@@ -135,7 +135,7 @@ final class VehicleStrategicTransitCommitAuthority {
             destination.mapObjects.add(vehicle);
 
             VehicleFuelAuthority.Result consumed =
-                    VehicleFuelAuthority.consumeCommitted(destination, vehicle,
+                    VehicleFuelAuthority.consumeStrategicReservation(destination, vehicle,
                             fuelRequired, game.turn,
                             clean(request.transitionReason(),
                                     "strategic vehicle transfer"));
@@ -198,6 +198,19 @@ final class VehicleStrategicTransitCommitAuthority {
             return Result.blocked(vehicle,
                     "Interrupted transit recovery requires the vehicle and both candidate worlds.");
         }
+        // Recovery may be called after a partial world transition. Only the
+        // persisted transfer provenance may authorize a placement or fuel change.
+        String recordedSource = value(vehicle, "strategicTransitCommitSource");
+        String recordedDestination = value(vehicle, "strategicTransitCommitDestination");
+        String sourceKey = Integer.toString(source.locationKey());
+        String destinationKey = Integer.toString(destination.locationKey());
+        if (source == destination || sourceKey.equals(destinationKey)
+                || recordedSource.isBlank() || recordedDestination.isBlank()
+                || !sourceKey.equals(recordedSource)
+                || !destinationKey.equals(recordedDestination)) {
+            return Result.blocked(vehicle,
+                    "Interrupted transit recovery requires the recorded source and destination worlds.");
+        }
         String state = value(vehicle, "strategicTransitState");
         if (!"committing".equals(state)) {
             return Result.blocked(vehicle,
@@ -206,6 +219,22 @@ final class VehicleStrategicTransitCommitAuthority {
         boolean inSource = source.mapObjects.contains(vehicle);
         boolean inDestination = destination.mapObjects.contains(vehicle);
         String reservationId = value(vehicle, "strategicTransitReservationId");
+        int outstandingReservation = intValue(value(vehicle,
+                "strategicTransitFuelReserved"), 0);
+        boolean matchingDebitReceipt = !reservationId.isBlank()
+                && reservationId.equals(value(vehicle, "strategicTransitFuelLastCommitId"));
+        // A source placement cannot be restored as an unpaid reservation after
+        // its debit was recorded, or when the reservation itself is missing.
+        if (inSource && (outstandingReservation <= 0 || matchingDebitReceipt)) {
+            return Result.blocked(vehicle,
+                    "Interrupted transit has a source placement but no safely restorable unpaid reservation; manual save recovery is required.");
+        }
+        // A receipt and a live reservation for the same transfer are mutually
+        // exclusive. Never debit this contradictory record a second time.
+        if (inDestination && outstandingReservation > 0 && matchingDebitReceipt) {
+            return Result.blocked(vehicle,
+                    "Interrupted transit has both an active reservation and a matching debit receipt; manual save recovery is required.");
+        }
         if (inSource && inDestination) {
             destination.mapObjects.remove(vehicle);
             vehicle.x = intValue(value(vehicle, "strategicTransitSourceX"),
@@ -236,22 +265,33 @@ final class VehicleStrategicTransitCommitAuthority {
         if (inDestination) {
             int reserved = intValue(value(vehicle,
                     "strategicTransitFuelReserved"), 0);
-            VehicleFuelAuthority.Result consumed =
-                    VehicleFuelAuthority.consumeCommitted(destination, vehicle,
-                            reserved, game == null ? 0 : game.turn,
-                            "interrupted strategic transfer recovery");
-            if (!consumed.success()) {
-                destination.mapObjects.remove(vehicle);
-                source.mapObjects.add(vehicle);
-                vehicle.x = intValue(value(vehicle,
-                        "strategicTransitSourceX"), vehicle.x);
-                vehicle.y = intValue(value(vehicle,
-                        "strategicTransitSourceY"), vehicle.y);
-                set(vehicle, "strategicTransitState", "reserved");
-                return new Result(Status.RECOVERED, true, true, 0,
-                        reservationId,
-                        "STRATEGIC TRANSIT RECOVERED: destination fuel commit failed, so the vehicle returned to source with its reservation intact.",
-                        vehicle);
+            if (reserved <= 0) {
+                // A completed debit may precede the final transfer-state write.
+                // Only a matching receipt proves that fuel was already spent.
+                if (reservationId.isBlank() || !reservationId.equals(
+                        value(vehicle, "strategicTransitFuelLastCommitId"))) {
+                    return Result.blocked(vehicle,
+                            "Interrupted transfer has no reservation or matching fuel debit receipt; manual save recovery is required.");
+                }
+            } else {
+                VehicleFuelAuthority.Result consumed =
+                        VehicleFuelAuthority.consumeStrategicReservation(
+                                destination, vehicle, reserved,
+                                game == null ? 0 : game.turn,
+                                "interrupted strategic transfer recovery");
+                if (!consumed.success()) {
+                    destination.mapObjects.remove(vehicle);
+                    source.mapObjects.add(vehicle);
+                    vehicle.x = intValue(value(vehicle,
+                            "strategicTransitSourceX"), vehicle.x);
+                    vehicle.y = intValue(value(vehicle,
+                            "strategicTransitSourceY"), vehicle.y);
+                    set(vehicle, "strategicTransitState", "reserved");
+                    return new Result(Status.RECOVERED, true, true, 0,
+                            reservationId,
+                            "STRATEGIC TRANSIT RECOVERED: destination fuel commit failed, so the vehicle returned to source with its reservation intact.",
+                            vehicle);
+                }
             }
             set(vehicle, "strategicTransitState", "completed");
             set(vehicle, "operationState", "parked");
@@ -259,7 +299,9 @@ final class VehicleStrategicTransitCommitAuthority {
                     + reservationId + " completed at destination during recovery");
             return new Result(Status.RECOVERED, true, true, reserved,
                     reservationId,
-                    "STRATEGIC TRANSIT RECOVERED: destination placement was retained and reserved fuel was committed.",
+                    reserved > 0
+                            ? "STRATEGIC TRANSIT RECOVERED: destination placement was retained and reserved fuel was committed."
+                            : "STRATEGIC TRANSIT RECOVERED: destination placement was retained; its matching fuel debit was already committed.",
                     vehicle);
         }
         return Result.blocked(vehicle,

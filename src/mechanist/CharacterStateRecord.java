@@ -1,6 +1,8 @@
 package mechanist;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,7 +62,154 @@ record CharacterStateRecord(
         String zone = values.getOrDefault("zoneId", "origin-zone");
         int health = SimpleJson.intValue(values.get("health"), 100);
         Instant updated = SimpleJson.instantValue(values.get("updatedAt"), Instant.now());
-        return new CharacterStateRecord(identity, name, x, y, z, zone, health, List.of(), List.of("ration-pack", "work-clothes"), Map.of("civic-authority", 0), updated);
+        return new CharacterStateRecord(
+                identity, name, x, y, z, zone, health,
+                parseStringList(values.get("selectedSkills"), List.of()),
+                parseStringList(values.get("startingItems"), List.of("ration-pack", "work-clothes")),
+                parseIntegerMap(values.get("factionReputation"), Map.of("civic-authority", 0)),
+                updated);
+    }
+
+    private static List<String> parseStringList(String raw, List<String> fallback) {
+        if (raw == null) return fallback;
+        NestedFieldReader reader = new NestedFieldReader(raw);
+        List<String> values = new ArrayList<>();
+        reader.expect('[');
+        if (!reader.consume(']')) {
+            do { values.add(reader.readString()); }
+            while (reader.consume(','));
+            reader.expect(']');
+        }
+        reader.expectEnd();
+        return List.copyOf(values);
+    }
+
+    private static Map<String, Integer> parseIntegerMap(
+            String raw, Map<String, Integer> fallback
+    ) {
+        if (raw == null) return fallback;
+        NestedFieldReader reader = new NestedFieldReader(raw);
+        Map<String, Integer> values = new LinkedHashMap<>();
+        reader.expect('{');
+        if (!reader.consume('}')) {
+            do {
+                String key = reader.readString();
+                reader.expect(':');
+                if (values.putIfAbsent(key, reader.readInteger()) != null) {
+                    throw new IllegalArgumentException("duplicate faction reputation key");
+                }
+            } while (reader.consume(','));
+            reader.expect('}');
+        }
+        reader.expectEnd();
+        return Map.copyOf(values);
+    }
+
+    /** Strictly reads the nested fields owned by this record; malformed saved state must not reset progress. */
+    private static final class NestedFieldReader {
+        private final String input;
+        private int index;
+
+        NestedFieldReader(String input) { this.input = input; }
+
+        private void skipWhitespace() {
+            while (index < input.length()
+                    && Character.isWhitespace(input.charAt(index))) index++;
+        }
+
+        boolean consume(char token) {
+            skipWhitespace();
+            if (index < input.length() && input.charAt(index) == token) {
+                index++;
+                return true;
+            }
+            return false;
+        }
+
+        void expect(char token) {
+            if (!consume(token)) {
+                throw new IllegalArgumentException(
+                        "invalid character field JSON: expected " + token);
+            }
+        }
+
+        void expectEnd() {
+            skipWhitespace();
+            if (index != input.length()) {
+                throw new IllegalArgumentException("trailing character field JSON");
+            }
+        }
+
+        String readString() {
+            expect('"');
+            StringBuilder out = new StringBuilder();
+            while (index < input.length()) {
+                char value = input.charAt(index++);
+                if (value == '"') return out.toString();
+                if (value == '\\') {
+                    if (index >= input.length()) {
+                        throw new IllegalArgumentException("truncated JSON string escape");
+                    }
+                    char escape = input.charAt(index++);
+                    switch (escape) {
+                        case '"', '\\', '/' -> out.append(escape);
+                        case 'b' -> out.append('\b');
+                        case 'f' -> out.append('\f');
+                        case 'n' -> out.append('\n');
+                        case 'r' -> out.append('\r');
+                        case 't' -> out.append('\t');
+                        case 'u' -> {
+                            if (index + 4 > input.length()) {
+                                throw new IllegalArgumentException("truncated JSON unicode escape");
+                            }
+                            try {
+                                out.append((char) Integer.parseInt(
+                                        input.substring(index, index + 4), 16));
+                            } catch (NumberFormatException invalid) {
+                                throw new IllegalArgumentException(
+                                        "invalid JSON unicode escape", invalid);
+                            }
+                            index += 4;
+                        }
+                        default -> throw new IllegalArgumentException(
+                                "invalid JSON string escape");
+                    }
+                } else {
+                    if (value < 0x20) {
+                        throw new IllegalArgumentException(
+                                "unescaped JSON control character");
+                    }
+                    out.append(value);
+                }
+            }
+            throw new IllegalArgumentException("unterminated JSON string");
+        }
+
+        int readInteger() {
+            skipWhitespace();
+            int start = index;
+            if (index < input.length() && input.charAt(index) == '-') index++;
+            if (index >= input.length()) {
+                throw new IllegalArgumentException(
+                        "missing faction reputation integer");
+            }
+            if (input.charAt(index) == '0') index++;
+            else {
+                if (input.charAt(index) < '1' || input.charAt(index) > '9') {
+                    throw new IllegalArgumentException(
+                            "invalid faction reputation integer");
+                }
+                while (index < input.length()
+                        && input.charAt(index) >= '0'
+                        && input.charAt(index) <= '9') index++;
+            }
+            try {
+                return Integer.parseInt(input.substring(start, index));
+            } catch (NumberFormatException invalid) {
+                throw new IllegalArgumentException(
+                        "out-of-range faction reputation integer", invalid);
+            }
+        }
     }
 
     private static String stringArray(List<String> values) {

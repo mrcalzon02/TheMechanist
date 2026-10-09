@@ -55,6 +55,32 @@ final class CharacterSaveManager implements AutoCloseable {
         }, ioExecutor);
     }
 
+    CharacterStateRecord loadOrCreateStrict(
+            PlayerIdentity identity,
+            String requestedName
+    ) throws IOException {
+        Objects.requireNonNull(identity, "identity");
+        Path file = profilePath(identity);
+        CharacterStateRecord record;
+        if (Files.exists(file)) {
+            record = CharacterStateRecord.fromJson(
+                    Files.readString(file, StandardCharsets.UTF_8));
+            if (!identity.storageKey().equals(record.identityKey())) {
+                throw new IOException(
+                        "character identity mismatch for " + identity.storageKey());
+            }
+        } else {
+            record = CharacterStateRecord.fresh(identity, requestedName);
+            atomicSaveSync(record);
+        }
+        if (!Files.isRegularFile(file)) {
+            throw new IOException(
+                    "canonical character record was not persisted for "
+                            + identity.storageKey());
+        }
+        return record;
+    }
+
     void atomicSaveSync(CharacterStateRecord record) throws IOException {
         CharacterStateRecord stamped = new CharacterStateRecord(record.identityKey(), record.characterName(), record.x(), record.y(), record.z(), record.zoneId(), record.health(), record.selectedSkills(), record.startingItems(), record.factionReputation(), Instant.now());
         Path finalPath = profileGuard.resolveInside(safeFileName(stamped.identityKey()) + ".dat");

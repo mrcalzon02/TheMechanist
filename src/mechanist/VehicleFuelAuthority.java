@@ -65,6 +65,18 @@ final class VehicleFuelAuthority {
 
     static Result consumeCommitted(World world, MapObjectState vehicle,
                                    int amount, int turn, String reason) {
+        return consumeEnergy(world, vehicle, amount, turn, reason, false);
+    }
+
+    /** Only an authoritative committing transfer may spend reserved energy. */
+    static Result consumeStrategicReservation(World world, MapObjectState vehicle,
+                                              int amount, int turn, String reason) {
+        return consumeEnergy(world, vehicle, amount, turn, reason, true);
+    }
+
+    private static Result consumeEnergy(World world, MapObjectState vehicle,
+                                        int amount, int turn, String reason,
+                                        boolean strategicReservation) {
         if (vehicle == null || !VehicleRuntimeAuthority.isVehicle(vehicle)) {
             return Result.blocked(0, "No vehicle fuel or power ledger is available.");
         }
@@ -72,17 +84,44 @@ final class VehicleFuelAuthority {
         int required = Math.max(0, amount);
         Snapshot before = inspect(world, vehicle);
         if (required <= 0) {
-            return new Result(true, false, before.current(), before.current(), 0,
+            return strategicReservation
+                    ? Result.blocked(before.current(),
+                    "Strategic transit requires a positive reserved fuel or power amount.")
+                    : new Result(true, false, before.current(), before.current(), 0,
                     "No fuel or power consumption was required.");
+        }
+        if (strategicReservation
+                && (!"committing".equals(value(vehicle, "strategicTransitState"))
+                || before.reserved() != required
+                || value(vehicle, "strategicTransitReservationId").isBlank()
+                || value(vehicle, "strategicTransitReservationId").equals(
+                        value(vehicle, "strategicTransitFuelLastCommitId")))) {
+            return Result.blocked(before.current(),
+                    "Strategic transit may consume only its exact active reservation during commit.");
         }
         if (before.current() < required) {
             return Result.blocked(before.current(),
                     "The vehicle requires " + required + " fuel or power units but only "
                             + before.current() + " remain.");
         }
+        if (!strategicReservation && before.available() < required) {
+            return Result.blocked(before.current(),
+                    "The vehicle has " + before.reserved()
+                            + " fuel or power units reserved for strategic transit; only "
+                            + before.available() + " remain for other operations.");
+        }
         int after = before.current() - required;
-        set(vehicle, "fuelOrPowerCurrent", Integer.toString(after));
-        set(vehicle, "strategicTransitFuelReserved", "0");
+        String updatedStock = MapObjectState.setStockFlag(vehicle.stockState,
+                "fuelOrPowerCurrent", Integer.toString(after));
+        if (strategicReservation) {
+            updatedStock = MapObjectState.setStockFlag(updatedStock,
+                    "strategicTransitFuelReserved", "0");
+            updatedStock = MapObjectState.setStockFlag(updatedStock,
+                    "strategicTransitFuelLastCommitId",
+                    value(vehicle, "strategicTransitReservationId"));
+        }
+        // One stock-state assignment records debit, reservation release and receipt.
+        vehicle.stockState = updatedStock;
         append(vehicle, "fuelOrPowerHistory", "Consumed " + required
                 + " unit(s) at turn " + Math.max(0, turn) + " / "
                 + clean(reason, "committed vehicle operation")

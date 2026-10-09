@@ -121,3 +121,31 @@ This ledger reset does not itself certify those workflows or publish a release. 
 Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement structural-scale combat, operation feedback, ambient vehicle audio, live vehicle dashboard/Infopedia integration, bounded route-history retention, bounded fuel/motor-pool/strategic-transit/manifest histories, vehicle contract-priority behavior, the shared headless `AuthoritativeWorldRuntime` snapshot seam, or the persisted independent-host `WAIT` command lane already present on `main`.
 
 For 06.R, extend the existing authenticated remote session and `IndependentHostTurnAuthority` into the canonical server world/map/player persistence owners; do not create a second remote world or character ledger. For ordinary Milestone 06 gameplay, continue reconciling the post-reset commit boundary against the ordered phase requirements until the first genuinely incomplete dependency-valid requirement is identified. Prefer a concrete implementation slice over adding another audit-only chain.
+
+### Milestone 06 vehicle fuel-reservation integrity (2026-10-07)
+
+- Ordinary committed vehicle operations now preserve fuel or power reserved for strategic transit; the transfer commit owner alone may spend an exact active reservation.
+- The strategic debit writes remaining fuel, reservation release, and a persistent matching debit receipt together. Interrupted destination recovery accepts a matching receipt without charging twice; ambiguous zero-reservation recovery refuses mutation.
+- The existing fuel-history and strategic-transfer smokes now cover overdraw, premature or mismatched commits, duplicate debit, interrupted post-debit recovery, and missing-receipt refusal. The strategic transit chain is registered directly in Gate 3.
+- Full Java 17 compilation, Maven, Gate 3 execution, native packaging, and in-game verification must be recorded separately when run; this entry does not certify a release.
+
+### Milestone 06 interrupted-transfer world identity validation (2026-10-08)
+
+- Interrupted strategic-transit recovery now verifies the caller's source and destination against the vehicle's persisted transfer-world keys before changing placement, reservations, or fuel. Identical logical worlds and absent provenance fail closed with readable refusal.
+- The existing strategic transit smoke adds wrong-source, wrong-destination, swapped-world, same-world, same-logical-world, and missing-provenance non-mutation cases while retaining the successful duplicate-placement recovery path.
+- Source anchors and repository readback are the available verification for this change; full Java 17 compilation, Maven, Gate 3 execution, and in-game tests are still required before runtime certification.
+
+### 06.R authenticated world-command refusal continuity (2026-10-08)
+
+- Authenticated but unavailable gameplay verbs on the dedicated `WORLD_COMMAND` lane now return an explicit `WORLD_COMMAND_REJECTED` frame instead of being routed through the fatal protocol-denial path.
+- Refused gameplay commands do not mutate turn state or consume the world-command sequence number; the client may retry the same command id with the currently supported authoritative `WAIT` command without reconnecting.
+- The hosted-session wire smoke now proves non-disconnecting refusal, zero mutation, sequence reuse, and successful authoritative WAIT immediately after the refusal. Protocol/authentication failures and wrong-lane hosted-session commands remain fail-closed.
+- Repository readback is required for this slice; full Java 17 compilation and packaged release-gate execution remain separately required.
+
+### 06.R canonical hosted character identity binding (2026-10-08)
+
+- Successful independent-host authentication now binds the stable remote profile identity through existing `PlayerIdentity` rules to the existing server-owned `CharacterSaveManager`; the native relay receives the same manager instance owned by `SecureServerNetworkingCore` rather than opening another profile store.
+- Authenticated access fails closed if the canonical character record cannot be durably loaded or created. The strict path rejects identity-mismatched records instead of silently granting access with transient fallback state.
+- The hosted-session wire smoke now proves durable canonical character creation and reconnect reuse of the same character identity. Server runtime state also records the canonical server-world reference plus remote session and turn-ledger paths for one coherent host identity surface.
+- This is a character-persistence integration slice only: canonical hosted world/map position mutation, inventory ownership, broader gameplay commands, and full remote gameplay certification remain open.
+- Repository source/readback verification is required for this slice; full Java 17 compilation and packaged release-gate execution remain separately required.
