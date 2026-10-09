@@ -13,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -100,25 +101,32 @@ final class CharacterSaveManager implements AutoCloseable {
     synchronized void atomicSaveSync(CharacterStateRecord record) throws IOException {
         CharacterStateRecord stamped = new CharacterStateRecord(record.identityKey(), record.characterName(), record.x(), record.y(), record.z(), record.zoneId(), record.health(), record.selectedSkills(), record.startingItems(), record.factionReputation(), Instant.now());
         Path finalPath = profileGuard.resolveInside(safeFileName(stamped.identityKey()) + ".dat");
-        Path tmpPath = profileGuard.resolveInside(safeFileName(stamped.identityKey()) + ".tmp");
-        // Never truncate a pre-existing temporary path: a hard link can target
-        // another file even when it is not a symbolic link. CREATE_NEW makes
-        // the temporary write exclusive and fails closed on orphaned temp files.
-        if (Files.isSymbolicLink(finalPath) || Files.isSymbolicLink(tmpPath)) {
-            throw new IOException("symbolic-link character save path denied");
+        // A fresh, exclusive sibling survives orphaned legacy .tmp paths and
+        // never opens a pre-existing hard link for truncation.
+        Path tmpPath = profileGuard.resolveInside(
+                safeFileName(stamped.identityKey()) + "." + UUID.randomUUID() + ".tmp");
+        if (Files.isSymbolicLink(finalPath)
+                || (Files.exists(finalPath, LinkOption.NOFOLLOW_LINKS)
+                    && !Files.isRegularFile(finalPath, LinkOption.NOFOLLOW_LINKS))) {
+            throw new IOException("unsafe canonical character save destination");
         }
         byte[] data = stamped.toJson().getBytes(StandardCharsets.UTF_8);
-        try (FileChannel channel = FileChannel.open(tmpPath,
-                StandardOpenOption.CREATE_NEW,
-                StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
-            ByteBuffer bytes = ByteBuffer.wrap(data);
-            while (bytes.hasRemaining()) channel.write(bytes);
-            channel.force(true);
-        }
         try {
-            Files.move(tmpPath, finalPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-        } catch (java.nio.file.AtomicMoveNotSupportedException ex) {
-            Files.move(tmpPath, finalPath, StandardCopyOption.REPLACE_EXISTING);
+            try (FileChannel channel = FileChannel.open(tmpPath,
+                    StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
+                ByteBuffer bytes = ByteBuffer.wrap(data);
+                while (bytes.hasRemaining()) channel.write(bytes);
+                channel.force(true);
+            }
+            try {
+                Files.move(tmpPath, finalPath,
+                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ex) {
+                Files.move(tmpPath, finalPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(tmpPath);
         }
     }
 

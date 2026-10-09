@@ -137,15 +137,25 @@ final class CharacterSaveManagerRegressionSmoke {
             PlayerIdentity blocked =
                     PlayerIdentity.fallbackFromCredential("character-blocked-profile");
             Path blockedFile = manager.profilePath(blocked);
-            Path blockedTemp = blockedFile.resolveSibling(
-                    blockedFile.getFileName().toString().replace(".dat", ".tmp"));
-            Files.createDirectory(blockedTemp);
-            Files.writeString(blockedTemp.resolve("sentinel"), "do-not-delete");
+            Files.createDirectory(blockedFile);
+            Files.writeString(blockedFile.resolve("sentinel"), "do-not-delete");
             expectAsyncIoFailure(manager.saveAsync(
                     CharacterStateRecord.fresh(blocked, "Blocked")));
             expectAsyncIoFailure(manager.loadOrCreate(blocked, "Blocked"));
-            check(!Files.exists(blockedFile),
-                    "failed persistence produced a misleading canonical character file");
+            check(Files.isDirectory(blockedFile)
+                            && "do-not-delete".equals(
+                                    Files.readString(blockedFile.resolve("sentinel"))),
+                    "failed persistence mutated a blocked destination");
+            PlayerIdentity orphan =
+                    PlayerIdentity.fallbackFromCredential("orphaned-temp-profile");
+            Path orphanFile = manager.profilePath(orphan);
+            Path orphanTemp = orphanFile.resolveSibling(
+                    orphanFile.getFileName().toString().replace(".dat", ".tmp"));
+            Files.createDirectory(orphanTemp);
+            manager.saveAsync(CharacterStateRecord.fresh(orphan, "Recovered")).join();
+            check("Recovered".equals(
+                            manager.loadOrCreateStrict(orphan, "Ignored").characterName()),
+                    "stale legacy temporary path prevented recovery");
             boolean hardLinkChecked = verifyHardLinkProtection(manager, root);
             boolean symlinkChecked = verifySymlinkProtection(manager, root);
             System.out.println("CharacterSaveManagerRegressionSmoke PASS"
@@ -185,10 +195,11 @@ final class CharacterSaveManagerRegressionSmoke {
                     | SecurityException unavailable) {
                 return false;
             }
-            expectAsyncIoFailure(manager.saveAsync(
-                    CharacterStateRecord.fresh(linked, "Hardlinked Temp")));
-            check(!Files.exists(destination),
-                    "hard-linked temporary path produced a character save");
+            manager.saveAsync(CharacterStateRecord.fresh(linked, "Hardlinked Temp")).join();
+            check(Files.isRegularFile(destination),
+                    "isolated temporary save did not publish the character");
+            check(Files.isSameFile(temp, outside),
+                    "legacy hard link was replaced");
             check("sentinel".equals(Files.readString(outside)),
                     "hard-linked temporary path truncated another file");
             return true;
