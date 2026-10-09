@@ -125,7 +125,15 @@ final class ServerRuntime {
             state.setProperty(
                     "server.remoteSessionLedger",
                     ServerRuntimePaths.remoteSessionLedgerPath(config.worldId()).toString());
-            binding = MultiplayerHostBindingService.bind(config);
+            state.setProperty(
+                    "server.remoteTurnLedger",
+                    ServerRuntimePaths.remoteTurnLedgerPath(config.worldId()).toString());
+            state.setProperty(
+                    "server.worldReference",
+                    ServerRuntimePaths.serverWorldReference(config.worldId()));
+            binding = MultiplayerHostBindingService.bind(
+                    config,
+                    securityCore.characterSaveManager);
             state.setProperty("server.hosting.requested", "true");
             state.setProperty(
                     "server.hosting.success", String.valueOf(binding.success()));
@@ -232,6 +240,8 @@ final class ServerRuntime {
                 + "Server save slots: " + ServerRuntimePaths.serverSlotDir() + "\n"
                 + "Remote session ledgers: "
                 + ServerRuntimePaths.remoteSessionDir() + "\n"
+                + "Remote turn authority: "
+                + ServerRuntimePaths.remoteWorldAuthorityDir() + "\n"
                 + "Desktop single-player saves: "
                 + ServerRuntimePaths.singlePlayerRoot() + "\n"
                 + NetworkPortAuthority.policySummary()
