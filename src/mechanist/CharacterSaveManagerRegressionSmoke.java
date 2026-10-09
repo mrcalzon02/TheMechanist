@@ -108,18 +108,56 @@ final class CharacterSaveManagerRegressionSmoke {
             expectAsyncIoFailure(manager.loadOrCreate(blocked, "Blocked"));
             check(!Files.exists(blockedFile),
                     "failed persistence produced a misleading canonical character file");
+            boolean symlinkChecked = verifySymlinkProtection(manager, root);
             System.out.println("CharacterSaveManagerRegressionSmoke PASS"
                     + " progressRoundTrip=true"
                     + " corruptRecordFailClosed=true"
                     + " corruptScalarFailClosed=true"
                     + " nonFinitePositionRejected=true"
-                    + " asyncFailuresVisible=true");
+                    + " asyncFailuresVisible=true"
+                    + " symlinkProtection=" + (symlinkChecked ? "verified" : "unsupported"));
         } finally {
             try (var files = Files.walk(root)) {
                 for (Path path : files.sorted(Comparator.reverseOrder()).toList()) {
                     Files.deleteIfExists(path);
                 }
             }
+        }
+    }
+
+    private static boolean verifySymlinkProtection(
+            CharacterSaveManager manager, Path root) throws Exception {
+        Path outside = Files.createTempFile(root.getParent(), "mechanist-outside-", ".dat");
+        try {
+            Files.writeString(outside, "sentinel", StandardCharsets.UTF_8);
+            PlayerIdentity linked = PlayerIdentity.fallbackFromCredential("linked-character");
+            Path file = manager.profilePath(linked);
+            try {
+                Files.createSymbolicLink(file, outside);
+            } catch (UnsupportedOperationException
+                    | java.nio.file.FileSystemException
+                    | SecurityException unavailable) {
+                return false;
+            }
+            expectAsyncIoFailure(manager.loadOrCreate(linked, "Linked"));
+            expectAsyncIoFailure(manager.saveAsync(CharacterStateRecord.fresh(linked, "Linked")));
+            check(Files.isSymbolicLink(file), "canonical link was replaced");
+            check("sentinel".equals(Files.readString(outside)),
+                    "canonical link modified an external file");
+
+            PlayerIdentity tempLinked = PlayerIdentity.fallbackFromCredential("linked-temp");
+            Path destination = manager.profilePath(tempLinked);
+            Path temp = destination.resolveSibling(
+                    destination.getFileName().toString().replace(".dat", ".tmp"));
+            Files.createSymbolicLink(temp, outside);
+            expectAsyncIoFailure(manager.saveAsync(
+                    CharacterStateRecord.fresh(tempLinked, "Temp Linked")));
+            check(!Files.exists(destination), "temporary link produced a character save");
+            check("sentinel".equals(Files.readString(outside)),
+                    "temporary link modified an external file");
+            return true;
+        } finally {
+            Files.deleteIfExists(outside);
         }
     }
 

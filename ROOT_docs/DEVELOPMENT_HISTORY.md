@@ -168,3 +168,8 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - Canonical `CharacterStateRecord.fromJson` now refuses missing or malformed saved identity, position, zone, health, and timestamp fields instead of silently resetting world position or health. Construction also rejects non-finite coordinates.
 - The existing Gate 3 `CharacterSaveManagerRegressionSmoke` covers eight scalar-corruption fixtures, preserves damaged files on strict-load refusal, and rejects non-finite position before serialization. Legacy optional skills/items/reputation collections retain their compatibility defaults.
 - Verified remote source commit: `c63e8603d7e95e32ca8998992df6225d44ead547`. Java 17 compilation and actual smoke execution remain unverified; remote movement and canonical hosted world/inventory mutation are not opened by this repair.
+
+### 06.R character profile filesystem safety (2026-10-10)
+
+- Canonical character reads and atomic saves now reject symbolic-link profile paths and use no-follow file access. The existing character persistence smoke checks refusal and external-file preservation when symbolic links are available.
+- Java 17 compilation, smoke execution, and release evidence remain unverified. Remote world and inventory authority remain pending.
