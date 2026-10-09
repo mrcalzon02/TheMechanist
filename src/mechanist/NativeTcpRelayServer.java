@@ -40,17 +40,20 @@ final class NativeTcpRelayServer implements AutoCloseable {
     private final NetworkThrottlingManager throttlingManager = new NetworkThrottlingManager();
     private final RemoteSessionLedgerAuthority sessionLedger;
     private final IndependentHostTurnAuthority turnAuthority;
+    private final CharacterSaveManager characterSaveManager;
 
     private NativeTcpRelayServer(
             ServerConfig config,
             String bindAddress,
             int boundPort,
-            ServerSocketChannel serverChannel
+            ServerSocketChannel serverChannel,
+            CharacterSaveManager characterSaveManager
     ) throws IOException {
         this.config = config;
         this.bindAddress = bindAddress;
         this.boundPort = boundPort;
         this.serverChannel = serverChannel;
+        this.characterSaveManager = characterSaveManager;
         RemoteSessionLedgerAuthority mountedLedger =
                 new RemoteSessionLedgerAuthority(
                         config.worldId(),
@@ -83,6 +86,14 @@ final class NativeTcpRelayServer implements AutoCloseable {
     }
 
     static NativeTcpRelayServer bind(ServerConfig config, boolean ipv6) throws IOException {
+        return bind(config, ipv6, null);
+    }
+
+    static NativeTcpRelayServer bind(
+            ServerConfig config,
+            boolean ipv6,
+            CharacterSaveManager characterSaveManager
+    ) throws IOException {
         if (config == null) throw new IOException("Server configuration is required.");
         String requested = config.boundAddress() == null || config.boundAddress().isBlank()
                 ? (ipv6 ? "::" : "0.0.0.0")
@@ -111,7 +122,11 @@ final class NativeTcpRelayServer implements AutoCloseable {
                     : MultiplayerProtocolState.NATIVE_IPV4;
             ServerConfig boundConfig = config.withBinding(actualAddress, actualPort, protocol);
             NativeTcpRelayServer server = new NativeTcpRelayServer(
-                    boundConfig, actualAddress, actualPort, channel);
+                    boundConfig,
+                    actualAddress,
+                    actualPort,
+                    channel,
+                    characterSaveManager);
             server.start();
             return server;
         } catch (IOException | RuntimeException failure) {
@@ -203,6 +218,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                         + " handshake=" + IndependentHostWireProtocol.VERSION
                         + " access=RELAY_ONLY"
                         + " worldControl=WAIT_ONLY"
+                        + " canonicalCharacterPersistence=" + (characterSaveManager != null)
                         + " movementAuthority=false"
                         + " rosterBroadcasts=authenticated-peers"
                         + " ledger={" + sessionLedger.auditSummary() + "}"
@@ -364,7 +380,8 @@ final class NativeTcpRelayServer implements AutoCloseable {
             this.protocol = new IndependentHostWireProtocol(
                     session,
                     sessionLedger,
-                    turnAuthority);
+                    turnAuthority,
+                    characterSaveManager);
             this.out = new BufferedWriter(new OutputStreamWriter(
                     Channels.newOutputStream(channel), StandardCharsets.UTF_8));
             write(protocol.helloLine());
