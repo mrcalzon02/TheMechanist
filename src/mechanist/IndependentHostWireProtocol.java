@@ -19,7 +19,7 @@ import java.util.Objects;
  * general remote gameplay authority remain closed.
  */
 final class IndependentHostWireProtocol {
-    static final String VERSION = "independent-host-wire-6";
+    static final String VERSION = "independent-host-wire-7";
     private static final String PREFIX = "MECH";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -318,9 +318,12 @@ final class IndependentHostWireProtocol {
         String command = requireToken(fields[3], "world command")
                 .toUpperCase(Locale.ROOT);
         if (!"WAIT".equals(command)) {
-            throw new IllegalArgumentException(
-                    "world command " + command
-                            + " is unavailable; only authoritative wait is open");
+            return Result.responses(line(
+                    "WORLD_COMMAND_REJECTED",
+                    Long.toString(commandId),
+                    command,
+                    "UNAVAILABLE",
+                    "Only authoritative wait is open; the session remains connected."));
         }
         IndependentHostTurnAuthority.TurnCommandResult result =
                 turnAuthority.applyCommand(
