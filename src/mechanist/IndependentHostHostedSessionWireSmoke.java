@@ -1,6 +1,9 @@
 package mechanist;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /** Verifies authenticated hosted-session commands, connected-only roster responses, and peer-broadcast classification. */
@@ -10,6 +13,10 @@ final class IndependentHostHostedSessionWireSmoke {
                 new RemoteSessionLedgerAuthority("hosted-session-wire-smoke");
         IndependentHostTurnAuthority turns =
                 new IndependentHostTurnAuthority("hosted-session-wire-smoke");
+        Path characterRoot = Files.createTempDirectory(
+                "Mechanist Hosted Character Persistence ");
+        CharacterSaveManager characters =
+                new CharacterSaveManager(characterRoot);
         IndependentHostWireProtocol alpha = null;
         IndependentHostWireProtocol beta = null;
         IndependentHostWireProtocol duplicate = null;
@@ -18,9 +25,19 @@ final class IndependentHostHostedSessionWireSmoke {
             alpha = new IndependentHostWireProtocol(
                     "wire-alpha-one",
                     ledger,
-                    turns);
+                    turns,
+                    characters);
             Access alphaAccess = authenticate(alpha, "profile.alpha.1001", "");
             require(!alphaAccess.resumed, "new wire session incorrectly reported resume");
+            PlayerIdentity alphaIdentity =
+                    PlayerIdentity.fallbackFromCredential("profile.alpha.1001");
+            CharacterStateRecord alphaCharacter = alpha.characterSnapshot();
+            require(alphaCharacter != null
+                            && alpha.boundPlayerIdentity() != null
+                            && alphaIdentity.storageKey().equals(alphaCharacter.identityKey())
+                            && alphaIdentity.equals(alpha.boundPlayerIdentity())
+                            && Files.isRegularFile(characters.profilePath(alphaIdentity)),
+                    "authenticated profile did not bind to durable canonical character persistence");
 
             IndependentHostWireProtocol.Result ready = alpha.accept(
                     "MECH|SESSION_COMMAND|0|READY|true");
@@ -74,7 +91,8 @@ final class IndependentHostHostedSessionWireSmoke {
             beta = new IndependentHostWireProtocol(
                     "wire-beta-one",
                     ledger,
-                    turns);
+                    turns,
+                    characters);
             authenticate(beta, "profile.beta.1002", "");
             IndependentHostWireProtocol.Result roster = beta.accept("MECH|SESSION_ROSTER");
             verifyRoster(roster.responses(), 2, 2, false);
@@ -84,7 +102,8 @@ final class IndependentHostHostedSessionWireSmoke {
             duplicate = new IndependentHostWireProtocol(
                     "wire-alpha-duplicate",
                     ledger,
-                    turns);
+                    turns,
+                    characters);
             Handshake duplicateHandshake = beginHandshake(
                     duplicate, "profile.alpha.1001", alphaAccess.resumeToken);
             String duplicateDigest = SecureHandshakeStateMachine.computeIntegrityDigest(
@@ -104,7 +123,8 @@ final class IndependentHostHostedSessionWireSmoke {
             resumed = new IndependentHostWireProtocol(
                     "wire-alpha-two",
                     ledger,
-                    turns);
+                    turns,
+                    characters);
             Access resumedAccess = authenticate(
                     resumed, "profile.alpha.1001", alphaAccess.resumeToken);
             require(resumedAccess.resumed,
@@ -113,6 +133,12 @@ final class IndependentHostHostedSessionWireSmoke {
                     "resume changed the stable remote player id");
             require(resumedAccess.connectionGeneration == 2L,
                     "resume did not advance the connection generation");
+            CharacterStateRecord resumedCharacter = resumed.characterSnapshot();
+            require(resumedCharacter != null
+                            && alphaCharacter.identityKey().equals(
+                            resumedCharacter.identityKey())
+                            && Files.isRegularFile(characters.profilePath(alphaIdentity)),
+                    "reconnect did not reuse the canonical hosted character record");
 
             IndependentHostWireProtocol.Result resumedCommand = resumed.accept(
                     "MECH|SESSION_COMMAND|0|PRESENCE|away");
@@ -173,6 +199,8 @@ final class IndependentHostHostedSessionWireSmoke {
                     + " departureRosterClassified=true"
                     + " duplicateAttachmentReachedLedger=true"
                     + " reconnectContinuity=true"
+                    + " canonicalCharacterPersistence=true"
+                    + " reconnectReusesCharacter=true"
                     + " hostedAndWorldCommandLanesSeparated=true"
                     + " gameplayRefusalKeepsSession=true"
                     + " refusedWorldCommandSequenceReusable=true"
@@ -185,6 +213,8 @@ final class IndependentHostHostedSessionWireSmoke {
             disconnectQuietly(alpha, "wire smoke cleanup");
             turns.close();
             ledger.close();
+            characters.close();
+            deleteRecursively(characterRoot);
         }
     }
 
@@ -257,6 +287,19 @@ final class IndependentHostHostedSessionWireSmoke {
         try {
             protocol.disconnect(reason);
         } catch (RuntimeException ignored) {
+        }
+    }
+
+    private static void deleteRecursively(Path root) {
+        if (root == null || !Files.exists(root)) return;
+        try (var paths = Files.walk(root)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (Exception ignored) {
+                }
+            });
+        } catch (Exception ignored) {
         }
     }
 
