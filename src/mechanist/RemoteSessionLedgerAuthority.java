@@ -67,6 +67,20 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             String presentedResumeToken,
             String connectionId
     ) {
+        return attach(profileIdentity, presentedResumeToken, connectionId, null);
+    }
+
+    /**
+     * Validates the resume credential before invoking a required host-state
+     * binding. No session or undisclosed resume token is committed if that
+     * binding fails; the same profile can retry after storage is repaired.
+     */
+    synchronized Attachment attach(
+            String profileIdentity,
+            String presentedResumeToken,
+            String connectionId,
+            Runnable beforeSessionCommit
+    ) {
         requireOpen();
         String profile = safeToken(profileIdentity, "unknown-profile");
         String connection = safeToken(connectionId, "unknown-connection");
@@ -83,13 +97,6 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
                 throw new SecurityException(
                         "resume token does not match any server-owned session");
             }
-            String issuedToken = randomHex(32);
-            session = new MutableSession(
-                    profile,
-                    playerIdFor(profile),
-                    sha256Hex(issuedToken));
-            session.activeResumeToken = issuedToken;
-            sessionsByProfile.put(profile, session);
         } else {
             if (resume.isBlank()
                     || !constantTimeEquals(
@@ -106,6 +113,21 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             if (connection.equals(session.activeConnectionId)) {
                 return attachment(session, true);
             }
+        }
+
+        // Character/world prerequisites may fail on disk. They must not
+        // allocate an unreachable resume token or advance a connection generation.
+        if (beforeSessionCommit != null) beforeSessionCommit.run();
+
+        if (session == null) {
+            String issuedToken = randomHex(32);
+            session = new MutableSession(
+                    profile,
+                    playerIdFor(profile),
+                    sha256Hex(issuedToken));
+            session.activeResumeToken = issuedToken;
+            sessionsByProfile.put(profile, session);
+        } else {
             resumed = true;
             session.connectionGeneration++;
             session.activeResumeToken = resume;
