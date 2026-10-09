@@ -9,6 +9,13 @@ final class MultiplayerHostBindingService {
     private MultiplayerHostBindingService() { }
 
     static HostBindingResult bind(ServerConfig requestedConfig) {
+        return bind(requestedConfig, null);
+    }
+
+    static HostBindingResult bind(
+            ServerConfig requestedConfig,
+            CharacterSaveManager characterSaveManager
+    ) {
         ServerConfig config = requestedConfig == null
                 ? ServerConfig.fromWorldSettings(System.currentTimeMillis(), "Unnamed Hive World", "local-world",
                 WorldSetupSettings.standard(), ServerConfig.DEFAULT_MAX_PLAYERS, 0, "::",
@@ -25,18 +32,30 @@ final class MultiplayerHostBindingService {
         }
 
         if ("::".equals(requestedAddress)) {
-            HostBindingResult ipv6 = bindExact(config, "::", true);
+            HostBindingResult ipv6 = bindExact(
+                    config, "::", true, characterSaveManager);
             if (ipv6.success()) return ipv6;
             DebugLog.audit("MULTIPLAYER_BIND_IPV6_FALLBACK", ipv6.compactLine());
-            return bindExact(config, "0.0.0.0", false);
+            return bindExact(
+                    config, "0.0.0.0", false, characterSaveManager);
         }
         if ("0.0.0.0".equals(requestedAddress)) {
-            return bindExact(config, requestedAddress, false);
+            return bindExact(
+                    config, requestedAddress, false, characterSaveManager);
         }
-        return bindExact(config, requestedAddress, requestedAddress.contains(":"));
+        return bindExact(
+                config,
+                requestedAddress,
+                requestedAddress.contains(":"),
+                characterSaveManager);
     }
 
-    private static HostBindingResult bindExact(ServerConfig base, String address, boolean ipv6) {
+    private static HostBindingResult bindExact(
+            ServerConfig base,
+            String address,
+            boolean ipv6,
+            CharacterSaveManager characterSaveManager
+    ) {
         MultiplayerProtocolState nettyProtocol = ipv6
                 ? MultiplayerProtocolState.NETTY_IPV6
                 : MultiplayerProtocolState.NETTY_IPV4;
@@ -52,7 +71,9 @@ final class MultiplayerHostBindingService {
 
         try {
             NativeTcpRelayServer nativeServer = NativeTcpRelayServer.bind(
-                    base.withBinding(address, base.port(), nativeProtocol), ipv6);
+                    base.withBinding(address, base.port(), nativeProtocol),
+                    ipv6,
+                    characterSaveManager);
             return HostBindingResult.success(
                     base,
                     nativeProtocol,
