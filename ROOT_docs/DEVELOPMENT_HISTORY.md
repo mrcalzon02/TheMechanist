@@ -134,3 +134,10 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - Interrupted strategic-transit recovery now verifies the caller's source and destination against the vehicle's persisted transfer-world keys before changing placement, reservations, or fuel. Identical logical worlds and absent provenance fail closed with readable refusal.
 - The existing strategic transit smoke adds wrong-source, wrong-destination, swapped-world, same-world, same-logical-world, and missing-provenance non-mutation cases while retaining the successful duplicate-placement recovery path.
 - Source anchors and repository readback are the available verification for this change; full Java 17 compilation, Maven, Gate 3 execution, and in-game tests are still required before runtime certification.
+
+### 06.R authenticated world-command refusal continuity (2026-10-08)
+
+- Authenticated but unavailable gameplay verbs on the dedicated `WORLD_COMMAND` lane now return an explicit `WORLD_COMMAND_REJECTED` frame instead of being routed through the fatal protocol-denial path.
+- Refused gameplay commands do not mutate turn state or consume the world-command sequence number; the client may retry the same command id with the currently supported authoritative `WAIT` command without reconnecting.
+- The hosted-session wire smoke now proves non-disconnecting refusal, zero mutation, sequence reuse, and successful authoritative WAIT immediately after the refusal. Protocol/authentication failures and wrong-lane hosted-session commands remain fail-closed.
+- Repository readback is required for this slice; full Java 17 compilation and packaged release-gate execution remain separately required.
