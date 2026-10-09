@@ -86,6 +86,44 @@ final class CharacterSaveManagerRegressionSmoke {
                 check(fixture[1].equals(Files.readString(corruptPath)),
                         "corrupt scalar was overwritten: " + fixture[0]);
             }
+
+            // The former flat JSON reader could accept duplicate keys,
+            // wrong scalar types, and partial envelopes as valid profile state.
+            String[][] invalidStructuralRecords = {
+                    {"duplicate-identity", valid.replace(
+                            "  \"characterName\":",
+                            "  \"identityKey\": \"" + corrupt.storageKey()
+                                    + "\",\n  \"characterName\":")},
+                    {"duplicate-health", valid.replace(
+                            "  \"updatedAt\":", "  \"health\": 100,\n  \"updatedAt\":")},
+                    {"quoted-coordinate", valid.replace(
+                            "\"x\": 0.0", "\"x\": \"0.0\"")},
+                    {"numeric-zone", valid.replace(
+                            "\"zoneId\": \"origin-zone\"", "\"zoneId\": 4")},
+                    {"unquoted-name", valid.replace(
+                            "\"characterName\": \"Test\"", "\"characterName\": Test")},
+                    {"unknown-field", valid.replace(
+                            "  \"updatedAt\":", "  \"unknown\": true,\n  \"updatedAt\":")},
+                    {"invalid-number-token", valid.replace(
+                            "\"y\": 0.0", "\"y\": 01")},
+                    {"trailing-object-data", valid + " {}"}
+            };
+            for (String[] fixture : invalidStructuralRecords) {
+                check(!fixture[1].equals(valid),
+                        "structural corruption fixture was not constructed: " + fixture[0]);
+                Files.writeString(corruptPath, fixture[1], StandardCharsets.UTF_8);
+                try {
+                    manager.loadOrCreateStrict(corrupt, "Test");
+                    throw new AssertionError(
+                            "corrupt saved structure was accepted: " + fixture[0]);
+                } catch (IOException expected) {
+                    check(expected.getCause() instanceof IllegalArgumentException,
+                            "corrupt structure did not preserve parse cause: " + fixture[0]);
+                }
+                check(fixture[1].equals(Files.readString(corruptPath)),
+                        "corrupt structure was overwritten: " + fixture[0]);
+            }
+
             try {
                 new CharacterStateRecord(
                         fresh.identityKey(), fresh.characterName(),
@@ -113,6 +151,7 @@ final class CharacterSaveManagerRegressionSmoke {
                     + " progressRoundTrip=true"
                     + " corruptRecordFailClosed=true"
                     + " corruptScalarFailClosed=true"
+                    + " strictStructureFailClosed=true"
                     + " nonFinitePositionRejected=true"
                     + " asyncFailuresVisible=true"
                     + " symlinkProtection=" + (symlinkChecked ? "verified" : "unsupported"));

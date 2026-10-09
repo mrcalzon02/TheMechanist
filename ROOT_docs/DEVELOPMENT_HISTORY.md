@@ -173,3 +173,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 
 - Canonical character reads and atomic saves now reject symbolic-link profile paths and use no-follow file access. The existing character persistence smoke checks refusal and external-file preservation when symbolic links are available.
 - Java 17 compilation, smoke execution, and release evidence remain unverified. Remote world and inventory authority remain pending.
+
+### 06.R strict canonical character JSON structure (2026-10-10)
+
+- Canonical character restoration now uses a schema-aware strict top-level reader rather than the shared permissive flat JSON extractor. Duplicate saved identity/health keys, wrong JSON scalar types, invalid number tokens, unknown fields, malformed nested collections, and trailing object content fail closed without overwriting the saved profile.
+- The existing CharacterSaveManagerRegressionSmoke adds eight structural-corruption cases alongside the prior scalar, async failure, and symbolic-link checks. The nested string/list/reputation parsers and legacy optional-field defaults remain the same.
+- An isolated parser probe compiled with Java --release 17 and passed valid escaped-string/numeric/nested-value parsing plus seven malformed-record refusals. Full source compilation, the registered regression smoke, Gate 3, packaging, and clean-machine evidence remain unexecuted; no remote world/map or inventory authority is claimed.
