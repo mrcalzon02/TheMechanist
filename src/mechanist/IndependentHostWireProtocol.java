@@ -272,8 +272,8 @@ final class IndependentHostWireProtocol {
         sessionAttachment = sessionLedger.attach(
                 profileIdentity,
                 requestedResumeToken,
-                handshake.sessionId());
-        bindCanonicalCharacter();
+                handshake.sessionId(),
+                this::bindCanonicalCharacter);
         handshake.beginLiveWorldInitialization();
         handshake.grantAccess();
         accessGranted = true;
