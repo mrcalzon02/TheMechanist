@@ -60,7 +60,7 @@ record CharacterStateRecord(
                 || !json.strip().endsWith("}")) {
             throw new IllegalArgumentException("invalid canonical character JSON envelope");
         }
-        Map<String, String> values = SimpleJson.object(json);
+        Map<String, String> values = strictSavedFields(json);
         // These fields have always been written by toJson. Missing or damaged
         // position/health/identity data must never silently reset on reconnect.
         String identity = requiredSavedText(values, "identityKey");
@@ -77,6 +77,40 @@ record CharacterStateRecord(
                 parseStringList(values.get("startingItems"), List.of("ration-pack", "work-clothes")),
                 parseIntegerMap(values.get("factionReputation"), Map.of("civic-authority", 0)),
                 updated);
+    }
+
+
+    /**
+     * Read only canonical top-level character fields, with strict JSON types,
+     * delimiters, and unique keys. The shared SimpleJson reader is intentionally
+     * permissive for other engine records and cannot protect saved identities.
+     */
+    private static Map<String, String> strictSavedFields(String json) {
+        NestedFieldReader reader = new NestedFieldReader(json);
+        Map<String, String> fields = new LinkedHashMap<>();
+        reader.expect('{');
+        if (!reader.consume('}')) {
+            do {
+                String key = reader.readString();
+                reader.expect(':');
+                String value = switch (key) {
+                    case "identityKey", "characterName", "zoneId", "updatedAt" ->
+                            reader.readString();
+                    case "x", "y", "z", "health" -> reader.readNumber();
+                    case "selectedSkills", "startingItems" -> reader.readStringArray();
+                    case "factionReputation" -> reader.readIntegerObject();
+                    default -> throw new IllegalArgumentException(
+                            "unknown canonical character field: " + key);
+                };
+                if (fields.putIfAbsent(key, value) != null) {
+                    throw new IllegalArgumentException(
+                            "duplicate canonical character field: " + key);
+                }
+            } while (reader.consume(','));
+            reader.expect('}');
+        }
+        reader.expectEnd();
+        return fields;
     }
 
     private static String requiredSavedText(Map<String, String> values, String field) {
@@ -231,6 +265,73 @@ record CharacterStateRecord(
                 }
             }
             throw new IllegalArgumentException("unterminated JSON string");
+        }
+
+
+        /** Strict JSON numeric token, leaving the field's range check to its owner. */
+        String readNumber() {
+            skipWhitespace();
+            int start = index;
+            if (index < input.length() && input.charAt(index) == '-') index++;
+            if (index >= input.length()) {
+                throw new IllegalArgumentException("missing saved character number");
+            }
+            if (input.charAt(index) == '0') {
+                index++;
+            } else {
+                if (input.charAt(index) < '1' || input.charAt(index) > '9') {
+                    throw new IllegalArgumentException("invalid saved character number");
+                }
+                while (index < input.length() && isDigit(input.charAt(index))) index++;
+            }
+            if (index < input.length() && input.charAt(index) == '.') {
+                index++;
+                if (index >= input.length() || !isDigit(input.charAt(index))) {
+                    throw new IllegalArgumentException("invalid saved character fraction");
+                }
+                while (index < input.length() && isDigit(input.charAt(index))) index++;
+            }
+            if (index < input.length()
+                    && (input.charAt(index) == 'e' || input.charAt(index) == 'E')) {
+                index++;
+                if (index < input.length()
+                        && (input.charAt(index) == '+' || input.charAt(index) == '-')) index++;
+                if (index >= input.length() || !isDigit(input.charAt(index))) {
+                    throw new IllegalArgumentException("invalid saved character exponent");
+                }
+                while (index < input.length() && isDigit(input.charAt(index))) index++;
+            }
+            return input.substring(start, index);
+        }
+
+        private static boolean isDigit(char value) {
+            return value >= '0' && value <= '9';
+        }
+
+        String readStringArray() {
+            skipWhitespace();
+            int start = index;
+            expect('[');
+            if (!consume(']')) {
+                do { readString(); } while (consume(','));
+                expect(']');
+            }
+            return input.substring(start, index);
+        }
+
+        String readIntegerObject() {
+            skipWhitespace();
+            int start = index;
+            expect('{');
+            if (!consume('}')) {
+                do {
+                    readString();
+                    expect(':');
+                    readInteger();
+                } while (consume(','));
+                expect('}');
+            }
+            return input.substring(start, index);
         }
 
         int readInteger() {
