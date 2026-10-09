@@ -156,3 +156,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - Strict loads now classify malformed persisted character records as I/O failures and preserve the original file for diagnosis. Synchronous strict loads and saves share one manager lock to prevent concurrent profile read/write and temporary-file collisions; atomic saves write the full buffer before commit.
 - `CharacterSaveManagerRegressionSmoke` exercises saved position, skills, inventory-like starting items, and reputation round trips; corrupt-record non-overwrite; and failed async save/create/load visibility. It is registered in the existing Gate 3 smoke suite.
 - Commit and file readback have been verified on `main`; Java 17 compilation, smoke execution, full release gates, and target-machine certification have **not** been run or claimed. Independent-host world/map position and inventory authority remain the next 06.R integration dependency.
+
+### 06.R remote session pre-commit character binding (2026-10-09)
+
+- Remote session attachment now validates existing resume credentials and duplicate connections before canonical character binding, and commits session identity only after character binding succeeds. Failed first-time character storage no longer strands a profile behind an undisclosed token; failed resumed binding does not advance its generation.
+- `IndependentHostWireProtocol` uses this prerequisite on the existing `CharacterSaveManager`. `RemoteSessionLedgerAuthoritySmoke` adds failure, retry, non-mutation, and resume continuity coverage.
+- Repository readback verifies source integration only. Java 17 compilation, smoke execution, and release certification are not claimed. World/map position and inventory authority remain open.
