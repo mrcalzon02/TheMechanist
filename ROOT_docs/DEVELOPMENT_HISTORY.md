@@ -141,3 +141,11 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - Refused gameplay commands do not mutate turn state or consume the world-command sequence number; the client may retry the same command id with the currently supported authoritative `WAIT` command without reconnecting.
 - The hosted-session wire smoke now proves non-disconnecting refusal, zero mutation, sequence reuse, and successful authoritative WAIT immediately after the refusal. Protocol/authentication failures and wrong-lane hosted-session commands remain fail-closed.
 - Repository readback is required for this slice; full Java 17 compilation and packaged release-gate execution remain separately required.
+
+### 06.R canonical hosted character identity binding (2026-10-08)
+
+- Successful independent-host authentication now binds the stable remote profile identity through existing `PlayerIdentity` rules to the existing server-owned `CharacterSaveManager`; the native relay receives the same manager instance owned by `SecureServerNetworkingCore` rather than opening another profile store.
+- Authenticated access fails closed if the canonical character record cannot be durably loaded or created. The strict path rejects identity-mismatched records instead of silently granting access with transient fallback state.
+- The hosted-session wire smoke now proves durable canonical character creation and reconnect reuse of the same character identity. Server runtime state also records the canonical server-world reference plus remote session and turn-ledger paths for one coherent host identity surface.
+- This is a character-persistence integration slice only: canonical hosted world/map position mutation, inventory ownership, broader gameplay commands, and full remote gameplay certification remain open.
+- Repository source/readback verification is required for this slice; full Java 17 compilation and packaged release-gate execution remain separately required.
