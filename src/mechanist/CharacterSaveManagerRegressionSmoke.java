@@ -234,11 +234,13 @@ final class CharacterSaveManagerRegressionSmoke {
             Path temp = destination.resolveSibling(
                     destination.getFileName().toString().replace(".dat", ".tmp"));
             Files.createSymbolicLink(temp, outside);
-            expectAsyncIoFailure(manager.saveAsync(
-                    CharacterStateRecord.fresh(tempLinked, "Temp Linked")));
-            check(!Files.exists(destination), "temporary link produced a character save");
+            manager.saveAsync(CharacterStateRecord.fresh(tempLinked, "Temp Linked")).join();
+            check(Files.isRegularFile(destination),
+                    "legacy symbolic-link temp prevented a safe character save");
+            check(Files.isSymbolicLink(temp),
+                    "legacy temporary symlink was replaced");
             check("sentinel".equals(Files.readString(outside)),
-                    "temporary link modified an external file");
+                    "legacy temporary symlink modified an external file");
             return true;
         } finally {
             Files.deleteIfExists(outside);
