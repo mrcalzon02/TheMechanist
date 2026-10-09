@@ -122,6 +122,33 @@ final class IndependentHostHostedSessionWireSmoke {
                             && "0".equals(resumedAccepted[10]),
                     "hosted command lifetime accounting did not survive reconnect");
 
+            IndependentHostWireProtocol.Result moveRejected = resumed.accept(
+                    "MECH|WORLD_COMMAND|0|MOVE");
+            require(!moveRejected.disconnect(),
+                    "unsupported gameplay command should not tear down an authenticated session");
+            String[] moveRejectedFrame = requireCommand(
+                    moveRejected.responses().get(0), "WORLD_COMMAND_REJECTED");
+            require(moveRejectedFrame.length == 6
+                            && "0".equals(moveRejectedFrame[2])
+                            && "MOVE".equals(moveRejectedFrame[3])
+                            && "UNAVAILABLE".equals(moveRejectedFrame[4]),
+                    "unsupported gameplay command did not return a stable refusal frame");
+            require(turns.acceptedCommands() == 0L && turns.worldTurn() == 0L,
+                    "unsupported gameplay refusal mutated authoritative turn state");
+
+            IndependentHostWireProtocol.Result waitAccepted = resumed.accept(
+                    "MECH|WORLD_COMMAND|0|WAIT");
+            require(!waitAccepted.disconnect(),
+                    "valid WAIT after a refused gameplay command disconnected the session");
+            String[] waitAcceptedFrame = requireCommand(
+                    waitAccepted.responses().get(0), "WORLD_COMMAND_ACCEPTED");
+            require(waitAcceptedFrame.length == 12
+                            && "0".equals(waitAcceptedFrame[2])
+                            && "WAIT".equals(waitAcceptedFrame[3])
+                            && turns.acceptedCommands() == 1L
+                            && turns.worldTurn() == 1L,
+                    "refused gameplay command consumed sequence state or blocked retry with WAIT");
+
             IndependentHostWireProtocol.Result wrongLaneDenied = resumed.accept(
                     "MECH|SESSION_COMMAND|1|MOVE|north");
             require(wrongLaneDenied.disconnect()
@@ -132,7 +159,7 @@ final class IndependentHostHostedSessionWireSmoke {
                     "departure roster exposed an offline persisted resume identity");
             require(!ledger.hostedSessionSnapshot().worldAuthority(),
                     "hosted-session roster overclaimed full world authority");
-            require(turns.acceptedCommands() == 0L && turns.worldTurn() == 0L,
+            require(turns.acceptedCommands() == 1L && turns.worldTurn() == 1L,
                     "wrong-lane MOVE mutated the separate wait authority");
 
             beta.disconnect("wire smoke complete");
@@ -147,6 +174,8 @@ final class IndependentHostHostedSessionWireSmoke {
                     + " duplicateAttachmentReachedLedger=true"
                     + " reconnectContinuity=true"
                     + " hostedAndWorldCommandLanesSeparated=true"
+                    + " gameplayRefusalKeepsSession=true"
+                    + " refusedWorldCommandSequenceReusable=true"
                     + " relayTransportOnly=true"
                     + " fullWorldAuthority=false");
         } finally {
