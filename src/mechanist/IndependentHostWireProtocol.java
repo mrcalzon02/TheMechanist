@@ -28,6 +28,9 @@ final class IndependentHostWireProtocol {
     private final String manifestFingerprint;
     private final RemoteSessionLedgerAuthority sessionLedger;
     private final IndependentHostTurnAuthority turnAuthority;
+    private final CharacterSaveManager characterSaveManager;
+    private PlayerIdentity boundPlayerIdentity;
+    private CharacterStateRecord boundCharacter;
     private String profileIdentity = "";
     private String requestedResumeToken = "";
     private RemoteSessionLedgerAuthority.Attachment sessionAttachment;
@@ -56,9 +59,19 @@ final class IndependentHostWireProtocol {
             RemoteSessionLedgerAuthority sessionLedger,
             IndependentHostTurnAuthority turnAuthority
     ) {
+        this(sessionId, sessionLedger, turnAuthority, null);
+    }
+
+    IndependentHostWireProtocol(
+            String sessionId,
+            RemoteSessionLedgerAuthority sessionLedger,
+            IndependentHostTurnAuthority turnAuthority,
+            CharacterSaveManager characterSaveManager
+    ) {
         this.handshake = new SecureHandshakeStateMachine(sessionId);
         this.sessionLedger = Objects.requireNonNull(sessionLedger, "sessionLedger");
         this.turnAuthority = Objects.requireNonNull(turnAuthority, "turnAuthority");
+        this.characterSaveManager = characterSaveManager;
         this.manifest = new SecureHandshakeStateMachine.ModManifestRecord(
                 "mechanist-base-" + BuildIdentityAuthority.version(),
                 0L,
@@ -138,6 +151,14 @@ final class IndependentHostWireProtocol {
                 : turnAuthority.snapshotForPlayer(sessionAttachment.playerId());
     }
 
+    CharacterStateRecord characterSnapshot() {
+        return boundCharacter;
+    }
+
+    PlayerIdentity boundPlayerIdentity() {
+        return boundPlayerIdentity;
+    }
+
     RemoteSessionLedgerAuthority.SessionSnapshot noteRelayFrameAccepted(long sequence) {
         if (!relayAccessGranted()) {
             throw new IllegalStateException(
@@ -176,6 +197,8 @@ final class IndependentHostWireProtocol {
                 + " rosterBroadcasts=true"
                 + " rosterVisibility=connected-only"
                 + " networkWaitAuthority=true"
+                + " canonicalCharacterBound=" + (boundCharacter != null)
+                + " canonicalCharacterPersistence=" + (characterSaveManager != null)
                 + " playerTurn=" + (turn == null ? 0 : turn.playerTurn())
                 + " worldTurn=" + (turn == null ? 0 : turn.worldTurn())
                 + " movementAuthority=false"
@@ -250,6 +273,7 @@ final class IndependentHostWireProtocol {
                 profileIdentity,
                 requestedResumeToken,
                 handshake.sessionId());
+        bindCanonicalCharacter();
         handshake.beginLiveWorldInitialization();
         handshake.grantAccess();
         accessGranted = true;
@@ -344,6 +368,28 @@ final class IndependentHostWireProtocol {
                 Long.toString(snapshot.acceptedPlayerCommands()),
                 Long.toString(snapshot.acceptedWorldCommands()),
                 snapshot.lastEvent()));
+    }
+
+    private void bindCanonicalCharacter() {
+        if (characterSaveManager == null) return;
+        PlayerIdentity identity =
+                PlayerIdentity.fallbackFromCredential(profileIdentity);
+        try {
+            CharacterStateRecord record =
+                    characterSaveManager.loadOrCreateStrict(
+                            identity,
+                            "Remote Citizen");
+            if (!identity.storageKey().equals(record.identityKey())) {
+                throw new SecurityException(
+                        "canonical character identity did not match authenticated profile");
+            }
+            boundPlayerIdentity = identity;
+            boundCharacter = record;
+        } catch (java.io.IOException failure) {
+            throw new IllegalStateException(
+                    "canonical hosted character persistence is unavailable",
+                    failure);
+        }
     }
 
     private Result acceptPing(String[] fields) {
