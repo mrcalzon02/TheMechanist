@@ -101,13 +101,15 @@ final class CharacterSaveManager implements AutoCloseable {
         CharacterStateRecord stamped = new CharacterStateRecord(record.identityKey(), record.characterName(), record.x(), record.y(), record.z(), record.zoneId(), record.health(), record.selectedSkills(), record.startingItems(), record.factionReputation(), Instant.now());
         Path finalPath = profileGuard.resolveInside(safeFileName(stamped.identityKey()) + ".dat");
         Path tmpPath = profileGuard.resolveInside(safeFileName(stamped.identityKey()) + ".tmp");
-        // Both save paths are restricted to ordinary files.
+        // Never truncate a pre-existing temporary path: a hard link can target
+        // another file even when it is not a symbolic link. CREATE_NEW makes
+        // the temporary write exclusive and fails closed on orphaned temp files.
         if (Files.isSymbolicLink(finalPath) || Files.isSymbolicLink(tmpPath)) {
             throw new IOException("symbolic-link character save path denied");
         }
         byte[] data = stamped.toJson().getBytes(StandardCharsets.UTF_8);
         try (FileChannel channel = FileChannel.open(tmpPath,
-                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.CREATE_NEW,
                 StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
             ByteBuffer bytes = ByteBuffer.wrap(data);
             while (bytes.hasRemaining()) channel.write(bytes);
