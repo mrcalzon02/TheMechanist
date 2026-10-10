@@ -191,3 +191,10 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - Canonical character saves now use a unique UUID-suffixed temporary sibling opened with exclusive CREATE_NEW. A stale fixed .tmp file, directory, or hard link no longer permanently blocks subsequent saves. The temporary file is removed after failed publication.
 - The existing CharacterSaveManagerRegressionSmoke now checks orphaned legacy temporary-path recovery, successful persistence without modifying an external hard-linked file, and observable failure for an unsafe canonical destination.
 - An isolated Java 17 filesystem probe passed orphan recovery, legacy hard-link isolation, destination-directory refusal, and temporary cleanup. Full project compilation, registered smoke execution, and release gates remain unverified.
+
+### 06.R canonical character state in remote authoritative snapshots (2026-10-10)
+
+- Authenticated remote sessions now bind the already-loaded canonical `CharacterStateRecord` into `IndependentHostTurnAuthority` without creating a second persistence ledger. Remote authoritative snapshots therefore use the canonical character name, X/Y position, zone label, and persisted item count instead of always reporting the staging defaults.
+- The turn authority retains WAIT-only mutation: canonical state is snapshot input only, movement/map/inventory mutation remains closed, and the character binding is discarded on disconnect so reconnect must re-establish it from canonical persistence.
+- `IndependentHostHostedSessionWireSmoke` seeds a persisted character away from the origin and verifies reconnect plus authoritative WAIT publishes the saved position, name, zone, and item count while unsupported movement remains non-mutating.
+- Repository source/readback verification is required for this slice. Full Java 17 compilation, registered smoke execution, hosted map ownership, movement persistence, and inventory mutation remain separately required.
