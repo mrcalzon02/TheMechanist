@@ -199,6 +199,9 @@ final class IndependentHostWireProtocol {
                 + " networkWaitAuthority=true"
                 + " canonicalCharacterBound=" + (boundCharacter != null)
                 + " canonicalCharacterPersistence=" + (characterSaveManager != null)
+                + " canonicalCharacterSnapshotBound="
+                + (boundCharacter != null && turn != null
+                && turn.worldSnapshot() != null)
                 + " playerTurn=" + (turn == null ? 0 : turn.playerTurn())
                 + " worldTurn=" + (turn == null ? 0 : turn.worldTurn())
                 + " movementAuthority=false"
@@ -274,6 +277,11 @@ final class IndependentHostWireProtocol {
                 requestedResumeToken,
                 handshake.sessionId(),
                 this::bindCanonicalCharacter);
+        if (boundCharacter != null) {
+            turnAuthority.bindCanonicalCharacter(
+                    sessionAttachment.playerId(),
+                    boundCharacter);
+        }
         handshake.beginLiveWorldInitialization();
         handshake.grantAccess();
         accessGranted = true;
