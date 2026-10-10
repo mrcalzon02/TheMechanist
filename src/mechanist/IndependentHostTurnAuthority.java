@@ -42,6 +42,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
     private final SectorManager sectorManager;
     private final AuthoritativeWorldRuntime worldRuntime;
     private final Map<String, MutablePlayerState> players = new LinkedHashMap<>();
+    private final Map<String, CharacterStateRecord> canonicalCharacters = new LinkedHashMap<>();
     private final Object commandLock = new Object();
 
     private long worldTurn;
@@ -250,6 +251,25 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         }
     }
 
+    void bindCanonicalCharacter(
+            String playerId,
+            CharacterStateRecord character
+    ) {
+        synchronized (commandLock) {
+            requireOpen();
+            String use = safePlayerId(playerId);
+            CharacterStateRecord canonical =
+                    Objects.requireNonNull(character, "character");
+            checkedGridCoordinate(canonical.x(), "character x");
+            checkedGridCoordinate(canonical.y(), "character y");
+            if (canonical.zoneId() == null || canonical.zoneId().isBlank()) {
+                throw new IllegalArgumentException(
+                        "canonical character zone is required");
+            }
+            canonicalCharacters.put(use, canonical);
+        }
+    }
+
     TurnSnapshot snapshotForPlayer(String playerId) {
         synchronized (commandLock) {
             requireOpen();
@@ -266,6 +286,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             if (closed) return;
             String use = safePlayerId(playerId);
             sectorManager.playerLeftCurrentSector(use);
+            canonicalCharacters.remove(use);
         }
     }
 
@@ -309,6 +330,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     + " players=" + players.size()
                     + " worldTurn=" + worldTurn
                     + " acceptedCommands=" + acceptedCommands
+                    + " canonicalCharacters=" + canonicalCharacters.size()
                     + " openCommands=wait"
                     + " movementAuthority=false"
                     + " mapAuthority=false"
@@ -724,6 +746,21 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         return value;
     }
 
+    private static int checkedGridCoordinate(
+            double value,
+            String label
+    ) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(label + " must be finite");
+        }
+        long rounded = Math.round(value);
+        if (rounded < Integer.MIN_VALUE || rounded > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                    label + " is outside supported grid range");
+        }
+        return (int) rounded;
+    }
+
     private static String safePlayerId(String value) {
         String playerId = Objects.requireNonNullElse(
                 value,
@@ -967,11 +1004,28 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                 long version,
                 SectorKey sector
         ) {
+            CharacterStateRecord character =
+                    canonicalCharacters.get(state.playerId);
+            int playerX = character == null
+                    ? 0
+                    : checkedGridCoordinate(character.x(), "character x");
+            int playerY = character == null
+                    ? 0
+                    : checkedGridCoordinate(character.y(), "character y");
+            String playerName = character == null
+                    ? state.playerId
+                    : character.characterName();
+            String zone = character == null
+                    ? "independent-host-staging"
+                    : character.zoneId();
+            int inventoryCount = character == null
+                    ? 0
+                    : character.startingItems().size();
             PlayerSnapshot player = new PlayerSnapshot(
                     state.playerId,
-                    state.playerId,
-                    0,
-                    0,
+                    playerName,
+                    playerX,
+                    playerY,
                     state.turn,
                     worldTurn,
                     0,
@@ -994,11 +1048,11 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     new UiStateSnapshot(
                             "REMOTE_HOST",
                             "TURN_AUTHORITY",
-                            0,
-                            0,
+                            playerX,
+                            playerY,
                             false,
-                            "independent-host-staging",
-                            0,
+                            zone,
+                            inventoryCount,
                             "none"),
                     System.currentTimeMillis());
         }
@@ -1013,6 +1067,20 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                 WorldSnapshot worldSnapshot,
                 String mutationThread
         ) {
+            CharacterStateRecord character =
+                    canonicalCharacters.get(state.playerId);
+            int playerX = character == null
+                    ? 0
+                    : checkedGridCoordinate(character.x(), "character x");
+            int playerY = character == null
+                    ? 0
+                    : checkedGridCoordinate(character.y(), "character y");
+            String zone = character == null
+                    ? "independent-host-staging"
+                    : character.zoneId();
+            String playerName = character == null
+                    ? state.playerId
+                    : character.characterName();
             return new AuthoritativeWorldSnapshot(
                     version,
                     playerId,
@@ -1020,13 +1088,13 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     safeEvent(reason),
                     state.turn,
                     worldTurn,
-                    0,
-                    0,
+                    playerX,
+                    playerY,
                     "REMOTE_HOST",
-                    "independent-host-staging",
+                    zone,
                     0,
                     state.events.size(),
-                    state.playerId,
+                    playerName,
                     "none",
                     worldSnapshot,
                     mutationThread,
