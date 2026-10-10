@@ -17,6 +17,23 @@ final class IndependentHostHostedSessionWireSmoke {
                 "Mechanist Hosted Character Persistence ");
         CharacterSaveManager characters =
                 new CharacterSaveManager(characterRoot);
+        PlayerIdentity alphaIdentity =
+                PlayerIdentity.fallbackFromCredential("profile.alpha.1001");
+        CharacterStateRecord alphaSeed =
+                CharacterStateRecord.fresh(alphaIdentity, "Alpha Remote");
+        alphaSeed = new CharacterStateRecord(
+                alphaSeed.identityKey(),
+                alphaSeed.characterName(),
+                17.0,
+                23.0,
+                0.0,
+                "alpha-hab",
+                alphaSeed.health(),
+                alphaSeed.selectedSkills(),
+                List.of("ration-pack", "work-clothes", "data-slate"),
+                alphaSeed.factionReputation(),
+                alphaSeed.updatedAt());
+        characters.atomicSaveSync(alphaSeed);
         IndependentHostWireProtocol alpha = null;
         IndependentHostWireProtocol beta = null;
         IndependentHostWireProtocol duplicate = null;
@@ -29,13 +46,15 @@ final class IndependentHostHostedSessionWireSmoke {
                     characters);
             Access alphaAccess = authenticate(alpha, "profile.alpha.1001", "");
             require(!alphaAccess.resumed, "new wire session incorrectly reported resume");
-            PlayerIdentity alphaIdentity =
-                    PlayerIdentity.fallbackFromCredential("profile.alpha.1001");
             CharacterStateRecord alphaCharacter = alpha.characterSnapshot();
             require(alphaCharacter != null
                             && alpha.boundPlayerIdentity() != null
                             && alphaIdentity.storageKey().equals(alphaCharacter.identityKey())
                             && alphaIdentity.equals(alpha.boundPlayerIdentity())
+                            && alphaCharacter.x() == 17.0
+                            && alphaCharacter.y() == 23.0
+                            && "alpha-hab".equals(alphaCharacter.zoneId())
+                            && alphaCharacter.startingItems().size() == 3
                             && Files.isRegularFile(characters.profilePath(alphaIdentity)),
                     "authenticated profile did not bind to durable canonical character persistence");
 
@@ -174,6 +193,21 @@ final class IndependentHostHostedSessionWireSmoke {
                             && turns.acceptedCommands() == 1L
                             && turns.worldTurn() == 1L,
                     "refused gameplay command consumed sequence state or blocked retry with WAIT");
+            IndependentHostTurnAuthority.TurnSnapshot canonicalTurn =
+                    turns.snapshotForPlayer(resumedAccess.playerId);
+            require(canonicalTurn != null
+                            && canonicalTurn.worldSnapshot() != null,
+                    "authoritative WAIT did not publish a canonical character snapshot");
+            PlayerSnapshot canonicalPlayer =
+                    canonicalTurn.worldSnapshot().player();
+            UiStateSnapshot canonicalUi =
+                    canonicalTurn.worldSnapshot().uiState();
+            require(canonicalPlayer.x() == 17
+                            && canonicalPlayer.y() == 23
+                            && "Alpha Remote".equals(canonicalPlayer.name())
+                            && "alpha-hab".equals(canonicalUi.zone())
+                            && canonicalUi.inventoryCount() == 3,
+                    "remote authoritative snapshot did not reflect canonical character state");
 
             IndependentHostWireProtocol.Result wrongLaneDenied = resumed.accept(
                     "MECH|SESSION_COMMAND|1|MOVE|north");
@@ -201,6 +235,8 @@ final class IndependentHostHostedSessionWireSmoke {
                     + " reconnectContinuity=true"
                     + " canonicalCharacterPersistence=true"
                     + " reconnectReusesCharacter=true"
+                    + " canonicalCharacterSnapshot=true"
+                    + " canonicalPositionSnapshot=true"
                     + " hostedAndWorldCommandLanesSeparated=true"
                     + " gameplayRefusalKeepsSession=true"
                     + " refusedWorldCommandSequenceReusable=true"
