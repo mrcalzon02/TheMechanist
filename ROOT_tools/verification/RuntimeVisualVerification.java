@@ -47,6 +47,7 @@ public final class RuntimeVisualVerification {
             resize(1280, 800);
             snapshot("01-boot");
             verifyEarlyScreenGraphicBindings();
+            verifyRoadTransportSpriteGallery();
             await("natural boot to main menu", () -> panel.screen == GamePanel.Screen.MENU, 60);
             snapshot("02-main-menu");
             edt(() -> { panel.screen = GamePanel.Screen.ZONE_SPLASH; return null; });
@@ -513,6 +514,50 @@ public final class RuntimeVisualVerification {
         }
     }
 
+
+
+    private static void verifyRoadTransportSpriteGallery() throws Exception {
+        String[][] types = {
+                {AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR, "Car"},
+                {AssetIntegrationDisciplineAuthority.PARKED_CARGO_TRUCK, "Cargo truck"},
+                {AssetIntegrationDisciplineAuthority.PARKED_UTILITY_BIKE, "Utility bike"},
+                {AssetIntegrationDisciplineAuthority.PARKED_ARMORED_CAR, "Armored car"},
+                {AssetIntegrationDisciplineAuthority.PARKED_TANK, "Crawler"},
+                {AssetIntegrationDisciplineAuthority.PARKING_LOT_MARKER, "Parking bay"},
+                {AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER, "Set-down bay"}
+        };
+        int cellW = 110, cellH = 110;
+        BufferedImage sheet = new BufferedImage(cellW * types.length, cellH,
+                BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        int count = 0;
+        try {
+            g.setColor(new Color(11, 14, 13));
+            g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+            g.setFont(new Font("Dialog", Font.BOLD, 11));
+            for (int i = 0; i < types.length; i++) {
+                MapObjectState obj = new MapObjectState();
+                obj.type = types[i][0];
+                obj.label = types[i][1];
+                obj.stockState = "";
+                BufferedImage art = edt(() -> panel.images.getMapObjectImage(obj));
+                require(art != null && art.getWidth() > 0 && art.getHeight() > 0,
+                        "Actual client image lookup returned no vehicle/parking art: " + obj.type);
+                int x = i * cellW;
+                g.drawImage(art, x + 23, 6, 64, 64, null);
+                g.setColor(new Color(165, 198, 145));
+                g.drawString(types[i][1], x + 8, 90);
+                g.setColor(new Color(11, 14, 13));
+                count++;
+            }
+        } finally {
+            g.dispose();
+        }
+        require(ImageIO.write(sheet, "png",
+                output.resolve("00a-road-transport-sprite-gallery.png").toFile()),
+                "Unable to write real client road/vehicle graphics gallery");
+        note("roadTransportGalleryBindings=" + count + "/" + types.length);
+    }
 
     private static void verifyEarlyScreenGraphicBindings() throws Exception {
         edt(() -> {
