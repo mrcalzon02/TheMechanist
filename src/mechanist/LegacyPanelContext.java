@@ -1142,8 +1142,11 @@ class GamePanel extends LegacyPanelBridgeBase {
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(viewWorld, wx, wy, ch);
                 g.setColor(auditTileColor(viewWorld, ch, wx, wy));
                 g.fillRect(sx, sy, tile, tile);
-                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, viewWorld, wx, wy, descriptor, ch, sx, sy, tile);
-                if (!drewArt && tile >= 13) {
+                boolean imageMode = options == null || options.tileIconRendering;
+                boolean drewArt = imageMode && drawCompiledTile(g, viewWorld, wx, wy, descriptor, ch, sx, sy, tile);
+                if (!drewArt && imageMode) {
+                    drawMissingWorldArtMarker(g, sx, sy, tile);
+                } else if (!drewArt && tile >= 13) {
                     g.setColor(tileGlyphColor(ch));
                     String s = Character.toString(ch);
                     g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
@@ -1656,8 +1659,11 @@ class GamePanel extends LegacyPanelBridgeBase {
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, wx, wy, ch);
                 g.setColor(tileColor(ch, wx, wy));
                 g.fillRect(sx, sy, tile, tile);
-                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, world, wx, wy, descriptor, ch, sx, sy, tile);
-                if (!drewArt && tile >= 13) {
+                boolean imageMode = options == null || options.tileIconRendering;
+                boolean drewArt = imageMode && drawCompiledTile(g, world, wx, wy, descriptor, ch, sx, sy, tile);
+                if (!drewArt && imageMode) {
+                    drawMissingWorldArtMarker(g, sx, sy, tile);
+                } else if (!drewArt && tile >= 13) {
                     g.setColor(tileGlyphColor(ch));
                     String s = Character.toString(ch);
                     g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
@@ -1666,6 +1672,29 @@ class GamePanel extends LegacyPanelBridgeBase {
                 g.setColor(new java.awt.Color(0, 0, 0, 70));
                 g.drawRect(sx, sy, tile, tile);
             }
+        }
+    }
+
+    /**
+     * Signal missing runtime art rather than silently painting an ASCII glyph.
+     * Only explicitly disabled tile imagery retains the optional glyph view.
+     */
+    private void drawMissingWorldArtMarker(java.awt.Graphics2D g, int sx, int sy, int tile) {
+        if (g == null || tile <= 0) return;
+        java.awt.Color previousColor = g.getColor();
+        try {
+            int pad = Math.max(1, tile / 8);
+            int span = Math.max(1, tile - pad * 2);
+            g.setColor(new java.awt.Color(62, 19, 19, 235));
+            g.fillRect(sx + pad, sy + pad, span, span);
+            g.setColor(new java.awt.Color(242, 88, 71));
+            g.drawRect(sx + pad, sy + pad, Math.max(0, span - 1), Math.max(0, span - 1));
+            g.drawLine(sx + pad + 2, sy + pad + 2,
+                    sx + pad + Math.max(2, span - 3), sy + pad + Math.max(2, span - 3));
+            g.drawLine(sx + pad + Math.max(2, span - 3), sy + pad + 2,
+                    sx + pad + 2, sy + pad + Math.max(2, span - 3));
+        } finally {
+            g.setColor(previousColor);
         }
     }
 
@@ -1816,13 +1845,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (img != null) {
             g.drawImage(img, sx + pad, sy + pad, size, size, null);
         } else {
-            g.setFont(asciiFont.deriveFont(java.awt.Font.BOLD, Math.max(9f, tile * 0.66f)));
-            java.awt.FontMetrics fm = g.getFontMetrics();
-            String s = fallback == null || fallback.isBlank() ? "?" : fallback.substring(0, 1);
-            g.setColor(new java.awt.Color(10, 12, 11, 210));
-            g.fillOval(sx + pad, sy + pad, size, size);
-            g.setColor(outline == null ? new java.awt.Color(230, 190, 88) : outline);
-            g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
+            // An unresolved sprite remains visibly missing, not an ASCII stand-in.
+            drawMissingWorldArtMarker(g, sx, sy, tile);
         }
         g.setColor(outline == null ? new java.awt.Color(230, 190, 88) : outline);
         g.drawRect(sx + pad, sy + pad, size, size);

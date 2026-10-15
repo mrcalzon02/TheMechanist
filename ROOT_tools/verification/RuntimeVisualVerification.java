@@ -67,10 +67,10 @@ public final class RuntimeVisualVerification {
                 note("draftPreviewReused=true");
                 return null;
             });
-            // Use the same seed edit authority as keyboard input, then wait for its real preview.
-            edt(() -> { flow().seedDraft = "466713"; flow().applySeedDraft(); return null; });
+            // The preceding assertion proves the ready picker draft survived the stage handoff.
+            // Do not regenerate a second full-size 600x600 world for this graphics test.
             await("generation preview image", () -> flow().previewWorld != null
-                    && flow().previewOverviewImage != null && !flow().previewWorkerRunning, 180);
+                    && flow().previewOverviewImage != null && !flow().previewWorkerRunning, 30);
             snapshot("04-world-generation");
             resize(960, 600);
             snapshot("04b-world-generation-960x600");
@@ -119,6 +119,21 @@ public final class RuntimeVisualVerification {
                 }
                 require(graphicPixels > 300, "Missing-art fallback did not render a graphical marker");
                 note("missingPortraitGraphicPixels=" + graphicPixels);
+                Method missingMarker = GamePanel.class.getDeclaredMethod("drawMissingWorldArtMarker",
+                        Graphics2D.class, int.class, int.class, int.class);
+                missingMarker.setAccessible(true);
+                BufferedImage tileMarker = new BufferedImage(56, 56, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D painter2 = tileMarker.createGraphics();
+                try { missingMarker.invoke(panel, painter2, 0, 0, 56); }
+                finally { painter2.dispose(); }
+                int markerPixels = 0;
+                for (int y = 0; y < tileMarker.getHeight(); y++) {
+                    for (int x = 0; x < tileMarker.getWidth(); x++) {
+                        if ((tileMarker.getRGB(x, y) >>> 24) != 0) markerPixels++;
+                    }
+                }
+                require(markerPixels > 1000, "Missing tile/object art has no graphical marker");
+                note("missingWorldArtMarkerPixels=" + markerPixels);
                 return null;
             });
             resize(960, 600);
@@ -252,6 +267,40 @@ public final class RuntimeVisualVerification {
             }
         } finally { graphics.dispose(); }
         note("visibleTileImageBindings=" + imaged + "/" + checked + " missing=" + missing);
+        require(panel.images.getPlayerPortrait(panel.active) != null,
+                "Gameplay player portrait is missing; live sprite would use a missing-art marker");
+        note("gameplayPlayerPortraitImage=true");
+        int visibleSprites = 0;
+        int missingSprites = 0;
+        int minX = panel.lastWorldViewMinX, minY = panel.lastWorldViewMinY;
+        int maxX = minX + cols, maxY = minY + rows;
+        if (panel.world.mapObjects != null) {
+            for (MapObjectState object : panel.world.mapObjects) {
+                if (object == null || object.x < minX || object.x >= maxX
+                        || object.y < minY || object.y >= maxY || !panel.isVisible(object.x, object.y)) continue;
+                visibleSprites++;
+                if (panel.images.getMapObjectImage(object) == null) missingSprites++;
+            }
+        }
+        if (panel.baseObjects != null) {
+            for (BaseObject object : panel.baseObjects) {
+                if (object == null || object.x < minX || object.x >= maxX
+                        || object.y < minY || object.y >= maxY || !panel.isVisible(object.x, object.y)) continue;
+                visibleSprites++;
+                if (panel.images.getBaseObjectImage(object) == null) missingSprites++;
+            }
+        }
+        if (panel.world.npcs != null) {
+            for (NpcEntity npc : panel.world.npcs) {
+                if (npc == null || npc.x < minX || npc.x >= maxX
+                        || npc.y < minY || npc.y >= maxY || !panel.isVisible(npc.x, npc.y)) continue;
+                visibleSprites++;
+                if (panel.images.getNpcPortraitFor(npc) == null) missingSprites++;
+            }
+        }
+        note("visibleWorldSpriteImageBindings=" + (visibleSprites - missingSprites)
+                + "/" + visibleSprites + " missing=" + missingSprites);
+        require(missingSprites == 0, "Visible world entities or objects lack authored images");
         BufferedImage negative;
         try { panel.options.tileIconRendering = false; negative = paint(); }
         finally { panel.options.tileIconRendering = true; }
