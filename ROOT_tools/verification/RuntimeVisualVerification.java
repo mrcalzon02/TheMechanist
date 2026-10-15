@@ -526,7 +526,9 @@ public final class RuntimeVisualVerification {
                 {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Pocket park", ""},
                 {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Civic breathing space", ""},
                 {"broadcast-device", "Roadside broadcast receiver", "radio receiver"},
-                {"broadcast-device", "Pict display", "pict"}
+                {AssetIntegrationDisciplineAuthority.CHEAP_RADIO, "Roadside cheap radio", "radio receiver"},
+                {"broadcast-device", "Pict display", "pict"},
+                {AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN, "Public pict terminal", "pict"}
         };
         BufferedImage sheet = new BufferedImage(110 * tests.length, 114, BufferedImage.TYPE_INT_RGB);
         Graphics2D painter = sheet.createGraphics();

@@ -14,7 +14,9 @@ public final class PublicFixtureGraphicalBindingSmoke {
                 {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Pocket park", "", "parks-things_r03c02_"},
                 {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Civic breathing space", "", "parks-things_r04c03_"},
                 {"broadcast-device", "Roadside broadcast receiver", "radio receiver", "service_items_r05c01_"},
-                {"broadcast-device", "Public pict screen", "pict display", "service_items_r03c03_"}
+                {AssetIntegrationDisciplineAuthority.CHEAP_RADIO, "Roadside broadcast receiver / Neutral Civilian Floor", "radio receiver", "service_items_r05c01_"},
+                {"broadcast-device", "Public pict screen", "pict display", "service_items_r03c03_"},
+                {AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN, "Public pict screen", "pict display", "service_items_r03c03_"}
         };
         for (String[] fixture : fixtures) {
             MapObjectState object = new MapObjectState();

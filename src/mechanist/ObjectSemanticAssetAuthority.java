@@ -251,10 +251,16 @@ final class ObjectSemanticAssetAuthority {
             imageStem = label.contains("pocket park") ? "parks-things_r03c02_"
                     : label.contains("civic breathing") ? "parks-things_r04c03_"
                     : "parks-things_r03c01_";
-        } else if ("broadcast-device".equals(type)) {
-            imageStem = stock.contains("pict") || stock.contains("tv")
-                    || label.contains("pict") || label.contains("television")
-                    ? "service_items_r03c03_" : "service_items_r05c01_";
+        } else if ("broadcast-device".equals(type)
+                || AssetIntegrationDisciplineAuthority.CHEAP_RADIO.equals(type)
+                || AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN.equals(type)) {
+            // Generated roadside receivers are typed cheap-radio, not the
+            // older broadcast-device alias. Respect both canonical identities.
+            boolean pict = AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN.equals(type)
+                    || ("broadcast-device".equals(type) &&
+                    (stock.contains("pict") || stock.contains("tv")
+                            || label.contains("pict") || label.contains("television")));
+            imageStem = pict ? "service_items_r03c03_" : "service_items_r05c01_";
         } else {
             return Optional.empty();
         }
