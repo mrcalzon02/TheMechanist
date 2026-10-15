@@ -865,28 +865,24 @@ class GamePanel extends LegacyPanelBridgeBase {
         return false;
     }
 
+    private SaveLoadLayoutAuthority.Layout saveLoadLayout() {
+        return SaveLoadLayoutAuthority.measure(getWidth(), getHeight(), saveLoadSlots().length);
+    }
+
     Rectangle saveLoadPanelRect() {
-        int panelW = Math.max(420, Math.min(760, getWidth() - 60));
-        int panelH = Math.max(360, Math.min(560, getHeight() - 80));
-        return new Rectangle(Math.max(20, getWidth() / 2 - panelW / 2), Math.max(40, getHeight() / 2 - panelH / 2), panelW, panelH);
+        return new Rectangle(saveLoadLayout().panel());
     }
 
     Rectangle saveLoadSlotRect(int index) {
-        Rectangle p = saveLoadPanelRect();
-        int rowH = 48;
-        int gap = 8;
-        int top = p.y + 92;
-        return new Rectangle(p.x + 28, top + index * (rowH + gap), p.width - 56, rowH);
+        return saveLoadLayout().slot(index);
     }
 
     Rectangle saveLoadBackRect() {
-        Rectangle p = saveLoadPanelRect();
-        return new Rectangle(p.x + 28, p.y + p.height - 58, 148, 34);
+        return new Rectangle(saveLoadLayout().back());
     }
 
     Rectangle saveLoadNewGameRect() {
-        Rectangle p = saveLoadPanelRect();
-        return new Rectangle(p.x + p.width - 206, p.y + p.height - 58, 178, 34);
+        return new Rectangle(saveLoadLayout().newGame());
     }
 
     void installExistingEarlyScreenInputBridge() {

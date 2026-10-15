@@ -215,3 +215,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - The custom-painted options screen now takes its geometry from a dedicated pure viewport/layout authority. Short tabs no longer inherit the full-height options shell; control grids size from actual command counts, tab rows, and available viewport area. The redundant framed subtitle has been reduced to a compact header line.
 - On ordinary small desktop windows, options stay in the owning frame; insufficient viewports show an explicit resize request rather than creating off-panel interactive command buttons. Palette color swatches use a bounded multi-row grid with clipped, pixel-fitted labels instead of a fixed 128-pixel horizontal stride.
 - Added OptionsLayoutAuthoritySmoke covering multiple viewport sizes, content densities, bounds, and narrow-window refusal. Java 17 pure geometry compilation and smoke execution passed. Interactive runtime review and the full Maven/package gates remain outstanding.
+
+### Milestone 06 cross-cutting UI readability: content-sized save/load screen (2026-10-15)
+
+- Save/load slot and action hitbox geometry now shares one viewport/layout authority between LegacyPanelContext and the actual painter, avoiding separately authored collision coordinates. The five-slot window shrinks from the old 560px cap to content size, keeps instructions above rather than overlapping actions, and arranges Back/Delete/New Game on one or two rows according to available width.
+- Too-small views expose a bounded Back control and a resize notice instead of allowing slot selection/deletion beyond the visible pane. Slot and button labels use pixel-fitted text.
+- SaveLoadLayoutAuthoritySmoke exercises desktop, reduced-window, narrow, and fallback geometry. Isolated Java 17 compilation and the geometry smoke passed. Full project build and live UI input validation remain outstanding.
