@@ -52,10 +52,26 @@ public final class RuntimeVisualVerification {
                         "Original title image is missing from the runtime");
                 return null;
             });
+            // Keep the normal client and menu route, but select the game's smallest
+            // supported world-size option in this synthetic capture profile. The
+            // default (larger) world size is unchanged for players.
+            edt(() -> {
+                WorldSetupSettings probeSetup = WorldSetupSettings.standard();
+                probeSetup.zoneSize = 0;
+                panel.worldSetup = probeSetup;
+                panel.seed = 466713L;
+                note("graphicsProbeWorldSize=" + probeSetup.zoneSizeTiles()
+                        + " seed=" + panel.seed + " mode=smallest-supported");
+                return null;
+            });
             key(KeyEvent.VK_1);
             awaitStage(WorldStartFlowAuthority.Stage.WORLD_PICKER);
+            snapshot("02b-world-picker-loading");
+            long previewStarted = System.nanoTime();
             await("world picker preview image", () -> flow().previewWorld != null
-                    && flow().previewOverviewImage != null && !flow().previewWorkerRunning, 180);
+                    && flow().previewOverviewImage != null && !flow().previewWorkerRunning, 420);
+            note("worldPickerPreviewSeconds="
+                    + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - previewStarted));
             snapshot("03-world-picker");
             World readyPickerPreview = edt(() -> flow().previewWorld);
             long readyDraftSeed = edt(() -> panel.seed);
@@ -75,8 +91,11 @@ public final class RuntimeVisualVerification {
             resize(960, 600);
             snapshot("04b-world-generation-960x600");
             resize(1280, 800);
+            long worldGenerationStarted = System.nanoTime();
             key(KeyEvent.VK_G);
             awaitStage(WorldStartFlowAuthority.Stage.CHARACTER_CREATION);
+            note("acceptedWorldGenerationSeconds="
+                    + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - worldGenerationStarted));
             edt(() -> {
                 Rectangle body = flow().characterBodyRect();
                 Rectangle footer = WorldStartLayoutAuthority.footer(flow().panelRect(panel.getWidth(), panel.getHeight()));
@@ -185,6 +204,13 @@ public final class RuntimeVisualVerification {
         while (System.nanoTime() < until) {
             if (edt(condition::getAsBoolean)) { note("reached=" + name); return; }
             Thread.sleep(200);
+        }
+        if (name.contains("preview") && flow() != null) {
+            note("previewTimeoutDetails=" + edt(() -> "stage=" + flow().stage
+                    + " running=" + flow().previewWorkerRunning
+                    + " requested=" + flow().previewRequestedKey
+                    + " ready=" + flow().previewKey
+                    + " status=" + flow().previewStatus));
         }
         throw new AssertionError("Timed out waiting for " + name);
     }

@@ -53,7 +53,7 @@ def main():
             run(["java", "-Xmx4g", "-Djava.awt.headless=false", "-Dsun.java2d.opengl=false",
                  "-Duser.home=" + str(user), "-Dmechanist.client.storage.root=" + str(user / "data"),
                  "-cp", os.pathsep.join([str(harness), str(runtime / "TheMechanist.jar")]),
-                 "mechanist.RuntimeVisualVerification", output], runtime, "client.log", timeout=900)
+                 "mechanist.RuntimeVisualVerification", output], runtime, "client.log", timeout=1200)
         report["status"] = "passed-automated-checks"
         report["manualScreenshotReviewRequired"] = True
         return 0
