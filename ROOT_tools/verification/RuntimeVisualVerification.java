@@ -267,6 +267,7 @@ public final class RuntimeVisualVerification {
             }
         } finally { graphics.dispose(); }
         note("visibleTileImageBindings=" + imaged + "/" + checked + " missing=" + missing);
+        verifyGeneratedWorldArtCensus(draw);
         require(panel.images.getPlayerPortrait(panel.active) != null,
                 "Gameplay player portrait is missing; live sprite would use a missing-art marker");
         note("gameplayPlayerPortraitImage=true");
@@ -314,6 +315,67 @@ public final class RuntimeVisualVerification {
         require(checked >= 10, "Insufficient remembered world tiles for graphics proof");
         require(imaged == checked, "Visible terrain still requires glyph fallback: " + missing);
         require(changed > (long) tile * tile, "Disabling tile art did not materially change the map");
+    }
+
+
+    /**
+     * Uses the actual compiled tile-image draw path over distributed world cells.
+     * This is a contact sheet from the generated world, not a gameplay screenshot
+     * or an alternate renderer. It catches asset gaps outside the small spawn FOV.
+     */
+    private static void verifyGeneratedWorldArtCensus(Method draw) throws Exception {
+        final int sampleColumns = 48, sampleRows = 32, size = 22;
+        BufferedImage sheet = new BufferedImage(sampleColumns * size, sampleRows * size,
+                BufferedImage.TYPE_INT_RGB);
+        Graphics2D canvas = sheet.createGraphics();
+        java.util.Set<String> descriptorFamilies = new java.util.HashSet<>();
+        int checked = 0, resolved = 0;
+        StringBuilder missing = new StringBuilder();
+        try {
+            for (int row = 0; row < sampleRows; row++) {
+                int wy = Math.min(panel.world.h - 1,
+                        (int) ((2L * row + 1L) * panel.world.h / (2L * sampleRows)));
+                for (int column = 0; column < sampleColumns; column++) {
+                    int wx = Math.min(panel.world.w - 1,
+                            (int) ((2L * column + 1L) * panel.world.w / (2L * sampleColumns)));
+                    char glyph = panel.world.tiles[wx][wy];
+                    CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(
+                            panel.world, wx, wy, glyph);
+                    descriptorFamilies.add(descriptor == null
+                            ? "unknown:" + (int) glyph
+                            : descriptor.baseLayer + ":" + descriptor.primaryArtKey + ":"
+                                    + descriptor.overlayArtKey);
+                    int sx = column * size, sy = row * size;
+                    canvas.setColor(new Color(8, 9, 10));
+                    canvas.fillRect(sx, sy, size, size);
+                    checked++;
+                    boolean drawn = (Boolean) draw.invoke(panel, canvas, panel.world,
+                            wx, wy, descriptor, glyph, sx, sy, size);
+                    if (drawn) {
+                        resolved++;
+                    } else {
+                        canvas.setColor(new Color(237, 85, 68));
+                        canvas.fillRect(sx, sy, size, size);
+                        canvas.setColor(Color.BLACK);
+                        canvas.drawLine(sx + 2, sy + 2, sx + size - 3, sy + size - 3);
+                        canvas.drawLine(sx + size - 3, sy + 2, sx + 2, sy + size - 3);
+                        if (missing.length() < 600) missing.append("[")
+                                .append(wx).append(',').append(wy)
+                                .append(" glyph=").append((int) glyph).append("]");
+                    }
+                }
+            }
+        } finally {
+            canvas.dispose();
+        }
+        require(ImageIO.write(sheet, "png", output.resolve("09-generated-world-art-census.png").toFile()),
+                "PNG writer failed for generated world art census");
+        note("generatedWorldArtCensus=" + resolved + "/" + checked
+                + " descriptorFamilies=" + descriptorFamilies.size()
+                + " missing=" + missing);
+        require(checked == sampleColumns * sampleRows, "Incomplete generated world art census");
+        require(resolved == checked,
+                "Generated world tile imagery has unresolved bindings beyond the spawn viewport: " + missing);
     }
 
     private static void require(boolean condition, String message) {
