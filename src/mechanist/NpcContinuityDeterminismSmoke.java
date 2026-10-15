@@ -39,11 +39,47 @@ public final class NpcContinuityDeterminismSmoke {
         for (int i = 0; i < 30; i++) NpcLifeMemoryAuthority.remember(actor, 300 + i, "event", "Witnessed event " + i);
         require(actor.lifeMemories.size() == NpcLifeMemoryAuthority.MAX_EVENTS,
                 "NPC memory budget not bounded");
+        actor.idleBias = 5;
+        actor.routineOffset = 19;
+        actor.lastTickTurn = 270;
+        actor.hp = 7;
+        actor.needTargetKind = "water";
+        actor.needTarget = new java.awt.Point(11, 12);
+        actor.facingDx = 0;
+        actor.facingDy = -1;
+        actor.crowdShuffleCooldown = 4;
+        actor.suspiciousBarkCooldown = 3;
         String originalMemory = NpcLifeMemoryAuthority.save(actor);
         NpcEntity restored = NpcEntity.parseLine(actor.saveLine(), world);
         require(restored != null && newer.id.equals(restored.currentAssignmentLedgerId)
                         && originalMemory.equals(NpcLifeMemoryAuthority.save(restored)),
                 "Current faction roster or NPC episodic memory lost on save/load");
+        require(restored.idleBias == actor.idleBias && restored.routineOffset == actor.routineOffset
+                        && restored.lastTickTurn == actor.lastTickTurn && restored.hp == actor.hp
+                        && restored.needTarget != null && restored.needTarget.equals(actor.needTarget)
+                        && "water".equals(restored.needTargetKind)
+                        && restored.facingDx == 0 && restored.facingDy == -1
+                        && restored.crowdShuffleCooldown == 4 && restored.suspiciousBarkCooldown == 3,
+                "NPC health, state/cadence, need target or movement cooldown changed after save/load");
+        NpcEntity originalPet = new NpcEntity();
+        originalPet.id = "PET-CONTINUITY-1";
+        originalPet.x = 8; originalPet.y = 8;
+        NpcEntity duplicatePet = new NpcEntity();
+        duplicatePet.id = originalPet.id;
+        duplicatePet.x = 8; duplicatePet.y = 8;
+        for (int x = 0; x < world.w; x++) for (int y = 0; y < world.h; y++) world.tiles[x][y] = '.';
+        originalPet.wanderNear(world, 8, 8, 2, -1, -1, 411);
+        duplicatePet.wanderNear(world, 8, 8, 2, -1, -1, 411);
+        require(originalPet.x == duplicatePet.x && originalPet.y == duplicatePet.y,
+                "Identical world/actor/turn produced divergent companion movement");
+        // Legacy NPC records lack the new cadence and memory fields; parsing
+        // them must still work without fabricating current-assignment history.
+        String[] existing = actor.saveLine().split("\\|", -1);
+        NpcEntity legacyActor = NpcEntity.parseLine(String.join("|",
+                java.util.Arrays.copyOf(existing, 41)), world);
+        require(legacyActor != null && legacyActor.lifeMemories.isEmpty()
+                        && legacyActor.currentAssignmentLedgerId.isEmpty(),
+                "Historical 41-field NPC save stopped loading");
         PersonnelPopulationApi.recordDeath(world, restored);
         require(newer.assigned == 0 && newer.dead == 1 && old.assigned == 1 && old.dead == 0,
                 "Death debited historical origin instead of current faction assignment");

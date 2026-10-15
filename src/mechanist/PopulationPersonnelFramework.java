@@ -1061,7 +1061,7 @@ class NpcEntity {
             if (owner != null) {
                 int d = Math.abs(x-owner.x)+Math.abs(y-owner.y);
                 if (d > 1) { stepToward(w, owner.x, owner.y, px, py); return; }
-                if (turn % Math.max(2, idleBias) == 0) wanderNear(w, owner.x, owner.y, 2, px, py);
+                if (turn % Math.max(2, idleBias) == 0) wanderNear(w, owner.x, owner.y, 2, px, py, turn);
                 return;
             }
         }
@@ -1069,10 +1069,10 @@ class NpcEntity {
         if (turn % Math.max(2, idleBias) == 0) wander(w, turn, px, py);
     }
 
-    void wanderNear(World w, int cx, int cy, int radius, int blockX, int blockY) {
+    void wanderNear(World w, int cx, int cy, int radius, int blockX, int blockY, int turn) {
         if (w == null) return;
         int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{0,0}};
-        int[] d=dirs[Math.floorMod(Objects.hash(id, w.seed, cx, cy, System.nanoTime()), dirs.length)];
+        int[] d=dirs[Math.floorMod(Objects.hash(id, w.seed, cx, cy, turn), dirs.length)];
         int nx=x+d[0], ny=y+d[1];
         if(Math.abs(nx-cx)+Math.abs(ny-cy) <= Math.max(1,radius) && canNpcStep(w,nx,ny,blockX,blockY)) moveTo(nx,ny);
     }
@@ -1269,7 +1269,11 @@ class NpcEntity {
         return enc(id)+"|"+numericId+"|"+enc(name)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+symbol+"|"+x+"|"+y+"|"+homeX+"|"+homeY+"|"+enc(state)+"|"+enc(role)+"|"+hunger+"|"+thirst+"|"+sleepDebt+"|"+portraitIndex+"|"+enc(provenance==null?"":provenance.save())+"|"+intellect+"|"+equipmentTier+"|"+enc(equippedMeleeWeapon)+"|"+enc(equippedRangedWeapon)+"|"+enc(equippedArmor)+"|"+enc(equippedExplosive)+"|"+loadedShots+"|"+ammoReloadsRemaining+"|"+factionRank+"|"+enc(factionRankTitle)+"|"+enc(factionRankScope)+"|"+enc(creatureKind)+"|"+enc(animalProfileId)+"|"+enc(companionOf)+"|"+ageYears+"|"+birthWorldTurn+"|"+enc(ageBand)+"|"+enc(nameLockedProfileKey)+"|"+pregnancyDueWorldTurn
                 +"|"+happiness+"|"+happinessLastEvaluatedWorldTurn+"|"+severeUnhappinessSinceWorldTurn
                 +"|"+lastPaidWorldTurn+"|"+lastFactionChangeWorldTurn+"|"+enc(happinessReason)
-                +"|"+enc(NpcLifeMemoryAuthority.save(this))+"|"+enc(currentAssignmentLedgerId);
+                +"|"+enc(NpcLifeMemoryAuthority.save(this))+"|"+enc(currentAssignmentLedgerId)
+                +"|"+Math.max(1, idleBias)+"|"+routineOffset+"|"+lastTickTurn+"|"+hp
+                +"|"+enc(needTargetKind)+"|"+(needTarget==null?-1:needTarget.x)
+                +"|"+(needTarget==null?-1:needTarget.y)
+                +"|"+facingDx+"|"+facingDy+"|"+crowdShuffleCooldown+"|"+suspiciousBarkCooldown;
     }
 
     static NpcEntity parseLine(String s, World w){
@@ -1315,6 +1319,21 @@ class NpcEntity {
         if (a.length >= 41 && !dec(a[40]).isBlank()) n.happinessReason = dec(a[40]);
         if (a.length >= 42) NpcLifeMemoryAuthority.restore(n, dec(a[41]));
         if (a.length >= 43) n.currentAssignmentLedgerId = dec(a[42]);
+        // Trailing fields are optional for old saves. A saved NPC must retain
+        // its cadence, active need target, health and tick guard across reload.
+        if (a.length >= 44) try { n.idleBias = Math.max(1, Integer.parseInt(a[43])); } catch(Exception ignored) {}
+        if (a.length >= 45) try { n.routineOffset = Integer.parseInt(a[44]); } catch(Exception ignored) {}
+        if (a.length >= 46) try { n.lastTickTurn = Integer.parseInt(a[45]); } catch(Exception ignored) {}
+        if (a.length >= 47) try { n.hp = Integer.parseInt(a[46]); } catch(Exception ignored) {}
+        if (a.length >= 48) n.needTargetKind = dec(a[47]);
+        int targetX = -1, targetY = -1;
+        if (a.length >= 49) try { targetX = Integer.parseInt(a[48]); } catch(Exception ignored) {}
+        if (a.length >= 50) try { targetY = Integer.parseInt(a[49]); } catch(Exception ignored) {}
+        if (targetX >= 0 && targetY >= 0) n.needTarget = new Point(targetX, targetY);
+        if (a.length >= 51) try { n.facingDx = Integer.parseInt(a[50]); } catch(Exception ignored) {}
+        if (a.length >= 52) try { n.facingDy = Integer.parseInt(a[51]); } catch(Exception ignored) {}
+        if (a.length >= 53) try { n.crowdShuffleCooldown = Math.max(0, Integer.parseInt(a[52])); } catch(Exception ignored) {}
+        if (a.length >= 54) try { n.suspiciousBarkCooldown = Math.max(0, Integer.parseInt(a[53])); } catch(Exception ignored) {}
         if (n.creatureKind == null || n.creatureKind.isBlank()) n.creatureKind = "humanoid";
         if (!n.isAnimalActor() && n.ageYears <= 0) AgeAndWorldTimeAuthority.initializeNpcAge(n, w == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : w.zoneType, new Random(n.numericId == 0 ? 1 : n.numericId));
         AgeAndWorldTimeAuthority.synchronizeNpc(n, 0L);
