@@ -230,6 +230,7 @@ class ImageCache {
         if (!loadDefaultProfilePortraitCells()) {
             loadExplicitPlayerHumanPortraitPool(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
         }
+        loadDefaultNpcPortraitCells(options);
         // Button authority: use the imported Tech Priests GUI controls folder.
         load("button_normal", base + "controls/normal/03_rect_button_off.png");
         load("button_hover", base + "controls/normal/04_rect_button_on.png");
@@ -307,6 +308,85 @@ class ImageCache {
         boolean ok = playerHumanPortraitCells.size() > before;
         DebugLog.audit("PLAYER_HUMAN_PORTRAIT_POOL", "defaultPackageHumans8x8Loaded=" + ok + " added=" + loaded + " count=" + playerHumanPortraitCells.size());
         return ok;
+    }
+
+
+    /**
+     * The shipping compiled Protraits directory is a flat collection of
+     * Family_r01c01_32px.png cells. The art-pack portrait loader above reads
+     * nested family directories, so it cannot populate NPC partitions from
+     * this shipped layout. Load these authored assets as faction-specific
+     * partitions without ever adding them to playerHumanPortraitCells.
+     */
+    void loadDefaultNpcPortraitCells(GameOptions options) {
+        String[][] families = {
+            {"Automata_servitors", "rogue_automata_servitors"},
+            {"Clerics", "ecclesiarch"},
+            {"Clerks", "administratum"},
+            {"creatures", "exotic_pets_swamp_creatures"},
+            {"Cultists", "cultists"},
+            {"Enforcer_", "enforcer_arebites"},
+            {"Farm_beasts", "farm_beasts"},
+            {"Flesh_cult", "flesh_cult"},
+            {"Gangers", "gangers"},
+            {"Heretics", "heretics"},
+            {"Hospital", "sisters_hospital"},
+            {"Medicae", "medicae"},
+            {"Mutants", "mutants"},
+            {"nobles", "nobles"},
+            {"PDF_military", "pdf_military"},
+            {"pets", "pets"},
+            {"Schola_children", "schola_children"},
+            {"Servants_butlers_chefs", "servants_butlers_and_chefs"},
+            {"UndyingLords", "undying_lords"}
+        };
+        LinkedHashSet<File> roots = new LinkedHashSet<>();
+        int quality = resolutionForQualityTier(options == null ? null : options.artQualityFolder());
+        LinkedHashSet<Integer> qualities = new LinkedHashSet<>();
+        qualities.add(quality);
+        qualities.add(32);
+        for (int resolution : qualities) {
+            String tier = "default_" + resolution + "/Protraits";
+            addExistingRoot(roots, "assets/graphics/packages/" + tier);
+            addExistingRoot(roots, "PACKAGE_client/assets/graphics/packages/" + tier);
+            addExistingRoot(roots, "packages/client/assets/graphics/packages/" + tier);
+            addExistingRoot(roots, "client/assets/graphics/packages/" + tier);
+        }
+        int loaded = 0;
+        int familiesLoaded = 0;
+        for (String[] family : families) {
+            String sourcePrefix = family[0].toLowerCase(Locale.ROOT) + "_r";
+            String rangeKey = family[1];
+            if (npcPortraitRanges.containsKey(rangeKey)) continue;
+            for (File root : roots) {
+                File[] cells = root.listFiles((dir, name) -> name != null
+                        && name.toLowerCase(Locale.ROOT).startsWith(sourcePrefix)
+                        && name.toLowerCase(Locale.ROOT).endsWith("px.png"));
+                if (cells == null || cells.length == 0) continue;
+                Arrays.sort(cells, Comparator.comparing(File::getName));
+                int start = npcPortraitCells.size();
+                for (File file : cells) {
+                    try {
+                        BufferedImage img = ImageIO.read(file);
+                        if (img != null) npcPortraitCells.add(img);
+                    } catch (IOException error) {
+                        DebugLog.error("NPC_PORTRAIT_LOAD",
+                                "Could not load packaged faction portrait " + file.getPath(), error);
+                    }
+                }
+                int end = npcPortraitCells.size();
+                if (end > start) {
+                    npcPortraitRanges.put(rangeKey, new int[]{start, end});
+                    loaded += end - start;
+                    familiesLoaded++;
+                    break;
+                }
+            }
+        }
+        DebugLog.audit("NPC_PORTRAIT_PACKAGE",
+                "flatPackageFamilies=" + familiesLoaded + " loadedCells=" + loaded
+                        + " totalNpcPortraits=" + npcPortraitCells.size()
+                        + " familyKeys=" + npcPortraitRanges.keySet());
     }
 
     void addExistingRoot(LinkedHashSet<File> roots, String path) {
@@ -516,6 +596,7 @@ class ImageCache {
         if (!loadDefaultProfilePortraitCells()) {
             loadExplicitPlayerHumanPortraitPool(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
         }
+        loadDefaultNpcPortraitCells(options);
         if (importedPortraitsEnabled(options)) {
             loadImportedPortraitSheets();
             loadPortraitCells("assets/imported_tech_priests/graphics/gui/portraits/cells_0560");

@@ -110,8 +110,17 @@ public final class RuntimeVisualVerification {
                 mediaField.setAccessible(true);
                 ImageCache media = (ImageCache) mediaField.get(panel.images);
                 note("loadedTileImages=" + media.tileArt.getRegistry().loadedCount()
-                        + " authoredHumanPortraits=" + media.playerHumanPortraitCells.size());
+                        + " authoredHumanPortraits=" + media.playerHumanPortraitCells.size()
+                        + " authoredNpcPortraits=" + media.npcPortraitCells.size()
+                        + " npcFamilies=" + media.npcPortraitRanges.size());
                 require(!media.playerHumanPortraitCells.isEmpty(), "Authored human portrait pool is empty");
+                require(media.npcPortraitCells.size() >= 250,
+                        "Shipped NPC portraits have not been rebound to the runtime image pool");
+                for (String family : java.util.List.of("gangers", "mutants", "medicae",
+                        "nobles", "enforcer_arebites", "pets", "administratum")) {
+                    require(media.npcPortraitRanges.containsKey(family),
+                            "Authored NPC image family is unavailable: " + family);
+                }
                 require(panel.images.getPlayerPortrait(panel.selectedNewGameCandidate()) != null,
                         "Character creation has no image portrait");
                 note("characterPortraitImage=true seed=" + panel.seed);
