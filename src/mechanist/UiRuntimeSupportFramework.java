@@ -97,32 +97,57 @@ class GuiLayoutApi {
         return Math.max(scaled(112, scale), (safe.width - gap*(cols-1)) / cols);
     }
     static String fitLabel(String text, FontMetrics fm, int maxWidth) {
-        String t = text == null ? "" : text;
-        if (fm == null || fm.stringWidth(t) <= maxWidth) return t;
-        String ell = "…";
-        if (fm.stringWidth(ell) > maxWidth) return "";
-        while (t.length() > 1 && fm.stringWidth(t + ell) > maxWidth) t = t.substring(0, t.length()-1);
-        return t + ell;
-    }
-    static java.util.List<String> wrapText(String text, FontMetrics fm, int maxWidth) {
-        java.util.ArrayList<String> out = new java.util.ArrayList<>();
-        String t = text == null ? "" : text.trim();
-        if (t.isEmpty()) { out.add(""); return out; }
-        if (fm == null || maxWidth <= 8) { out.add(t); return out; }
-        StringBuilder line = new StringBuilder();
-        for (String word : t.split("\s+")) {
-            String candidate = line.length() == 0 ? word : line + " " + word;
-            if (fm.stringWidth(candidate) <= maxWidth) line.setLength(0);
-            if (fm.stringWidth(candidate) <= maxWidth) line.append(candidate);
-            else {
-                if (line.length() > 0) out.add(line.toString());
-                line.setLength(0);
-                if (fm.stringWidth(word) <= maxWidth) line.append(word);
-                else out.add(fitLabel(word, fm, maxWidth));
-            }
+        String value = text == null ? "" : text;
+        if (fm == null) return value;
+        if (maxWidth <= 0) return "";
+        if (fm.stringWidth(value) <= maxWidth) return value;
+        String ellipsis = "…";
+        if (fm.stringWidth(ellipsis) > maxWidth) return "";
+        int end = value.length();
+        while (end > 0 && fm.stringWidth(value.substring(0, end) + ellipsis) > maxWidth) {
+            end = value.offsetByCodePoints(end, -1);
         }
-        if (line.length() > 0) out.add(line.toString());
-        return out;
+        return value.substring(0, end) + ellipsis;
+    }
+
+    static java.util.List<String> wrapText(String text, FontMetrics fm, int maxWidth) {
+        java.util.ArrayList<String> lines = new java.util.ArrayList<>();
+        String value = text == null ? "" : text.trim();
+        if (value.isEmpty()) { lines.add(""); return lines; }
+        if (fm == null || maxWidth <= 0) { lines.add(value); return lines; }
+        StringBuilder line = new StringBuilder();
+        for (String word : value.split("\\s+")) {
+            if (word.isEmpty()) continue;
+            if (line.length() > 0 && fm.stringWidth(line + " " + word) <= maxWidth) {
+                line.append(' ').append(word);
+                continue;
+            }
+            if (line.length() > 0) {
+                lines.add(line.toString());
+                line.setLength(0);
+            }
+            if (fm.stringWidth(word) <= maxWidth) {
+                line.append(word);
+                continue;
+            }
+            // Hard-wrap oversized tokens rather than replacing the unseen remainder with ellipsis.
+            // Code-point iteration prevents splitting supplementary Unicode characters.
+            StringBuilder chunk = new StringBuilder();
+            for (int index = 0; index < word.length();) {
+                int codePoint = word.codePointAt(index);
+                String glyph = new String(Character.toChars(codePoint));
+                if (chunk.length() > 0 && fm.stringWidth(chunk.toString() + glyph) > maxWidth) {
+                    lines.add(chunk.toString());
+                    chunk.setLength(0);
+                }
+                chunk.append(glyph);
+                index += Character.charCount(codePoint);
+            }
+            line.append(chunk);
+        }
+        if (line.length() > 0) lines.add(line.toString());
+        if (lines.isEmpty()) lines.add("");
+        return lines;
     }
 }
 
