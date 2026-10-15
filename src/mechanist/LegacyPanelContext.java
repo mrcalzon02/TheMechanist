@@ -7862,16 +7862,16 @@ final class LegacyImageSurface {
         ensureLoaded(lastOptions);
         String hint = ObjectSemanticAssetAuthority.assetIdForMapObject(object);
         String id = ObjectSemanticAssetAuthority.runtimeAssetIdForMapObject(object).orElse(hint);
-        BufferedImage img = media.getSemanticAssetImage(id);
-        return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
+        // Semantic image lookup rejects AssetManager's generic missing-asset icon.
+        // Returning that icon from a second lookup used to conceal broken bindings.
+        return media.getSemanticAssetImage(id);
     }
 
     BufferedImage getBaseObjectImage(BaseObject object) {
         ensureLoaded(lastOptions);
         String hint = ObjectSemanticAssetAuthority.assetIdForBaseObject(object);
         String id = ObjectSemanticAssetAuthority.runtimeAssetIdForBaseObject(object).orElse(hint);
-        BufferedImage img = media.getSemanticAssetImage(id);
-        return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
+        return media.getSemanticAssetImage(id);
     }
 
     BufferedImage getNpcPortraitFor(Object npc) {

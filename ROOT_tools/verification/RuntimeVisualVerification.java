@@ -294,6 +294,7 @@ public final class RuntimeVisualVerification {
         } finally { graphics.dispose(); }
         note("visibleTileImageBindings=" + imaged + "/" + checked + " missing=" + missing);
         verifyGeneratedWorldArtCensus(draw);
+        verifyWorldSpriteArtCensus();
         require(panel.images.getPlayerPortrait(panel.active) != null,
                 "Gameplay player portrait is missing; live sprite would use a missing-art marker");
         note("gameplayPlayerPortraitImage=true");
@@ -402,6 +403,101 @@ public final class RuntimeVisualVerification {
         require(checked == sampleColumns * sampleRows, "Incomplete generated world art census");
         require(resolved == checked,
                 "Generated world tile imagery has unresolved bindings beyond the spawn viewport: " + missing);
+    }
+
+
+    /**
+     * The actual visible-world count can be 0/0 immediately after spawning.
+     * Inspect the generated world records and rasterize representative loaded
+     * portrait/object imagery independently of initial fog of war.
+     */
+    private static void verifyWorldSpriteArtCensus() throws Exception {
+        final int columns = 12, rows = 8, cell = 72, maxPerType = 32;
+        BufferedImage sheet = new BufferedImage(columns * cell, rows * cell, BufferedImage.TYPE_INT_RGB);
+        Graphics2D painter = sheet.createGraphics();
+        int cells = 0, sampledNpc = 0, sampledObjects = 0, sampledBuildings = 0;
+        int unresolved = 0;
+        StringBuilder missing = new StringBuilder();
+        java.lang.reflect.Field mediaField = LegacyImageSurface.class.getDeclaredField("media");
+        mediaField.setAccessible(true);
+        ImageCache media = (ImageCache) mediaField.get(panel.images);
+        try {
+            painter.setColor(new Color(12, 14, 13));
+            painter.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+            BufferedImage playerPortrait = panel.images.getPlayerPortrait(panel.active);
+            require(playerPortrait != null, "Player sprite has no actual portrait image");
+            painter.drawImage(playerPortrait, 4, 4, cell - 8, cell - 8, null);
+            cells++;
+            if (panel.world.npcs != null) {
+                for (NpcEntity npc : panel.world.npcs) {
+                    if (npc == null || sampledNpc == maxPerType || cells == columns * rows) break;
+                    BufferedImage art = panel.images.getNpcPortraitFor(npc);
+                    if (art == null) {
+                        unresolved++;
+                        if (missing.length() < 350) missing.append("npc:").append(npc.name).append(";");
+                    }
+                    paintSpriteCensusCell(painter, art, cells++, cell);
+                    sampledNpc++;
+                }
+            }
+            if (panel.world.mapObjects != null) {
+                for (MapObjectState object : panel.world.mapObjects) {
+                    if (object == null || sampledObjects == maxPerType || cells == columns * rows) break;
+                    BufferedImage art = panel.images.getMapObjectImage(object);
+                    if (art == null) {
+                        unresolved++;
+                        if (missing.length() < 350) missing.append("object:").append(object.label).append(";");
+                    }
+                    paintSpriteCensusCell(painter, art, cells++, cell);
+                    sampledObjects++;
+                }
+            }
+            if (panel.baseObjects != null) {
+                for (BaseObject building : panel.baseObjects) {
+                    if (building == null || sampledBuildings == maxPerType || cells == columns * rows) break;
+                    BufferedImage art = panel.images.getBaseObjectImage(building);
+                    if (art == null) {
+                        unresolved++;
+                        if (missing.length() < 350) missing.append("building:").append(building.name).append(";");
+                    }
+                    paintSpriteCensusCell(painter, art, cells++, cell);
+                    sampledBuildings++;
+                }
+            }
+            int authoredNpcPortraitSamples = 0;
+            for (BufferedImage authored : media.npcPortraitCells) {
+                if (cells == columns * rows || authoredNpcPortraitSamples >= 16) break;
+                paintSpriteCensusCell(painter, authored, cells++, cell);
+                authoredNpcPortraitSamples++;
+            }
+            require(authoredNpcPortraitSamples > 0, "Packaged client has no authored NPC portraits");
+            note("generatedWorldSpriteCensus=npcs=" + sampledNpc
+                    + " mapObjects=" + sampledObjects + " baseObjects=" + sampledBuildings
+                    + " npcPortraitPool=" + media.npcPortraitCells.size()
+                    + " authoredNpcSamples=" + authoredNpcPortraitSamples
+                    + " missing=" + unresolved + " detail=" + missing);
+        } finally {
+            painter.dispose();
+        }
+        require(ImageIO.write(sheet, "png", output.resolve("10-world-sprite-art-census.png").toFile()),
+                "Could not save world sprite image census");
+        require(unresolved == 0, "Generated world entities have unresolved image assets: " + missing);
+    }
+
+    private static void paintSpriteCensusCell(Graphics2D painter, BufferedImage art,
+                                              int position, int cell) {
+        int x = (position % 12) * cell, y = (position / 12) * cell;
+        painter.setColor(new Color(36, 41, 40));
+        painter.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+        if (art == null) {
+            painter.setColor(new Color(220, 58, 46));
+            painter.fillRect(x + 4, y + 4, cell - 8, cell - 8);
+            painter.setColor(Color.BLACK);
+            painter.drawLine(x + 6, y + 6, x + cell - 6, y + cell - 6);
+            painter.drawLine(x + cell - 6, y + 6, x + 6, y + cell - 6);
+        } else {
+            painter.drawImage(art, x + 4, y + 4, cell - 8, cell - 8, null);
+        }
     }
 
     private static void require(boolean condition, String message) {
