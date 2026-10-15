@@ -198,3 +198,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - The turn authority retains WAIT-only mutation: canonical state is snapshot input only, movement/map/inventory mutation remains closed, and the character binding is discarded on disconnect so reconnect must re-establish it from canonical persistence.
 - `IndependentHostHostedSessionWireSmoke` seeds a persisted character away from the origin and verifies reconnect plus authoritative WAIT publishes the saved position, name, zone, and item count while unsupported movement remains non-mutating.
 - Repository source/readback verification is required for this slice. Full Java 17 compilation, registered smoke execution, hosted map ownership, movement persistence, and inventory mutation remain separately required.
+
+### Milestone 06 cross-cutting UI containment: hover guidance (2026-10-14)
+
+- Replaced fixed-character-count hover-help formatting with FontMetrics pixel wrapping and compact, viewport-bounded popup geometry. Very long help explicitly shows a continuation marker rather than silently painting beyond the window.
+- Mouse-edge placement is clamped; keyboard-selected modal controls can now display their help without an active mouse position. Drawing restores clip, color, and font.
+- Added \`UiHoverHelpPainterSmoke\` with headless viewport-edge, long-text, small-screen, and compact-label cases. An isolated Java 17 source compilation with minimal renderer stubs and the focused smoke passed; full project build and interactive headset/desktop validation were not run.
