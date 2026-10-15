@@ -646,7 +646,9 @@ final class WorldStartFlowAuthority {
             drawCompactLine(g, "Age " + c.ageYears + " years / " + safe(c.ageBand), nameX, metaY + 18, nameW, muted());
 
             int statsY = Math.max(portraitRect.y + portraitRect.height + 16, metaY + 38);
-            int statsH = Math.max(1, Math.min(256, r.y + r.height - statsY - 8));
+            int statsH = Math.max(1, Math.min(
+                    WorldStartLayoutAuthority.statPanelHeight(r.width - 24, c.stats.size()),
+                    r.y + r.height - statsY - 8));
             Rectangle stats = new Rectangle(r.x + 12, statsY, r.width - 24, statsH);
             drawSubPanel(g, stats, "Stats");
             drawStatRanges(g, c, stats);

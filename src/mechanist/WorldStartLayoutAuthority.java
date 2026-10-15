@@ -63,16 +63,22 @@ final class WorldStartLayoutAuthority {
                 Math.max(1, panel.width - 48), Math.max(1, panel.height - 210));
     }
 
+    static int statPanelHeight(int width, int statCount) {
+        int cols = Math.max(1, (Math.max(1, width - 24) + 6) / 82);
+        int rows = (Math.max(1, statCount) + cols - 1) / cols;
+        return 46 + rows * 32 + Math.max(0, rows - 1) * 6;
+    }
+
     static List<Rectangle> statCells(Rectangle area, int statCount) {
         ArrayList<Rectangle> cells = new ArrayList<>();
         if (statCount <= 0) return cells;
         final int gap = 6;
         int innerW = Math.max(1, area.width - 24);
         int innerH = Math.max(1, area.height - 46);
-        int cols = Math.max(1, Math.min(statCount, (innerW + gap) / 56));
+        int cols = Math.max(1, Math.min(statCount, (innerW + gap) / 82));
         int rows = (statCount + cols - 1) / cols;
         int cellW = Math.max(1, (innerW - Math.max(0, cols - 1) * gap) / cols);
-        int cellH = Math.max(1, (innerH - Math.max(0, rows - 1) * gap) / rows);
+        int cellH = Math.max(1, Math.min(32, (innerH - Math.max(0, rows - 1) * gap) / rows));
         for (int i = 0; i < statCount; i++) {
             cells.add(new Rectangle(area.x + 12 + (i % cols) * (cellW + gap),
                     area.y + 34 + (i / cols) * (cellH + gap), cellW, cellH));

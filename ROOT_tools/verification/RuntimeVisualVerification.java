@@ -24,6 +24,8 @@ public final class RuntimeVisualVerification {
         int result = 1;
         try {
             require(!GraphicsEnvironment.isHeadless(), "A real virtual desktop is required");
+            WorldStartLayoutAuthoritySmoke.main(new String[0]);
+            CharacterCreationPortraitSelectionSmoke.main(new String[0]);
             robot = new Robot();
             robot.setAutoDelay(100);
             note("commit=" + System.getenv("GITHUB_SHA"));
@@ -73,16 +75,16 @@ public final class RuntimeVisualVerification {
                 note("characterPortraitImage=true seed=" + panel.seed);
                 return null;
             });
-            resize(800, 600);
-            snapshot("06-character-creation-800x600");
+            resize(960, 600);
+            snapshot("06-character-creation-960x600");
             resize(1280, 800);
             key(KeyEvent.VK_G);
             await("normal start-run handoff", () -> panel.screen == GamePanel.Screen.GAME
                     && panel.world != null && !WorldStartFlowAuthority.isActive(panel), 180);
             snapshot("07-gameplay");
             edt(() -> { verifyWorldArt(); return null; });
-            resize(800, 600);
-            snapshot("08-gameplay-800x600");
+            resize(960, 600);
+            snapshot("08-gameplay-960x600");
             note("status=PASS");
             note("scope=Linux Java17 development package; manual screenshot review still required; no installer certification");
             result = 0;
