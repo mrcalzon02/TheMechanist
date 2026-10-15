@@ -463,7 +463,10 @@ final class SemanticRenderAssetResolver {
     private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON; }
     private static boolean toolIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON; }
     private static boolean tradeGoodIcon(AssetMetadata asset) { return itemIcon(asset); }
-    private static boolean dataDeviceIcon(AssetMetadata asset) { return itemIcon(asset); }
+    private static boolean dataDeviceIcon(AssetMetadata asset) {
+        return itemIcon(asset) || (asset.type() == AssetType.UI_ICON
+                && themed(haystack(asset), "knowledge device", "skill device"));
+    }
     private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
     private static boolean specializedSurface(String text) {
