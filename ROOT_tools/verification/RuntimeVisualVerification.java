@@ -44,14 +44,12 @@ public final class RuntimeVisualVerification {
             }, 90);
             resize(1280, 800);
             snapshot("01-boot");
+            verifyEarlyScreenGraphicBindings();
             await("natural boot to main menu", () -> panel.screen == GamePanel.Screen.MENU, 60);
             snapshot("02-main-menu");
-            edt(() -> {
-                require(panel.options.tileIconRendering, "Default configuration disables tile images");
-                require(panel.images.get("title_mechanist_rebase") != null,
-                        "Original title image is missing from the runtime");
-                return null;
-            });
+            edt(() -> { panel.screen = GamePanel.Screen.ZONE_SPLASH; return null; });
+            snapshot("02a-graphical-zone-loading");
+            edt(() -> { panel.screen = GamePanel.Screen.MENU; return null; });
             // Keep the normal client and menu route, but select the game's smallest
             // supported world-size option in this synthetic capture profile. The
             // default (larger) world size is unchanged for players.
@@ -105,6 +103,7 @@ public final class RuntimeVisualVerification {
                 return null;
             });
             snapshot("05-character-creation");
+            verifyAlternatePortraitRaster();
             edt(() -> {
                 java.lang.reflect.Field mediaField = LegacyImageSurface.class.getDeclaredField("media");
                 mediaField.setAccessible(true);
@@ -506,6 +505,65 @@ public final class RuntimeVisualVerification {
             painter.drawLine(x + cell - 6, y + 6, x + 6, y + cell - 6);
         } else {
             painter.drawImage(art, x + 4, y + 4, cell - 8, cell - 8, null);
+        }
+    }
+
+
+    private static void verifyEarlyScreenGraphicBindings() throws Exception {
+        edt(() -> {
+            require(panel.options.tileIconRendering,
+                    "Default graphical configuration unexpectedly disables tile images");
+            for (String key : java.util.List.of("title_mechanist_rebase",
+                    "subtitle_rebase", "new_world_backdrop_rebase",
+                    "clouds_slow_rebase", "clouds_fast_rebase")) {
+                BufferedImage art = panel.images.get(key);
+                require(art != null && art.getWidth() > 0 && art.getHeight() > 0,
+                        "Missing authored early-screen artwork: " + key);
+                note("uiArt." + key + "=" + art.getWidth() + "x" + art.getHeight());
+            }
+            BufferedImage spinnerArt = panel.images.getCompiledSystemIcon(4, 2, 1);
+            require(spinnerArt != null && spinnerArt.getWidth() > 0,
+                    "Packaged boot/loading spinner system image missing");
+            note("uiArt.bootLoadingSpinner=" + spinnerArt.getWidth() + "x" + spinnerArt.getHeight());
+            int menuIcons = 0;
+            for (String label : panel.mainMenuRouteLabels()) {
+                require(panel.systemButtonIconForLabel(label) != null,
+                        "Main menu icon artwork is missing for: " + label);
+                menuIcons++;
+            }
+            note("uiArt.mainMenuRouteIcons=" + menuIcons + "/" + panel.mainMenuRouteLabels().size());
+            note("uiArt.menuButtonSkin=" + (panel.images.get("button_normal") != null
+                    && panel.images.get("button_hover") != null ? "authored" : "drawn-fallback"));
+            return null;
+        });
+    }
+
+    private static void verifyAlternatePortraitRaster() throws Exception {
+        int previous = edt(() -> panel.candidateIndex);
+        require(panel.candidates.size() >= 2, "Need two candidates for live portrait switch test");
+        BufferedImage first = edt(() -> panel.images.getPlayerPortrait(panel.candidates.get(previous)));
+        int alternate = (previous + 1) % panel.candidates.size();
+        BufferedImage second = edt(() -> {
+            panel.candidateIndex = alternate;
+            return panel.images.getPlayerPortrait(panel.selectedNewGameCandidate());
+        });
+        try {
+            require(first != null && second != null, "Candidate portrait switch has no image");
+            int different = 0;
+            for (int y = 0; y < 64; y += 2) {
+                for (int x = 0; x < 64; x += 2) {
+                    int x1 = Math.min(first.getWidth() - 1, x * first.getWidth() / 64);
+                    int y1 = Math.min(first.getHeight() - 1, y * first.getHeight() / 64);
+                    int x2 = Math.min(second.getWidth() - 1, x * second.getWidth() / 64);
+                    int y2 = Math.min(second.getHeight() - 1, y * second.getHeight() / 64);
+                    if (first.getRGB(x1, y1) != second.getRGB(x2, y2)) different++;
+                }
+            }
+            note("uiArt.alternatePortraitDifferentPixels=" + different);
+            require(different > 100, "Switching roster candidates does not change portrait art");
+            snapshot("05b-character-creation-alternate-portrait");
+        } finally {
+            edt(() -> { panel.candidateIndex = previous; return null; });
         }
     }
 

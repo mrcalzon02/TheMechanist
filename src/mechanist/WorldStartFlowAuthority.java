@@ -550,7 +550,17 @@ final class WorldStartFlowAuthority {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int w = Math.max(1, getWidth());
                 int h = Math.max(1, getHeight());
-                g.setColor(new Color(0, 0, 0, 208));
+                // Paint our own opaque image base; translucent black over the
+                // previously rendered main menu leaves ghost route labels visible
+                // during world and character selection.
+                BufferedImage backdrop = panel.images == null
+                        ? null : panel.images.get("new_world_backdrop_rebase");
+                if (backdrop != null) {
+                    g.drawImage(backdrop, 0, 0, w, h, null);
+                    g.setColor(new Color(0, 0, 0, 228));
+                } else {
+                    g.setColor(Color.BLACK);
+                }
                 g.fillRect(0, 0, w, h);
                 Rectangle panelRect = panelRect(w, h);
                 drawFrame(g, panelRect, title());
