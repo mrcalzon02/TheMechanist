@@ -158,7 +158,6 @@ final class WorldStartFlowAuthority {
             nameEditing = false;
             seedEditing = false;
             pendingWorldDeleteKey = "";
-            clearPreviewCache();
             status = worlds.isEmpty()
                     ? MenuTextAuthority.text("menu.world_manager.empty", "No generated arcology worlds found. Generate a new world to continue.")
                     : MenuTextAuthority.text("menu.world_manager.status", "Select an existing generated world, inspect its spawn preview, or choose Generate New World.");
@@ -187,14 +186,14 @@ final class WorldStartFlowAuthority {
         }
 
         void openWorldGeneration() {
-            panel.seed = System.currentTimeMillis();
+            if (panel.seed == 0L) panel.seed = System.currentTimeMillis();
             panel.rng = new Random(panel.seed ^ 0x4E475345545550L);
-            panel.worldSetup = WorldSetupSettings.standard();
+            panel.worldSetup = panel.worldSetup == null
+                    ? WorldSetupSettings.standard() : panel.worldSetup.copy();
             worldGenerationOption = 0;
             seedEditing = false;
             seedDraft = Long.toString(panel.seed);
             pendingWorldDeleteKey = "";
-            clearPreviewCache();
             status = "";
             stage = Stage.WORLD_GENERATION;
             panel.newGameSetupActive = false;
@@ -931,9 +930,30 @@ final class WorldStartFlowAuthority {
 
         void drawSeedEditor(Graphics2D g) { Rectangle seed = seedEditRect(); g.setFont(panel.smallFont); g.setColor(muted()); drawBackedText(g, MenuTextAuthority.text("menu.world_generation.seed", "Seed"), seed.x, seed.y - 8, false); g.setColor(seedEditing ? new Color(54, 47, 31, 238) : new Color(16, 18, 16, 224)); g.fillRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8); g.setColor(seedEditing ? highlight() : new Color(145, 118, 64, 140)); g.drawRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8); String text = seedEditing ? seedDraft + "_" : Long.toString(panel.seed); drawText(g, text, seed.x + 10, seed.y + 24, seed.width - 20, seedEditing ? highlight() : main()); }
 
-        void drawWorldManagerPreview(Graphics2D g, Rectangle r) { WorldSaveInfo info = selectedWorldInfo(); if (info != null) requestPreviewFor(info.seed, info.settings == null ? WorldSetupSettings.standard() : info.settings.copy(), "existing:" + info.seed + ":" + safe(info.hiveName), safe(info.hiveName) + " / seed " + info.seed); else { long seed = ensureDraftSeed(); WorldSetupSettings setup = panel.worldSetup == null ? WorldSetupSettings.standard() : panel.worldSetup.copy(); requestPreviewFor(seed, setup, "new:" + seed + ":" + setup.encode(), "Generate New World / seed " + seed); } drawSpawnPreviewBody(g, r, info == null ? MenuTextAuthority.text("menu.world_manager.preview.new", "Preview: Generate New World") : MenuTextAuthority.text("menu.world_manager.preview.selected", "Selected World Spawn Preview")); }
+        void drawWorldManagerPreview(Graphics2D g, Rectangle r) {
+            WorldSaveInfo info = selectedWorldInfo();
+            if (info != null) {
+                requestPreviewFor(info.seed, info.settings == null
+                        ? WorldSetupSettings.standard() : info.settings.copy(),
+                        safe(info.hiveName) + " / seed " + info.seed);
+            } else {
+                long seed = ensureDraftSeed();
+                WorldSetupSettings setup = panel.worldSetup == null
+                        ? WorldSetupSettings.standard() : panel.worldSetup.copy();
+                requestPreviewFor(seed, setup, "New world / seed " + seed);
+            }
+            drawSpawnPreviewBody(g, r, info == null
+                    ? MenuTextAuthority.text("menu.world_manager.preview.new", "Preview: Generate New World")
+                    : MenuTextAuthority.text("menu.world_manager.preview.selected", "Selected World Spawn Preview"));
+        }
         WorldSaveInfo selectedWorldInfo() { return worldIndex >= 0 && worldIndex < worlds.size() ? worlds.get(worldIndex) : null; }
-        void drawSpawnPreview(Graphics2D g, Rectangle r) { if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard(); long safeSeed = ensureDraftSeed(); requestPreviewFor(safeSeed, panel.worldSetup.copy(), "generation:" + safeSeed + ":" + panel.worldSetup.encode(), "Generated hive / seed " + safeSeed); drawSpawnPreviewBody(g, r, MenuTextAuthority.text("menu.world_generation.preview", "Spawn Sector Preview")); }
+        void drawSpawnPreview(Graphics2D g, Rectangle r) {
+            if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
+            long safeSeed = ensureDraftSeed();
+            requestPreviewFor(safeSeed, panel.worldSetup.copy(), "New world / seed " + safeSeed);
+            drawSpawnPreviewBody(g, r,
+                    MenuTextAuthority.text("menu.world_generation.preview", "Spawn Sector Preview"));
+        }
 
         void drawSpawnPreviewBody(Graphics2D g, Rectangle r, String title) {
             g.setColor(new Color(12, 14, 13, 230)); g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10); g.setColor(new Color(145, 118, 64, 170)); g.drawRoundRect(r.x, r.y, r.width, r.height, 10, 10); drawText(g, title, r.x + 14, r.y + 28, r.width - 28, highlight()); drawText(g, previewStatus, r.x + 14, r.y + 54, r.width - 28, muted()); if (previewWorld == null) return;
@@ -964,9 +984,9 @@ final class WorldStartFlowAuthority {
             drawText(g, "Full zone " + previewWorld.w + "x" + previewWorld.h + " / spawn " + spawn.x + "," + spawn.y + " / " + previewWorld.zoneType.label, r.x + 14, r.y + r.height - 28, r.width - 28, main());
         }
 
-        void requestPreviewFor(long seed, WorldSetupSettings setup, String key, String label) {
+        void requestPreviewFor(long seed, WorldSetupSettings setup, String label) {
             WorldSetupSettings safeSetup = setup == null ? WorldSetupSettings.standard() : setup.copy();
-            String safeKey = key == null ? "preview:" + seed + ":" + safeSetup.encode() : key;
+            String safeKey = "preview:" + seed + ":" + safeSetup.encode();
             if (safeKey.equals(previewKey)) return;
             if (safeKey.equals(previewRequestedKey) && previewWorkerRunning) return;
             if (pendingPreviewRequest != null && safeKey.equals(pendingPreviewRequest.key)) return;

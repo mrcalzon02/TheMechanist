@@ -57,8 +57,16 @@ public final class RuntimeVisualVerification {
             await("world picker preview image", () -> flow().previewWorld != null
                     && flow().previewOverviewImage != null && !flow().previewWorkerRunning, 180);
             snapshot("03-world-picker");
+            World readyPickerPreview = edt(() -> flow().previewWorld);
+            long readyDraftSeed = edt(() -> panel.seed);
             key(KeyEvent.VK_G);
             awaitStage(WorldStartFlowAuthority.Stage.WORLD_GENERATION);
+            edt(() -> {
+                require(panel.seed == readyDraftSeed && flow().previewWorld == readyPickerPreview,
+                        "Opening generation discarded the ready draft preview");
+                note("draftPreviewReused=true");
+                return null;
+            });
             // Use the same seed edit authority as keyboard input, then wait for its real preview.
             edt(() -> { flow().seedDraft = "466713"; flow().applySeedDraft(); return null; });
             await("generation preview image", () -> flow().previewWorld != null
