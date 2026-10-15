@@ -30,9 +30,9 @@ final class WorldStartLayoutAuthority {
 
     static Rectangle pickerPreview(Rectangle panel) {
         int x = panel.x + 24 + pickerListWidth(panel) + 18;
-        return new Rectangle(x, panel.y + 130,
+        return new Rectangle(x, panel.y + 92,
                 Math.max(1, panel.x + panel.width - 24 - x),
-                Math.max(1, panel.height - 245));
+                Math.max(1, panel.height - 207));
     }
 
     static int generationListWidth(Rectangle panel) {
@@ -40,27 +40,33 @@ final class WorldStartLayoutAuthority {
     }
 
     static Rectangle seed(Rectangle panel) {
-        return new Rectangle(panel.x + 24, panel.y + 116, generationListWidth(panel), 34);
+        return new Rectangle(panel.x + 24, panel.y + 92, generationListWidth(panel), 34);
     }
 
     static List<Rectangle> generationRows(Rectangle panel) {
         ArrayList<Rectangle> rows = new ArrayList<>();
+        int pitch = Math.min(40, Math.max(34, (panel.height - 116 - 134 - 34) / 6));
         for (int i = 0; i < 7; i++)
-            rows.add(new Rectangle(panel.x + 24, panel.y + 158 + i * 40,
+            rows.add(new Rectangle(panel.x + 24, panel.y + 134 + i * pitch,
                     generationListWidth(panel), 34));
         return rows;
     }
 
     static Rectangle generationPreview(Rectangle panel) {
         int x = panel.x + 24 + generationListWidth(panel) + 18;
-        return new Rectangle(x, panel.y + 116,
+        return new Rectangle(x, panel.y + 92,
                 Math.max(1, panel.x + panel.width - 24 - x),
-                Math.max(1, panel.height - 228));
+                Math.max(1, panel.height - 204));
     }
 
     static Rectangle characterBody(Rectangle panel) {
-        return new Rectangle(panel.x + 24, panel.y + 112,
-                Math.max(1, panel.width - 48), Math.max(1, panel.height - 210));
+        return new Rectangle(panel.x + 24, panel.y + 88,
+                Math.max(1, panel.width - 48), Math.max(1, panel.height - 202));
+    }
+
+    static Rectangle footer(Rectangle panel) {
+        return new Rectangle(panel.x + 24, panel.y + panel.height - 108,
+                Math.max(1, panel.width - 48), 42);
     }
 
     static int statPanelHeight(int width, int statCount) {

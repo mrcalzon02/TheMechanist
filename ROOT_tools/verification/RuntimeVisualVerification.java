@@ -54,14 +54,29 @@ public final class RuntimeVisualVerification {
             });
             key(KeyEvent.VK_1);
             awaitStage(WorldStartFlowAuthority.Stage.WORLD_PICKER);
+            await("world picker preview image", () -> flow().previewWorld != null
+                    && flow().previewOverviewImage != null && !flow().previewWorkerRunning, 180);
             snapshot("03-world-picker");
             key(KeyEvent.VK_G);
             awaitStage(WorldStartFlowAuthority.Stage.WORLD_GENERATION);
-            snapshot("04-world-generation");
-            // Use the same seed edit authority as keyboard input, then normal Generate.
+            // Use the same seed edit authority as keyboard input, then wait for its real preview.
             edt(() -> { flow().seedDraft = "466713"; flow().applySeedDraft(); return null; });
+            await("generation preview image", () -> flow().previewWorld != null
+                    && flow().previewOverviewImage != null && !flow().previewWorkerRunning, 180);
+            snapshot("04-world-generation");
+            resize(960, 600);
+            snapshot("04b-world-generation-960x600");
+            resize(1280, 800);
             key(KeyEvent.VK_G);
             awaitStage(WorldStartFlowAuthority.Stage.CHARACTER_CREATION);
+            edt(() -> {
+                Rectangle body = flow().characterBodyRect();
+                Rectangle footer = WorldStartLayoutAuthority.footer(flow().panelRect(panel.getWidth(), panel.getHeight()));
+                require(!body.intersects(footer), "Character content overlaps help text");
+                require(flow().CHARACTER_ACTION_LABELS.length == flow().CHARACTER_ACTION_COUNT,
+                        "Visible character controls and keyboard action count disagree");
+                return null;
+            });
             snapshot("05-character-creation");
             edt(() -> {
                 java.lang.reflect.Field mediaField = LegacyImageSurface.class.getDeclaredField("media");
@@ -78,8 +93,17 @@ public final class RuntimeVisualVerification {
             resize(960, 600);
             snapshot("06-character-creation-960x600");
             resize(1280, 800);
-            key(KeyEvent.VK_G);
-            await("normal start-run handoff", () -> panel.screen == GamePanel.Screen.GAME
+            Point startButton = edt(() -> {
+                Rectangle bounds = flow().buttonRect(0);
+                Point origin = flow().getLocationOnScreen();
+                return new Point(origin.x + bounds.x + bounds.width / 2,
+                        origin.y + bounds.y + bounds.height / 2);
+            });
+            robot.mouseMove(startButton.x, startButton.y);
+            robot.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            await("normal start-run mouse handoff", () -> panel.screen == GamePanel.Screen.GAME
                     && panel.world != null && !WorldStartFlowAuthority.isActive(panel), 180);
             snapshot("07-gameplay");
             edt(() -> { verifyWorldArt(); return null; });

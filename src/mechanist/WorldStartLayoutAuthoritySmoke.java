@@ -24,9 +24,15 @@ final class WorldStartLayoutAuthoritySmoke {
             for (boolean character : new boolean[] {false, true}) {
                 Rectangle panel = WorldStartLayoutAuthority.panelRect(size[0], size[1], character);
                 within(panel, viewport, "stage panel");
+                Rectangle footer = WorldStartLayoutAuthority.footer(panel);
+                within(footer, panel, "footer");
+                Rectangle actions = new Rectangle(panel.x + 24, panel.y + panel.height - 58,
+                        panel.width - 48, 34);
+                check(!footer.intersects(actions), "footer/action overlap");
                 if (character) {
                     Rectangle body = WorldStartLayoutAuthority.characterBody(panel);
                     within(body, panel, "character body");
+                    check(!body.intersects(footer), "character body/footer overlap");
                     int rosterW = Math.max(128, Math.min(180, body.width / 5));
                     int rightW = Math.max(240, Math.min(380, body.width / 3));
                     int midW = body.width - rosterW - rightW - 28;
@@ -55,9 +61,11 @@ final class WorldStartLayoutAuthoritySmoke {
                     within(WorldStartLayoutAuthority.seed(panel), panel, "seed editor");
                     Rectangle preview = WorldStartLayoutAuthority.generationPreview(panel);
                     within(preview, panel, "generation preview");
+                    check(!preview.intersects(footer), "preview/footer overlap");
                     for (Rectangle row : WorldStartLayoutAuthority.generationRows(panel)) {
                         within(row, panel, "generation setting");
                         check(!row.intersects(preview), "setting intersects preview");
+                        check(!row.intersects(footer), "setting/footer overlap");
                     }
                 }
             }
