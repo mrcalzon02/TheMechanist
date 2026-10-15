@@ -15,7 +15,7 @@ public final class RoadTransportGraphicalBindingSmoke {
     private RoadTransportGraphicalBindingSmoke() {}
 
     public static void main(String[] args) {
-        if (AssetManager.registry().isEmpty()) {
+        if (AssetManager.registry().size() == 0) {
             throw new AssertionError("No packaged semantic image registry");
         }
         Object[][] cases = {
@@ -50,8 +50,8 @@ public final class RoadTransportGraphicalBindingSmoke {
             require(metadata.pathOrUri().toLowerCase(java.util.Locale.ROOT)
                             .contains((String) test[1]),
                     "Wrong atlas cell for " + object.type + " : " + metadata.pathOrUri());
-            javax.swing.ImageIcon icon = AssetManager.imageForAssetId(id);
-            require(icon != null && !AssetManager.isMissingIcon(icon)
+            javax.swing.ImageIcon icon = AssetManager.getAsset(id);
+            require(icon != null && !AssetManager.isMissingAssetIcon(icon)
                             && icon.getIconWidth() > 0 && icon.getIconHeight() > 0,
                     "Road object asset did not decode: " + object.type);
         }
