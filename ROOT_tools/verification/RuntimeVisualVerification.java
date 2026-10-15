@@ -62,6 +62,12 @@ public final class RuntimeVisualVerification {
             awaitStage(WorldStartFlowAuthority.Stage.CHARACTER_CREATION);
             snapshot("05-character-creation");
             edt(() -> {
+                java.lang.reflect.Field mediaField = LegacyImageSurface.class.getDeclaredField("media");
+                mediaField.setAccessible(true);
+                ImageCache media = (ImageCache) mediaField.get(panel.images);
+                note("loadedTileImages=" + media.tileArt.getRegistry().loadedCount()
+                        + " authoredHumanPortraits=" + media.playerHumanPortraitCells.size());
+                require(!media.playerHumanPortraitCells.isEmpty(), "Authored human portrait pool is empty");
                 require(panel.images.getPlayerPortrait(panel.selectedNewGameCandidate()) != null,
                         "Character creation has no image portrait");
                 note("characterPortraitImage=true seed=" + panel.seed);
@@ -163,15 +169,19 @@ public final class RuntimeVisualVerification {
                 World.class, int.class, int.class, CompiledTileDescriptor.class, char.class,
                 int.class, int.class, int.class);
         draw.setAccessible(true);
+        Method viewport = GamePanel.class.getDeclaredMethod("gameWorldViewportRect", int.class, int.class);
+        viewport.setAccessible(true);
+        Rectangle map = (Rectangle) viewport.invoke(panel, panel.getWidth(), panel.getHeight());
+        int cols = Math.max(1, map.width / tile), rows = Math.max(1, map.height / tile);
         int checked = 0, imaged = 0;
         StringBuilder missing = new StringBuilder();
         BufferedImage probe = new BufferedImage(tile, tile, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = probe.createGraphics();
         try {
-            for (int y = panel.lastWorldViewMinY; y < panel.world.h; y++) {
+            for (int y = panel.lastWorldViewMinY; y < Math.min(panel.world.h, panel.lastWorldViewMinY + rows); y++) {
                 int sy = panel.lastWorldViewOriginY + (y - panel.lastWorldViewMinY) * tile;
                 if (sy + tile > panel.getHeight()) break;
-                for (int x = panel.lastWorldViewMinX; x < panel.world.w; x++) {
+                for (int x = panel.lastWorldViewMinX; x < Math.min(panel.world.w, panel.lastWorldViewMinX + cols); x++) {
                     int sx = panel.lastWorldViewOriginX + (x - panel.lastWorldViewMinX) * tile;
                     if (sx + tile > panel.getWidth()) break;
                     if (!panel.isRemembered(x, y)) continue;
@@ -189,8 +199,8 @@ public final class RuntimeVisualVerification {
         try { panel.options.tileIconRendering = false; negative = paint(); }
         finally { panel.options.tileIconRendering = true; }
         long changed = 0;
-        for (int y = Math.max(0, panel.lastWorldViewOriginY); y < normal.getHeight(); y++) {
-            for (int x = Math.max(0, panel.lastWorldViewOriginX); x < normal.getWidth(); x++) {
+        for (int y = Math.max(0, panel.lastWorldViewOriginY); y < Math.min(normal.getHeight(), map.y + map.height); y++) {
+            for (int x = Math.max(0, panel.lastWorldViewOriginX); x < Math.min(normal.getWidth(), map.x + map.width); x++) {
                 if (normal.getRGB(x, y) != negative.getRGB(x, y)) changed++;
             }
         }
