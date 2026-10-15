@@ -72,6 +72,21 @@ public final class NpcContinuityDeterminismSmoke {
         duplicatePet.wanderNear(world, 8, 8, 2, -1, -1, 411);
         require(originalPet.x == duplicatePet.x && originalPet.y == duplicatePet.y,
                 "Identical world/actor/turn produced divergent companion movement");
+        // Room-intake selection must use the request's RNG rather than the
+        // mutable world-generation random stream.
+        World firstWorld = roomWorld(8173L);
+        World secondWorld = roomWorld(8173L);
+        for (int i = 0; i < 500; i++) secondWorld.r.nextInt();
+        PersonnelReplacementRequest fixedRequest = new PersonnelReplacementRequest();
+        fixedRequest.sourceRoomId = 0;
+        fixedRequest.sourceLedgerId = "replacement-room";
+        fixedRequest.faction = Faction.HIVER;
+        java.awt.Point firstPoint = PersonnelPopulationApi.spawnPointForReplacement(
+                firstWorld, fixedRequest, new Random(19L));
+        java.awt.Point secondPoint = PersonnelPopulationApi.spawnPointForReplacement(
+                secondWorld, fixedRequest, new Random(19L));
+        require(firstPoint != null && firstPoint.equals(secondPoint),
+                "Intake placement changed after irrelevant world RNG draws");
         // Legacy NPC records lack the new cadence and memory fields; parsing
         // them must still work without fabricating current-assignment history.
         String[] existing = actor.saveLine().split("\\|", -1);
@@ -116,6 +131,24 @@ public final class NpcContinuityDeterminismSmoke {
                 "Legacy reinforcement manifests should not invent a former role");
         System.out.println("NpcContinuityDeterminismSmoke PASS memory=" + restored.lifeMemories.size()
                 + " replacementDue=" + first.dueTurn);
+    }
+
+    private static World roomWorld(long seed) {
+        World world = new World(seed, 20, 20);
+        for (int x = 0; x < world.w; x++) for (int y = 0; y < world.h; y++) {
+            world.tiles[x][y] = '#';
+            world.roomIds[x][y] = -1;
+        }
+        java.awt.Rectangle room = new java.awt.Rectangle(3, 3, 12, 12);
+        world.rooms.add(room);
+        for (int x = 4; x < 14; x++) for (int y = 4; y < 14; y++) {
+            world.tiles[x][y] = '.';
+            world.roomIds[x][y] = 0;
+        }
+        RoomPopulationLedger ledger = ledger("replacement-room", Faction.HIVER);
+        ledger.roomId = 0;
+        world.roomPopulationLedgers.add(ledger);
+        return world;
     }
 
     private static RoomPopulationLedger ledger(String id, Faction faction) {

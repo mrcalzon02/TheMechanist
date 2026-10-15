@@ -478,15 +478,53 @@ class PersonnelPopulationApi {
         ensureLedgers(w, r);
         int rid = req == null ? -1 : req.sourceRoomId;
         if(rid >= 0 && rid < w.rooms.size()){
-            Point p = w.randomOpenPointInRoom(w.rooms.get(rid));
+            Point p = deterministicRoomReplacementPoint(w, w.rooms.get(rid), r);
             if(p != null) return p;
         }
         RoomPopulationLedger l = ledgerById(w, req == null ? null : req.sourceLedgerId);
         if(l != null && l.roomId >= 0 && l.roomId < w.rooms.size()){
-            Point p = w.randomOpenPointInRoom(w.rooms.get(l.roomId));
+            Point p = deterministicRoomReplacementPoint(w, w.rooms.get(l.roomId), r);
             if(p != null) return p;
         }
-        return w.randomOpenPoint(r==null?new Random():r);
+        Random rng = r == null ? new Random(w.seed) : r;
+        if (!w.rooms.isEmpty()) {
+            for (int tries = 0; tries < 120; tries++) {
+                Point point = deterministicRoomReplacementPoint(w,
+                        w.rooms.get(rng.nextInt(w.rooms.size())), rng);
+                if (point != null) return point;
+            }
+        }
+        for (int tries = 0; tries < 300; tries++) {
+            int x = 1 + rng.nextInt(Math.max(1, w.w - 2));
+            int y = 1 + rng.nextInt(Math.max(1, w.h - 2));
+            if (isAvailableReplacementPoint(w, x, y, false)) return new Point(x, y);
+        }
+        for (int x = 0; x < w.w; x++) for (int y = 0; y < w.h; y++)
+            if (isAvailableReplacementPoint(w, x, y, false)) return new Point(x, y);
+        // Do not resurrect an occupied player spawn point as a last resort.
+        return null;
+    }
+
+    private static Point deterministicRoomReplacementPoint(World w, Rectangle room, Random random) {
+        if (w == null || room == null) return null;
+        Random rng = random == null ? new Random(w.seed ^ room.x ^ room.y) : random;
+        for (int tries = 0; tries < 80; tries++) {
+            int x = room.x + 1 + rng.nextInt(Math.max(1, room.width - 2));
+            int y = room.y + 1 + rng.nextInt(Math.max(1, room.height - 2));
+            if (isAvailableReplacementPoint(w, x, y, true)) return new Point(x, y);
+        }
+        int cx = room.x + room.width / 2, cy = room.y + room.height / 2;
+        if (isAvailableReplacementPoint(w, cx, cy, false)) return new Point(cx, cy);
+        for (int x = room.x; x < room.x + room.width; x++)
+            for (int y = room.y; y < room.y + room.height; y++)
+                if (isAvailableReplacementPoint(w, x, y, true)) return new Point(x, y);
+        return null;
+    }
+
+    private static boolean isAvailableReplacementPoint(World w, int x, int y, boolean requireRoom) {
+        return w.inBounds(x, y) && w.walkable(x, y)
+                && (!requireRoom || w.roomIds[x][y] >= 0)
+                && w.npcAt(x, y) == null && w.mapObjectAt(x, y) == null;
     }
 
     static void consumeReplacementSlot(World w, PersonnelReplacementRequest req, Random r){

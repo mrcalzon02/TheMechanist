@@ -289,7 +289,7 @@ final class NpcHappinessAuthority {
     }
 
     private static void releasePopulationAssignment(World world, NpcEntity npc, Faction oldFaction) {
-        if (npc.provenance == null) return;
+        if (npc.provenance == null && npc.currentAssignmentLedgerId.isBlank()) return;
         RoomPopulationLedger ledger = PersonnelPopulationApi.ledgerById(world,
                 npc.currentAssignmentLedgerId.isBlank()
                 ? npc.provenance.originSiteId : npc.currentAssignmentLedgerId);
@@ -301,9 +301,10 @@ final class NpcHappinessAuthority {
 
     private static void assignPopulationSlot(World world, NpcEntity npc, Faction faction, Random random) {
         RoomPopulationLedger ledger = PersonnelPopulationApi.drawLedgerFor(world, -1, faction, random, false);
-        if (ledger == null || !FactionIdentityAuthority.sameFamily(ledger.faction, faction)) return;
+        if (ledger == null || ledger.available <= 0
+                || !FactionIdentityAuthority.sameFamily(ledger.faction, faction)) return;
         ledger.assigned++;
-        ledger.available = Math.max(0, ledger.available - 1);
+        ledger.available--;
         npc.currentAssignmentLedgerId = ledger.id;
         if (npc.provenance != null) npc.provenance.backstory += " Current faction assignment uses " + ledger.roomName + ".";
     }
