@@ -1,0 +1,208 @@
+package mechanist;
+
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.lang.reflect.Method;
+import java.nio.file.*;
+import java.util.concurrent.*;
+import java.util.function.BooleanSupplier;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+
+/** Developer-only driver. Compiled separately against the freshly packaged client. */
+public final class RuntimeVisualVerification {
+    private static Path output;
+    private static Robot robot;
+    private static JFrame frame;
+    private static GamePanel panel;
+    private static final StringBuilder evidence = new StringBuilder();
+
+    public static void main(String[] args) throws Exception {
+        output = Path.of(args[0]).toAbsolutePath();
+        Files.createDirectories(output);
+        int result = 1;
+        try {
+            require(!GraphicsEnvironment.isHeadless(), "A real virtual desktop is required");
+            robot = new Robot();
+            robot.setAutoDelay(100);
+            note("commit=" + System.getenv("GITHUB_SHA"));
+            note("java=" + System.getProperty("java.version"));
+            note("runtime=" + Path.of(".").toAbsolutePath().normalize());
+            note("client=" + TheMechanist.class.getProtectionDomain().getCodeSource().getLocation());
+            TheMechanist.main(new String[0]);
+            await("client window", () -> {
+                for (Frame candidate : Frame.getFrames()) {
+                    if (candidate instanceof JFrame f && f.isShowing()
+                            && f.getContentPane() instanceof GamePanel p) {
+                        frame = f; panel = p; return true;
+                    }
+                }
+                return false;
+            }, 90);
+            resize(1280, 800);
+            snapshot("01-boot");
+            await("natural boot to main menu", () -> panel.screen == GamePanel.Screen.MENU, 60);
+            snapshot("02-main-menu");
+            edt(() -> {
+                require(panel.options.tileIconRendering, "Default configuration disables tile images");
+                require(panel.images.get("title_mechanist_rebase") != null,
+                        "Original title image is missing from the runtime");
+                return null;
+            });
+            key(KeyEvent.VK_1);
+            awaitStage(WorldStartFlowAuthority.Stage.WORLD_PICKER);
+            snapshot("03-world-picker");
+            key(KeyEvent.VK_G);
+            awaitStage(WorldStartFlowAuthority.Stage.WORLD_GENERATION);
+            snapshot("04-world-generation");
+            // Use the same seed edit authority as keyboard input, then normal Generate.
+            edt(() -> { flow().seedDraft = "466713"; flow().applySeedDraft(); return null; });
+            key(KeyEvent.VK_G);
+            awaitStage(WorldStartFlowAuthority.Stage.CHARACTER_CREATION);
+            snapshot("05-character-creation");
+            edt(() -> {
+                require(panel.images.getPlayerPortrait(panel.selectedNewGameCandidate()) != null,
+                        "Character creation has no image portrait");
+                note("characterPortraitImage=true seed=" + panel.seed);
+                return null;
+            });
+            resize(800, 600);
+            snapshot("06-character-creation-800x600");
+            resize(1280, 800);
+            key(KeyEvent.VK_G);
+            await("normal start-run handoff", () -> panel.screen == GamePanel.Screen.GAME
+                    && panel.world != null && !WorldStartFlowAuthority.isActive(panel), 180);
+            snapshot("07-gameplay");
+            edt(() -> { verifyWorldArt(); return null; });
+            resize(800, 600);
+            snapshot("08-gameplay-800x600");
+            note("status=PASS");
+            note("scope=Linux Java17 development package; manual screenshot review still required; no installer certification");
+            result = 0;
+        } catch (Throwable failure) {
+            failure.printStackTrace();
+            note("status=FAIL reason=" + failure);
+            if (robot != null) {
+                ImageIO.write(robot.createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize())),
+                        "png", output.resolve("failure-desktop.png").toFile());
+            }
+        } finally {
+            Files.writeString(output.resolve("runtime-evidence.txt"), evidence.toString());
+        }
+        System.exit(result);
+    }
+
+    private static WorldStartFlowAuthority.WorldStartFlowOverlay flow() {
+        return (WorldStartFlowAuthority.WorldStartFlowOverlay) panel.getClientProperty(
+                WorldStartFlowAuthority.WorldStartFlowOverlay.CLIENT_PROPERTY);
+    }
+
+    private static void awaitStage(WorldStartFlowAuthority.Stage wanted) throws Exception {
+        await(wanted.name(), () -> flow() != null && flow().stage == wanted, 180);
+    }
+
+    private static void await(String name, BooleanSupplier condition, int seconds) throws Exception {
+        long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds);
+        while (System.nanoTime() < until) {
+            if (edt(condition::getAsBoolean)) { note("reached=" + name); return; }
+            Thread.sleep(200);
+        }
+        throw new AssertionError("Timed out waiting for " + name);
+    }
+
+    private static <T> T edt(Callable<T> task) throws Exception {
+        FutureTask<T> future = new FutureTask<>(task);
+        SwingUtilities.invokeLater(future);
+        return future.get(90, TimeUnit.SECONDS);
+    }
+
+    private static void key(int code) throws Exception {
+        edt(() -> { frame.toFront(); panel.requestFocusInWindow(); return null; });
+        robot.keyPress(code);
+        robot.keyRelease(code);
+        robot.waitForIdle();
+    }
+
+    private static void resize(int width, int height) throws Exception {
+        edt(() -> {
+            frame.setExtendedState(Frame.NORMAL);
+            panel.setPreferredSize(new Dimension(width, height));
+            frame.pack();
+            frame.setLocation(20, 20);
+            frame.toFront();
+            panel.requestFocusInWindow();
+            return null;
+        });
+        robot.waitForIdle();
+    }
+
+    private static void snapshot(String name) throws Exception {
+        edt(() -> { panel.paintImmediately(0, 0, panel.getWidth(), panel.getHeight()); return null; });
+        robot.waitForIdle();
+        Toolkit.getDefaultToolkit().sync();
+        Rectangle area = edt(() -> new Rectangle(panel.getLocationOnScreen(), panel.getSize()));
+        BufferedImage image = robot.createScreenCapture(area);
+        require(ImageIO.write(image, "png", output.resolve(name + ".png").toFile()), "PNG writer missing");
+        note("snapshot=" + name + " size=" + area.width + "x" + area.height);
+    }
+
+    private static BufferedImage paint() {
+        BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        try { panel.paint(graphics); } finally { graphics.dispose(); }
+        return image;
+    }
+
+    private static void verifyWorldArt() throws Exception {
+        require(panel.options.tileIconRendering, "Image rendering was disabled during gameplay");
+        BufferedImage normal = paint();
+        int tile = panel.lastWorldViewTileSize;
+        require(tile >= 13, "Tile viewport was not established");
+        Method draw = GamePanel.class.getDeclaredMethod("drawCompiledTile", Graphics2D.class,
+                World.class, int.class, int.class, CompiledTileDescriptor.class, char.class,
+                int.class, int.class, int.class);
+        draw.setAccessible(true);
+        int checked = 0, imaged = 0;
+        StringBuilder missing = new StringBuilder();
+        BufferedImage probe = new BufferedImage(tile, tile, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = probe.createGraphics();
+        try {
+            for (int y = panel.lastWorldViewMinY; y < panel.world.h; y++) {
+                int sy = panel.lastWorldViewOriginY + (y - panel.lastWorldViewMinY) * tile;
+                if (sy + tile > panel.getHeight()) break;
+                for (int x = panel.lastWorldViewMinX; x < panel.world.w; x++) {
+                    int sx = panel.lastWorldViewOriginX + (x - panel.lastWorldViewMinX) * tile;
+                    if (sx + tile > panel.getWidth()) break;
+                    if (!panel.isRemembered(x, y)) continue;
+                    char glyph = panel.world.tiles[x][y];
+                    CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(panel.world, x, y, glyph);
+                    checked++;
+                    if ((Boolean) draw.invoke(panel, graphics, panel.world, x, y, descriptor, glyph, 0, 0, tile)) imaged++;
+                    else if (missing.length() < 1000) missing.append("[").append(x).append(',').append(y)
+                            .append(" glyph=").append((int)glyph).append("]");
+                }
+            }
+        } finally { graphics.dispose(); }
+        note("visibleTileImageBindings=" + imaged + "/" + checked + " missing=" + missing);
+        BufferedImage negative;
+        try { panel.options.tileIconRendering = false; negative = paint(); }
+        finally { panel.options.tileIconRendering = true; }
+        long changed = 0;
+        for (int y = Math.max(0, panel.lastWorldViewOriginY); y < normal.getHeight(); y++) {
+            for (int x = Math.max(0, panel.lastWorldViewOriginX); x < normal.getWidth(); x++) {
+                if (normal.getRGB(x, y) != negative.getRGB(x, y)) changed++;
+            }
+        }
+        note("mapPixelsChangedWithImagesDisabled=" + changed);
+        require(checked >= 10, "Insufficient remembered world tiles for graphics proof");
+        require(imaged == checked, "Visible terrain still requires glyph fallback: " + missing);
+        require(changed > (long) tile * tile, "Disabling tile art did not materially change the map");
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) throw new AssertionError(message);
+    }
+
+    private static void note(String value) { evidence.append(value).append('\n'); System.out.println(value); }
+}
