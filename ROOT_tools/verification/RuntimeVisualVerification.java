@@ -27,6 +27,7 @@ public final class RuntimeVisualVerification {
             WorldStartLayoutAuthoritySmoke.main(new String[0]);
             CharacterCreationPortraitSelectionSmoke.main(new String[0]);
             NpcPortraitSelectionSmoke.main(new String[0]);
+            RoadTransportGraphicalBindingSmoke.main(new String[0]);
             robot = new Robot();
             robot.setAutoDelay(100);
             note("commit=" + System.getenv("GITHUB_SHA"));
