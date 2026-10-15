@@ -709,7 +709,7 @@ final class WorldStartFlowAuthority {
             g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
             BufferedImage img = panel.images.getPlayerPortrait(c);
             if (img != null) g.drawImage(img, r.x + 8, r.y + 8, r.width - 16, r.height - 16, null);
-            else drawAsciiPortrait(g, c, r);
+            else drawMissingPortrait(g, r);
         }
 
         void drawNameEditor(Graphics2D g, Candidate c) {
@@ -1194,28 +1194,40 @@ final class WorldStartFlowAuthority {
         void drawText(Graphics2D g, String text, int x, int y, int width, Color color) { g.setFont(panel.smallFont); FontMetrics fm = g.getFontMetrics(); List<String> lines = GuiLayoutApi.wrapText(text == null ? "" : text, fm, Math.max(8, width)); drawWrappedTextBlock(g, lines, x, y, width, color, false); }
         void drawLines(Graphics2D g, List<String> lines, int x, int y, int width, Color color) { g.setFont(panel.smallFont); ArrayList<String> wrapped = new ArrayList<>(); FontMetrics fm = g.getFontMetrics(); if (lines != null) for (String line : lines) wrapped.addAll(GuiLayoutApi.wrapText(line == null ? "" : line, fm, Math.max(8, width))); drawWrappedTextBlock(g, wrapped, x, y, width, color, false); }
         void drawWrappedTextBlock(Graphics2D g, List<String> lines, int x, int firstBaseline, int width, Color color, boolean centered) { if (g == null || lines == null || lines.isEmpty()) return; FontMetrics fm = g.getFontMetrics(); int lineH = Math.max(15, fm.getHeight() + 2); int maxW = 0; for (String line : lines) maxW = Math.max(maxW, fm.stringWidth(line == null ? "" : line)); int bx = centered ? x - maxW / 2 - 7 : x - 7; int by = firstBaseline - fm.getAscent() - 5; int bw = Math.max(12, Math.min(Math.max(width, maxW), maxW) + 14); int bh = lineH * lines.size() + 8; Color old = g.getColor(); g.setColor(new Color(0, 0, 0, 118)); g.fillRoundRect(bx, by, bw, bh, 8, 8); g.setColor(new Color(128, 105, 58, 88)); g.drawRoundRect(bx, by, bw, bh, 8, 8); g.setColor(color == null ? old : color); int yy = firstBaseline; for (String raw : lines) { String line = raw == null ? "" : raw; int tx = centered ? x - fm.stringWidth(line) / 2 : x; g.drawString(line, tx, yy); yy += lineH; } g.setColor(old); }
-        void drawAsciiPortrait(Graphics2D g, Candidate c, Rectangle r) {
-            if (c == null || c.portrait == null) return;
-            Font oldFont = g.getFont();
-            Shape oldClip = g.getClip();
+        void drawMissingPortrait(Graphics2D g, Rectangle r) {
+            // Explicit graphical missing-art state; never hide absent runtime assets behind ASCII portraits.
+            Shape previousClip = g.getClip();
+            Color previousColor = g.getColor();
+            Font previousFont = g.getFont();
+            java.awt.Stroke previousStroke = g.getStroke();
             g.clip(r);
             try {
-                g.setFont(panel.asciiFont.deriveFont(Font.BOLD,
-                        Math.max(8f, Math.min(15f, r.height / (float)Math.max(1, c.portrait.length + 1)))));
-                g.setColor(main());
-                FontMetrics fm = g.getFontMetrics();
-                int baseline = r.y + fm.getAscent() + 6;
-                for (String line : c.portrait) {
-                    if (baseline + fm.getDescent() > r.y + r.height - 4) break;
-                    String fitted = GuiLayoutApi.fitLabel(line, fm, Math.max(1, r.width - 8));
-                    g.drawString(fitted, r.x + Math.max(4, (r.width - fm.stringWidth(fitted)) / 2), baseline);
-                    baseline += fm.getHeight();
-                }
+                int usable = Math.max(12, Math.min(r.width, r.height) - 16);
+                int cx = r.x + r.width / 2;
+                int head = Math.max(10, usable / 3);
+                int headY = r.y + Math.max(10, r.height / 5);
+                g.setColor(new Color(55, 61, 56, 230));
+                g.fillOval(cx - head / 2, headY, head, head);
+                int torsoWidth = Math.max(20, usable * 3 / 5);
+                int torsoHeight = Math.max(12, usable / 3);
+                g.fillRoundRect(cx - torsoWidth / 2, headY + head - 1,
+                        torsoWidth, torsoHeight, 10, 10);
+                g.setColor(new Color(230, 128, 101));
+                g.setStroke(new BasicStroke(2f));
+                g.drawLine(r.x + 8, r.y + 8, r.x + r.width - 8, r.y + r.height - 8);
+                g.setColor(new Color(255, 184, 150));
+                g.setFont(panel.smallFont.deriveFont(Font.BOLD, 10f));
+                FontMetrics metrics = g.getFontMetrics();
+                String label = GuiLayoutApi.fitLabel("ART MISSING", metrics, Math.max(1, r.width - 8));
+                g.drawString(label, cx - metrics.stringWidth(label) / 2, r.y + r.height - 8);
             } finally {
-                g.setClip(oldClip);
-                g.setFont(oldFont);
+                g.setClip(previousClip);
+                g.setColor(previousColor);
+                g.setFont(previousFont);
+                g.setStroke(previousStroke);
             }
         }
+
         void center(Graphics2D g, String text, int x, int y) { FontMetrics fm = g.getFontMetrics(); String s = text == null ? "" : text; drawWrappedTextBlock(g, List.of(s), x, y, fm.stringWidth(s), g.getColor(), true); }
         void drawBackedText(Graphics2D g, String text, int x, int y, boolean centered) { if (g == null || text == null || text.isBlank()) return; FontMetrics fm = g.getFontMetrics(); int tw = fm.stringWidth(text); int th = fm.getHeight(); int bx = x - 5; int by = y - fm.getAscent() - 3; Color old = g.getColor(); g.setColor(new Color(0, 0, 0, 104)); g.fillRoundRect(bx, by, tw + 10, th + 5, 7, 7); g.setColor(new Color(128, 105, 58, 76)); g.drawRoundRect(bx, by, tw + 10, th + 5, 7, 7); g.setColor(old); g.drawString(text, x, y); }
         void repaintPanel() { revalidate(); repaint(); if (panel != null) panel.repaint(); }

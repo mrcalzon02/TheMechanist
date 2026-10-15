@@ -96,6 +96,29 @@ public final class RuntimeVisualVerification {
                 require(panel.images.getPlayerPortrait(panel.selectedNewGameCandidate()) != null,
                         "Character creation has no image portrait");
                 note("characterPortraitImage=true seed=" + panel.seed);
+                int boundRosterPortraits = 0;
+                for (Candidate candidate : panel.candidates) {
+                    require(panel.images.getPlayerPortrait(candidate) != null,
+                            "Roster candidate " + (boundRosterPortraits + 1) + " lacks authored portrait art");
+                    boundRosterPortraits++;
+                }
+                require(boundRosterPortraits > 0, "No candidate portraits were checked");
+                note("rosterPortraitBindings=" + boundRosterPortraits);
+                return null;
+            });
+            edt(() -> {
+                BufferedImage missingArt = new BufferedImage(112, 112, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D painter = missingArt.createGraphics();
+                try { flow().drawMissingPortrait(painter, new Rectangle(0, 0, 112, 112)); }
+                finally { painter.dispose(); }
+                int graphicPixels = 0;
+                for (int y = 0; y < missingArt.getHeight(); y++) {
+                    for (int x = 0; x < missingArt.getWidth(); x++) {
+                        if ((missingArt.getRGB(x, y) >>> 24) != 0) graphicPixels++;
+                    }
+                }
+                require(graphicPixels > 300, "Missing-art fallback did not render a graphical marker");
+                note("missingPortraitGraphicPixels=" + graphicPixels);
                 return null;
             });
             resize(960, 600);
