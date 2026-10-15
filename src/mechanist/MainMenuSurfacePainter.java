@@ -57,12 +57,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             Dimension subSize = panel.mainMenuSubtitleDrawSize(subtitle, W, H);
             int sw = subSize.width;
             int sh = subSize.height;
-            int minSubtitleW = Math.max(buttonFrame.width, Math.min(W - 48, buttonFrame.width));
-            if (sw < minSubtitleW && subtitle.getWidth() > 0) {
-                sw = Math.min(W - 48, minSubtitleW);
-                sh = Math.max(1, (int)Math.round(subtitle.getHeight() * (sw / (double) subtitle.getWidth())));
-            }
-            sh = Math.min(sh, Math.max(40, H / 7));
+            sh = Math.min(sh, Math.max(1, H / 13));
             int sy = drawnTitleBottom + 3;
             g.drawImage(subtitle, cx - sw / 2, sy, sw, sh, null);
             panel.stampUiFrameId(g, "I", "subtitle", cx - sw / 2, sy, sw, sh);
@@ -111,10 +106,19 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         BufferedImage profilePortrait = LauncherPortraitAssetLoader.selectedProfilePortrait();
         boolean portraitExpected = !"not supplied".equals(portraitId);
         int portraitSize = portraitExpected ? Math.max(40, Math.min(52, H / 15)) : 0;
-        int panelW = Math.min(W - 220, portraitExpected ? 315 : 245);
+        int panelW = portraitExpected ? 315 : 245;
         int panelH = portraitExpected ? Math.max(58, portraitSize + 12) : Math.max(22, Math.min(26, H / 24));
-        int panelX = (W - panelW) / 2;
-        int panelY = Math.max(8, Math.min(H - panelH - 10, buttonFrame.y - panelH - 10));
+        if (buttonFrame.x < panelW + 20) {
+            g.setFont(panel.smallFont.deriveFont(Font.PLAIN, Math.max(10f, Math.min(12f, panel.smallFont.getSize2D()))));
+            FontMetrics fm = g.getFontMetrics();
+            g.setColor(panel.optionColor(GameOptions.TEXT_DIM));
+            String status = shellLines.isEmpty() ? "The Mechanist" : shellLines.get(0);
+            g.drawString(GuiLayoutApi.fitLabel(status, fm, Math.max(1, W - 24)), 12, 18);
+            g.setFont(panel.smallFont);
+            return;
+        }
+        int panelX = Math.max(8, buttonFrame.x - panelW - 12);
+        int panelY = buttonFrame.y + 10;
 
         g.setColor(new Color(0, 0, 0, 150));
         g.fillRoundRect(panelX, panelY, panelW, panelH, 9, 9);

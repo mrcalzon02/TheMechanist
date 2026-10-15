@@ -448,18 +448,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     Rectangle mainMenuRouteRect(int index) {
-        Rectangle frame = mainMenuButtonFrameRect();
-        java.util.List<String> labels = mainMenuRouteLabels();
-        int count = Math.max(1, labels.size());
-        int buttonW = Math.max(300, frame.width - 58);
-        int gap = Math.max(7, Math.min(11, frame.height / 38));
-        int pad = Math.max(16, Math.min(24, frame.height / 13));
-        int availableH = Math.max(1, frame.height - (pad * 2) - (gap * Math.max(0, count - 1)));
-        int buttonH = Math.max(26, Math.min(48, availableH / count));
-        int usedH = buttonH * count + gap * Math.max(0, count - 1);
-        int top = frame.y + Math.max(pad, (frame.height - usedH) / 2);
-        int x = getWidth() / 2 - buttonW / 2;
-        return new Rectangle(x, top + index * (buttonH + gap), buttonW, buttonH);
+        return MainMenuLayoutAuthority.route(mainMenuButtonFrameRect(), mainMenuRouteLabels().size(), index);
     }
 
     int mainMenuRouteIndexAt(int x, int y) {
