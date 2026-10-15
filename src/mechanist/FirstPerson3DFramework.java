@@ -515,18 +515,13 @@ final class FirstPersonRenderViewport {
         Point center = DoomRayTarget.reticleCenter(w, h);
         int cx = center.x, cy = center.y;
         DoomRayTarget targetSolution = acquireTarget(panel);
-        renderTargetReticle(g, targetSolution, cx, cy);
+        renderTargetReticle(g, targetSolution, cx, cy, w);
         RaycastHit hit = targetSolution.hit();
-        String target = hit.hit() ? hit.kind() + " " + hit.label() + " " + hit.tileX() + "," + hit.tileY() + " d=" + formatDistance2(hit.distance()) : "no ray target";
         LogicalTile tile = continuousPlayer.currentLogicalTile();
-        lastStatus = statusLine(panel.options) + " / tile " + tile.label() + " / " + target + " / LWJGL: " + LwjglRenderBackendProbe.statusLine();
+        lastStatus = "SECTOR " + tile.label()
+                + (hit.hit() ? "  /  " + hit.label() + "  /  " + formatDistance2(hit.distance()) + "m" : "");
         g.setFont(new Font("Monospaced", Font.BOLD, 12));
-        FontMetrics fm = g.getFontMetrics();
-        int boxW = Math.min(w - 32, Math.max(360, fm.stringWidth(lastStatus) + 20));
-        g.setColor(new Color(0, 0, 0, 160));
-        g.fillRoundRect(16, 16, boxW, 28, 8, 8);
-        g.setColor(new Color(232, 210, 132));
-        g.drawString(lastStatus, 26, 35);
+        FirstPersonHudLayoutAuthority.drawStrip(g, lastStatus, w, 16, false, new Color(232, 210, 132));
         renderTurnCountdown(g, panel, w);
     }
 
@@ -534,13 +529,9 @@ final class FirstPersonRenderViewport {
         String countdown = panel.passiveTurnCountdownLabel(System.currentTimeMillis())
                 + " / MOVE " + panel.movementModeLabel(panel.selectedMovementModeIndex);
         g.setFont(new Font("Monospaced", Font.BOLD, 13));
-        int tw = g.getFontMetrics().stringWidth(countdown);
-        int x = Math.max(16, width - tw - 28);
-        g.setColor(new Color(0, 0, 0, 175));
-        g.fillRoundRect(x - 8, 50, tw + 16, 28, 8, 8);
-        g.setColor(panel.options != null && panel.options.passiveSinglePlayerTicking()
-                ? new Color(245, 214, 118) : new Color(145, 154, 148));
-        g.drawString(countdown, x, 69);
+        Color color = panel.options != null && panel.options.passiveSinglePlayerTicking()
+                ? new Color(245, 214, 118) : new Color(145, 154, 148);
+        FirstPersonHudLayoutAuthority.drawStrip(g, countdown, width, 50, true, color);
     }
 
     private DoomRayTarget acquireTarget(GamePanel panel) {
@@ -575,7 +566,7 @@ final class FirstPersonRenderViewport {
         return true;
     }
 
-    private void renderTargetReticle(Graphics2D g, DoomRayTarget target, int cx, int cy) {
+    private void renderTargetReticle(Graphics2D g, DoomRayTarget target, int cx, int cy, int width) {
         Color color = target.reticleColor();
         g.setColor(new Color(0, 0, 0, 190));
         g.fillOval(cx - 3, cy - 3, 7, 7);
@@ -587,8 +578,9 @@ final class FirstPersonRenderViewport {
         g.drawLine(cx, cy + 5, cx, cy + 15);
         g.drawRect(cx - 20, cy - 20, 40, 40);
         g.setFont(new Font("Monospaced", Font.BOLD, 11));
-        String label = target.reticleLabel();
-        int tw = g.getFontMetrics().stringWidth(label);
+        FontMetrics fm = g.getFontMetrics();
+        String label = GuiLayoutApi.fitLabel(target.reticleLabel(), fm, Math.max(1, width - 44));
+        int tw = fm.stringWidth(label);
         g.setColor(new Color(0, 0, 0, 165));
         g.fillRoundRect(cx - tw / 2 - 6, cy + 27, tw + 12, 18, 6, 6);
         g.setColor(color);

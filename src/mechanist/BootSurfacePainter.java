@@ -100,9 +100,9 @@ final class BootSurfacePainter implements ScreenPainter {
     private void drawSpinner(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
         BufferedImage frame = bootFrame(panel, elapsed);
         if (frame == null && panel.images != null) frame = panel.images.get("mechanical_skull_gear_emblem");
-        int size = Math.max(96, Math.min(220, Math.min(w, h) / 4));
+        int size = Math.max(32, Math.min(180, Math.min(w, h) / 4));
         int x = w / 2 - size / 2;
-        int y = Math.max(h / 2 - size / 2, h / 2 - 80);
+        int y = Math.max(8, Math.min(h / 2 - size / 2, h - size - 126));
         if (frame != null) {
             g.drawImage(frame, x, y, size, size, null);
         } else {
@@ -147,12 +147,12 @@ final class BootSurfacePainter implements ScreenPainter {
     private void drawBootText(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
         g.setFont(panel.smallFont == null ? new Font("Monospaced", Font.BOLD, 14) : panel.smallFont);
         String[] steps = {
-                "studio intro placeholder",
-                "logo splash placeholder",
-                "loading cogitator frame slices",
-                "binding tile art registries",
-                "indexing portrait pools",
-                "holding main-menu music gate",
+                "preparing session",
+                "loading interface",
+                "preparing environment",
+                "loading art",
+                "preparing character profiles",
+                "initializing menu",
                 "opening main menu"
         };
         long stepMillis = Math.max(1L, BootMenuFlowAuthority.MIN_BOOT_MILLIS / steps.length);
@@ -176,6 +176,6 @@ final class BootSurfacePainter implements ScreenPainter {
     private void drawCentered(Graphics2D g, String text, int x, int y) {
         FontMetrics fm = g.getFontMetrics();
         String s = text == null ? "" : text;
-        g.drawString(s, x - fm.stringWidth(s) / 2, y);
+        EarlyScreenTextAuthority.drawCentered(g, s, x, y, Math.max(1, 2 * x - 24));
     }
 }

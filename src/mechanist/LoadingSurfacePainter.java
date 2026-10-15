@@ -28,6 +28,6 @@ final class LoadingSurfacePainter implements ScreenPainter {
 
     private void drawCentered(Graphics2D g, String text, int x, int y) {
         FontMetrics fm = g.getFontMetrics();
-        g.drawString(text == null ? "" : text, x - fm.stringWidth(text == null ? "" : text) / 2, y);
+        EarlyScreenTextAuthority.drawCentered(g, text, x, y, Math.max(1, x * 2 - 24));
     }
 }

@@ -40,21 +40,17 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         int h = Math.max(1, panel.getHeight());
         long elapsed = Math.max(0L, System.currentTimeMillis() - panel.bootStartMillis);
 
-        Object oldAntialias = g.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
-        Object oldRendering = g.getRenderingHint(RenderingHints.KEY_RENDERING);
-        Stroke oldStroke = g.getStroke();
+        // Use a child graphics context: restoring a previously absent hint with null
+        // throws on Java2D, and backdrop paints/fonts must not leak into other UI layers.
+        Graphics2D scene = EarlyScreenTextAuthority.isolatedScene(g, w, h);
         try {
-            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-            paintBackdrop(g, w, h, elapsed);
-            paintTitle(g, panel, w, h);
-            paintCrawl(g, panel, w, h, elapsed);
-            paintPrompt(g, panel, w, h, elapsed);
+            paintBackdrop(scene, w, h, elapsed);
+            paintTitle(scene, panel, w, h);
+            paintCrawl(scene, panel, w, h, elapsed);
+            paintPrompt(scene, panel, w, h, elapsed);
         } finally {
-            g.setStroke(oldStroke);
-            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, oldAntialias);
-            g.setRenderingHint(RenderingHints.KEY_RENDERING, oldRendering);
+            scene.dispose();
         }
     }
 
@@ -89,7 +85,7 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         Font subtitle = panel.smallFont == null ? new Font("Monospaced", Font.PLAIN, 15) : panel.smallFont;
         int titleY = Math.max(54, h / 6);
 
-        g.setFont(title);
+        g.setFont(EarlyScreenTextAuthority.fitFont(g, title, TITLE, Math.max(1, w - 28), 14f));
         g.setColor(new Color(0, 0, 0, 190));
         drawCentered(g, TITLE, w / 2 + 2, titleY + 2);
         g.setColor(TITLE_GOLD);
@@ -101,7 +97,7 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         drawCentered(g, operator, w / 2, titleY + Math.max(26, title.getSize() / 2 + 16));
 
         int ruleY = titleY + Math.max(44, title.getSize() + 18);
-        int ruleWidth = Math.max(180, Math.min(620, w - 96));
+        int ruleWidth = Math.max(1, Math.min(620, w - 48));
         g.setColor(RULE_COLOR);
         g.setStroke(new BasicStroke(1.4f));
         g.drawLine(w / 2 - ruleWidth / 2, ruleY, w / 2 + ruleWidth / 2, ruleY);
@@ -111,17 +107,24 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         Font body = panel.smallFont == null ? new Font("Monospaced", Font.PLAIN, 15) : panel.smallFont;
         g.setFont(body);
         FontMetrics fm = g.getFontMetrics();
-        int maxWidth = Math.max(220, Math.min(760, w - 120));
+        int maxWidth = Math.max(1, Math.min(760, w - 48));
         int lineHeight = Math.max(18, fm.getHeight() + 4);
         int paragraphGap = Math.max(10, lineHeight / 2);
-        int driftRange = Math.max(1, h + 260);
+        List<List<String>> paragraphs = new ArrayList<>();
+        int contentHeight = 0;
+        for (String paragraph : introCrawlParagraphs(panel)) {
+            List<String> wrapped = GuiLayoutApi.wrapText(paragraph, fm, maxWidth);
+            paragraphs.add(wrapped);
+            contentHeight += wrapped.size() * lineHeight + paragraphGap;
+        }
+        // The complete crawl must pass through the viewport before animation wraps.
+        int driftRange = Math.max(1, h + contentHeight + 120);
         int drift = (int)((elapsed / 18L) % driftRange);
-        int y = Math.max(h / 3, h - drift + 84);
+        int y = h + 60 - drift;
         int bottomLimit = Math.max(80, h - 82);
 
         g.setColor(BODY_GOLD);
-        for (String paragraph : introCrawlParagraphs(panel)) {
-            List<String> lines = GuiLayoutApi.wrapText(paragraph, fm, maxWidth);
+        for (List<String> lines : paragraphs) {
             for (String line : lines) {
                 if (y > Math.max(0, h / 4) && y < bottomLimit) {
                     int alpha = fadeAlpha(y, h);
@@ -164,8 +167,8 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
     }
 
     private void drawCentered(Graphics2D g, String text, int x, int y) {
-        String safe = text == null ? "" : text;
-        FontMetrics fm = g.getFontMetrics();
-        g.drawString(safe, x - fm.stringWidth(safe) / 2, y);
+        int width = g.getClipBounds() == null
+                ? Math.max(1, x * 2 - 24) : Math.max(1, g.getClipBounds().width - 24);
+        EarlyScreenTextAuthority.drawCentered(g, text, x, y, width);
     }
 }
