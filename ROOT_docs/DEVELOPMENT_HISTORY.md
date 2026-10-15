@@ -203,4 +203,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 
 - Replaced fixed-character-count hover-help formatting with FontMetrics pixel wrapping and compact, viewport-bounded popup geometry. Very long help explicitly shows a continuation marker rather than silently painting beyond the window.
 - Mouse-edge placement is clamped; keyboard-selected modal controls can now display their help without an active mouse position. Drawing restores clip, color, and font.
-- Added \`UiHoverHelpPainterSmoke\` with headless viewport-edge, long-text, small-screen, and compact-label cases. An isolated Java 17 source compilation with minimal renderer stubs and the focused smoke passed; full project build and interactive headset/desktop validation were not run.
+- Added `UiHoverHelpPainterSmoke` with headless viewport-edge, long-text, small-screen, and compact-label cases. An isolated Java 17 source compilation with minimal renderer stubs and the focused smoke passed; full project build and interactive headset/desktop validation were not run.
+
+### Milestone 06 cross-cutting UI containment: button-label readability (2026-10-14)
+
+- The shared painted ButtonBox now shrinks fonts only when needed for button height, with a 10-point readability floor (preserving intentionally smaller requested fonts). Long labels use the existing pixel-width ellipsis instead of driving ordinary text to six points.
+- Button drawing restores Graphics2D color, font, and clip for adjacent UI paint operations. Extended GuiLayoutApiSmoke with readable-font and null-font boundaries; an isolated Java 17 font-metric probe passed. Full project build, registered smoke execution, and interactive verification remain outstanding.

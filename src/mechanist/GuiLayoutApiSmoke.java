@@ -47,6 +47,15 @@ final class GuiLayoutApiSmoke {
             String label = GuiLayoutApi.fitLabel("Open😀😀😀 Storage", metrics, labelWidth);
             check(metrics.stringWidth(label) <= labelWidth, "Button label exceeds width");
             checkValidSurrogates(label);
+            Font requested = new Font("Dialog", Font.BOLD, 18);
+            Font readable = GuiLayoutApi.readableButtonFont(graphics, requested, 12);
+            check(readable.getSize2D() >= 10f, "Button label must not shrink below 10pt");
+            check(readable.getSize2D() <= requested.getSize2D(), "Button label should not grow");
+            Font smallRequested = new Font("Dialog", Font.PLAIN, 9);
+            check(GuiLayoutApi.readableButtonFont(graphics, smallRequested, 12).getSize2D() == 9f,
+                    "Do not enlarge deliberately small labels");
+            check(GuiLayoutApi.readableButtonFont(graphics, null, 12) != null,
+                    "Null button font should use the standard fallback");
             check(GuiLayoutApi.wrapText("", metrics, width).equals(List.of("")),
                     "Blank text should retain a blank line");
             check(GuiLayoutApi.fitLabel("sample", metrics, 0).isEmpty(),
