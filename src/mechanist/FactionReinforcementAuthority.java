@@ -220,7 +220,8 @@ final class FactionReinforcementAuthority {
         expireRequests(world, turn);
         ArrayList<PersonnelReplacementRequest> ordered = new ArrayList<>();
         for (PersonnelReplacementRequest request : world.replacementQueue) if (matches(request, target)) ordered.add(request);
-        ordered.sort(Comparator.comparingInt(request -> request.dueTurn));
+        ordered.sort(Comparator.comparingInt((PersonnelReplacementRequest request) -> request.dueTurn)
+                .thenComparing(request -> request.deadNpcId == null ? "" : request.deadNpcId));
         if (ordered.isEmpty()) {
             return new ReceptionResult(false, 0, 0, "No casualty replacement manifest is open for " + target.label + ".", List.of());
         }
@@ -255,18 +256,27 @@ final class FactionReinforcementAuthority {
                 fundsBlocked++;
                 continue;
             }
+            Random actorRandom = new Random(java.util.Objects.hash(world.seed, request.deadNpcId,
+                    request.dueTurn, request.faction, "replacement-arrival"));
             Point point = SourceMethod.fromId(request.sourceMode) == SourceMethod.TRAIN_IMPORT
                     ? FactionImportNodeGenerationAuthority.arrivalPoint(world, request.faction) : null;
-            if (point == null) point = PersonnelPopulationApi.spawnPointForReplacement(world, request, rng);
+            if (point == null) point = PersonnelPopulationApi.spawnPointForReplacement(world, request, actorRandom);
             if (point == null || world.npcAt(point.x, point.y) != null) {
                 routeBlocked++;
                 continue;
             }
-            NpcEntity npc = NpcEntity.create(request.faction, world.zoneType, point.x, point.y, rng);
+            NpcEntity npc = NpcEntity.create(request.faction, world.zoneType, point.x, point.y, actorRandom);
+            if (request.formerRole != null && !request.formerRole.isBlank()
+                    && !request.formerRole.toLowerCase(Locale.ROOT).contains("representative")) {
+                npc.role = request.formerRole;
+            }
             npc.state = "Reinforcement Intake";
-            PersonnelProvenanceApi.assignReplacementProvenance(npc, world, request, rng);
+            PersonnelProvenanceApi.assignReplacementProvenance(npc, world, request, actorRandom);
+            NpcLifeMemoryAuthority.remember(npc, turn, "intake",
+                    "Assigned to " + request.faction.label + " as " + npc.role
+                    + " following the loss of " + request.deadName);
             NpcPortraitSelectionAuthority.assignForSpawn(npc, world);
-            PersonnelPopulationApi.consumeReplacementSlot(world, request, rng);
+            PersonnelPopulationApi.consumeReplacementSlot(world, request, actorRandom);
             world.npcs.add(npc);
             world.replacementQueue.remove(request);
             arrived.add(npc);

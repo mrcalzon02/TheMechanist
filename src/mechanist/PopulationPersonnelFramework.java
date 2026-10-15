@@ -39,11 +39,12 @@ class PersonnelProvenanceRecord {
 class PersonnelReplacementRequest {
     String deadNpcId, deadName, source, sourceLedgerId, reason;
     String sourceMode = "legacy-roster", sourcePrerequisite = "linked population roster";
+    String formerRole = "", formerState = "";
     Faction faction;
     int requestedTurn, dueTurn, expiresTurn, scriptCost;
     int x,y, sourceRoomId = -1;
-    String saveLine(){ return enc(deadNpcId)+"|"+enc(deadName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+dueTurn+"|"+x+"|"+y+"|"+enc(source)+"|"+enc(reason)+"|"+sourceRoomId+"|"+enc(sourceLedgerId)+"|"+requestedTurn+"|"+expiresTurn+"|"+enc(sourceMode)+"|"+scriptCost+"|"+enc(sourcePrerequisite); }
-    static PersonnelReplacementRequest parse(String s){ try{ String[] a=s.split("\\|",15); if(a.length<8) return null; PersonnelReplacementRequest r=new PersonnelReplacementRequest(); r.deadNpcId=dec(a[0]); r.deadName=dec(a[1]); r.faction=Faction.valueOf(a[2]); r.dueTurn=Integer.parseInt(a[3]); r.x=Integer.parseInt(a[4]); r.y=Integer.parseInt(a[5]); r.source=dec(a[6]); r.reason=dec(a[7]); if(a.length>=9) try{ r.sourceRoomId=Integer.parseInt(a[8]); }catch(Exception ignored){} if(a.length>=10) r.sourceLedgerId=dec(a[9]); r.requestedTurn=a.length>=11?Integer.parseInt(a[10]):Math.max(0,r.dueTurn-84); r.expiresTurn=a.length>=12?Integer.parseInt(a[11]):r.dueTurn+FactionReinforcementAuthority.ARRIVAL_WINDOW_TURNS; if(a.length>=13&&!dec(a[12]).isBlank()) r.sourceMode=dec(a[12]); r.scriptCost=a.length>=14?Math.max(0,Integer.parseInt(a[13])):0; if(a.length>=15&&!dec(a[14]).isBlank()) r.sourcePrerequisite=dec(a[14]); return r; }catch(Exception e){ return null; } }
+    String saveLine(){ return enc(deadNpcId)+"|"+enc(deadName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+dueTurn+"|"+x+"|"+y+"|"+enc(source)+"|"+enc(reason)+"|"+sourceRoomId+"|"+enc(sourceLedgerId)+"|"+requestedTurn+"|"+expiresTurn+"|"+enc(sourceMode)+"|"+scriptCost+"|"+enc(sourcePrerequisite)+"|"+enc(formerRole)+"|"+enc(formerState); }
+    static PersonnelReplacementRequest parse(String s){ try{ String[] a=s.split("\\|",-1); if(a.length<8) return null; PersonnelReplacementRequest r=new PersonnelReplacementRequest(); r.deadNpcId=dec(a[0]); r.deadName=dec(a[1]); r.faction=Faction.valueOf(a[2]); r.dueTurn=Integer.parseInt(a[3]); r.x=Integer.parseInt(a[4]); r.y=Integer.parseInt(a[5]); r.source=dec(a[6]); r.reason=dec(a[7]); if(a.length>=9) try{ r.sourceRoomId=Integer.parseInt(a[8]); }catch(Exception ignored){} if(a.length>=10) r.sourceLedgerId=dec(a[9]); r.requestedTurn=a.length>=11?Integer.parseInt(a[10]):Math.max(0,r.dueTurn-84); r.expiresTurn=a.length>=12?Integer.parseInt(a[11]):r.dueTurn+FactionReinforcementAuthority.ARRIVAL_WINDOW_TURNS; if(a.length>=13&&!dec(a[12]).isBlank()) r.sourceMode=dec(a[12]); r.scriptCost=a.length>=14?Math.max(0,Integer.parseInt(a[13])):0; if(a.length>=15&&!dec(a[14]).isBlank()) r.sourcePrerequisite=dec(a[14]); if(a.length>=16) r.formerRole=dec(a[15]); if(a.length>=17) r.formerState=dec(a[16]); return r; }catch(Exception e){ return null; } }
     static String enc(String s){ return Base64.getUrlEncoder().withoutPadding().encodeToString((s==null?"":s).getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     static String dec(String s){ try{return new String(Base64.getUrlDecoder().decode(s), java.nio.charset.StandardCharsets.UTF_8);}catch(Exception e){return "";} }
 }
@@ -497,9 +498,13 @@ class PersonnelPopulationApi {
     }
 
     static void recordDeath(World w, NpcEntity dead){
-        if(w == null || dead == null || dead.provenance == null) return;
-        RoomPopulationLedger l = ledgerById(w, dead.provenance.originSiteId);
-        if(l != null){ l.assigned = Math.max(0, l.assigned - 1); l.dead++; }
+        if(w == null || dead == null) return;
+        RoomPopulationLedger l = ledgerById(w, dead.currentAssignmentLedgerId.isBlank()
+                ? (dead.provenance == null ? "" : dead.provenance.originSiteId)
+                : dead.currentAssignmentLedgerId);
+        if(l != null && FactionIdentityAuthority.sameFamily(l.faction, dead.faction)){
+            l.assigned = Math.max(0, l.assigned - 1); l.dead++;
+        }
     }
 
     static int pruneReplacementQueueToCapacity(World w){
@@ -586,6 +591,7 @@ class PersonnelPopulationApi {
         if(ledger != null){
             p.originRoom = ledger.roomName + " #" + ledger.roomId;
             p.originSiteId = ledger.id;
+            npc.currentAssignmentLedgerId = ledger.id;
             p.populationPool = ledger.sourceLabel;
             p.originMode = originModeFor(ledger.sourceKind);
             p.upbringing = upbringingFromLedger(ledger, w.zoneType);
@@ -646,6 +652,7 @@ class PersonnelProvenanceApi {
         p.upbringing = ledger == null ? p.upbringing : PersonnelPopulationApi.upbringingFromLedger(ledger, world.zoneType);
         p.backstory = "Arrived from " + req.source + " to replace " + req.deadName + " after " + req.reason + "; replacement source room=" + req.sourceRoomId + "; linked facility=" + facility + "; current pool=" + p.populationPool + ".";
         npc.provenance = p;
+        npc.currentAssignmentLedgerId = req.sourceLedgerId == null ? "" : req.sourceLedgerId;
     }
 
     static PersonnelProvenanceRecord create(Faction faction, ZoneType zone, String room, int sx, int sy, int zx, int zy, int floor, boolean sewer, Random r){
@@ -666,11 +673,16 @@ class PersonnelProvenanceApi {
         if(world == null || dead == null) return null;
         PersonnelReplacementRequest req = new PersonnelReplacementRequest();
         req.deadNpcId = dead.id; req.deadName = dead.name; req.faction = dead.faction; req.x = dead.x; req.y = dead.y; req.reason = reason == null ? "unrecorded death" : reason;
-        req.source = replacementSource(dead.faction, world.zoneType, r);
+        req.formerRole = dead.role == null ? "" : dead.role;
+        req.formerState = dead.state == null ? "" : dead.state;
+        // This casualty's reinforcement rate and source must not depend on
+        // unrelated world-RNG draws or the order other NPCs were processed.
+        Random deterministic = new Random(Objects.hash(world.seed, dead.id, dead.faction, turn, "casualty-intake"));
+        req.source = replacementSource(dead.faction, world.zoneType, deterministic);
         PersonnelPopulationApi.recordDeath(world, dead);
-        PersonnelPopulationApi.fillReplacementRequest(world, req, r);
+        PersonnelPopulationApi.fillReplacementRequest(world, req, deterministic);
         req.requestedTurn = turn;
-        FactionReinforcementAuthority.configureInitialSource(world, req, turn, r);
+        FactionReinforcementAuthority.configureInitialSource(world, req, turn, deterministic);
         world.replacementQueue.add(req);
         DebugLog.audit("PERSONNEL_DEATH_SCHEDULE", "dead=" + dead.id + " name=" + dead.name + " faction=" + dead.faction.label + " source=" + req.source + " due=" + req.dueTurn + " reason=" + req.reason + " provenance=" + dead.originSummary());
         return req;
@@ -757,6 +769,9 @@ class NpcEntity {
     long lastPaidWorldTurn = -1L;
     long lastFactionChangeWorldTurn = -1L;
     String happinessReason = "settled living conditions";
+    // Provenance is immutable origin; assignment is mutable, faction-owned roster truth.
+    String currentAssignmentLedgerId = "";
+    ArrayList<String> lifeMemories = new ArrayList<>();
     String ageBand = "adult";
     String nameLockedProfileKey = "";
     String factionRankTitle = "";
@@ -1253,7 +1268,8 @@ class NpcEntity {
         ensureRankIdentity(new Random(numericId == 0 ? Objects.hash(name, faction) : numericId));
         return enc(id)+"|"+numericId+"|"+enc(name)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+symbol+"|"+x+"|"+y+"|"+homeX+"|"+homeY+"|"+enc(state)+"|"+enc(role)+"|"+hunger+"|"+thirst+"|"+sleepDebt+"|"+portraitIndex+"|"+enc(provenance==null?"":provenance.save())+"|"+intellect+"|"+equipmentTier+"|"+enc(equippedMeleeWeapon)+"|"+enc(equippedRangedWeapon)+"|"+enc(equippedArmor)+"|"+enc(equippedExplosive)+"|"+loadedShots+"|"+ammoReloadsRemaining+"|"+factionRank+"|"+enc(factionRankTitle)+"|"+enc(factionRankScope)+"|"+enc(creatureKind)+"|"+enc(animalProfileId)+"|"+enc(companionOf)+"|"+ageYears+"|"+birthWorldTurn+"|"+enc(ageBand)+"|"+enc(nameLockedProfileKey)+"|"+pregnancyDueWorldTurn
                 +"|"+happiness+"|"+happinessLastEvaluatedWorldTurn+"|"+severeUnhappinessSinceWorldTurn
-                +"|"+lastPaidWorldTurn+"|"+lastFactionChangeWorldTurn+"|"+enc(happinessReason);
+                +"|"+lastPaidWorldTurn+"|"+lastFactionChangeWorldTurn+"|"+enc(happinessReason)
+                +"|"+enc(NpcLifeMemoryAuthority.save(this))+"|"+enc(currentAssignmentLedgerId);
     }
 
     static NpcEntity parseLine(String s, World w){
@@ -1297,6 +1313,8 @@ class NpcEntity {
         if (a.length >= 39) try { n.lastPaidWorldTurn = Long.parseLong(a[38]); } catch(Exception ignored) {}
         if (a.length >= 40) try { n.lastFactionChangeWorldTurn = Long.parseLong(a[39]); } catch(Exception ignored) {}
         if (a.length >= 41 && !dec(a[40]).isBlank()) n.happinessReason = dec(a[40]);
+        if (a.length >= 42) NpcLifeMemoryAuthority.restore(n, dec(a[41]));
+        if (a.length >= 43) n.currentAssignmentLedgerId = dec(a[42]);
         if (n.creatureKind == null || n.creatureKind.isBlank()) n.creatureKind = "humanoid";
         if (!n.isAnimalActor() && n.ageYears <= 0) AgeAndWorldTimeAuthority.initializeNpcAge(n, w == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : w.zoneType, new Random(n.numericId == 0 ? 1 : n.numericId));
         AgeAndWorldTimeAuthority.synchronizeNpc(n, 0L);

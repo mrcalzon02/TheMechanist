@@ -127,7 +127,14 @@ final class NpcHappinessAuthority {
         Faction oldFaction = target.faction;
         releasePopulationAssignment(game.world, target, oldFaction);
         target.faction = plan.faction;
+        target.factionRankTitle = FactionRosterAuthority.titleForRank(plan.faction, target.factionRank);
+        target.factionRankScope = FactionRosterAuthority.scopeForRank(target.factionRank);
         target.state = "Recruited by Rival Faction";
+        target.needTarget = null;
+        target.needTargetKind = "none";
+        NpcLifeMemoryAuthority.remember(target, game.worldTurn, "allegiance",
+                "Left " + oldFaction.label + " to join " + plan.faction.label
+                + " following an offer from " + officerName);
         target.lastFactionChangeWorldTurn = game.worldTurn;
         target.lastPaidWorldTurn = game.worldTurn;
         target.happiness = Math.max(45, Math.min(75, averageHappiness(game.world, plan.faction)));
@@ -183,6 +190,10 @@ final class NpcHappinessAuthority {
         npc.factionRankTitle = "Unaffiliated Resident";
         npc.factionRankScope = "general populace";
         npc.state = "Left Faction";
+        npc.needTarget = null;
+        npc.needTargetKind = "none";
+        NpcLifeMemoryAuthority.remember(npc, worldTurn, "allegiance",
+                "Left " + oldFaction.label + " following sustained deprivation");
         npc.lastFactionChangeWorldTurn = worldTurn;
         npc.severeUnhappinessSinceWorldTurn = -1L;
         if (npc.provenance != null) npc.provenance.backstory += " Left " + oldFaction.label
@@ -279,10 +290,13 @@ final class NpcHappinessAuthority {
 
     private static void releasePopulationAssignment(World world, NpcEntity npc, Faction oldFaction) {
         if (npc.provenance == null) return;
-        RoomPopulationLedger ledger = PersonnelPopulationApi.ledgerById(world, npc.provenance.originSiteId);
+        RoomPopulationLedger ledger = PersonnelPopulationApi.ledgerById(world,
+                npc.currentAssignmentLedgerId.isBlank()
+                ? npc.provenance.originSiteId : npc.currentAssignmentLedgerId);
         if (ledger != null && FactionIdentityAuthority.sameFamily(ledger.faction, oldFaction)) {
             ledger.assigned = Math.max(0, ledger.assigned - 1);
         }
+        npc.currentAssignmentLedgerId = "";
     }
 
     private static void assignPopulationSlot(World world, NpcEntity npc, Faction faction, Random random) {
@@ -290,6 +304,7 @@ final class NpcHappinessAuthority {
         if (ledger == null || !FactionIdentityAuthority.sameFamily(ledger.faction, faction)) return;
         ledger.assigned++;
         ledger.available = Math.max(0, ledger.available - 1);
+        npc.currentAssignmentLedgerId = ledger.id;
         if (npc.provenance != null) npc.provenance.backstory += " Current faction assignment uses " + ledger.roomName + ".";
     }
 

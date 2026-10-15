@@ -26,6 +26,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone04FactionMarketAccessSmoke.main(args);
         Milestone04FactionMarketContractNewsSmoke.main(args);
         Milestone04NpcHappinessFactionRecruitmentSmoke.main(args);
+        NpcContinuityDeterminismSmoke.main(args);
         Milestone04EconomyWorldEditorInfopediaSmoke.main(args);
         PlayerFacingCopySanitizerSmoke.main(args);
         PlayerFacingUiTextSmoke.main(args);

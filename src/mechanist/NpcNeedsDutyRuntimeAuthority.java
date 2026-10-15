@@ -66,17 +66,17 @@ final class NpcNeedsDutyRuntimeAuthority {
             if (npc == null) continue;
             int beforeX = npc.x;
             int beforeY = npc.y;
+            String beforeState = npc.state;
             npc.tick(world, game.playerX, game.playerY, game.turn);
             if (isNeedState(npc)) out.needs++;
             if (isDutyState(npc)) out.duties++;
             if (npc.x != beforeX || npc.y != beforeY) {
                 out.moved++;
-                continue;
-            }
-            if (!sleeping && applyPassiveDesire(world, npc, game.turn, game.playerX, game.playerY)) {
+            } else if (!sleeping && applyPassiveDesire(world, npc, game.turn, game.playerX, game.playerY)) {
                 out.passiveDesires++;
                 if (npc.x != beforeX || npc.y != beforeY) out.moved++;
             }
+            NpcLifeMemoryAuthority.observeState(npc, game.worldTurn, beforeState);
         }
         return out;
     }
