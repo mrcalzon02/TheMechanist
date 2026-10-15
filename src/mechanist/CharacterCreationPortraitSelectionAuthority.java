@@ -105,7 +105,7 @@ final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispa
 
     static Rectangle portraitRectForSheet(Rectangle sheet) {
         if (sheet == null) return new Rectangle();
-        int portraitSize = Math.max(88, Math.min(128, Math.min(sheet.width - 24, sheet.height / 3)));
+        int portraitSize = Math.max(72, Math.min(128, Math.min(sheet.width - 24, sheet.height / 4)));
         return new Rectangle(sheet.x + 12, sheet.y + 34, portraitSize, portraitSize);
     }
 

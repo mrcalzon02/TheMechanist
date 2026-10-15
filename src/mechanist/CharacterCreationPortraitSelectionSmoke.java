@@ -60,6 +60,18 @@ public final class CharacterCreationPortraitSelectionSmoke {
             throw new AssertionError("portrait image body was incorrectly turned into a mouse control");
         }
 
+        // The compact sheet uses the same portrait geometry for art, arrow rendering,
+        // and pointer hit-testing; neither arrow may escape at 760x560.
+        Rectangle compactSheet = new Rectangle(182, 132, 264, 314);
+        Rectangle compactPortrait = CharacterCreationPortraitSelectionAuthority.portraitRectForSheet(compactSheet);
+        Rectangle compactPrevious = CharacterCreationPortraitSelectionAuthority.previousControlRect(compactPortrait);
+        Rectangle compactNext = CharacterCreationPortraitSelectionAuthority.nextControlRect(compactPortrait);
+        if (!compactSheet.contains(compactPortrait)
+                || !compactPortrait.contains(compactPrevious)
+                || !compactPortrait.contains(compactNext)
+                || compactPrevious.intersects(compactNext)) {
+            throw new AssertionError("compact character portrait controls escaped or overlapped");
+        }
         System.out.println("CharacterCreationPortraitSelectionSmoke PASS authority="
                 + CharacterCreationPortraitSelectionAuthority.VERSION
                 + " keys=[/] persistentIndex=true semanticWrap=true visibleControls=true");
