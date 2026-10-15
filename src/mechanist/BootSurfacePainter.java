@@ -101,11 +101,11 @@ final class BootSurfacePainter implements ScreenPainter {
         BufferedImage frame = bootFrame(panel, elapsed);
         if (frame == null && panel.images != null) frame = panel.images.get("mechanical_skull_gear_emblem");
         // The legacy imported eight-frame spinner is absent from the compiled
-        // distribution. Use a real packaged SYSTEM image instead of replacing
+        // distribution. Use its packaged refresh/reroll SYSTEM image instead of replacing
         // its art with the old concentric-circle Java2D placeholder.
         boolean rotateSystemArt = false;
         if (frame == null && panel.images != null) {
-            frame = panel.images.getCompiledSystemIcon(4, 2, 1);
+            frame = panel.images.getCompiledSystemIcon(4, 2, 2);
             rotateSystemArt = frame != null;
         }
         int size = Math.max(32, Math.min(180, Math.min(w, h) / 4));

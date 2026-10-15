@@ -49,6 +49,8 @@ public final class RuntimeVisualVerification {
             snapshot("02-main-menu");
             edt(() -> { panel.screen = GamePanel.Screen.ZONE_SPLASH; return null; });
             snapshot("02a-graphical-zone-loading");
+            edt(() -> { panel.screen = GamePanel.Screen.INTRO_CRAWL; return null; });
+            snapshot("02aa-artwork-backed-intro-crawl");
             edt(() -> { panel.screen = GamePanel.Screen.MENU; return null; });
             // Keep the normal client and menu route, but select the game's smallest
             // supported world-size option in this synthetic capture profile. The
@@ -521,7 +523,7 @@ public final class RuntimeVisualVerification {
                         "Missing authored early-screen artwork: " + key);
                 note("uiArt." + key + "=" + art.getWidth() + "x" + art.getHeight());
             }
-            BufferedImage spinnerArt = panel.images.getCompiledSystemIcon(4, 2, 1);
+            BufferedImage spinnerArt = panel.images.getCompiledSystemIcon(4, 2, 2);
             require(spinnerArt != null && spinnerArt.getWidth() > 0,
                     "Packaged boot/loading spinner system image missing");
             note("uiArt.bootLoadingSpinner=" + spinnerArt.getWidth() + "x" + spinnerArt.getHeight());
@@ -532,6 +534,14 @@ public final class RuntimeVisualVerification {
                 menuIcons++;
             }
             note("uiArt.mainMenuRouteIcons=" + menuIcons + "/" + panel.mainMenuRouteLabels().size());
+            String launcherPortraitId = UserProfileAuthority.launcherPortraitId();
+            if (!"not supplied".equals(launcherPortraitId)) {
+                require(LauncherPortraitAssetLoader.selectedProfilePortrait() != null,
+                        "Selected launcher profile portrait cannot render as a graphical image");
+                note("uiArt.launcherProfilePortrait=authored");
+            } else {
+                note("uiArt.launcherProfilePortrait=not-configured");
+            }
             note("uiArt.menuButtonSkin=" + (panel.images.get("button_normal") != null
                     && panel.images.get("button_hover") != null ? "authored" : "drawn-fallback"));
             return null;

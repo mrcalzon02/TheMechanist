@@ -45,7 +45,7 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         Graphics2D scene = EarlyScreenTextAuthority.isolatedScene(g, w, h);
         try {
 
-            paintBackdrop(scene, w, h, elapsed);
+            paintBackdrop(scene, panel, w, h, elapsed);
             paintTitle(scene, panel, w, h);
             paintCrawl(scene, panel, w, h, elapsed);
             paintPrompt(scene, panel, w, h, elapsed);
@@ -54,11 +54,20 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         }
     }
 
-    private void paintBackdrop(Graphics2D g, int w, int h, long elapsed) {
-        g.setPaint(new LinearGradientPaint(0, 0, 0, h,
-                new float[]{0.0f, 1.0f},
-                new Color[]{BACKDROP_TOP, BACKDROP_BOTTOM}));
-        g.fillRect(0, 0, w, h);
+    private void paintBackdrop(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
+        // The intro crawl previously replaced all authored early-game art with
+        // a synthetic gradient. Reuse the same real scene image and scrolling
+        // cloud layers as boot/menu; preserve the atmospheric crawl treatment.
+        if (panel.images != null && panel.images.get("new_world_backdrop_rebase") != null) {
+            new BootSurfacePainter().drawBackdrop(g, panel, w, h, elapsed);
+            g.setColor(new Color(0, 0, 0, 136));
+            g.fillRect(0, 0, w, h);
+        } else {
+            g.setPaint(new LinearGradientPaint(0, 0, 0, h,
+                    new float[]{0.0f, 1.0f},
+                    new Color[]{BACKDROP_TOP, BACKDROP_BOTTOM}));
+            g.fillRect(0, 0, w, h);
+        }
 
         int centerX = w / 2;
         int horizonY = Math.max(68, h / 5);
