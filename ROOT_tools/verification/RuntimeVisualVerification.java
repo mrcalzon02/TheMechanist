@@ -585,6 +585,16 @@ public final class RuntimeVisualVerification {
                     npc.faction = (Faction) category[0];
                     npc.creatureKind = (String) category[3];
                     npc.animalProfileId = (String) category[4];
+                    // Real generated people receive an age and birth turn before
+                    // portrait assignment. Without these fields the save parser
+                    // initializes a new (occasionally minor) age, legitimately
+                    // moving a restored gang member into schola_children art.
+                    // A portrait persistence test must use a fully formed actor.
+                    if (!npc.isAnimalActor()) {
+                        npc.ageYears = 30;
+                        npc.birthWorldTurn = -30L * AgeAndWorldTimeAuthority.TURNS_PER_YEAR;
+                        npc.ageBand = "adult";
+                    }
                     NpcPortraitSelectionAuthority.assignForSpawn(npc, preview);
                     int index = npc.portraitIndex;
                     NpcEntity restored = NpcEntity.parseLine(npc.saveLine(), preview);
@@ -598,12 +608,44 @@ public final class RuntimeVisualVerification {
                     require(art == media.npcPortraitCells.get(expected[0]
                                     + Math.floorMod(index, expected[1] - expected[0])),
                             "NPC category returned incorrect image from family: " + family);
+                    int[] restoredRange = media.portraitRangeForNpc(restored);
+                    require(restoredRange != null
+                                    && restoredRange[0] == selectedRange[0]
+                                    && restoredRange[1] == selectedRange[1],
+                            "NPC category changed after save/load: " + family
+                                    + " age=" + npc.ageYears + " restoredAge=" + restored.ageYears);
                     require(media.getNpcPortraitFor(restored) == art,
                             "NPC saved/reloaded portrait image changed: " + family);
                     painter.drawImage(art, c * 80 + 4, i * 80 + 4, 72, 72, null);
                     verified++;
                 }
             }
+            // Minors intentionally use a different art pool. Verify that age
+            // classification is stable across serialization rather than
+            // incorrectly treating legitimate child/adult categories as a
+            // regression in portrait identity.
+            NpcEntity minor = new NpcEntity();
+            minor.id = "ART-CENSUS-YOUTH-GANGER";
+            minor.name = "Young Ganger";
+            minor.role = "Ganger";
+            minor.faction = Faction.BANDIT;
+            minor.creatureKind = "humanoid";
+            minor.ageYears = 14;
+            minor.birthWorldTurn = -14L * AgeAndWorldTimeAuthority.TURNS_PER_YEAR;
+            minor.ageBand = "teen";
+            NpcPortraitSelectionAuthority.assignForSpawn(minor, preview);
+            int[] minorRange = media.portraitRangeForNpc(minor);
+            int[] scholaRange = media.npcPortraitRanges.get("schola_children");
+            require(scholaRange != null && minorRange != null
+                            && minorRange[0] == scholaRange[0]
+                            && minorRange[1] == scholaRange[1],
+                    "Teenager does not select its intended minor portrait family");
+            NpcEntity restoredMinor = NpcEntity.parseLine(minor.saveLine(), preview);
+            require(restoredMinor != null && restoredMinor.ageYears == minor.ageYears
+                            && restoredMinor.portraitIndex == minor.portraitIndex
+                            && media.getNpcPortraitFor(restoredMinor) == media.getNpcPortraitFor(minor),
+                    "Minor portrait changed across save/load");
+            note("npcPortraitMinorSaveRoundTrip=passed");
         } finally { painter.dispose(); }
         require(ImageIO.write(sheet, "png",
                 output.resolve("05c-deterministic-npc-type-portrait-gallery.png").toFile()),

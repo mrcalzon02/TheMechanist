@@ -36,8 +36,9 @@ public final class NpcPortraitSelectionSmoke {
                 npc("ID-999", "Factory Resident", Faction.HIVER, "worker")),
                 "different identity unexpectedly chose identical image slot");
         NpcEntity restored = NpcEntity.parseLine(first.saveLine(), world);
-        require(restored != null && restored.portraitIndex == initial,
-                "saved NPC image slot was changed during round-trip");
+        require(restored != null && restored.portraitIndex == initial
+                        && restored.ageYears == first.ageYears && restored.isChildActor() == first.isChildActor(),
+                "saved NPC identity, age or portrait slot changed during round-trip");
         first.x = 12;
         first.y = 8;
         require(initial == NpcPortraitSelectionAuthority.stableIndex(world.seed, first),
@@ -64,6 +65,11 @@ public final class NpcPortraitSelectionSmoke {
         npc.faction = faction;
         npc.role = role;
         npc.creatureKind = "humanoid";
+        // Match the complete lifecycle state of NPCs spawned through
+        // NpcEntity.create(), including age-dependent portrait routing.
+        npc.ageYears = 30;
+        npc.birthWorldTurn = -30L * AgeAndWorldTimeAuthority.TURNS_PER_YEAR;
+        npc.ageBand = "adult";
         npc.homeX = 5;
         npc.homeY = 6;
         npc.x = 5;
