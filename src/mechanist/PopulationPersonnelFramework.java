@@ -344,6 +344,7 @@ class AnimalPopulationApi {
         n.portraitIndex = (p == null ? 350 : p.portraitBase) + Math.floorMod(r.nextInt(), 25);
         n.numericId = Math.abs(Objects.hash(n.name, n.animalProfileId, x, y, r.nextInt()));
         n.id = "ANIMAL-" + n.animalProfileId + "-" + n.numericId;
+        n.portraitIndex = NpcPortraitSelectionAuthority.stableIndex(0L, n);
         n.companionOf = owner == null ? "" : owner.id;
         n.factionRank = 8; n.factionRankTitle = "Unranked animal"; n.factionRankScope = "not part of faction command";
         n.equippedMeleeWeapon=""; n.equippedRangedWeapon=""; n.equippedArmor=""; n.equippedExplosive=""; n.loadedShots=0; n.ammoReloadsRemaining=0;
@@ -774,6 +775,8 @@ class NpcEntity {
         n.role = roleFor(n.faction, z, r);
         AgeAndWorldTimeAuthority.initializeNpcAge(n, z, r);
         n.ensureRankIdentity(r);
+        // Consume the same RNG draw for world-generation compatibility; the
+        // final image slot is set from persistent NPC identity below.
         n.portraitIndex = r.nextInt(256);
         n.idleBias = 2 + r.nextInt(5);
         n.hunger = r.nextInt(4);
@@ -782,6 +785,7 @@ class NpcEntity {
         n.routineOffset = r.nextInt(24);
         n.numericId = Math.abs(Objects.hash(n.faction.name(), n.name, x, y, n.portraitIndex, r.nextInt()));
         n.id = n.faction.name() + "-" + n.numericId;
+        n.portraitIndex = NpcPortraitSelectionAuthority.stableIndex(0L, n);
         n.provenance = PersonnelProvenanceApi.create(n.faction, z, "unassigned spawn point", 0,0,0,0,0,false, r);
         n.ensureCombatLoadout(r);
         return n;

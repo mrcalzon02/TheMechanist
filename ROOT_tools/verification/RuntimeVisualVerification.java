@@ -26,6 +26,7 @@ public final class RuntimeVisualVerification {
             require(!GraphicsEnvironment.isHeadless(), "A real virtual desktop is required");
             WorldStartLayoutAuthoritySmoke.main(new String[0]);
             CharacterCreationPortraitSelectionSmoke.main(new String[0]);
+            NpcPortraitSelectionSmoke.main(new String[0]);
             robot = new Robot();
             robot.setAutoDelay(100);
             note("commit=" + System.getenv("GITHUB_SHA"));
@@ -122,6 +123,7 @@ public final class RuntimeVisualVerification {
                     require(media.npcPortraitRanges.containsKey(family),
                             "Authored NPC image family is unavailable: " + family);
                 }
+                verifyTypedNpcPortraitImages(media);
                 require(panel.images.getPlayerPortrait(panel.selectedNewGameCandidate()) != null,
                         "Character creation has no image portrait");
                 note("characterPortraitImage=true seed=" + panel.seed);
@@ -546,6 +548,68 @@ public final class RuntimeVisualVerification {
                     && panel.images.get("button_hover") != null ? "authored" : "drawn-fallback"));
             return null;
         });
+    }
+
+
+    private static void verifyTypedNpcPortraitImages(ImageCache media) throws Exception {
+        World preview = new World(99117L, 16, 16);
+        Object[][] categories = {
+                {Faction.BANDIT, "Ganger", "gangers", "humanoid", ""},
+                {Faction.MUTANT, "Mutant", "mutants", "humanoid", ""},
+                {Faction.NOBLE, "Courtier", "nobles", "humanoid", ""},
+                {Faction.ARBITES, "Enforcer", "enforcer_arebites", "humanoid", ""},
+                {Faction.IMPERIAL_GUARD, "Soldier", "pdf_military", "humanoid", ""},
+                {Faction.CULTIST, "Cultist", "cultists", "humanoid", ""},
+                {Faction.ROGUE_MACHINE, "Servitor", "rogue_automata_servitors", "machine", ""},
+                {Faction.NONE, "Farm Animal", "farm_beasts", "farm-animal", "goat"},
+                {Faction.NONE, "Pet", "pets", "pet", "cat"}
+        };
+        BufferedImage sheet = new BufferedImage(categories.length * 80, 5 * 80,
+                BufferedImage.TYPE_INT_RGB);
+        Graphics2D painter = sheet.createGraphics();
+        int verified = 0;
+        try {
+            painter.setColor(new Color(9, 12, 11));
+            painter.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+            for (int c = 0; c < categories.length; c++) {
+                Object[] category = categories[c];
+                String family = (String) category[2];
+                int[] expected = media.npcPortraitRanges.get(family);
+                require(expected != null && expected[1] > expected[0],
+                        "NPC class has no authored image family: " + family);
+                for (int i = 0; i < 5; i++) {
+                    NpcEntity npc = new NpcEntity();
+                    npc.id = "ART-CENSUS-" + family + "-" + i;
+                    npc.name = (String) category[1];
+                    npc.role = (String) category[1];
+                    npc.faction = (Faction) category[0];
+                    npc.creatureKind = (String) category[3];
+                    npc.animalProfileId = (String) category[4];
+                    NpcPortraitSelectionAuthority.assignForSpawn(npc, preview);
+                    int index = npc.portraitIndex;
+                    NpcEntity restored = NpcEntity.parseLine(npc.saveLine(), preview);
+                    require(restored != null && restored.portraitIndex == index,
+                            "Type-specific NPC portrait index did not survive save/read: " + family);
+                    int[] selectedRange = media.portraitRangeForNpc(npc);
+                    require(selectedRange != null && selectedRange[0] == expected[0]
+                                    && selectedRange[1] == expected[1],
+                            "NPC category mapped to wrong portrait family: " + family);
+                    BufferedImage art = media.getNpcPortraitFor(npc);
+                    require(art == media.npcPortraitCells.get(expected[0]
+                                    + Math.floorMod(index, expected[1] - expected[0])),
+                            "NPC category returned incorrect image from family: " + family);
+                    require(media.getNpcPortraitFor(restored) == art,
+                            "NPC saved/reloaded portrait image changed: " + family);
+                    painter.drawImage(art, c * 80 + 4, i * 80 + 4, 72, 72, null);
+                    verified++;
+                }
+            }
+        } finally { painter.dispose(); }
+        require(ImageIO.write(sheet, "png",
+                output.resolve("05c-deterministic-npc-type-portrait-gallery.png").toFile()),
+                "Could not save deterministic NPC portrait image gallery");
+        note("npcPortraitTypeCensus=" + verified + "/" + (categories.length * 5)
+                + " families=" + categories.length + " stableAcrossSave=true");
     }
 
     private static void verifyAlternatePortraitRaster() throws Exception {
