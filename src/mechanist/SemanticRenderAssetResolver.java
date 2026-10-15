@@ -459,8 +459,8 @@ final class SemanticRenderAssetResolver {
     private static boolean equipmentType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.MACHINE || asset.type() == AssetType.OBJECT; }
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE; }
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON; }
-    private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || itemIcon(asset); }
-    private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON || itemIcon(asset); }
+    private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON; }
+    private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON; }
     private static boolean toolIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON; }
     private static boolean tradeGoodIcon(AssetMetadata asset) { return itemIcon(asset); }
     private static boolean dataDeviceIcon(AssetMetadata asset) { return itemIcon(asset); }
