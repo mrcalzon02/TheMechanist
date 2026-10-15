@@ -209,3 +209,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 
 - The shared painted ButtonBox now shrinks fonts only when needed for button height, with a 10-point readability floor (preserving intentionally smaller requested fonts). Long labels use the existing pixel-width ellipsis instead of driving ordinary text to six points.
 - Button drawing restores Graphics2D color, font, and clip for adjacent UI paint operations. Extended GuiLayoutApiSmoke with readable-font and null-font boundaries; an isolated Java 17 font-metric probe passed. Full project build, registered smoke execution, and interactive verification remain outstanding.
+
+### Milestone 06 cross-cutting UI readability: content-sized options screen (2026-10-15)
+
+- The custom-painted options screen now takes its geometry from a dedicated pure viewport/layout authority. Short tabs no longer inherit the full-height options shell; control grids size from actual command counts, tab rows, and available viewport area. The redundant framed subtitle has been reduced to a compact header line.
+- On ordinary small desktop windows, options stay in the owning frame; insufficient viewports show an explicit resize request rather than creating off-panel interactive command buttons. Palette color swatches use a bounded multi-row grid with clipped, pixel-fitted labels instead of a fixed 128-pixel horizontal stride.
+- Added OptionsLayoutAuthoritySmoke covering multiple viewport sizes, content densities, bounds, and narrow-window refusal. Java 17 pure geometry compilation and smoke execution passed. Interactive runtime review and the full Maven/package gates remain outstanding.

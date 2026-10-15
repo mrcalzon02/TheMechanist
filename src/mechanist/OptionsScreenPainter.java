@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,95 +24,126 @@ final class OptionsScreenPainter {
         final int panelY;
         final int panelW;
         final int panelH;
+        final OptionsLayoutAuthority.Layout geometry;
 
-        Layout(int width, int height, int panelX, int panelY, int panelW, int panelH) {
-            this.width = width;
-            this.height = height;
-            this.panelX = panelX;
-            this.panelY = panelY;
-            this.panelW = panelW;
-            this.panelH = panelH;
+        Layout(OptionsLayoutAuthority.Layout geometry) {
+            this.geometry = geometry;
+            width = geometry.viewportWidth();
+            height = geometry.viewportHeight();
+            panelX = geometry.panel().x;
+            panelY = geometry.panel().y;
+            panelW = geometry.panel().width;
+            panelH = geometry.panel().height;
         }
     }
 
     static Layout layout(GamePanel panel) {
-        int width = panel.getWidth();
-        int height = panel.getHeight();
-        int panelX = Math.max(34, width / 2 - Math.min(620, width / 2 - 34));
-        int panelY = Math.max(34, height / 22);
-        int panelW = Math.min(width - panelX * 2, Math.max(980, width - 90));
-        int panelH = Math.max(430, height - panelY - 64);
-        return new Layout(width, height, panelX, panelY, panelW, panelH);
+        return layoutForViewport(panel.getWidth(), panel.getHeight(),
+                commandsForTab(panel).size(), linesForTab(panel).size());
     }
 
-    static java.awt.Rectangle subtitleBox(Layout layout) {
-        return new java.awt.Rectangle(layout.panelX + 44, layout.panelY + 74, layout.panelW - 88, 28);
+    static Layout layoutForViewport(int width, int height, int commandCount, int detailLines) {
+        return new Layout(OptionsLayoutAuthority.measure(width, height, commandCount, detailLines));
     }
 
-    static java.awt.Rectangle controlsBox(Layout layout) {
-        int x = layout.panelX + 44;
-        int y = layout.panelY + 108;
-        int w = layout.panelW - 88;
-        int h = Math.max(180, Math.min(292, layout.panelH / 3));
-        return new java.awt.Rectangle(x, y, w, h);
+    static Rectangle controlsBox(Layout layout) {
+        return new Rectangle(layout.geometry.controls());
     }
 
-    static java.awt.Rectangle infoBox(Layout layout) {
-        java.awt.Rectangle controls = controlsBox(layout);
-        int x = layout.panelX + 44;
-        int y = controls.y + controls.height + 12;
-        int w = layout.panelW - 88;
-        int h = Math.max(96, layout.panelY + layout.panelH - y - 50);
-        return new java.awt.Rectangle(x, y, w, h);
+    static Rectangle infoBox(Layout layout) {
+        return new Rectangle(layout.geometry.details());
     }
 
     static void paintShell(GamePanel panel, Graphics2D g) {
         Layout layout = layout(panel);
         g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.BACKGROUND));
         g.fillRect(0, 0, layout.width, layout.height);
-        panel.drawSlicedFrame(g, 20, 20, layout.width - 40, layout.height - 40, "outer");
         panel.drawPanelBox(g, layout.panelX, layout.panelY, layout.panelW, layout.panelH, "OPTIONS");
         g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(10f, Math.min(14f, layout.height / 64f))));
         g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_TITLE));
-        panel.drawUiTextLine(g, "OPTIONS", layout.panelX + 18, layout.panelY + 26);
-        java.awt.Rectangle sub = subtitleBox(layout);
-        panel.drawTextPanel(g, sub.x, sub.y, sub.width, sub.height, Collections.singletonList(subtitle(panel.optionsTab)), true);
-        java.awt.Rectangle controls = controlsBox(layout);
-        g.setColor(new Color(0, 0, 0, 202));
-        g.fillRoundRect(controls.x, controls.y, controls.width, controls.height, 12, 12);
-        panel.drawSlicedFrame(g, controls.x, controls.y, controls.width, controls.height, "inner");
-        panel.stampUiFrameId(g, "T", "options-controls", controls.x, controls.y, controls.width, controls.height);
+        panel.drawUiTextLine(g, "OPTIONS", layout.panelX + 16, layout.panelY + 26);
+        if (layout.panelW > 380) {
+            g.setFont(panel.smallFont);
+            FontMetrics fm = g.getFontMetrics();
+            g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_DIM));
+            String hint = GuiLayoutApi.fitLabel(subtitle(panel.optionsTab), fm, Math.max(1, layout.panelW - 155));
+            panel.drawUiTextLine(g, hint, layout.panelX + 132, layout.panelY + 26);
+        }
+        Rectangle controls = controlsBox(layout);
+        if (controls.width > 8 && controls.height > 8) {
+            g.setColor(new Color(0, 0, 0, 202));
+            g.fillRoundRect(controls.x, controls.y, controls.width, controls.height, 10, 10);
+            panel.drawSlicedFrame(g, controls.x, controls.y, controls.width, controls.height, "inner");
+            panel.stampUiFrameId(g, "T", "options-controls", controls.x, controls.y, controls.width, controls.height);
+        }
     }
 
     static void paintBody(GamePanel panel, Graphics2D g) {
-        Layout layout = layout(panel);
-        java.awt.Rectangle controls = controlsBox(layout);
-        panel.buttons.clear();
-        buildOptionButtons(panel, controls);
-
-        java.awt.Rectangle info = infoBox(layout);
-        g.setFont(panel.smallFont);
+        ArrayList<OptionCommand> commands = commandsForTab(panel);
         List<String> lines = linesForTab(panel);
-        int h = panel.optionsTab == 4 ? Math.max(96, info.height - 72) : info.height;
-        panel.drawTextPanel(g, info.x, info.y, info.width, h, lines, false);
-        if (panel.optionsTab == 4) paintColorSwatches(panel, g, info);
+        Layout layout = layoutForViewport(panel.getWidth(), panel.getHeight(), commands.size(), lines.size());
+        panel.buttons.clear();
+        buildOptionButtons(panel, layout, commands);
+
+        Rectangle info = infoBox(layout);
+        g.setFont(panel.smallFont);
+        if (info.height > 32 && info.width > 32) {
+            int swatchesHeight = panel.optionsTab == 4 ? swatchesHeight(info) : 0;
+            int bodyHeight = Math.max(0, info.height - swatchesHeight);
+            if (bodyHeight > 32) panel.drawTextPanel(g, info.x, info.y, info.width, bodyHeight, lines, false);
+            if (panel.optionsTab == 4) paintColorSwatches(panel, g, info);
+        }
+        if (!layout.geometry.commandsFit()) {
+            Rectangle controls = controlsBox(layout);
+            g.setFont(panel.smallFont);
+            g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_HIGHLIGHT));
+            int y = controls.y + Math.min(controls.height - 8,
+                    (OptionsLayoutAuthority.TAB_COUNT + layout.geometry.tabColumns() - 1)
+                    / layout.geometry.tabColumns() * (OptionsLayoutAuthority.TAB_HEIGHT + OptionsLayoutAuthority.GAP)
+                    + OptionsLayoutAuthority.PAD * 2 + g.getFontMetrics().getAscent());
+            if (y > controls.y + g.getFontMetrics().getAscent()) {
+                Shape oldClip = g.getClip();
+                g.clipRect(controls.x + 8, controls.y + 8,
+                        Math.max(1, controls.width - 16), Math.max(1, controls.height - 16));
+                panel.drawUiTextLine(g, "Enlarge window to show all controls.", controls.x + 12, y);
+                g.setClip(oldClip);
+            }
+        }
         drawOptionButtons(panel, g, false);
     }
 
-    static void paintColorSwatches(GamePanel panel, Graphics2D g, java.awt.Rectangle info) {
-        int swatchY = info.y + Math.max(96, info.height - 66);
-        int sx = info.x + 18;
-        for (int i = 0; i < GameOptions.COLOR_KEYS.length; i++) {
-            int px = sx + i * Math.max(128, (info.width - 36) / GameOptions.COLOR_KEYS.length);
-            g.setColor(new Color(panel.options.colorValue(i)));
-            g.fillRect(px, swatchY, 28, 18);
-            g.setColor(i == panel.options.colorTarget ? AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_HIGHLIGHT) : AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_MAIN));
-            g.drawRect(px, swatchY, 28, 18);
+    static int swatchesHeight(Rectangle info) {
+        if (GameOptions.COLOR_KEYS.length == 0 || info.width <= 40) return 0;
+        int columns = Math.min(GameOptions.COLOR_KEYS.length, Math.max(1, (info.width - 24) / 110));
+        int rows = (GameOptions.COLOR_KEYS.length + columns - 1) / columns;
+        return rows * 24 + 12;
+    }
+
+    static void paintColorSwatches(GamePanel panel, Graphics2D g, Rectangle info) {
+        if (GameOptions.COLOR_KEYS.length == 0 || info.width <= 40 || info.height <= 32) return;
+        int columns = Math.min(GameOptions.COLOR_KEYS.length, Math.max(1, (info.width - 24) / 110));
+        int rows = (GameOptions.COLOR_KEYS.length + columns - 1) / columns;
+        int cellW = Math.max(1, (info.width - 24) / columns);
+        int gridY = info.y + info.height - (rows * 24) - 8;
+        Shape previousClip = g.getClip();
+        g.clipRect(info.x + 8, info.y + 8, Math.max(1, info.width - 16), Math.max(1, info.height - 16));
+        try {
             g.setFont(panel.smallFont);
-            for (String line : TextSurfaceApi.wrap(GameOptions.COLOR_KEYS[i], 11)) {
-                panel.drawUiTextLine(g, line, px + 34, swatchY + 13);
-                break;
+            FontMetrics fm = g.getFontMetrics();
+            for (int i = 0; i < GameOptions.COLOR_KEYS.length; i++) {
+                int px = info.x + 12 + (i % columns) * cellW;
+                int py = gridY + (i / columns) * 24;
+                g.setColor(new Color(panel.options.colorValue(i)));
+                g.fillRect(px, py, 22, 16);
+                g.setColor(i == panel.options.colorTarget
+                        ? AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_HIGHLIGHT)
+                        : AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_MAIN));
+                g.drawRect(px, py, 22, 16);
+                String label = GuiLayoutApi.fitLabel(GameOptions.COLOR_KEYS[i], fm, Math.max(1, cellW - 32));
+                panel.drawUiTextLine(g, label, px + 28, py + 13);
             }
+        } finally {
+            g.setClip(previousClip);
         }
     }
 
@@ -126,34 +158,44 @@ final class OptionsScreenPainter {
         drawOptionButtons(panel, g, true);
     }
 
-    static void buildOptionButtons(GamePanel panel, Rectangle controls) {
-        int gap = Math.max(5, Math.min(8, controls.height / 28));
-        int tabH = Math.max(24, Math.min(30, controls.height / 7));
-        int tabY = controls.y + gap;
-        int tabW = Math.max(44, (controls.width - gap * (TAB_LABELS.length - 1)) / TAB_LABELS.length);
+    static void buildOptionButtons(GamePanel panel, Layout layout, ArrayList<OptionCommand> commands) {
+        Rectangle controls = controlsBox(layout);
+        int gap = OptionsLayoutAuthority.GAP;
+        int padding = OptionsLayoutAuthority.PAD;
+        int tabH = OptionsLayoutAuthority.TAB_HEIGHT;
+        int tabColumns = layout.geometry.tabColumns();
+        int tabRows = (TAB_LABELS.length + tabColumns - 1) / tabColumns;
+        int tabW = Math.max(1, (controls.width - padding * 2 - gap * (tabColumns - 1)) / tabColumns);
         for (int i = 0; i < TAB_LABELS.length; i++) {
             final int tab = i;
-            int x = controls.x + i * (tabW + gap);
-            int w = (i == TAB_LABELS.length - 1) ? Math.max(44, controls.x + controls.width - x) : tabW;
-            panel.buttons.add(new ButtonBox(TAB_LABELS[i], x, tabY, w, tabH, "Open the " + TAB_LABELS[i] + " options panel.", () -> selectOptionsTab(panel, tab)));
+            int col = i % tabColumns;
+            int row = i / tabColumns;
+            int x = controls.x + padding + col * (tabW + gap);
+            int y = controls.y + padding + row * (tabH + gap);
+            int w = col == tabColumns - 1
+                    ? controls.x + controls.width - padding - x : tabW;
+            if (y + tabH > controls.y + controls.height - padding) break;
+            panel.buttons.add(new ButtonBox(TAB_LABELS[i], x, y, Math.max(1, w), tabH,
+                    "Open the " + TAB_LABELS[i] + " options panel.", () -> selectOptionsTab(panel, tab)));
         }
 
-        ArrayList<OptionCommand> commands = commandsForTab(panel);
-        int commandTop = tabY + tabH + gap + 4;
-        int commandBottom = controls.y + controls.height - gap;
-        int availableH = Math.max(1, commandBottom - commandTop);
-        int cols = controls.width < 680 ? 2 : (commands.size() > 9 ? 4 : 3);
-        int rows = Math.max(1, (commands.size() + cols - 1) / cols);
-        int rowH = Math.max(24, Math.min(32, (availableH - gap * Math.max(0, rows - 1)) / rows));
-        int commandW = Math.max(82, (controls.width - gap * (cols - 1)) / cols);
+        if (!layout.geometry.commandsFit()) {
+            clampSelectedButton(panel, panel.buttons.size());
+            return;
+        }
+        int cols = layout.geometry.commandColumns();
+        int commandTop = controls.y + padding + tabRows * tabH + (tabRows - 1) * gap + padding;
+        int commandW = Math.max(1, (controls.width - padding * 2 - gap * (cols - 1)) / cols);
         for (int i = 0; i < commands.size(); i++) {
             OptionCommand command = commands.get(i);
             int col = i % cols;
             int row = i / cols;
-            int x = controls.x + col * (commandW + gap);
-            int y = commandTop + row * (rowH + gap);
-            int w = col == cols - 1 ? Math.max(82, controls.x + controls.width - x) : commandW;
-            panel.buttons.add(new ButtonBox(command.label, x, y, w, rowH, command.tip, command.action));
+            int x = controls.x + padding + col * (commandW + gap);
+            int y = commandTop + row * (OptionsLayoutAuthority.COMMAND_HEIGHT + gap);
+            int w = col == cols - 1 ? controls.x + controls.width - padding - x : commandW;
+            if (y + OptionsLayoutAuthority.COMMAND_HEIGHT > controls.y + controls.height - padding) break;
+            panel.buttons.add(new ButtonBox(command.label, x, y, Math.max(1, w),
+                    OptionsLayoutAuthority.COMMAND_HEIGHT, command.tip, command.action));
         }
 
         int firstDropdown = panel.buttons.size();
