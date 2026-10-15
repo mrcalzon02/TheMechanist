@@ -28,6 +28,7 @@ public final class RuntimeVisualVerification {
             CharacterCreationPortraitSelectionSmoke.main(new String[0]);
             NpcPortraitSelectionSmoke.main(new String[0]);
             RoadTransportGraphicalBindingSmoke.main(new String[0]);
+            PublicFixtureGraphicalBindingSmoke.main(new String[0]);
             robot = new Robot();
             robot.setAutoDelay(100);
             note("commit=" + System.getenv("GITHUB_SHA"));
@@ -48,6 +49,7 @@ public final class RuntimeVisualVerification {
             snapshot("01-boot");
             verifyEarlyScreenGraphicBindings();
             verifyRoadTransportSpriteGallery();
+            verifyPublicFixtureSpriteGallery();
             await("natural boot to main menu", () -> panel.screen == GamePanel.Screen.MENU, 60);
             snapshot("02-main-menu");
             edt(() -> { panel.screen = GamePanel.Screen.ZONE_SPLASH; return null; });
@@ -460,7 +462,8 @@ public final class RuntimeVisualVerification {
                     BufferedImage art = panel.images.getMapObjectImage(object);
                     if (art == null) {
                         unresolved++;
-                        if (missing.length() < 350) missing.append("object:").append(object.label).append(";");
+                        if (missing.length() < 350) missing.append("object:").append(object.label)
+                                .append(" type=").append(object.type).append(";");
                     }
                     paintSpriteCensusCell(painter, art, cells++, cell);
                     sampledObjects++;
@@ -515,6 +518,41 @@ public final class RuntimeVisualVerification {
     }
 
 
+
+
+    private static void verifyPublicFixtureSpriteGallery() throws Exception {
+        String[][] tests = {
+                {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Roadside park", ""},
+                {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Pocket park", ""},
+                {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Civic breathing space", ""},
+                {"broadcast-device", "Roadside broadcast receiver", "radio receiver"},
+                {"broadcast-device", "Pict display", "pict"}
+        };
+        BufferedImage sheet = new BufferedImage(110 * tests.length, 114, BufferedImage.TYPE_INT_RGB);
+        Graphics2D painter = sheet.createGraphics();
+        try {
+            painter.setColor(new Color(11, 14, 13));
+            painter.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+            painter.setFont(new Font("Dialog", Font.BOLD, 10));
+            for (int i = 0; i < tests.length; i++) {
+                String[] fixture = tests[i];
+                MapObjectState object = new MapObjectState();
+                object.type = fixture[0];
+                object.label = fixture[1];
+                object.stockState = fixture[2];
+                BufferedImage art = edt(() -> panel.images.getMapObjectImage(object));
+                require(art != null && art.getWidth() > 0 && art.getHeight() > 0,
+                        "Packaged renderer has no public fixture image: " + object.label);
+                painter.drawImage(art, i * 110 + 23, 6, 64, 64, null);
+                painter.setColor(new Color(176, 196, 154));
+                painter.drawString(object.label, i * 110 + 4, 94);
+            }
+        } finally { painter.dispose(); }
+        require(ImageIO.write(sheet, "png",
+                output.resolve("00b-public-fixture-sprite-gallery.png").toFile()),
+                "Could not persist public fixture sprite gallery");
+        note("publicFixtureGalleryBindings=" + tests.length + "/" + tests.length);
+    }
 
     private static void verifyRoadTransportSpriteGallery() throws Exception {
         String[][] types = {

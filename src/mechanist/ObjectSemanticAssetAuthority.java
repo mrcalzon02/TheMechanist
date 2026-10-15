@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10kl-road-transport-art-bindings";
+    static final String VERSION = "0.9.10kl-civic-fixture-art-bindings";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -166,6 +166,8 @@ final class ObjectSemanticAssetAuthority {
         // returning a missing-art icon for a real parked vehicle.
         Optional<String> authoredRoadTransport = runtimeRoadTransportAssetId(object);
         if (authoredRoadTransport.isPresent()) return authoredRoadTransport;
+        Optional<String> publicFixture = runtimePublicFixtureAssetId(object);
+        if (publicFixture.isPresent()) return publicFixture;
 
         String label = object.label == null ? "" : object.label;
         String type = object.type == null ? "" : object.type;
@@ -233,6 +235,37 @@ final class ObjectSemanticAssetAuthority {
         }
         // This is not an invitation to draw a generic item or tile. A missing
         // authored sprite remains an explicit unresolved binding for CI.
+        return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+    }
+
+    /** Maps authored civic park and broadcast fixtures to their actual Objects atlas art.
+     *  No generic fallback is allowed when a recognized fixture's sprite is absent. */
+    static Optional<String> runtimePublicFixtureAssetId(MapObjectState obj) {
+        if (obj == null) return Optional.empty();
+        String type = AssetIntegrationDisciplineAuthority.canonicalType(obj.type);
+        if (type == null) return Optional.empty();
+        String label = obj.label == null ? "" : obj.label.toLowerCase(Locale.ROOT);
+        String stock = obj.stockState == null ? "" : obj.stockState.toLowerCase(Locale.ROOT);
+        String imageStem;
+        if (AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE.equals(type)) {
+            imageStem = label.contains("pocket park") ? "parks-things_r03c02_"
+                    : label.contains("civic breathing") ? "parks-things_r04c03_"
+                    : "parks-things_r03c01_";
+        } else if ("broadcast-device".equals(type)) {
+            imageStem = stock.contains("pict") || stock.contains("tv")
+                    || label.contains("pict") || label.contains("television")
+                    ? "service_items_r03c03_" : "service_items_r05c01_";
+        } else {
+            return Optional.empty();
+        }
+        for (AssetMetadata asset : AssetManager.registry().byType(AssetType.OBJECT)) {
+            String path = asset.pathOrUri().replace('\\', '/').toLowerCase(Locale.ROOT);
+            for (int resolution : new int[]{32, 64, 128, 256}) {
+                if (path.endsWith("/objects/" + imageStem + resolution + "px.png")) {
+                    return Optional.of(asset.id());
+                }
+            }
+        }
         return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
     }
 
