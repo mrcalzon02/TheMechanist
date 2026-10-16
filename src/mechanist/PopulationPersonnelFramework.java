@@ -715,7 +715,8 @@ class PersonnelProvenanceApi {
         req.formerState = dead.state == null ? "" : dead.state;
         // This casualty's reinforcement rate and source must not depend on
         // unrelated world-RNG draws or the order other NPCs were processed.
-        Random deterministic = new Random(Objects.hash(world.seed, dead.id, dead.faction, turn, "casualty-intake"));
+        Random deterministic = new Random(Objects.hash(world.seed, dead.id, dead.faction == null ? "NONE" : dead.faction.name(),
+                turn, "casualty-intake"));
         req.source = replacementSource(dead.faction, world.zoneType, deterministic);
         PersonnelPopulationApi.recordDeath(world, dead);
         PersonnelPopulationApi.fillReplacementRequest(world, req, deterministic);

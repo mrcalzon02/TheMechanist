@@ -256,8 +256,9 @@ final class FactionReinforcementAuthority {
                 fundsBlocked++;
                 continue;
             }
-            Random actorRandom = new Random(java.util.Objects.hash(world.seed, request.deadNpcId,
-                    request.dueTurn, request.faction, "replacement-arrival"));
+            Random actorRandom = new Random(java.util.Objects.hash(world.seed, request.deadNpcId, request.dueTurn,
+                    request.faction == null ? "NONE" : request.faction.name(),
+                    "replacement-arrival"));
             Point point = SourceMethod.fromId(request.sourceMode) == SourceMethod.TRAIN_IMPORT
                     ? FactionImportNodeGenerationAuthority.arrivalPoint(world, request.faction) : null;
             if (point == null) point = PersonnelPopulationApi.spawnPointForReplacement(world, request, actorRandom);
