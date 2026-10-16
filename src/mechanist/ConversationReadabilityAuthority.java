@@ -5,7 +5,7 @@ import java.util.List;
 
 /** Compact relationship and service context for ordinary conversation panels. */
 final class ConversationReadabilityAuthority {
-    static final String VERSION = "0.9.10kn";
+    static final String VERSION = "0.9.10kn-npc-memory-state";
 
     record ConversationReadout(String relationshipLine, String serviceLine, String consequenceLine, List<String> lines) { }
 
@@ -32,6 +32,12 @@ final class ConversationReadabilityAuthority {
                         : "No immediate standing consequence is shown for this conversation.";
         ArrayList<String> lines = new ArrayList<>();
         lines.add(relationship);
+        // State and memory are the NPC's own saved facts, not generic faction
+        // flavor text or inferred internal thoughts. Keep a single compact row.
+        String activity = npc.state == null || npc.state.isBlank() ? "Unrecorded" : npc.state;
+        String recalled = NpcLifeMemoryAuthority.latestSummary(npc);
+        lines.add("Activity: " + activity
+                + (recalled.isBlank() ? "." : " | Last remembered: " + recalled));
         lines.add(service);
         lines.add(consequence);
         return new ConversationReadout(relationship, service, consequence, List.copyOf(lines));
@@ -47,7 +53,7 @@ final class ConversationReadabilityAuthority {
 
     static String auditSummary() {
         return "conversationReadabilityAuthority version=" + VERSION
-                + " exposes=speakerRole+factionStanding+services+knownConsequences"
+                + " exposes=speakerRole+factionStanding+activeNpcState+latestSavedNpcMemory+services+knownConsequences"
                 + " questPlaceholderClaims=false";
     }
 }

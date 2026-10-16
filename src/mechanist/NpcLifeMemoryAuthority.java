@@ -47,6 +47,15 @@ final class NpcLifeMemoryAuthority {
         remember(npc, worldTurn, kind, "State changed to " + now);
     }
 
+    /** Compact, saved-fact readback, never a fabricated emotion or intention. */
+    static String latestSummary(NpcEntity npc) {
+        if (npc == null || npc.lifeMemories.isEmpty()) return "";
+        String[] fields = npc.lifeMemories.get(npc.lifeMemories.size() - 1).split("\\t", 4);
+        if (fields.length != 4) return "";
+        String detail = safe(fields[3], 100);
+        return detail.isBlank() ? "" : detail + " (turn " + fields[0] + ")";
+    }
+
     static String save(NpcEntity npc) {
         if (npc == null || npc.lifeMemories.isEmpty()) return "";
         return String.join("\n", npc.lifeMemories);
