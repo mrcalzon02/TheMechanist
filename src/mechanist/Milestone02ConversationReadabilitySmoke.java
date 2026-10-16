@@ -28,7 +28,7 @@ final class Milestone02ConversationReadabilitySmoke {
         representative.id = "CONVERSATION-MEMORY-SAVE";
         representative.ageYears = 35;
         NpcEntity restored = NpcEntity.parseLine(representative.saveLine(), savedWorld);
-        require(restored != null, "speaker failed save/load");
+        if (restored == null) throw new AssertionError("speaker failed save/load");
         requireContains(String.join(" ", ConversationReadabilityAuthority.describe(restored, 14, 0).lines()),
                 "Joined the Hiver", "conversation readback must survive save/load");
 
