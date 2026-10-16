@@ -204,7 +204,7 @@ final class Milestone04NpcHappinessFactionRecruitmentSmoke {
                             && destination.available == 4,
                     "recruited actor must be bound to the actual reserve ledger");
             require(rival.lifeMemories.stream().anyMatch(memory -> memory.contains("allegiance")
-                            && memory.contains("CIVIC_WARDENS")),
+                            && memory.contains(Faction.CIVIC_WARDENS.label)),
                     "faction recruit failed to remember previous allegiance");
             NpcEntity restoredRival = NpcEntity.parseLine(rival.saveLine(), world);
             require(restoredRival != null && restoredRival.faction == Faction.HIVER
