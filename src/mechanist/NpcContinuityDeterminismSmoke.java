@@ -99,6 +99,39 @@ public final class NpcContinuityDeterminismSmoke {
         require(newer.assigned == 0 && newer.dead == 1 && old.assigned == 1 && old.dead == 0,
                 "Death debited historical origin instead of current faction assignment");
 
+        // Roster selection cannot consume unrelated faction ledgers or accept
+        // a roster whose reserve is empty despite unused nominal capacity.
+        World membership = new World(72419L, 22, 22);
+        RoomPopulationLedger exhausted = ledger("a-hiver-exhausted", Faction.HIVER);
+        exhausted.available = 0;
+        RoomPopulationLedger active = ledger("b-hiver-available", Faction.HIVER);
+        RoomPopulationLedger unrelated = ledger("c-wardens-available", Faction.CIVIC_WARDENS);
+        membership.roomPopulationLedgers.add(exhausted);
+        membership.roomPopulationLedgers.add(unrelated);
+        membership.roomPopulationLedgers.add(active);
+        NpcEntity applicant = NpcEntity.create(Faction.CIVIC_WARDENS, membership.zoneType,
+                9, 9, new Random(24));
+        applicant.id = "APPLICANT-1";
+        RoomPopulationLedger selected = NpcHappinessAuthority.availableRecruitmentLedger(
+                membership, Faction.HIVER, applicant);
+        require(selected == active, "Recruitment selected an exhausted or rival roster");
+        membership.roomPopulationLedgers.clear();
+        membership.roomPopulationLedgers.add(active);
+        membership.roomPopulationLedgers.add(unrelated);
+        membership.roomPopulationLedgers.add(exhausted);
+        require(NpcHappinessAuthority.availableRecruitmentLedger(
+                membership, Faction.HIVER, applicant) == active,
+                "Destination roster changed with insertion order");
+        active.available = 0;
+        require(NpcHappinessAuthority.availableRecruitmentLedger(
+                membership, Faction.HIVER, applicant) == null,
+                "Empty reserve ledger incorrectly accepted a faction transfer");
+        active.available = 2;
+        active.assigned = active.capacity;
+        require(NpcHappinessAuthority.availableRecruitmentLedger(
+                membership, Faction.HIVER, applicant) == null,
+                "Fully assigned roster incorrectly accepted recruitment");
+
         NpcEntity casualty = NpcEntity.create(Faction.CIVIC_WARDENS, world.zoneType, 9, 9, new Random(56));
         casualty.id = "CASUALTY-STABLE-A";
         casualty.name = "Corporal Flint";

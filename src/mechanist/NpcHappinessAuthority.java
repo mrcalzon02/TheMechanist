@@ -118,6 +118,12 @@ final class NpcHappinessAuthority {
             return new RecruitmentOutcome(false, 0, officerName, target.name,
                     officerName + " could not promise " + target.name + " faction housing; destination capacity is " + living + "/" + capacity + ".");
         }
+        RoomPopulationLedger destination = availableRecruitmentLedger(game.world, plan.faction, target);
+        if (destination == null) {
+            return new RecruitmentOutcome(false, 0, officerName, target.name,
+                    officerName + " cannot recruit " + target.name + ": no staffed "
+                    + plan.faction.label + " roster has a free reserve slot.");
+        }
         int chance = vulnerabilityChance(game.world, target, plan.faction, officerBonus);
         int roll = 1 + game.rng.nextInt(100);
         if (roll > chance) {
@@ -139,7 +145,7 @@ final class NpcHappinessAuthority {
         target.lastPaidWorldTurn = game.worldTurn;
         target.happiness = Math.max(45, Math.min(75, averageHappiness(game.world, plan.faction)));
         target.severeUnhappinessSinceWorldTurn = -1L;
-        assignPopulationSlot(game.world, target, plan.faction, game.rng);
+        assignPopulationSlot(target, destination);
         if (target.provenance != null) {
             target.provenance.backstory += " Recruited from " + oldFaction.label + " by " + officerName
                     + " at world turn " + game.worldTurn + " after sustained dissatisfaction.";
@@ -299,14 +305,39 @@ final class NpcHappinessAuthority {
         npc.currentAssignmentLedgerId = "";
     }
 
-    private static void assignPopulationSlot(World world, NpcEntity npc, Faction faction, Random random) {
-        RoomPopulationLedger ledger = PersonnelPopulationApi.drawLedgerFor(world, -1, faction, random, false);
-        if (ledger == null || ledger.available <= 0
-                || !FactionIdentityAuthority.sameFamily(ledger.faction, faction)) return;
+    /**
+     * Choose an actual destination roster before recruiting an actor. A generic
+     * faction population-capacity total is insufficient: capacity can exist in
+     * exhausted or unrelated ledgers, which must not produce homeless recruits.
+     * Sorting by durable ledger identity makes insertion order irrelevant.
+     */
+    static RoomPopulationLedger availableRecruitmentLedger(World world, Faction faction, NpcEntity actor) {
+        if (world == null || actor == null || !FactionIdentityAuthority.aligned(faction)
+                || world.roomPopulationLedgers == null) return null;
+        ArrayList<RoomPopulationLedger> eligible = new ArrayList<>();
+        for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
+            if (ledger == null || ledger.capacity <= 0 || ledger.available <= 0
+                    || ledger.assigned >= ledger.capacity
+                    || !FactionIdentityAuthority.sameFamily(ledger.faction, faction)) continue;
+            eligible.add(ledger);
+        }
+        if (eligible.isEmpty()) return null;
+        eligible.sort(java.util.Comparator
+                .comparing((RoomPopulationLedger ledger) -> ledger.id == null ? "" : ledger.id)
+                .thenComparingInt(ledger -> ledger.roomId));
+        int slot = Math.floorMod(Objects.hash(world.seed, actor.id,
+                faction.name(), "recruitment-roster"), eligible.size());
+        return eligible.get(slot);
+    }
+
+    private static void assignPopulationSlot(NpcEntity npc, RoomPopulationLedger ledger) {
+        // The destination was checked before the recruitment roll and no
+        // population mutation occurs between validation and assignment.
         ledger.assigned++;
         ledger.available--;
         npc.currentAssignmentLedgerId = ledger.id;
-        if (npc.provenance != null) npc.provenance.backstory += " Current faction assignment uses " + ledger.roomName + ".";
+        if (npc.provenance != null) npc.provenance.backstory += " Current faction assignment uses "
+                + ledger.roomName + ".";
     }
 
     private static boolean tracks(NpcEntity npc) {
