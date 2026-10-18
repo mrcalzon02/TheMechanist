@@ -290,6 +290,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             String use = safePlayerId(playerId);
             sectorManager.playerLeftCurrentSector(use);
             canonicalCharacters.remove(use);
+            lastSnapshotsByPlayer.remove(use);
         }
     }
 
@@ -334,6 +335,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     + " worldTurn=" + worldTurn
                     + " acceptedCommands=" + acceptedCommands
                     + " canonicalCharacters=" + canonicalCharacters.size()
+                    + " retainedPlayerSnapshots=" + lastSnapshotsByPlayer.size()
                     + " openCommands=wait"
                     + " movementAuthority=false"
                     + " mapAuthority=false"
