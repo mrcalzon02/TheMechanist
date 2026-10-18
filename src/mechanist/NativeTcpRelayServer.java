@@ -11,7 +11,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.channels.Channels;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
@@ -383,13 +382,13 @@ final class NativeTcpRelayServer implements AutoCloseable {
                     turnAuthority,
                     characterSaveManager);
             this.out = new BufferedWriter(new OutputStreamWriter(
-                    Channels.newOutputStream(channel), StandardCharsets.UTF_8));
+                    channel.socket().getOutputStream(), StandardCharsets.UTF_8));
             write(protocol.helloLine());
             DebugLog.audit("NATIVE_RELAY_CLIENT_HELLO", protocol.auditSummary());
         }
 
         void readLoop() {
-            try (InputStream input = Channels.newInputStream(channel)) {
+            try (InputStream input = channel.socket().getInputStream()) {
                 String line;
                 while (running.get()
                         && open.get()
