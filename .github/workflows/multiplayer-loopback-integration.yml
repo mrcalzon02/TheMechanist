@@ -1,0 +1,63 @@
+name: Multiplayer Loopback Integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - '.github/workflows/multiplayer-loopback-integration.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - '.github/workflows/multiplayer-loopback-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: multiplayer-loopback-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  multi-client-server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile production sources and multiplayer test clients
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/mechanist-multiplayer/classes"
+          find src -name '*.java' -print | sort > "${RUNNER_TEMP}/mechanist-multiplayer/sources.txt"
+          test -s "${RUNNER_TEMP}/mechanist-multiplayer/sources.txt"
+          javac -encoding UTF-8 --release 17 -d "${RUNNER_TEMP}/mechanist-multiplayer/classes" @"${RUNNER_TEMP}/mechanist-multiplayer/sources.txt"
+      - name: Run real TCP relay with simultaneous clients
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true -cp "${RUNNER_TEMP}/mechanist-multiplayer/classes" mechanist.IndependentHostTransportSessionSmoke
+      - name: Validate authenticated multiplayer world command isolation
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          classes="${RUNNER_TEMP}/mechanist-multiplayer/classes"
+          java -Djava.awt.headless=true -cp "$classes" mechanist.IndependentHostHostedSessionWireSmoke
+          java -Djava.awt.headless=true -cp "$classes" mechanist.IndependentHostWorldWaitWireSmoke
+          java -Djava.awt.headless=true -cp "$classes" mechanist.IndependentHostTurnAuthoritySmoke
+          java -Djava.awt.headless=true -cp "$classes" mechanist.IndependentHostTurnRollbackSnapshotSmoke
+      - name: Verify reconnect and persistence after server restart
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          classes="${RUNNER_TEMP}/mechanist-multiplayer/classes"
+          java -Djava.awt.headless=true -cp "$classes" mechanist.IndependentHostPersistentSessionRestartSmoke
+          java -Djava.awt.headless=true -cp "$classes" mechanist.IndependentHostTurnPersistenceIntegritySmoke
