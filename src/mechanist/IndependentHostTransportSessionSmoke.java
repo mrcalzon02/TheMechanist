@@ -67,6 +67,8 @@ final class IndependentHostTransportSessionSmoke {
                                 && relay.activeRemoteSessionCount() == 2,
                         "relay ledger did not register two active server-owned sessions");
 
+                // The second client's attach broadcasts to existing peers only.
+                // The first client receives the authoritative two-player roster.
                 HostedRosterReadout joinRoster = sender.readRoster();
                 require(joinRoster.totalSessions == 2
                                 && joinRoster.activeSessions == 2
@@ -86,6 +88,8 @@ final class IndependentHostTransportSessionSmoke {
                                 && ready.acceptedHostedCommands == 1L
                                 && ready.lastConnectionCommandId == 0L,
                         "sender READY command was not accepted authoritatively");
+                // A joining client is excluded from its own join broadcast,
+                // but does receive subsequent updates from its peer.
                 HostedRosterReadout readyBroadcast = receiver.readRoster();
                 RosterEntryReadout senderReady = readyBroadcast.entryFor(sender.playerId);
                 require(senderReady != null && senderReady.ready,
