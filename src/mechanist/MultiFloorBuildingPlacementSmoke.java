@@ -48,6 +48,13 @@ public final class MultiFloorBuildingPlacementSmoke {
                     "ordinary rooms may block the building entrance-to-road corridor");
         }
 
+        World sixth = streetedWorld(8921L, 6, original);
+        require(MultiFloorBuildingPlacementAuthority.stampFloor(sixth) == 5,
+                "ground atrium did not stamp its four galleries and hall");
+        var groundAtrium = original.get(2);
+        require(sixth.isDoorSymbol(sixth.tiles[groundAtrium.x() + 14][groundAtrium.y() + 5])
+                        && sixth.isDoorSymbol(sixth.tiles[groundAtrium.x() + 14][groundAtrium.y() + 27]),
+                "lower atrium galleries were generated without accessible doors");
         World seventh = streetedWorld(893L, 7, original);
         require(MultiFloorBuildingPlacementAuthority.stampFloor(seventh) == 4,
                 "upper atrium floor does not contain its surrounding rooms");
@@ -79,6 +86,27 @@ public final class MultiFloorBuildingPlacementSmoke {
         require(rejected.tiles[blocked.x + 12][blocked.y + 10]
                         == RoadGridIntegrationAuthority.ROAD_LANE,
                 "existing road was destroyed by a rejected multi-floor structure");
+        World renumber = new World(271L, 44, 44);
+        for (int x = 0; x < renumber.w; x++)
+            for (int y = 0; y < renumber.h; y++) renumber.tiles[x][y] = '#';
+        Rectangle plaza = new Rectangle(20, 20, 5, 5);
+        Rectangle obsolete = new Rectangle(3, 3, 5, 5);
+        Rectangle owned = new Rectangle(11, 11, 5, 5);
+        for (Rectangle room : new Rectangle[]{plaza, obsolete, owned}) {
+            renumber.carve(room);
+            renumber.rooms.add(room);
+        }
+        String retained = "BLD-REINDEX/F2/APARTMENT/0";
+        renumber.buildingRoomIds.put(retained, 2);
+        renumber.buildingRoomIds.put("BLD-REINDEX/F2/OLD", 1);
+        renumber.removeRoomAtIndex(1);
+        require(renumber.buildingRoomIds.size() == 1
+                        && renumber.buildingRoomIds.get(retained) == 1,
+                "removing a preceding room left the building ledger at a stale room index");
+        renumber.removeRoomAtIndex(1);
+        require(renumber.buildingRoomIds.isEmpty(),
+                "removing a building room left a phantom building-room reference");
+
         System.out.println("MultiFloorBuildingPlacementSmoke PASS "
                 + "apartmentFloors=2,4 atriumFloor=7 roadCollisionRejected=true");
     }

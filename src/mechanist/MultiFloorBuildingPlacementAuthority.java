@@ -134,8 +134,13 @@ final class MultiFloorBuildingPlacementAuthority {
         }
 
         if (site.blueprint().kind() == VerticalBuildingBlueprintAuthority.Kind.ATRIUM_HALL) {
-            // An interior bypass joins both upper balconies without stepping
-            // across the upper floors' non-walkable atrium opening.
+            // The lower atrium also needs circulation bands in front of its
+            // galleries. Upper levels already own these as balcony spaces.
+            if (plate.floor() == site.blueprint().firstFloor()) {
+                fill(w, new Rectangle(site.x() + 10, site.y() + 6, 20, 2), corridor);
+                fill(w, new Rectangle(site.x() + 10, site.y() + 23, 20, 2), corridor);
+            }
+            // A lateral gallery bypass never crosses the open-air volume.
             fill(w, new Rectangle(site.x() + 8, site.y() + 5, 2, 22), corridor);
             fill(w, new Rectangle(site.x() + 6, site.y() + 14, 2, 1), corridor);
         } else {

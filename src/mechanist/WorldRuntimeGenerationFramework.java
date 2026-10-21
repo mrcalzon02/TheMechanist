@@ -2296,6 +2296,11 @@ class World {
         for(int x=rr.x; x<rr.x+rr.width; x++) for(int y=rr.y; y<rr.y+rr.height; y++) if(inBounds(x,y) && roomIds[x][y]==idx){ roomIds[x][y] = -1; tiles[x][y] = '#'; }
         rooms.remove(idx); roomProfiles.remove(idx); roomFactions.remove(idx); roomSpecials.remove(idx);
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) if(roomIds[x][y] > idx) roomIds[x][y]--;
+        // Stable building-space IDs must continue pointing to the correct
+        // remaining room when any earlier generated room is culled.
+        buildingRoomIds.entrySet().removeIf(e -> e.getValue() == null || e.getValue() == idx);
+        for(java.util.Map.Entry<String,Integer> e: buildingRoomIds.entrySet())
+            if(e.getValue() > idx) e.setValue(e.getValue() - 1);
     }
 
     void cullUnreachableRoomsHard(){
