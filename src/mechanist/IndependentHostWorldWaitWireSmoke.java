@@ -88,10 +88,27 @@ final class IndependentHostWorldWaitWireSmoke {
                 authenticate(unsupported, "alpha.world.wait.2002", "");
                 IndependentHostWireProtocol.Result denied =
                         unsupported.accept("MECH|WORLD_COMMAND|0|MOVE");
-                require(denied.disconnect()
-                                && allMessages(denied.reason())
+                require(!denied.disconnect()
+                                && denied.responses().size() == 1
+                                && denied.broadcasts().isEmpty(),
+                        "unsupported movement must be refused without dropping the authenticated session");
+                String[] rejected = requireCommand(
+                        denied.responses().get(0), "WORLD_COMMAND_REJECTED");
+                require(rejected.length == 6
+                                && "0".equals(rejected[2])
+                                && "MOVE".equals(rejected[3])
+                                && "UNAVAILABLE".equals(rejected[4])
+                                && allMessages(rejected[5])
                                 .contains("only authoritative wait is open"),
-                        "unsupported movement verb was not rejected at the wire boundary");
+                        "unsupported movement did not produce the explicit wire-level refusal");
+                require(unsupportedSessions.activeSessionCount() == 1
+                                && unsupportedTurns.worldTurn() == 0L
+                                && unsupportedTurns.acceptedCommands() == 0L,
+                        "rejected movement disconnected the player or mutated authoritative world time");
+                String[] nextAccepted = requireCommand(
+                        unsupported.accept("MECH|WORLD_COMMAND|0|WAIT")
+                                .responses().get(0), "WORLD_COMMAND_ACCEPTED");
+                verifyWaitAccepted(nextAccepted, 0L, 1L, 0L, 1L, 1L, 1L);
             } finally {
                 unsupported.disconnect("world wait smoke complete");
                 unsupportedSessions.close();
