@@ -1,6 +1,0 @@
-name: Disabled Java 17 Verify and Release
-
-on:
-  workflow_call:
-
-jobs: {}
