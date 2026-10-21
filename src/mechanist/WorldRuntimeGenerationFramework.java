@@ -513,7 +513,12 @@ class World {
             int[][] dirs = frontageDirectionsForStreet(street);
             if(dirs.length == 0) continue;
             for(int[] dir: dirs){
-                Rectangle rr = roadFirstRoomRectFromStreet(street, dir, size.width, size.height);
+                // Mixed frontage: direct doors, short mews, and set-back block
+                // interiors. Every candidate still earns a valid street connector
+                // before it is accepted, and a shallow fallback preserves quotas.
+                for(int setback: RoadFrontageDepthAuthority.candidateSetbacks(
+                        seed, salt, street.x, street.y, dir[0], dir[1])){
+                Rectangle rr = roadFirstRoomRectFromStreet(street, dir, size.width, size.height, setback);
                 if(rr == null) continue;
                 if(!rectInMap(rr) || rr.x < 2 || rr.y < 2 || rr.x+rr.width >= w-2 || rr.y+rr.height >= h-2){
                     SectorGenerationTraceAuthority.reject(this, "REJECT", "Road-first room outside safe map bounds.", rr);
@@ -539,8 +544,9 @@ class World {
                 FactionRoomLayoutAuthority.applyInteriorLayout(this, before, rr, spec, layoutPlan);
                 RoomProfile profile = before < roomProfiles.size() ? roomProfiles.get(before) : null;
                 if(profile != null) profile.featureText = FactionRoomLayoutAuthority.decorateFeatureText(profile.featureText, layoutPlan);
-                SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first " + spec.kind + " room " + before + " placed from street frontage. " + layoutPlan.summary(), rr, false);
+                SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first " + spec.kind + " room " + before + " placed with street setback=" + setback + " tiles. " + layoutPlan.summary(), rr, false);
                 return attempts;
+                }
             }
         }
         return attempts;
@@ -606,8 +612,12 @@ class World {
     }
 
     Rectangle roadFirstRoomRectFromStreet(Point street, int[] dir, int rw, int rh){
+        return roadFirstRoomRectFromStreet(street, dir, rw, rh, 2);
+    }
+
+    Rectangle roadFirstRoomRectFromStreet(Point street, int[] dir, int rw, int rh, int setback){
         if(street == null || dir == null) return null;
-        int gap = 2;
+        int gap = Math.max(2, setback);
         int x, y;
         if(dir[0] > 0){ x = street.x + gap; y = street.y - rh/2; }
         else if(dir[0] < 0){ x = street.x - gap - rw + 1; y = street.y - rh/2; }

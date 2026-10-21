@@ -5,6 +5,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) throws Exception {
         EarlyGameInputUsabilitySmoke.main(args);
         MainMenuLayoutAuthoritySmoke.main(args);
+        RoadFrontageDepthSmoke.main(args);
         CharacterSaveManagerRegressionSmoke.main(args);
         FactionContractDisplaySmoke.main(args);
         Milestone03ContractTurnInSmoke.main(args);
