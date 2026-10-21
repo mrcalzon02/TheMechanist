@@ -69,6 +69,17 @@ jobs:
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
 
+      - name: Verify deterministic NPC continuity and physical vehicle strategy
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.NpcContinuityDeterminismSmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06VehicleRuntimeFoundationSmoke
+
       - name: Run Gate 3 player-facing smoke suite
         shell: bash
         run: |
