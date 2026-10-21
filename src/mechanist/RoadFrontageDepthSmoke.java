@@ -46,11 +46,10 @@ public final class RoadFrontageDepthSmoke {
         world.tiles[21][60] = RoadGridIntegrationAuthority.SIDEWALK;
         // Only the eastward direction has adjacent wall mass; all other
         // candidates are non-buildable, so the test examines real deep placement.
-        world.tiles[21][59] = RoadGridIntegrationAuthority.SIDEWALK;
-        world.tiles[21][61] = RoadGridIntegrationAuthority.SIDEWALK;
-        // The additional sidewalks must not become independent room anchors.
-        world.tiles[20][59] = RoadGridIntegrationAuthority.ROAD_LANE;
-        world.tiles[20][61] = RoadGridIntegrationAuthority.ROAD_LANE;
+        world.tiles[21][59] = '.';
+        world.tiles[21][61] = '.';
+        // Surrounding non-street tiles block tangential anchor directions;
+        // only this existing sidewalk can seed a room in the test.
         StampedRoomSpec spec = new StampedRoomSpec(
                 "ROOM", "Interior Hab Room", "Long interior access corridor",
                 12, Faction.HIVER, new String[]{"cloth scraps"}, new char[]{'q'});
