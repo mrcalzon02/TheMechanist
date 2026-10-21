@@ -183,18 +183,26 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
         plan.immediateGoal = FactionVehicleStrategicAuthority.VEHICLE_SEIZURE_GOAL;
         plan.scheme = "divert faction stock";
         plan.secrecy = 60;
-        plan.aggression = 50;
-        plan.ambition = 55;
+        plan.aggression = 85;
+        plan.ambition = 80;
         plan.phaseUntilTurn = game.turn;
         plan.nextDecisionTurn = game.turn;
         game.factionStrategicPlans.add(plan);
 
         PlayerState playerBefore = PlayerState.capture(game);
+        FactionVehicleBalanceAuthority.Contest contest =
+                FactionVehicleBalanceAuthority.compare(game, site.faction, Faction.NOBLE, site);
+        require(contest.canEscalate(plan.aggression, plan.ambition),
+                "committed vehicle operation must meet actual fleet escalation threshold: "
+                        + contest.summary());
         int stockBeforeSeizure = site.stock;
         int resolved = FactionStrategicAssetTickAuthority.tick(game);
         require(resolved == 1 && "COOLDOWN".equals(plan.phase)
                         && plan.success == 1 && plan.failure == 0,
-                "strategy tick should resolve one physical vehicle seizure and skip abstract duplication");
+                "strategy tick must resolve one fleet-authorized physical vehicle seizure: "
+                        + "resolved=" + resolved + " phase=" + plan.phase
+                        + " success=" + plan.success + " failure=" + plan.failure
+                        + " outcome=" + plan.lastOutcome);
         require(VehicleRuntimeAuthority.factionOwns(nobleTruck, site.faction)
                         && VehicleRuntimeAuthority.seized(nobleTruck)
                         && site.stock < stockBeforeSeizure,
