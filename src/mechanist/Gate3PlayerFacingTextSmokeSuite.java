@@ -7,6 +7,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         MainMenuLayoutAuthoritySmoke.main(args);
         RoadFrontageDepthSmoke.main(args);
         VerticalBuildingBlueprintSmoke.main(args);
+        MultiFloorBuildingPlacementSmoke.main(args);
         CharacterSaveManagerRegressionSmoke.main(args);
         FactionContractDisplaySmoke.main(args);
         Milestone03ContractTurnInSmoke.main(args);
