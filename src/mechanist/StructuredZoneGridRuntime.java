@@ -1,5 +1,6 @@
 package mechanist;
 
+import java.awt.Rectangle;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -77,7 +78,23 @@ final class StructuredZoneGridRuntime {
 
     private static ZoneTileGrid createGridFromWorld(Object world) {
         char[][] legacyTiles = legacyTilesFromWorld(world);
-        if (legacyTiles != null) return ZoneTileGrid.fromLegacyTiles(legacyTiles);
+        if (legacyTiles != null) {
+            ZoneTileGrid grid = ZoneTileGrid.fromLegacyTiles(legacyTiles);
+            if (world instanceof World w) {
+                for (Rectangle rect : w.buildingOpenVolumes) {
+                    String buildingId = "unknown-building";
+                    for (MultiFloorBuildingPlacementAuthority.Site site : w.buildingSites) {
+                        if (site.blueprint().containsFloor(w.floor)
+                                && site.footprint().contains(rect)) {
+                            buildingId = site.blueprint().buildingId();
+                            break;
+                        }
+                    }
+                    grid.markOpenVolume(rect, buildingId);
+                }
+            }
+            return grid;
+        }
         int width = intField(world, "w", intField(world, "width", 1));
         int height = intField(world, "h", intField(world, "height", 1));
         return new ZoneTileGrid(Math.max(1, width), Math.max(1, height));

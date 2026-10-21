@@ -56,6 +56,16 @@ public final class MultiFloorBuildingPlacementSmoke {
         require(seventh.tiles[vx][vy] == InterstitialInfrastructureApi.VOID_SPACE
                         && !seventh.walkable(vx, vy) && seventh.roomIds[vx][vy] == -1,
                 "upper atrium opening was incorrectly made into a walkable room/floor");
+        ZoneTileGrid semantic = StructuredZoneGridRuntime.rebuildGridForWorld(seventh);
+        ZoneTileState air = semantic.requireTile(vx, vy);
+        require(air.spaceType() == ZoneTileState.SpaceType.OPEN_VOLUME
+                        && air.baseType() == ZoneTileState.BaseTileType.VOID
+                        && air.hasFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT)
+                        && air.blocksRoomPlacement()
+                        && air.reservationLabel().contains(original.get(2).blueprint().buildingId()),
+                "atrium open shaft lost its building identity or placement/collision semantics");
+        require(semantic.toLegacyGlyphs()[vx][vy] == InterstitialInfrastructureApi.VOID_SPACE,
+                "semantic conversion flattened an upper open shaft into walkable legacy floor");
 
         World rejected = streetedWorld(894L, 2, original);
         var eastApartment = original.get(0);

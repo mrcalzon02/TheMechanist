@@ -1,6 +1,6 @@
 # Multi-floor buildings, open volumes, and apartment stacks
 
-Status: **architecture and deterministic blueprint model implemented; physical stamping not yet integrated**.
+Status: **deterministic blueprints and initial physical per-floor stamping integrated**. Remaining: atomic cross-slice site acceptance, vertical travel, persisted building modifications, roof/slab rendering, and finished 3D atrium presentation.
 
 This design extends the existing 3x3-sector / 3x3-zone / ten-floor atlas. It does **not** reinterpret one atlas floor as one building floor or claim that existing globally aligned elevator glyphs already form individual multi-storey buildings.
 
@@ -94,7 +94,9 @@ A completed building registry should be authoritative for the full sector/zone a
 
 **Completed in the initial blueprint pass:** deterministic stable IDs, multiple buildings per zone, coherent floor plates, distinct room/building counts, non-walkable upper voids, aligned stair/lift edges, and strict constructor invariants. `VerticalBuildingBlueprintSmoke` is included in Gate 3.
 
-**Next: multi-floor reservation and physical integration.** Create one real placed residential building in a generated roaded zone. Verify lower, middle and upper floors agree on x/y footprint, confirm no road/plaza overwrite, physically connect a lobby, verify stairs/lift transitions, save, unload, reload in a different order and compare the structure/room IDs and tile geometry.
+**Current physical pass:** `MultiFloorBuildingPlacementAuthority` reserves two apartment footprints and one upper atrium footprint using the shared atlas seed, materializes rooms into their corresponding main-floor slices, maintains room-to-building references, and rejects a blocked site or road approach before stamping its plate. Its geometric `MultiFloorBuildingPlacementSmoke` has passed on floors 2, 4, and 7. An explicit structured `OPEN_VOLUME` tile now keeps atrium voids distinguishable from generic exterior voids.
+
+**Next: atomic cross-slice placement and real world acceptance.** Create one real placed residential building in a generated roaded zone. Verify lower, middle and upper floors agree on x/y footprint, confirm no road/plaza overwrite, physically connect a lobby, verify stairs/lift transitions, save, unload, reload in a different order and compare the structure/room IDs and tile geometry.
 
 **Then:** atrium stamp/renderer with looking down across levels; two-sided fall/rail validation; apartment tenancy, occupancy and faction ownership; editor and player construction flows; 3D reachability, persistence round trips and deterministic snapshots at all six configured map sizes. Run independently of the large general gameplay suite as well as through Gate 3.
 
