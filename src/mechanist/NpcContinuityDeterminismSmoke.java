@@ -132,6 +132,43 @@ public final class NpcContinuityDeterminismSmoke {
                 membership, Faction.HIVER, applicant) == null,
                 "Fully assigned roster incorrectly accepted recruitment");
 
+        // Remembered deprivation must actually affect recruitment behavior, be
+        // restored from save, expire on world time, and never blame a new faction.
+        long recruitmentTurn = 20L * GamePanel.TURNS_PER_HOUR * GamePanel.HOURS_PER_DAY;
+        applicant.role = "Laborer";
+        applicant.ageYears = 30;
+        applicant.happiness = 30;
+        applicant.lastFactionChangeWorldTurn = -1L;
+        applicant.happinessLastEvaluatedWorldTurn = recruitmentTurn;
+        int untreatedChance = NpcHappinessAuthority.vulnerabilityChance(
+                membership, applicant, Faction.HIVER, 0, recruitmentTurn);
+        require(untreatedChance > 0 && untreatedChance <= 78,
+                "Recruitment baseline must leave room for actual memory consequences");
+        NpcLifeMemoryAuthority.remember(applicant, recruitmentTurn - 1L,
+                "deprivation", "State changed to Search Needs");
+        int influencedChance = NpcHappinessAuthority.vulnerabilityChance(
+                membership, applicant, Faction.HIVER, 0, recruitmentTurn);
+        require(influencedChance == untreatedChance + 12,
+                "Recently experienced deprivation must change the rival recruitment probability");
+        NpcEntity recalled = NpcEntity.parseLine(applicant.saveLine(), membership);
+        require(recalled != null && NpcHappinessAuthority.vulnerabilityChance(
+                membership, recalled, Faction.HIVER, 0, recruitmentTurn) == influencedChance,
+                "Saved personal deprivation must influence the same decision after reload");
+        Random irrelevant = new Random(618273);
+        int originalRoll = NpcHappinessAuthority.deterministicRecruitmentRoll(
+                membership, applicant, Faction.HIVER, recruitmentTurn);
+        for (int i = 0; i < 500; i++) irrelevant.nextInt();
+        require(originalRoll == NpcHappinessAuthority.deterministicRecruitmentRoll(
+                membership, recalled, Faction.HIVER, recruitmentTurn),
+                "Recruitment outcome depended on unrelated random draws or save/load");
+        long later = recruitmentTurn + 4L * GamePanel.TURNS_PER_HOUR * GamePanel.HOURS_PER_DAY;
+        require(NpcHappinessAuthority.vulnerabilityChance(
+                membership, recalled, Faction.HIVER, 0, later) == untreatedChance,
+                "Old deprivation memories must stop affecting recruitment decisions");
+        recalled.faction = Faction.HIVER;
+        require(NpcLifeMemoryAuthority.recruitmentPressure(recalled, recruitmentTurn) == 0,
+                "Changing faction must not make the new faction responsible for old deprivation");
+
         NpcEntity casualty = NpcEntity.create(Faction.CIVIC_WARDENS, world.zoneType, 9, 9, new Random(56));
         casualty.id = "CASUALTY-STABLE-A";
         casualty.name = "Corporal Flint";

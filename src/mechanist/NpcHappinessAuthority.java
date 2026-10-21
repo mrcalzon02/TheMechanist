@@ -84,12 +84,18 @@ final class NpcHappinessAuthority {
     static String statusLine(World world, NpcEntity npc, long worldTurn) {
         if (npc == null) return "Happiness: unavailable.";
         Assessment assessment = assess(world, npc, worldTurn);
-        int chance = vulnerabilityChance(world, npc, Faction.NONE, 0);
+        int chance = vulnerabilityChance(world, npc, Faction.NONE, 0, worldTurn);
         return "Happiness: " + npc.happiness + "/100 (" + band(npc.happiness) + "); "
                 + assessment.summary() + "; rival recruitment susceptibility " + chance + "%.";
     }
 
     static int vulnerabilityChance(World world, NpcEntity npc, Faction recruiter, int officerBonus) {
+        long observedTurn = npc == null ? -1L : npc.happinessLastEvaluatedWorldTurn;
+        return vulnerabilityChance(world, npc, recruiter, officerBonus, observedTurn);
+    }
+
+    static int vulnerabilityChance(World world, NpcEntity npc, Faction recruiter,
+                                   int officerBonus, long worldTurn) {
         if (!tracks(npc) || !FactionIdentityAuthority.aligned(npc.faction)
                 || (FactionIdentityAuthority.aligned(recruiter) && FactionIdentityAuthority.sameFamily(npc.faction, recruiter))
                 || npc.happiness > RECRUITABLE_HAPPINESS) return 0;
@@ -97,7 +103,8 @@ final class NpcHappinessAuthority {
                 && npc.happinessLastEvaluatedWorldTurn - npc.lastFactionChangeWorldTurn < 7L * DAY_TURNS) return 0;
         int relative = FactionIdentityAuthority.aligned(recruiter)
                 ? Math.max(0, averageHappiness(world, recruiter) - npc.happiness) : 0;
-        return Math.max(5, Math.min(90, (RECRUITABLE_HAPPINESS - npc.happiness) * 2 + relative / 2 + officerBonus));
+        return Math.max(5, Math.min(90, (RECRUITABLE_HAPPINESS - npc.happiness) * 2 + relative / 2 + officerBonus
+                + NpcLifeMemoryAuthority.recruitmentPressure(npc, worldTurn)));
     }
 
     static RecruitmentOutcome attemptSchemeRecruitment(GamePanel game, FactionStrategicPlan plan) {
@@ -107,7 +114,7 @@ final class NpcHappinessAuthority {
         NpcEntity officer = bestOfficer(game.world, plan.faction);
         String officerName = officer == null ? plan.leaderName : officer.name;
         int officerBonus = officer == null ? 6 + plan.ambition / 20 : 8 + Math.max(0, 6 - officer.factionRank) * 2;
-        NpcEntity target = mostRecruitableRival(game.world, plan.faction, plan.schemeTargetFaction, officerBonus);
+        NpcEntity target = mostRecruitableRival(game.world, plan.faction, plan.schemeTargetFaction, officerBonus, game.worldTurn);
         if (target == null) {
             return new RecruitmentOutcome(false, 0, officerName, "no target",
                     officerName + " found no sufficiently unhappy rival member willing to hear an approach.");
@@ -124,8 +131,8 @@ final class NpcHappinessAuthority {
                     officerName + " cannot recruit " + target.name + ": no staffed "
                     + plan.faction.label + " roster has a free reserve slot.");
         }
-        int chance = vulnerabilityChance(game.world, target, plan.faction, officerBonus);
-        int roll = 1 + game.rng.nextInt(100);
+        int chance = vulnerabilityChance(game.world, target, plan.faction, officerBonus, game.worldTurn);
+        int roll = deterministicRecruitmentRoll(game.world, target, plan.faction, game.worldTurn);
         if (roll > chance) {
             return new RecruitmentOutcome(false, chance, officerName, target.name,
                     officerName + " approached " + target.name + ", but the offer failed (roll " + roll + " vs " + chance + "%).");
@@ -153,6 +160,17 @@ final class NpcHappinessAuthority {
         return new RecruitmentOutcome(true, chance, officerName, target.name,
                 officerName + " recruited " + target.name + " from " + oldFaction.label + " into "
                         + plan.faction.label + " (roll " + roll + " vs " + chance + "%).");
+    }
+
+    /**
+     * A specific approach is reproducible even if unrelated world simulation
+     * consumed random draws first. The simulation turn distinguishes new offers.
+     */
+    static int deterministicRecruitmentRoll(World world, NpcEntity target,
+                                            Faction recruiter, long worldTurn) {
+        int hash = Objects.hash(world.seed, target.id,
+                recruiter == null ? "" : recruiter.name(), worldTurn, "rival-recruitment");
+        return 1 + Math.floorMod(hash, 100);
     }
 
     static boolean isRecruitmentPlan(FactionStrategicPlan plan) {
@@ -264,7 +282,8 @@ final class NpcHappinessAuthority {
         return npc.factionRank <= 4 || contains(role, "officer", "leader", "manager", "supervisor", "marshal", "deputy", "representative");
     }
 
-    private static NpcEntity mostRecruitableRival(World world, Faction recruiter, Faction targetFaction, int officerBonus) {
+    private static NpcEntity mostRecruitableRival(World world, Faction recruiter, Faction targetFaction,
+                                                  int officerBonus, long worldTurn) {
         NpcEntity best = null;
         int bestChance = 0;
         for (NpcEntity npc : world.npcs) {
@@ -272,7 +291,7 @@ final class NpcHappinessAuthority {
                     || FactionIdentityAuthority.sameFamily(npc.faction, recruiter)) continue;
             if (FactionIdentityAuthority.aligned(targetFaction)
                     && !FactionIdentityAuthority.sameFamily(npc.faction, targetFaction)) continue;
-            int chance = vulnerabilityChance(world, npc, recruiter, officerBonus);
+            int chance = vulnerabilityChance(world, npc, recruiter, officerBonus, worldTurn);
             if (chance > bestChance) {
                 best = npc;
                 bestChance = chance;

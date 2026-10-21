@@ -47,6 +47,28 @@ final class NpcLifeMemoryAuthority {
         remember(npc, worldTurn, kind, "State changed to " + now);
     }
 
+    /**
+     * A personally experienced, recent deprivation increases susceptibility to a
+     * rival offer. Only memories recorded under the NPC's CURRENT allegiance
+     * qualify: a new faction must not inherit blame for the old one's shortages.
+     * The event list is bounded and persisted with the NPC, so the modifier is
+     * stable across save/load and independent of shared random state.
+     */
+    static int recruitmentPressure(NpcEntity npc, long worldTurn) {
+        if (npc == null || npc.faction == null || worldTurn < 0L) return 0;
+        long window = 3L * GamePanel.TURNS_PER_HOUR * GamePanel.HOURS_PER_DAY;
+        for (int i = npc.lifeMemories.size() - 1; i >= 0; i--) {
+            String[] fields = npc.lifeMemories.get(i).split("\\t", 4);
+            if (fields.length != 4 || !"deprivation".equals(fields[1])
+                    || !npc.faction.name().equals(fields[2])) continue;
+            try {
+                long experienced = Long.parseLong(fields[0]);
+                if (experienced <= worldTurn && worldTurn - experienced <= window) return 12;
+            } catch (NumberFormatException ignored) { }
+        }
+        return 0;
+    }
+
     /** Compact, saved-fact readback, never a fabricated emotion or intention. */
     static String latestSummary(NpcEntity npc) {
         if (npc == null || npc.lifeMemories.isEmpty()) return "";
