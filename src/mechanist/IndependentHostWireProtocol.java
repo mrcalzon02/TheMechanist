@@ -171,14 +171,39 @@ final class IndependentHostWireProtocol {
         disconnect("transport closed");
     }
 
-    void disconnect(String reason) {
+    synchronized void disconnect(String reason) {
         if (disconnected) return;
         disconnected = true;
-        if (sessionAttachment != null) {
-            turnAuthority.disconnectPlayer(sessionAttachment.playerId());
+        // The session ledger owns private resumability. A failure while
+        // releasing a world/sector binding must never strand that identity
+        // as an active player after the socket is gone.
+        completeDisconnect(
+                () -> {
+                    if (sessionAttachment != null) {
+                        turnAuthority.disconnectPlayer(sessionAttachment.playerId());
+                    }
+                },
+                () -> sessionLedger.disconnect(sessionAttachment, reason),
+                handshake::disconnect);
+    }
+
+    /**
+     * Run each independent cleanup even if an earlier authority fails.
+     * Retain the original exception and suppress any additional failures
+     * so the transport reports the complete problem instead of concealing it.
+     */
+    static void completeDisconnect(
+            Runnable worldCleanup, Runnable sessionCleanup, Runnable handshakeCleanup) {
+        RuntimeException failure = null;
+        for (Runnable cleanup : new Runnable[]{worldCleanup, sessionCleanup, handshakeCleanup}) {
+            try {
+                cleanup.run();
+            } catch (RuntimeException exception) {
+                if (failure == null) failure = exception;
+                else if (failure != exception) failure.addSuppressed(exception);
+            }
         }
-        sessionLedger.disconnect(sessionAttachment, reason);
-        handshake.disconnect();
+        if (failure != null) throw failure;
     }
 
     String auditSummary() {

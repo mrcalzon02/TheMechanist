@@ -222,6 +222,7 @@ final class IndependentHostHostedSessionWireSmoke {
             require(turns.acceptedCommands() == 1L && turns.worldTurn() == 1L,
                     "wrong-lane MOVE mutated the separate wait authority");
 
+            verifyDisconnectCleanupAfterWorldFailure();
             beta.disconnect("wire smoke complete");
             System.out.println("IndependentHostHostedSessionWireSmoke PASS"
                     + " hostedCommands=true"
@@ -252,6 +253,38 @@ final class IndependentHostHostedSessionWireSmoke {
             characters.close();
             deleteRecursively(characterRoot);
         }
+    }
+
+    /**
+     * Reproduce a failed world cleanup without a physical socket. The
+     * persistent private session must be released and remain resumable, while
+     * the original failure is reported rather than silently swallowed.
+     */
+    private static void verifyDisconnectCleanupAfterWorldFailure() {
+        RemoteSessionLedgerAuthority failedWorld =
+                new RemoteSessionLedgerAuthority("disconnect-failure-regression");
+        RemoteSessionLedgerAuthority.Attachment first = failedWorld.attach(
+                "profile.disconnect.regression", "", "disconnect-one");
+        IllegalStateException rootFailure = new IllegalStateException(
+                "injected world cleanup failure");
+        try {
+            IndependentHostWireProtocol.completeDisconnect(
+                    () -> { throw rootFailure; },
+                    () -> failedWorld.disconnect(first, "world cleanup failed"),
+                    () -> { });
+            throw new AssertionError("World cleanup failure was silently suppressed");
+        } catch (IllegalStateException actual) {
+            require(actual == rootFailure,
+                    "Disconnect did not report the original world cleanup failure");
+        }
+        require(failedWorld.totalSessionCount() == 1
+                        && failedWorld.activeSessionCount() == 0,
+                "Failed world cleanup stranded an active private remote session");
+        RemoteSessionLedgerAuthority.Attachment resumed = failedWorld.attach(
+                "profile.disconnect.regression", first.resumeToken(), "disconnect-two");
+        require(resumed.resumed() && resumed.playerId().equals(first.playerId()),
+                "World cleanup error caused a private session to lose resumable identity");
+        failedWorld.disconnect(resumed, "regression complete");
     }
 
     private static Access authenticate(

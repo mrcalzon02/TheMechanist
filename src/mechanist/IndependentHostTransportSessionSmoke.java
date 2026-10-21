@@ -202,9 +202,17 @@ final class IndependentHostTransportSessionSmoke {
                 waitForSessionConnected(relay, SENDER_PROFILE, false, 3_000L);
             }
             waitForAuthenticatedClients(relay, 0, 3_000L);
+            // Network removal and durable session disconnect happen in separate
+            // phases of the client worker. Wait for BOTH private identities to
+            // become offline rather than sampling midway through cleanup.
+            waitForSessionConnected(relay, SENDER_PROFILE, false, 3_000L);
+            waitForSessionConnected(relay, RECEIVER_PROFILE, false, 3_000L);
             require(relay.remoteSessionCount() == 2
                             && relay.activeRemoteSessionCount() == 0,
-                    "closed clients were not retained privately as offline resumable sessions");
+                    "closed clients were not retained privately as offline resumable sessions"
+                    + "; ledger=" + relay.remoteSessionPersistence()
+                    + "; sender=" + relay.remoteSessionSnapshot(SENDER_PROFILE)
+                    + "; receiver=" + relay.remoteSessionSnapshot(RECEIVER_PROFILE));
         } finally {
             first.close();
         }
