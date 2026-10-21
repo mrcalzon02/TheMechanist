@@ -474,6 +474,7 @@ final class GamePanelKeyController {
         // Building-owned landings have priority over global panel scrolling.
         // Outside a valid landing PageUp/PageDown retain their existing behavior.
         if (panel.screen == GamePanel.Screen.GAME && panel.world != null
+                && !panel.manualMovementPlanActive
                 && (code == KeyEvent.VK_PAGE_UP || code == KeyEvent.VK_PAGE_DOWN)
                 && MultiFloorBuildingTransitAuthority.handlePlayerFloorKey(
                         panel, code == KeyEvent.VK_PAGE_UP ? 1 : -1)) return true;

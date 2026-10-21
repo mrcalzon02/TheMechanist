@@ -3,6 +3,7 @@ package mechanist;
 import java.awt.Rectangle;
 import java.util.List;
 import java.util.Random;
+import java.util.IdentityHashMap;
 
 /** Real stamped buildings, adjacent-floor links, denial and preservation. */
 public final class MultiFloorBuildingTransitSmoke {
@@ -55,8 +56,25 @@ public final class MultiFloorBuildingTransitSmoke {
                         stairs.x + 1, stairs.y + 1, 1).allowed(),
                 "travel crossed between different zones with the same local shaft coordinates");
 
+        IdentityHashMap<World,boolean[][]> memories = new IdentityHashMap<>();
+        boolean[][] explored2 = new boolean[level2.w][level2.h];
+        explored2[12][14] = true;
+        boolean[][] entered3 = MultiFloorBuildingTransitAuthority.rememberedFor(
+                memories, level2, explored2, level3);
+        require(entered3 != explored2 && !entered3[12][14],
+                "exploration of floor 2 leaked into a newly entered floor 3");
+        entered3[19][23] = true;
+        boolean[][] returned2 = MultiFloorBuildingTransitAuthority.rememberedFor(
+                memories, level3, entered3, level2);
+        require(returned2 == explored2 && returned2[12][14] && !returned2[19][23],
+                "returning to floor 2 discarded its own remembered map or merged floor 3");
+        require(MultiFloorBuildingTransitAuthority.rememberedFor(
+                memories, level2, returned2, level3) == entered3,
+                "returning to a previously visited floor lost its exploration history");
+
         System.out.println("MultiFloorBuildingTransitSmoke PASS stairs=true lifts=true "
-                + "adjacentOnly=true blockedTargetDenied=true sameBuilding=true");
+                + "adjacentOnly=true blockedTargetDenied=true sameBuilding=true "
+                + "separateFloorExploration=true");
     }
 
     private static World level(int floor, long seed, List<MultiFloorBuildingPlacementAuthority.Site> sites) {

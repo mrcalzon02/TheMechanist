@@ -1,6 +1,9 @@
 package mechanist;
 
 import java.awt.Rectangle;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * Building-owned vertical travel is distinct from general zone or sewer
@@ -8,7 +11,21 @@ import java.awt.Rectangle;
  * landings within the same building, and never across an open atrium volume.
  */
 final class MultiFloorBuildingTransitAuthority {
+    // A different atlas means a new game. Keep per-world fog isolated for the
+    // current session without extending the legacy save format implicitly.
+    private record Exploration(WorldAtlas atlas, IdentityHashMap<World,boolean[][]> memory) { }
+    private static final Map<GamePanel, Exploration> EXPLORATION = new WeakHashMap<>();
     private MultiFloorBuildingTransitAuthority() { }
+
+    static boolean[][] rememberedFor(Map<World,boolean[][]> memory,
+                                     World from, boolean[][] visibleHistory, World destination) {
+        if (memory == null || from == null || destination == null)
+            throw new IllegalArgumentException("World and exploration cache required");
+        if (visibleHistory != null && visibleHistory.length == from.w
+                && visibleHistory[0].length == from.h)
+            memory.put(from, visibleHistory);
+        return memory.computeIfAbsent(destination, w -> new boolean[w.w][w.h]);
+    }
 
     record Landing(String buildingId, VerticalBuildingBlueprintAuthority.LinkKind kind,
                    int floor, int x, int y, VerticalBuildingBlueprintAuthority.Rect shaft) { }
@@ -95,45 +112,70 @@ final class MultiFloorBuildingTransitAuthority {
         World from = game.world;
         Landing departure = landingAt(from, game.playerX, game.playerY);
         if (departure == null) return false;
-        String message;
         WorldAtlas atlas = game.atlas;
         if (atlas == null || atlas.floor != from.floor || atlas.sewer != from.sewerLayer
                 || atlas.sectorX != from.sectorX || atlas.sectorY != from.sectorY
                 || atlas.zoneX != from.zoneX || atlas.zoneY != from.zoneY) {
-            message = "Cannot change floors: the active atlas does not match this building.";
-        } else if (direction != 1 && direction != -1
+            report(game, "Cannot change floors: the active atlas does not match this building.");
+            return true;
+        }
+        if (direction != 1 && direction != -1
                 || atlas.floor + direction < VerticalBuildingBlueprintAuthority.FIRST_FLOOR
                 || atlas.floor + direction > VerticalBuildingBlueprintAuthority.LAST_FLOOR) {
-            message = "No accessible building landing in that direction.";
-        } else {
-            int originalFloor = atlas.floor;
-            try {
-                atlas.floor = originalFloor + direction;
-                World target = atlas.currentWorld();
-                Resolution check = resolve(from, target, game.playerX, game.playerY, direction);
-                if (check.allowed()) {
-                    game.world = target;
-                    game.lookX = game.playerX;
-                    game.lookY = game.playerY;
-                    game.combatX = game.playerX;
-                    game.combatY = game.playerY;
-                    message = (departure.kind() == VerticalBuildingBlueprintAuthority.LinkKind.LIFT
-                            ? "Building lift" : "Building stairs")
-                            + ": arrived on floor " + target.floor + " in " + departure.buildingId() + ".";
-                } else {
-                    atlas.floor = originalFloor;
-                    message = "Cannot change floors: " + check.reason();
-                }
-            } catch (RuntimeException failure) {
-                atlas.floor = originalFloor;
-                message = "Building floor transition failed; original level retained: "
-                        + failure.getClass().getSimpleName();
-                DebugLog.warn("BUILDING_TRANSIT", message + " " + failure.getMessage());
-            }
+            report(game, "No accessible building landing in that direction.");
+            return true;
         }
+        int originalFloor = atlas.floor;
+        World target;
+        try {
+            atlas.floor = originalFloor + direction;
+            target = atlas.currentWorld();
+        } catch (RuntimeException failure) {
+            atlas.floor = originalFloor;
+            String message = "Building destination load failed; original level retained: "
+                    + failure.getClass().getSimpleName();
+            DebugLog.warn("BUILDING_TRANSIT", message + " " + failure.getMessage());
+            report(game, message);
+            return true;
+        }
+        Resolution check = resolve(from, target, game.playerX, game.playerY, direction);
+        if (!check.allowed()) {
+            atlas.floor = originalFloor;
+            report(game, "Cannot change floors: " + check.reason());
+            return true;
+        }
+
+        // Only after both landings and the authoritative link validate do we
+        // commit atlas/world state, exploration visibility and simulation time.
+        Exploration exploration = EXPLORATION.get(game);
+        if (exploration == null || exploration.atlas() != atlas) {
+            exploration = new Exploration(atlas, new IdentityHashMap<>());
+            EXPLORATION.put(game, exploration);
+        }
+        boolean[][] remembered = rememberedFor(exploration.memory(), from,
+                game.rememberedTiles, target);
+        game.world = target;
+        game.rememberedTiles = remembered;
+        game.visibleTiles = new boolean[target.w][target.h];
+        game.lightLevels = new int[target.w][target.h];
+        game.sensoryWorldRef = null;
+        game.lookX = game.playerX;
+        game.lookY = game.playerY;
+        game.combatX = game.playerX;
+        game.combatY = game.playerY;
+        game.buildX = game.playerX;
+        game.buildY = game.playerY;
+        game.markZoneVisitedAndCheckFirstType();
+        game.advanceTurnBody(null);
+        report(game, (departure.kind() == VerticalBuildingBlueprintAuthority.LinkKind.LIFT
+                ? "Building lift" : "Building stairs")
+                + ": arrived on floor " + target.floor + " in " + departure.buildingId() + ".");
+        return true;
+    }
+
+    private static void report(GamePanel game, String message) {
         game.lastTargetingReport = message;
         game.logEvent(message);
         game.repaint();
-        return true;
     }
 }
