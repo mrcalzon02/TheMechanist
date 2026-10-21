@@ -69,6 +69,25 @@ final class NpcLifeMemoryAuthority {
         return 0;
     }
 
+    /**
+     * Threat memory can influence a noncombatant's subsequent search for
+     * safety without teaching them about an event they never experienced.
+     * A retained event is effective for two in-world days.
+     */
+    static boolean recentThreat(NpcEntity npc, long worldTurn) {
+        if (npc == null || worldTurn < 0L) return false;
+        long window = 2L * GamePanel.TURNS_PER_HOUR * GamePanel.HOURS_PER_DAY;
+        for (int i = npc.lifeMemories.size() - 1; i >= 0; i--) {
+            String[] fields = npc.lifeMemories.get(i).split("\\t", 4);
+            if (fields.length != 4 || !"threat".equals(fields[1])) continue;
+            try {
+                long experienced = Long.parseLong(fields[0]);
+                if (experienced <= worldTurn && worldTurn - experienced <= window) return true;
+            } catch (NumberFormatException ignored) { }
+        }
+        return false;
+    }
+
     /** Compact, saved-fact readback, never a fabricated emotion or intention. */
     static String latestSummary(NpcEntity npc) {
         if (npc == null || npc.lifeMemories.isEmpty()) return "";

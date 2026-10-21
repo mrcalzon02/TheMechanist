@@ -1078,12 +1078,13 @@ class NpcEntity {
 
     void tick(World w, int px, int py, int turn) {
         if (turn == lastTickTurn) return;
+        int previousTickTurn = lastTickTurn;
         lastTickTurn = turn;
         if (crowdShuffleCooldown > 0) crowdShuffleCooldown--;
         activeMotionStateIndex = GamePanel.MOTION_STATIONARY;
         selectedMovementModeIndex = chooseMovementModeIndex(turn);
         if (isAnimalActor()) { tickAnimal(w, px, py, turn); return; }
-        updateNeeds(turn);
+        updateNeeds(turn, previousTickTurn);
         updateRoutine(turn);
         if (turn % idleBias != 0) return;
         if (state.equals("Sleep")) { sleepDebt = Math.max(0, sleepDebt - 1); return; }
@@ -1117,9 +1118,23 @@ class NpcEntity {
     }
 
     void updateNeeds(int turn) {
-        if (turn > 0 && turn % 18 == 0) sleepDebt = Math.min(30, sleepDebt + 1);
-        if (turn > 0 && turn % 24 == 0) hunger = Math.min(20, hunger + 1);
-        if (turn > 0 && turn % 18 == 0) thirst = Math.min(20, thirst + 1);
+        updateNeeds(turn, turn - 1);
+    }
+
+    /**
+     * Budget-deferred NPCs must age their needs by the elapsed world ticks,
+     * not merely whether the current tick happens to align with a cadence.
+     * A never-simulated spawn starts at its first observed turn, while a
+     * restored actor resumes from its persisted lastTickTurn.
+     */
+    void updateNeeds(int turn, int previousTickTurn) {
+        if (turn > 0) {
+            int prior = previousTickTurn < 0 || previousTickTurn > turn
+                    ? turn - 1 : previousTickTurn;
+            sleepDebt = Math.min(30, sleepDebt + turn / 18 - prior / 18);
+            hunger = Math.min(20, hunger + turn / 24 - prior / 24);
+            thirst = Math.min(20, thirst + turn / 18 - prior / 18);
+        }
         if (hunger > 14 || thirst > 14) state = "Search Needs";
     }
 

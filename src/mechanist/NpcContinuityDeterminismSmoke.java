@@ -169,6 +169,68 @@ public final class NpcContinuityDeterminismSmoke {
         require(NpcLifeMemoryAuthority.recruitmentPressure(recalled, recruitmentTurn) == 0,
                 "Changing faction must not make the new faction responsible for old deprivation");
 
+        // Deferred NPCs should accrue all missed need cadences, and restoring
+        // lastTickTurn must prevent double-charging a resumed simulation turn.
+        NpcEntity deferred = NpcEntity.create(Faction.HIVER, world.zoneType, 6, 6, new Random(83));
+        deferred.id = "DEFERRED-NEEDS-1";
+        deferred.hunger = 0;
+        deferred.thirst = 0;
+        deferred.sleepDebt = 0;
+        deferred.idleBias = 101;
+        deferred.lastTickTurn = 0;
+        NpcEntity resumed = NpcEntity.parseLine(deferred.saveLine(), world);
+        require(resumed != null, "Deferred NPC could not be restored from a save");
+        resumed.tick(world, -1, -1, 72);
+        require(resumed.hunger == 3 && resumed.thirst == 4 && resumed.sleepDebt == 4,
+                "Deferred needs failed to accrue missed hunger, water, or fatigue cadences");
+        String afterDeferredTick = resumed.saveLine();
+        resumed.tick(world, -1, -1, 72);
+        require(afterDeferredTick.equals(resumed.saveLine()),
+                "Duplicate simulation turn charged NPC needs or changed persisted state");
+        NpcEntity uninterrupted = NpcEntity.parseLine(deferred.saveLine(), world);
+        for (int t = 1; t <= 72; t++) uninterrupted.updateNeeds(t, t - 1);
+        require(uninterrupted.hunger == resumed.hunger
+                        && uninterrupted.thirst == resumed.thirst
+                        && uninterrupted.sleepDebt == resumed.sleepDebt,
+                "Deferred need progression differs from uninterrupted cadence");
+        NpcEntity fresh = NpcEntity.parseLine(deferred.saveLine(), world);
+        fresh.lastTickTurn = -1;
+        fresh.tick(world, -1, -1, 72);
+        require(fresh.hunger == 1 && fresh.thirst == 1 && fresh.sleepDebt == 1,
+                "Fresh spawn must not inherit needs from turns before its first activation");
+
+        // A witnessed threat must change a later civilian's real need-target
+        // choice, retain that influence through save/load, and eventually expire.
+        NpcEntity cautious = NpcEntity.create(Faction.HIVER, world.zoneType, 7, 7, new Random(85));
+        cautious.id = "CAUTIOUS-CIVILIAN";
+        cautious.role = "civilian resident";
+        cautious.hunger = 0;
+        cautious.thirst = 0;
+        cautious.sleepDebt = 0;
+        int decisionTurn = -1;
+        for (int t = 300; t < 340; t++) {
+            if (!"safety".equals(NpcNeedsDutyRuntimeAuthority.passiveDesireFor(
+                    world, cautious, t, t))) {
+                decisionTurn = t;
+                break;
+            }
+        }
+        require(decisionTurn >= 0, "Could not establish the civilian's normal non-safety desire");
+        NpcLifeMemoryAuthority.remember(cautious, decisionTurn - 1L, "threat",
+                "Witnessed a hostile attacker");
+        require("safety".equals(NpcNeedsDutyRuntimeAuthority.passiveDesireFor(
+                    world, cautious, decisionTurn, decisionTurn)),
+                "A personally remembered threat failed to influence the next safety decision");
+        NpcEntity cautiousRestored = NpcEntity.parseLine(cautious.saveLine(), world);
+        require(cautiousRestored != null && "safety".equals(
+                NpcNeedsDutyRuntimeAuthority.passiveDesireFor(
+                        world, cautiousRestored, decisionTurn, decisionTurn)),
+                "Threat-influenced behavior changed after NPC save/load");
+        long afterFearWindow = decisionTurn
+                + 2L * GamePanel.TURNS_PER_HOUR * GamePanel.HOURS_PER_DAY + 1L;
+        require(!NpcLifeMemoryAuthority.recentThreat(cautiousRestored, afterFearWindow),
+                "Old threat memory incorrectly influences safety priorities forever");
+
         NpcEntity casualty = NpcEntity.create(Faction.CIVIC_WARDENS, world.zoneType, 9, 9, new Random(56));
         casualty.id = "CASUALTY-STABLE-A";
         casualty.name = "Corporal Flint";

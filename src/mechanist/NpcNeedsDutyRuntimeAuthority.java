@@ -72,7 +72,7 @@ final class NpcNeedsDutyRuntimeAuthority {
             if (isDutyState(npc)) out.duties++;
             if (npc.x != beforeX || npc.y != beforeY) {
                 out.moved++;
-            } else if (!sleeping && applyPassiveDesire(world, npc, game.turn, game.playerX, game.playerY)) {
+            } else if (!sleeping && applyPassiveDesire(world, npc, game.turn, game.worldTurn, game.playerX, game.playerY)) {
                 out.passiveDesires++;
                 if (npc.x != beforeX || npc.y != beforeY) out.moved++;
             }
@@ -119,14 +119,15 @@ final class NpcNeedsDutyRuntimeAuthority {
                 || "vault desk".equals(state);
     }
 
-    private static boolean applyPassiveDesire(World world, NpcEntity npc, int turn, int blockX, int blockY) {
+    private static boolean applyPassiveDesire(World world, NpcEntity npc, int turn,
+                                              long worldTurn, int blockX, int blockY) {
         if (world == null || npc == null || npc.isAnimalActor() || npc.isUntargetableAnchor()) return false;
         if (NpcTurnBudgetScheduler.looksDangerous(npc) || isDutyState(npc)) return false;
         if (!isUnassignedOrPassiveActor(npc)) return false;
         int cadence = Math.max(6, Math.max(1, npc.idleBias) * 5);
         if (turn <= 0 || turn % cadence != Math.floorMod(npc.numericId, cadence)) return false;
 
-        String desire = passiveDesireFor(world, npc, turn);
+        String desire = passiveDesireFor(world, npc, turn, worldTurn);
         Point target = world.findNeedProvider(npc.x, npc.y, desire);
         if (target == null) return false;
         npc.needTarget = target;
@@ -156,11 +157,12 @@ final class NpcNeedsDutyRuntimeAuthority {
                 || role.contains("trader");
     }
 
-    private static String passiveDesireFor(World world, NpcEntity npc, int turn) {
+    static String passiveDesireFor(World world, NpcEntity npc, int turn, long worldTurn) {
         if (npc.sleepDebt > 12) return "sleep";
         if (npc.hunger > 8) return "food";
         if (npc.thirst > 8) return "water";
         if (nearDanger(world, npc)) return "safety";
+        if (NpcLifeMemoryAuthority.recentThreat(npc, worldTurn)) return "safety";
         String role = safe(npc.role);
         if (npc.faction == Faction.INN || role.contains("reporter") || role.contains("editor") || role.contains("broadcaster")) return "news";
         int roll = Math.floorMod((npc.id == null ? 0 : npc.id.hashCode()) + turn / Math.max(1, npc.idleBias), 5);
