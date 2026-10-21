@@ -199,6 +199,33 @@ public final class NpcContinuityDeterminismSmoke {
         require(fresh.hunger == 1 && fresh.thirst == 1 && fresh.sleepDebt == 1,
                 "Fresh spawn must not inherit needs from turns before its first activation");
 
+        // Deferred work must count each distant NPC exactly once, even when
+        // the rotating cursor has already examined the same distant actor.
+        ArrayList<NpcEntity> scheduledPopulation = new ArrayList<>();
+        NpcEntity near = new NpcEntity();
+        near.id = "NEAR-SCHEDULER-ACTOR";
+        near.faction = Faction.HIVER;
+        near.state = "Idle";
+        near.x = 5;
+        near.y = 5;
+        scheduledPopulation.add(near);
+        for (int i = 0; i < 32; i++) {
+            NpcEntity far = new NpcEntity();
+            far.id = "FAR-SCHEDULER-" + i;
+            far.faction = Faction.HIVER;
+            far.state = "Idle";
+            far.x = 100 + i;
+            far.y = 100;
+            scheduledPopulation.add(far);
+        }
+        NpcTurnBudgetScheduler.Selection scheduled = new NpcTurnBudgetScheduler().select(
+                scheduledPopulation, 5, 5, 100, false, false);
+        require(scheduled.selected.size() == 1 && scheduled.selected.get(0) == near,
+                "Near NPC should be serviced without allowing distant actors into local simulation");
+        require(scheduled.farDeferred == 32 && scheduled.budgetLimited == 0
+                        && scheduled.debtSuggested == 2,
+                "Distant NPCs counted more than once or deferred work budget was inflated");
+
         // A witnessed threat must change a later civilian's real need-target
         // choice, retain that influence through save/load, and eventually expire.
         NpcEntity cautious = NpcEntity.create(Faction.HIVER, world.zoneType, 7, 7, new Random(85));
