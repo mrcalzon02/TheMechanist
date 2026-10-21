@@ -92,7 +92,7 @@ final class MultiFloorBuildingPlacementAuthority {
     private static List<Integer> availableFacade(World w, Site site) {
         boolean westSite = site.x() < w.w / 2;
         int dir = westSite ? 1 : -1;
-        int start = westSite ? site.x() + site.footprint().width() - 1 : site.x();
+        int start = westSite ? site.x() + site.footprint().width - 1 : site.x();
         int row = site.y() + (site.blueprint().kind()
                 == VerticalBuildingBlueprintAuthority.Kind.ATRIUM_HALL ? 14 : 12);
         ArrayList<Integer> cells = new ArrayList<>();
