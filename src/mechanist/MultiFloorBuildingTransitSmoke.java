@@ -45,6 +45,22 @@ public final class MultiFloorBuildingTransitSmoke {
             blocked.tiles[x][y] = '#';
             require(!MultiFloorBuildingTransitAuthority.resolve(level2, blocked, x, y, 1).allowed(),
                     "blocked destination landing must not be accepted");
+            // NPCs and placed fixtures must block an otherwise valid landing.
+            NpcEntity occupant = NpcEntity.create(Faction.HIVER, level3.zoneType,
+                    x, y, new Random(91L));
+            level3.npcs.add(occupant);
+            var occupiedByNpc = MultiFloorBuildingTransitAuthority.resolve(level2, level3, x, y, 1);
+            require(!occupiedByNpc.allowed() && occupiedByNpc.reason().contains("occupying"),
+                    "an NPC occupying the arrival landing was ignored");
+            level3.npcs.remove(occupant);
+            MapObjectState obstruction = MapObjectState.shop(x, y, level3.zoneType);
+            level3.mapObjects.add(obstruction);
+            var occupiedByFixture = MultiFloorBuildingTransitAuthority.resolve(level2, level3, x, y, 1);
+            require(!occupiedByFixture.allowed() && occupiedByFixture.reason().contains("blocking"),
+                    "a map object occupying the arrival landing was ignored");
+            level3.mapObjects.remove(obstruction);
+            require(MultiFloorBuildingTransitAuthority.resolve(level2, level3, x, y, 1).allowed(),
+                    "clearing a landing did not restore valid travel");
         }
 
         World mismatched = level(3, 897L, sites);

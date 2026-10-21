@@ -91,6 +91,14 @@ final class MultiFloorBuildingTransitAuthority {
         var site = siteFor(from, departure.buildingId());
         if (site == null || siteFor(destination, departure.buildingId()) == null)
             return Resolution.denied(departure, "Persistent building identity is not available on both levels.");
+        // An aligned shaft still cannot receive a player when an actor or
+        // fixture physically occupies its destination tile.
+        if (!destination.walkable(x, y))
+            return Resolution.denied(departure, "The destination landing is not walkable.");
+        if (destination.npcAt(x, y) != null)
+            return Resolution.denied(departure, "Someone is occupying the destination landing.");
+        if (destination.mapObjectAt(x, y) != null)
+            return Resolution.denied(departure, "An object is blocking the destination landing.");
         int lower = Math.min(from.floor, destination.floor);
         for (var link : site.blueprint().connections()) {
             if (link.kind() == departure.kind() && link.lowerFloor() == lower
