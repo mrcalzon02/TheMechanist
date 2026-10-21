@@ -69,7 +69,11 @@ final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispa
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event == null || event.getID() != KeyEvent.KEY_PRESSED) return false;
         if (panel == null || panel.screen != GamePanel.Screen.CHARACTER || !panel.newGameSetupActive) return false;
-        if (!WorldStartFlowAuthority.isActive(panel)) return false;
+        Object activeOverlay = panel.getClientProperty(
+                WorldStartFlowAuthority.WorldStartFlowOverlay.CLIENT_PROPERTY);
+        if (!(activeOverlay instanceof WorldStartFlowAuthority.WorldStartFlowOverlay overlay)
+                || overlay.stage != WorldStartFlowAuthority.Stage.CHARACTER_CREATION
+                || overlay.nameEditing) return false;
 
         int direction = directionForKey(event.getKeyCode());
         if (direction == 0) return false;

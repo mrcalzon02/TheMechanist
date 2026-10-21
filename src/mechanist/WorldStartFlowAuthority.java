@@ -363,11 +363,23 @@ final class WorldStartFlowAuthority {
             return true;
         }
 
+        static int portraitKeyDirection(boolean nameEditing, int code) {
+            return nameEditing ? 0 : CharacterCreationPortraitSelectionAuthority.directionForKey(code);
+        }
+
         boolean handleCharacterKey(int code) {
             if (nameEditing) {
                 if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_ESCAPE) { finishNameEdit(); return true; }
                 if (code == KeyEvent.VK_BACK_SPACE) { backspaceName(); return true; }
                 if (code == KeyEvent.VK_DELETE) { clearName(); return true; }
+                return true;
+            }
+            // This overlay is the first KeyEventDispatcher installed for staged
+            // creation. Handle portrait browsing here rather than expecting a
+            // later dispatcher to receive a key that this overlay consumes.
+            int portraitDirection = portraitKeyDirection(false, code);
+            if (portraitDirection != 0) {
+                CharacterCreationPortraitSelectionAuthority.cycleSelectedPortrait(panel, portraitDirection);
                 return true;
             }
             if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q) { openWorldPicker("back from character generation"); return true; }
@@ -400,11 +412,19 @@ final class WorldStartFlowAuthority {
             requestFocusInWindow();
         }
 
+        static String appendSeedCharacter(String current, char ch) {
+            String draft = current == null ? "" : current;
+            if (Character.isISOControl(ch)) return draft;
+            if (ch == '-' && draft.isEmpty()) return "-";
+            if (!Character.isDigit(ch)) return draft;
+            // Long.MAX_VALUE needs 19 digits; Long.MIN_VALUE needs a sign
+            // and 19 digits. The previous 18-character limit rejected both.
+            int limit = draft.startsWith("-") ? 20 : 19;
+            return draft.length() < limit ? draft + ch : draft;
+        }
+
         void appendSeedChar(char ch) {
-            if (Character.isISOControl(ch)) return;
-            if (ch == '-' && seedDraft.isEmpty()) { seedDraft = "-"; return; }
-            if (!Character.isDigit(ch)) return;
-            if (seedDraft.length() < 18) seedDraft += ch;
+            seedDraft = appendSeedCharacter(seedDraft, ch);
         }
 
         void backspaceSeed() { if (!seedDraft.isEmpty()) seedDraft = seedDraft.substring(0, seedDraft.length() - 1); }
