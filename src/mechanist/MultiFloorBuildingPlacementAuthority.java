@@ -47,10 +47,21 @@ final class MultiFloorBuildingPlacementAuthority {
 
     static boolean reserved(World w, Rectangle candidate) {
         if (w == null || candidate == null || w.sewerLayer) return false;
-        for (Site site : w.buildingSites)
-            if (site.blueprint().containsFloor(w.floor) && site.footprint().intersects(candidate))
-                return true;
+        for (Site site : w.buildingSites) {
+            if (!site.blueprint().containsFloor(w.floor)) continue;
+            if (site.footprint().intersects(candidate)
+                    || facadeAccessReservation(site, w.w).intersects(candidate)) return true;
+        }
         return false;
+    }
+
+    /** Reserve the building's dedicated road approach before ordinary rooms stamp. */
+    static Rectangle facadeAccessReservation(Site site, int worldWidth) {
+        boolean westSite = site.x() < worldWidth / 2;
+        int y = site.y() + (site.blueprint().kind()
+                == VerticalBuildingBlueprintAuthority.Kind.ATRIUM_HALL ? 14 : 12);
+        int x = westSite ? site.x() + site.footprint().width : site.x() - 24;
+        return new Rectangle(x, y, 24, 1);
     }
 
     static int stampFloor(World w) {

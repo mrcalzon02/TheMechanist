@@ -41,6 +41,11 @@ public final class MultiFloorBuildingPlacementSmoke {
                     "building lift shaft missing or shifted on upper floor");
             require(MultiFloorBuildingPlacementAuthority.reserved(second, footprint),
                     "ordinary generation no longer treats the building footprint as reserved");
+            Rectangle approach = MultiFloorBuildingPlacementAuthority.facadeAccessReservation(
+                    site, second.w);
+            require(MultiFloorBuildingPlacementAuthority.reserved(second, approach)
+                            && !footprint.intersects(approach),
+                    "ordinary rooms may block the building entrance-to-road corridor");
         }
 
         World seventh = streetedWorld(893L, 7, original);
