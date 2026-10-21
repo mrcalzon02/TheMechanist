@@ -39,9 +39,20 @@ final class Milestone06VehicleDashboardSmoke {
             require(VehicleManifestAuthority.boardPassenger(game, dashboardCar,
                             "Dashboard Passenger").success(),
                     "dashboard fixture should accept a passenger");
-            require(VehicleManifestAuthority.registerCargo(game, dashboardCar,
-                            "Dashboard Parcel", "Dashboard Owner", 2).success(),
-                    "dashboard fixture should accept registered cargo");
+            VehicleManifestAuthority.Result cargoLoad =
+                    VehicleManifestAuthority.registerCargo(game, dashboardCar,
+                            "Dashboard Parcel", "Dashboard Owner", 1);
+            require(cargoLoad.success() && cargoLoad.changed()
+                            && cargoLoad.snapshot().cargoUnits() == 1
+                            && cargoLoad.snapshot().cargoCapacity() == 1,
+                    "dashboard fixture should accept its one-unit civilian-car cargo capacity");
+            String loadedManifest = dashboardCar.stockState;
+            VehicleManifestAuthority.Result cargoOverflow =
+                    VehicleManifestAuthority.registerCargo(game, dashboardCar,
+                            "Excess Parcel", "Dashboard Owner", 1);
+            require(!cargoOverflow.success()
+                            && loadedManifest.equals(dashboardCar.stockState),
+                    "civilian-car cargo overflow must be rejected without changing its manifest");
             require(VehicleFuelAuthority.consumeCommitted(game.world,
                             dashboardCar, 6, game.turn,
                             "dashboard fuel proof").success(),
