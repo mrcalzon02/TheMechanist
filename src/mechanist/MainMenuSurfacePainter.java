@@ -87,7 +87,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             String fallbackLabel = labels.get(i);
             String label = MenuTextAuthority.text(i < ROUTE_KEYS.length ? ROUTE_KEYS[i] : "", fallbackLabel);
             BufferedImage icon = panel.systemButtonIconForLabel(fallbackLabel);
-            int iconSize = icon == null ? 0 : Math.max(36, Math.min((int)Math.round(r.height * 1.16), 57));
+            int iconSize = icon == null ? 0 : routeIconSize(r);
             int iconX = r.x + 12;
             int textX = r.x + 18;
             int textW = r.width - 36;
@@ -160,6 +160,12 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             lineY += Math.max(10, fm.getHeight());
         }
         g.setFont(panel.smallFont);
+    }
+
+    /** Keep decorative icons inside the actual clickable button at every viewport. */
+    static int routeIconSize(Rectangle row) {
+        if (row == null || row.width <= 0 || row.height <= 0) return 0;
+        return Math.max(1, Math.min(57, Math.min(row.height - 4, row.width - 24)));
     }
 
     private static void drawCover(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {

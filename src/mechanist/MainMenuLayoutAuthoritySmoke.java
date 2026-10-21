@@ -27,6 +27,15 @@ final class MainMenuLayoutAuthoritySmoke {
                         && row.y + row.height <= frame.y + frame.height,
                         "main menu route " + i + " escaped frame at " + viewport[0] + "x" + viewport[1]);
                 if (previous != null) check(!row.intersects(previous), "main menu routes overlap");
+                int iconSize = MainMenuSurfacePainter.routeIconSize(row);
+                check(iconSize > 0 && iconSize <= row.height,
+                        "main menu icon taller than its clickable route at " + viewport[0] + "x" + viewport[1]);
+                Rectangle icon = new Rectangle(row.x + 12,
+                        row.y + (row.height - iconSize) / 2, iconSize, iconSize);
+                check(row.contains(icon), "main menu icon escaped its button at "
+                        + viewport[0] + "x" + viewport[1] + ": " + icon);
+                if (previous != null) check(!previous.intersects(icon),
+                        "main menu route icon visually overlapped the preceding button");
                 previous = row;
             }
         }
