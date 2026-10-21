@@ -79,7 +79,9 @@ final class Milestone06VehicleDashboardSmoke {
             List<String> dashboard = VehicleTransitAuthority.inspectionLines(
                     game, dashboardCar);
             requireContains(dashboard, "VEHICLE DASHBOARD", "dashboard title");
-            requireContains(dashboard, "civilian car", "class identity");
+            requireContains(dashboard,
+                    "Class: " + VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR.label + " /",
+                    "class identity");
             requireContains(dashboard, "65%", "remaining component integrity");
             requireContains(dashboard, "18/24", "fuel ledger");
             requireContains(dashboard, "Dashboard Driver", "driver identity");
@@ -87,7 +89,9 @@ final class Milestone06VehicleDashboardSmoke {
             requireContains(dashboard, "Dashboard Parcel", "cargo custody");
             requireContains(dashboard, "sector-7/dashboard-depot",
                     "strategic destination");
-            requireContains(dashboard, "civilian car vehicle dossier",
+            requireContains(dashboard,
+                    VehicleInfopediaBridgeAuthority.title(
+                            VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR),
                     "Infopedia dossier title");
             requireContains(dashboard, "LOCAL TRANSIT CONTROL",
                     "existing transit controls");
