@@ -7214,7 +7214,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         lastPassiveAmbientMillis = now;
         PassiveAmbientCue cue = passiveAmbientCueForCurrentView();
         if (cue == null) return;
-        sounds.playDistantCue(cue.key, cue.distance, options);
+        if (cue.positioned) {
+            sounds.playPositioned(cue.key, cue.sourceX, cue.sourceY,
+                    playerX, playerY, facingDx, facingDy,
+                    !hasLineOfSight(playerX, playerY,
+                            cue.sourceX, cue.sourceY), options);
+        } else {
+            sounds.playDistantCue(cue.key, cue.distance, options);
+        }
     }
 
     void tickSinglePlayerPassiveWorldTime() {
@@ -7252,45 +7259,60 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     PassiveAmbientCue passiveAmbientCueForCurrentView() {
-        String nearby = nearbyAmbientCue();
-        if (nearby != null) return new PassiveAmbientCue(nearby, 2);
+        PassiveAmbientCue nearby = nearbyAmbientCue();
+        if (nearby != null) return nearby;
         String z = world.zoneType == null ? "" : world.zoneType.name();
-        if (world.sewerLayer || z.contains("SEWER") || z.contains("SUMP")) return new PassiveAmbientCue("ambient_sludge", 6);
-        if (z.contains("MECHANICUS") || z.contains("FORGE") || z.contains("INDUSTR")) return new PassiveAmbientCue("ambient_press", 5);
-        if (z.contains("NEWS") || z.contains("MARKET") || z.contains("INN")) return new PassiveAmbientCue("ambient_radio", 5);
-        if (z.contains("NOBLE") || z.contains("GOVERNOR") || z.contains("CIVIC")) return new PassiveAmbientCue("ambient_chime", 6);
-        if (z.contains("TRASH") || z.contains("MUTANT") || z.contains("WASTE")) return new PassiveAmbientCue("ambient_drip", 7);
-        return new PassiveAmbientCue("ambient_vent", 7);
+        if (world.sewerLayer || z.contains("SEWER") || z.contains("SUMP")) return PassiveAmbientCue.diffuse("ambient_sludge", 6);
+        if (z.contains("MECHANICUS") || z.contains("FORGE") || z.contains("INDUSTR")) return PassiveAmbientCue.diffuse("ambient_press", 5);
+        if (z.contains("NEWS") || z.contains("MARKET") || z.contains("INN")) return PassiveAmbientCue.diffuse("ambient_radio", 5);
+        if (z.contains("NOBLE") || z.contains("GOVERNOR") || z.contains("CIVIC")) return PassiveAmbientCue.diffuse("ambient_chime", 6);
+        if (z.contains("TRASH") || z.contains("MUTANT") || z.contains("WASTE")) return PassiveAmbientCue.diffuse("ambient_drip", 7);
+        return PassiveAmbientCue.diffuse("ambient_vent", 7);
     }
 
-    String nearbyAmbientCue() {
+    PassiveAmbientCue nearbyAmbientCue() {
+        PassiveAmbientCue closest = null;
+        int bestDistance = Integer.MAX_VALUE;
         if (world.mapObjects != null) {
-            int bestDistance = Integer.MAX_VALUE;
-            String best = null;
             for (MapObjectState object : world.mapObjects) {
                 if (object == null) continue;
                 int d = Math.abs(object.x - playerX) + Math.abs(object.y - playerY);
                 if (d > 7 || d >= bestDistance) continue;
                 String type = object.type == null ? "" : object.type.toLowerCase(Locale.ROOT);
-                if (type.contains("broadcast") || type.contains("radio") || type.contains("news")) best = "ambient_radio";
-                else if (type.contains("light")) best = "ambient_spark";
-                else if (type.contains("terminal") || type.contains("bank")) best = "ambient_servo";
-                else if (type.contains("water") || type.contains("recycler")) best = "ambient_pipe";
-                else if (type.contains("machine") || type.contains("utility")) best = "ambient_machine";
-                else if (type.contains("door") || type.contains("security")) best = "ambient_door_servo";
-                if (best != null) bestDistance = d;
+                String key = null;
+                if (type.contains("broadcast") || type.contains("radio") || type.contains("news")) key = "ambient_radio";
+                else if (type.contains("light")) key = "ambient_spark";
+                else if (type.contains("terminal") || type.contains("bank")) key = "ambient_servo";
+                else if (type.contains("water") || type.contains("recycler")) key = "ambient_pipe";
+                else if (type.contains("machine") || type.contains("utility")) key = "ambient_machine";
+                else if (type.contains("door") || type.contains("security")) key = "ambient_door_servo";
+                if (key == null) continue;
+                closest = PassiveAmbientCue.spatial(key, object.x, object.y, d);
+                bestDistance = d;
             }
-            if (best != null) return best;
         }
         if (world.lightSources != null) {
             for (ZoneLightSourceRecord light : world.lightSources) {
-                if (light != null && Math.abs(light.x - playerX) + Math.abs(light.y - playerY) <= 5) return "ambient_spark";
+                if (light == null) continue;
+                int d = Math.abs(light.x - playerX) + Math.abs(light.y - playerY);
+                if (d > 5 || d >= bestDistance) continue;
+                closest = PassiveAmbientCue.spatial(
+                        "ambient_spark", light.x, light.y, d);
+                bestDistance = d;
             }
         }
-        return null;
+        return closest;
     }
 
-    record PassiveAmbientCue(String key, int distance) { }
+    record PassiveAmbientCue(String key, int distance,
+                             int sourceX, int sourceY, boolean positioned) {
+        static PassiveAmbientCue diffuse(String key, int distance) {
+            return new PassiveAmbientCue(key, distance, 0, 0, false);
+        }
+        static PassiveAmbientCue spatial(String key, int x, int y, int distance) {
+            return new PassiveAmbientCue(key, distance, x, y, true);
+        }
+    }
 
     boolean hasLineOfSight(int x0, int y0, int x1, int y1) { return traceLightLine(x0, y0, x1, y1, true); }
     boolean hasKnowledge(String knowledge) { return knowledge == null || knowledge.isBlank() || unlockedKnowledges.contains(knowledge); }
@@ -7717,6 +7739,15 @@ final class LegacySoundSurface {
     void playDistantCue(String key, int distance, GameOptions options) {
         ensureLoaded();
         manager.playDistantCue(key, distance, options);
+    }
+
+    void playPositioned(String key, int sourceX, int sourceY,
+                        int listenerX, int listenerY,
+                        int facingX, int facingY, boolean occluded,
+                        GameOptions options) {
+        ensureLoaded();
+        manager.playPositional(key, sourceX, sourceY, listenerX, listenerY,
+                facingX, facingY, occluded, options);
     }
 
     void playIntroCrawlNarration(GameOptions options) {
