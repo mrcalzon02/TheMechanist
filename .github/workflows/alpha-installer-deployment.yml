@@ -282,7 +282,10 @@ jobs:
         with:
           name: Alpha-Installer-Deployment-${{ matrix.platform }}
           path: |
-            dist/alpha-installer/**
+            dist/alpha-installer/**/*.json
+            dist/alpha-installer/**/*.log
+            dist/alpha-installer/**/*.msi
+            dist/alpha-installer/**/*.deb
             dist/alpha-installer-build-${{ matrix.platform }}.log
           if-no-files-found: warn
           retention-days: 30
