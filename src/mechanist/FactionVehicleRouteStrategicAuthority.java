@@ -101,16 +101,13 @@ final class FactionVehicleRouteStrategicAuthority {
                 && target != Faction.NONE
                 && !FactionIdentityAuthority.sameFamily(
                 target, site.faction)) {
-            FactionVehicleBalanceAuthority.Contest contest =
-                    FactionVehicleBalanceAuthority.compare(
-                    game, site.faction, target, site);
-            if (!contest.canEscalate(plan.aggression, plan.ambition)) {
+            FactionVehicleBalanceAuthority.Assessment command =
+                    FactionVehicleBalanceAuthority.assess(
+                            game, site.faction, target, site, plan);
+            if (!command.willEngage()) {
                 return Suggestion.none();
             }
-            posture = contest.posture().label
-                    + " fleet posture with commitment "
-                    + contest.commitment(plan.aggression, plan.ambition)
-                    + "/" + contest.escalationThreshold();
+            posture = command.summary();
         }
 
         return new Suggestion(VEHICLE_ROUTE_CONTROL_GOAL, destination,
@@ -185,7 +182,7 @@ final class FactionVehicleRouteStrategicAuthority {
         int stockBefore = site.stock;
         FactionVehicleRouteControlAuthority.Result assignment =
                 FactionVehicleRouteControlAuthority.assign(
-                        game, site, request);
+                        game, site, request, plan);
         if (!assignment.success() || assignment.vehicle() == null) {
             restore(beforeVehicles);
             return Progress.terminal(false, false,
