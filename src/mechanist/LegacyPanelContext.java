@@ -7215,10 +7215,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         PassiveAmbientCue cue = passiveAmbientCueForCurrentView();
         if (cue == null) return;
         if (cue.positioned) {
-            sounds.playPositioned(cue.key, cue.sourceX, cue.sourceY,
-                    playerX, playerY, facingDx, facingDy,
-                    !hasLineOfSight(playerX, playerY,
-                            cue.sourceX, cue.sourceY), options);
+            WorldPositionalSoundAuthority.play(this, cue.key,
+                    cue.sourceX, cue.sourceY, 1.0);
         } else {
             sounds.playDistantCue(cue.key, cue.distance, options);
         }
@@ -7298,6 +7296,20 @@ class GamePanel extends LegacyPanelBridgeBase {
                 if (d > 5 || d >= bestDistance) continue;
                 closest = PassiveAmbientCue.spatial(
                         "ambient_spark", light.x, light.y, d);
+                bestDistance = d;
+            }
+        }
+        if (world.noiseSources != null) {
+            for (ZoneNoiseSourceRecord source : world.noiseSources) {
+                if (source == null || !world.inBounds(source.x, source.y)
+                        || !WorldPositionalSoundAuthority.noiseActiveThisTurn(source, turn))
+                    continue;
+                int d = Math.abs(source.x - playerX) + Math.abs(source.y - playerY);
+                if (d > Math.min(15, Math.max(1, source.radius))
+                        || d >= bestDistance) continue;
+                String key = WorldPositionalSoundAuthority.noiseCue(source);
+                if (key == null) continue;
+                closest = PassiveAmbientCue.spatial(key, source.x, source.y, d);
                 bestDistance = d;
             }
         }
@@ -7745,9 +7757,17 @@ final class LegacySoundSurface {
                         int listenerX, int listenerY,
                         int facingX, int facingY, boolean occluded,
                         GameOptions options) {
+        playPositioned(key, sourceX, sourceY, listenerX, listenerY,
+                facingX, facingY, occluded, false, 1.0, options);
+    }
+
+    void playPositioned(String key, int sourceX, int sourceY,
+                        int listenerX, int listenerY,
+                        int facingX, int facingY, boolean occluded,
+                        boolean enclosed, double strength, GameOptions options) {
         ensureLoaded();
         manager.playPositional(key, sourceX, sourceY, listenerX, listenerY,
-                facingX, facingY, occluded, options);
+                facingX, facingY, occluded, enclosed, strength, options);
     }
 
     void playIntroCrawlNarration(GameOptions options) {
