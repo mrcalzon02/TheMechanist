@@ -1,0 +1,108 @@
+name: Automatic Verified Installer Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mechanist-verified-release-main
+  cancel-in-progress: false
+
+jobs:
+  verify-installer-lifecycle:
+    name: Build, install, boot, uninstall (Windows and Linux)
+    uses: ./.github/workflows/alpha-installer-deployment.yml
+    with:
+      release_version: ${{ format('0.9.{0}', github.run_number) }}
+
+  publish:
+    name: Publish verified GitHub prerelease
+    needs: verify-installer-lifecycle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    steps:
+      - name: Download lifecycle-certified packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Alpha-Installer-Deployment-*
+          path: verified
+          merge-multiple: false
+
+      - name: Select complete release assets and make checksums
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          RELEASE_RUN: ${{ github.run_number }}
+          RELEASE_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import os
+          import shutil
+
+          evidence = Path("verified")
+          output = Path("publish-assets")
+          output.mkdir(parents=True, exist_ok=True)
+          assets = []
+          for pattern, label in (("*.msi", "windows-x64-installer"), ("*.deb", "linux-x64-installer")):
+              matches = [p for p in evidence.rglob(pattern) if p.is_file()]
+              if len(matches) != 1:
+                  raise SystemExit(f"Expected exactly one {label}, found {len(matches)}: {matches}")
+              source = matches[0]
+              if source.stat().st_size <= 1024 * 1024:
+                  raise SystemExit(f"Refusing empty/implausibly small package: {source}")
+              if source.stat().st_size >= 2 * 1024**3:
+                  raise SystemExit(f"GitHub release asset exceeds 2 GiB: {source}")
+              destination = output / source.name
+              if destination.exists():
+                  raise SystemExit(f"Colliding installer asset name: {source.name}")
+              shutil.copy2(source, destination)
+              digest = hashlib.file_digest(destination.open("rb"), "sha256").hexdigest()
+              assets.append({"name": destination.name, "role": label,
+                             "size": destination.stat().st_size, "sha256": digest})
+          (output / "SHA256SUMS.txt").write_text(
+              "".join(f'{a["sha256"]}  {a["name"]}\n' for a in assets), encoding="utf-8"
+          )
+          (output / "release-metadata.json").write_text(
+              json.dumps({"schema": 1, "channel": "alpha", "commit": os.environ["SOURCE_COMMIT"],
+                          "run_number": int(os.environ["RELEASE_RUN"]),
+                          "run_id": int(os.environ["RELEASE_RUN_ID"]),
+                          "version": "0.9." + os.environ["RELEASE_RUN"],
+                          "assets": assets}, indent=2) + "\n", encoding="utf-8"
+          )
+          print("Validated assets:", json.dumps(assets, indent=2))
+          PY
+          (cd publish-assets && sha256sum -c SHA256SUMS.txt)
+          test -s publish-assets/release-metadata.json
+
+      - name: Publish only after Windows and Linux lifecycle gates passed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          RELEASE_RUN: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          short_sha="${SOURCE_COMMIT:0:12}"
+          tag="auto-${RELEASE_RUN}-${short_sha}"
+          notes="Verified installer build for commit ${SOURCE_COMMIT}. Windows MSI and Linux DEB passed the native installer deployment lifecycle gates (build, install, launch, uninstall, and preservation of mutable data). Verify downloaded files against SHA256SUMS.txt. This is an alpha release; native executables are not Authenticode/code-signed."
+          if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$REPOSITORY" \
+              --target "$SOURCE_COMMIT" --draft --prerelease \
+              --title "The Mechanist alpha 0.9.${RELEASE_RUN} (${short_sha})" \
+              --notes "$notes"
+          fi
+          gh release upload "$tag" --repo "$REPOSITORY" --clobber publish-assets/*
+          gh release edit "$tag" --repo "$REPOSITORY" --draft=false --prerelease=true
+          gh release view "$tag" --repo "$REPOSITORY" --json url,isDraft,assets \
+            --jq '{url: .url, draft: .isDraft, assetNames: [.assets[].name]}'
