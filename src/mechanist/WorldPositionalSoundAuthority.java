@@ -108,6 +108,41 @@ final class WorldPositionalSoundAuthority {
                        Math.max(2, noise.period)) != 0);
     }
 
+    /** A tactical noise must not be drowned out by a closer idle fixture. */
+    static ZoneNoiseSourceRecord nearestTacticalNoise(World world,
+                                                       int listenerX, int listenerY,
+                                                       int turn) {
+        if (world == null || world.noiseSources == null) return null;
+        ZoneNoiseSourceRecord nearest = null;
+        int best = Integer.MAX_VALUE;
+        for (ZoneNoiseSourceRecord noise : world.noiseSources) {
+            if (noise == null || !world.inBounds(noise.x, noise.y)
+                    || !noiseActiveThisTurn(noise, turn)) continue;
+            String key = noiseCue(noise);
+            if (!"weapon_shot".equals(key)
+                    && !"weapon_thundering".equals(key)) continue;
+            int d = Math.abs(noise.x - listenerX) + Math.abs(noise.y - listenerY);
+            if (d > Math.min(15, Math.max(1, noise.radius))
+                    || d >= best) continue;
+            nearest = noise;
+            best = d;
+        }
+        return nearest;
+    }
+
+    static void playTacticalNoise(GamePanel game,
+                                  String previousCue, int previousX, int previousY) {
+        if (!active(game)) return;
+        ZoneNoiseSourceRecord tactical = nearestTacticalNoise(
+                game.world, game.playerX, game.playerY, game.turn);
+        if (tactical == null) return;
+        String cue = noiseCue(tactical);
+        if (cue.equals(previousCue)
+                && tactical.x == previousX && tactical.y == previousY)
+            return; // Already played as this tick's primary ambient.
+        play(game, cue, tactical.x, tactical.y, 1.0);
+    }
+
     static boolean sameRoom(World world, int listenerX, int listenerY,
                             int sourceX, int sourceY) {
         if (world == null || world.roomIds == null
