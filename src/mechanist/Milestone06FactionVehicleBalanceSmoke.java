@@ -64,6 +64,8 @@ final class Milestone06FactionVehicleBalanceSmoke {
                             + "without fabricating uncommitted route control: "
                             + initial.summary());
 
+            verifyCommanderAssessment(game, mechanist, initial);
+
             FactionStrategicPlan lowCommitment = seizurePlan(
                     "STRAT-BALANCE-LOW", 20, 20, game.turn);
             FactionVehicleStrategicAuthority.Suggestion refusedPlanning =
@@ -189,12 +191,149 @@ final class Milestone06FactionVehicleBalanceSmoke {
             }
 
             verifyVehicleContractOutcomes(game, mechanist, cargo, guardTank);
+            verifyUnderdogEngagements();
             System.out.println("Milestone 06 faction vehicle balance and contract smoke passed.");
         } finally {
             game.shutdownRuntime();
         }
         Milestone06FactionVehicleRouteControlSmoke.main(args);
         Milestone06FactionVehicleStrategicRouteControlSmoke.main(args);
+    }
+
+    private static void verifyCommanderAssessment(
+            GamePanel game, NpcFactionSite site,
+            FactionVehicleBalanceAuthority.Contest actual) {
+        FactionStrategicPlan plan = seizurePlan(
+                "COMMAND-ASSESSMENT-ROUNDTRIP", 90, 80, game.turn);
+        plan.leaderName = "Commander Belis";
+        plan.deputyName = "Lieutenant Vale";
+        plan.commandSkill = 94;
+        String encoded = plan.saveLine();
+        FactionStrategicPlan decoded = FactionStrategicPlan.parse(encoded);
+        require(decoded != null && decoded.effectiveCommandSkill() == 94
+                        && decoded.saveLine().equals(encoded),
+                "commander assessment skill must survive strategic plan save/load");
+        String legacy = encoded.substring(0, encoded.lastIndexOf('|'));
+        FactionStrategicPlan oldSave = FactionStrategicPlan.parse(legacy);
+        require(oldSave != null
+                        && oldSave.effectiveCommandSkill() >= 25
+                        && oldSave.effectiveCommandSkill() <= 95
+                        && FactionStrategicPlan.parse(oldSave.saveLine())
+                        .effectiveCommandSkill() == oldSave.effectiveCommandSkill(),
+                "pre-assessment saves must derive and then preserve a stable commander skill");
+
+        plan.commandSkill = 0;
+        FactionVehicleBalanceAuthority.Assessment novice =
+                FactionVehicleBalanceAuthority.assess(game,
+                        site.faction, Faction.IMPERIAL_GUARD, site, plan);
+        plan.commandSkill = 100;
+        FactionVehicleBalanceAuthority.Assessment expert =
+                FactionVehicleBalanceAuthority.assess(game,
+                        site.faction, Faction.IMPERIAL_GUARD, site, plan);
+        FactionVehicleBalanceAuthority.Assessment repeated =
+                FactionVehicleBalanceAuthority.assess(game,
+                        site.faction, Faction.IMPERIAL_GUARD, site, plan);
+        require(expert.equals(repeated)
+                        && novice.uncertaintyPct() > expert.uncertaintyPct()
+                        && novice.actual().equals(actual)
+                        && expert.actual().equals(actual)
+                        && Math.abs(expert.perceivedDefenderPower()
+                        - actual.defenderPower()) <=
+                        actual.defenderPower() * expert.uncertaintyPct() / 100 + 1,
+                "skilled commanders must have tighter, stable intelligence without altering actual fleet strength");
+
+        int adventurousVictories = 0, adventurousLosses = 0;
+        for (int i = 0; i < 160; i++) {
+            plan.id = "COMMANDER-RISK-ROLL-" + i;
+            plan.commandSkill = 50;
+            plan.aggression = 95;
+            plan.ambition = 95;
+            FactionVehicleBalanceAuthority.Assessment attempt =
+                    FactionVehicleBalanceAuthority.assess(game, site.faction,
+                            Faction.IMPERIAL_GUARD, site, plan);
+            require(attempt.actual().equals(actual)
+                            && attempt.victoryChance() > 0
+                            && attempt.victoryChance() < 50
+                            && attempt.willEngage(),
+                    "bold commanders must be allowed to gamble while objectively outmatched");
+            if (attempt.victorious()) adventurousVictories++;
+            else adventurousLosses++;
+        }
+        require(adventurousVictories > 0 && adventurousLosses > 0,
+                "stable combat outcomes must allow both underdog upsets and repulsed attacks");
+    }
+
+    private static void verifyUnderdogEngagements() {
+        GamePanel game = new GamePanel();
+        game.shutdownRuntime();
+        try {
+            game.world = world();
+            game.turn = 1600;
+            game.worldTurn = 1600L;
+            game.npcFactionSites.clear();
+            game.factionStrategicPlans.clear();
+            NpcFactionSite site = site("Independent Risk Yard",
+                    Faction.MECHANIST_COLLEGIA, game.world);
+            site.workers = 8;
+            site.baseLevel = 3;
+            site.machineLevel = 4;
+            site.stock = 140;
+            game.npcFactionSites.add(site);
+            MapObjectState truck = vehicle(game.world, 4, 5,
+                    AssetIntegrationDisciplineAuthority.PARKED_CARGO_TRUCK,
+                    site.faction, "industrial logistics", 301L);
+            staff(truck, "Driver Vale", 6);
+            game.world.mapObjects.add(truck);
+            require(VehicleMotorPoolAuthority.assign(game, truck, site,
+                    "production freight convoy", "underdog registration").success(),
+                    "underdog must have a real assigned logistics vehicle");
+            MapObjectState tank = vehicle(game.world, 10, 5,
+                    AssetIntegrationDisciplineAuthority.PARKED_TANK,
+                    Faction.IMPERIAL_GUARD, "armored route defense", 302L);
+            staff(tank, "Commander Rusk", 6);
+            game.world.mapObjects.add(tank);
+
+            FactionStrategicPlan defeated = null, successful = null;
+            for (int i = 0; i < 160; i++) {
+                FactionStrategicPlan plan = seizurePlan(
+                        "UNDERDOG-BATTLE-" + i, 95, 95, game.turn);
+                plan.commandSkill = 50;
+                var assessment = FactionVehicleBalanceAuthority.assess(
+                        game, site.faction, Faction.IMPERIAL_GUARD,
+                        site, plan);
+                if (!assessment.willEngage()
+                        || assessment.actual().attackerPower()
+                        >= assessment.actual().defenderPower()) continue;
+                if (assessment.victorious() && successful == null)
+                    successful = plan;
+                if (!assessment.victorious() && defeated == null)
+                    defeated = plan;
+                if (defeated != null && successful != null) break;
+            }
+            require(defeated != null && successful != null,
+                    "both risk outcomes must exist for a disadvantaged fleet");
+            String beforeTank = tank.stockState;
+            int beforeStock = site.stock;
+            var repulsed = FactionVehicleStrategicAuthority.attempt(
+                    game, defeated, site);
+            require(repulsed.handled() && !repulsed.success()
+                            && "vehicle-seizure-repulsed".equals(repulsed.blocker())
+                            && site.stock < beforeStock
+                            && beforeTank.equals(tank.stockState)
+                            && VehicleRuntimeAuthority.factionOwns(
+                            tank, Faction.IMPERIAL_GUARD),
+                    "losing a committed battle must consume deployment stock without stealing the defender's vehicle");
+            int stockAfterLoss = site.stock;
+            var upset = FactionVehicleStrategicAuthority.attempt(
+                    game, successful, site);
+            require(upset.handled() && upset.success()
+                            && site.stock < stockAfterLoss
+                            && VehicleRuntimeAuthority.factionOwns(tank, site.faction)
+                            && upset.message().contains("Battle roll"),
+                    "an underdog's winning battle roll must permit a real physical vehicle capture");
+        } finally {
+            game.shutdownRuntime();
+        }
     }
 
     private static void verifyVehicleContractOutcomes(
