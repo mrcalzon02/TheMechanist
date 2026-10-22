@@ -85,7 +85,7 @@ class FactionStrategicPlan {
 
     int effectiveCommandSkill() {
         return commandSkill >= 0 ? Math.max(0, Math.min(100, commandSkill))
-                : 25 + Math.floorMod(Objects.hash(faction, leaderName,
+                : 25 + Math.floorMod(Objects.hash(faction == null ? "NONE" : faction.name(), leaderName,
                         deputyName, "strategic-command-skill"), 71);
     }
 
