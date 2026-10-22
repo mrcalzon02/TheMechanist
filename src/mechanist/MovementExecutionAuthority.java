@@ -162,6 +162,7 @@ final class MovementExecutionAuthority {
         game.manualMovementPlanPath.clear();
         game.mouseMovePreviewPath.clear();
         game.advanceTurnBody(null);
+        WorldPositionalSoundAuthority.playPlayerStep(game, fromX, fromY);
         ProgressiveLookAuthority.reset(game, source == null || source.isBlank() ? "movement execution" : source);
     }
 
