@@ -54,8 +54,14 @@ final class Milestone06FactionVehicleBalanceSmoke {
                             == FactionVehicleBalanceAuthority.Posture.OUTMATCHED)
                             && initial.defenderHeavy() == 1
                             && initial.defenderPower() > initial.attackerPower()
-                            && initial.routeControlDelta() < 0,
-                    "a logistics-only motor pool should be deterred by a ready guard tank: "
+                            && initial.attackerAssault() < initial.defenderDefense()
+                            && initial.confidence() < 50
+                            && initial.deterrence() > 50
+                            && initial.attackerRouteCommitment() == 0
+                            && initial.defenderRouteCommitment() == 0
+                            && initial.routeControlDelta() <= 0,
+                    "a logistics-only motor pool should be deterred by a ready guard tank, "
+                            + "without fabricating uncommitted route control: "
                             + initial.summary());
 
             FactionStrategicPlan lowCommitment = seizurePlan(
