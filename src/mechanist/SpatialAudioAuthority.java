@@ -48,11 +48,11 @@ final class SpatialAudioAuthority {
         byte[] output = new byte[frames * 4];
         for (int i = 0; i < frames; i++) {
             int sourceIndex = i * channels * 2;
-            short leftSample = sample(source, sourceIndex);
-            short rightSample = channels == 1
-                    ? leftSample : sample(source, sourceIndex + 2);
-            write(output, i * 4, scaled(leftSample, mix.left()));
-            write(output, i * 4 + 2, scaled(rightSample, mix.right()));
+            int mono = sample(source, sourceIndex);
+            if (channels == 2)
+                mono = (mono + sample(source, sourceIndex + 2)) / 2;
+            write(output, i * 4, scaled((short) mono, mix.left()));
+            write(output, i * 4 + 2, scaled((short) mono, mix.right()));
         }
         return output;
     }
