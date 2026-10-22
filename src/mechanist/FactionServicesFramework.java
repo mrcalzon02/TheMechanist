@@ -55,7 +55,7 @@ class FactionStrategicPlan {
         p.aggression = aggressionFor(p.faction, r);
         p.secrecy = secrecyFor(p.faction, r);
         p.officerCadencePct = cadenceFor(p.faction, p.leaderName, p.deputyName);
-        p.commandSkill = 25 + r.nextInt(71);
+        p.commandSkill = p.effectiveCommandSkill();
         p.longTermGoal = pick(longTermGoals(p.faction), r);
         p.personalGoal = pick(personalGoals(p.faction), r);
         p.chooseNewImmediateGoal(r, turn);
