@@ -78,7 +78,7 @@ final class FactionVehicleBalanceAuthority {
                 plan == null ? "" : plan.deputyName,
                 plan == null ? "" : plan.scheme,
                 plan == null ? 0 : plan.cadenceCycle,
-                actual.attacker(), actual.defender());
+                actual.attacker().name(), actual.defender().name());
         Random assessmentRolls = new Random(worldSeed ^ (identity * 0x9E3779B97F4A7C15L));
         // Commanders know their own forces better than opposing dispositions.
         int ownError = assessmentRolls.nextInt(uncertainty + 1)
