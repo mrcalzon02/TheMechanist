@@ -192,6 +192,7 @@ final class Milestone06FactionVehicleBalanceSmoke {
 
             verifyVehicleContractOutcomes(game, mechanist, cargo, guardTank);
             verifyUnderdogEngagements();
+            verifyContestedEngagements();
             System.out.println("Milestone 06 faction vehicle balance and contract smoke passed.");
         } finally {
             game.shutdownRuntime();
@@ -261,6 +262,63 @@ final class Milestone06FactionVehicleBalanceSmoke {
         }
         require(adventurousVictories > 0 && adventurousLosses > 0,
                 "stable combat outcomes must allow both underdog upsets and repulsed attacks");
+    }
+
+    private static void verifyContestedEngagements() {
+        GamePanel game = new GamePanel();
+        game.shutdownRuntime();
+        try {
+            game.world = world();
+            game.turn = 1700;
+            game.worldTurn = 1700L;
+            game.npcFactionSites.clear();
+            game.factionStrategicPlans.clear();
+            NpcFactionSite site = site("Contested Armored Yard",
+                    Faction.MECHANIST_COLLEGIA, game.world);
+            site.workers = 8;
+            site.baseLevel = 3;
+            site.machineLevel = 4;
+            site.stock = 120;
+            game.npcFactionSites.add(site);
+            MapObjectState attackingTank = vehicle(game.world, 6, 5,
+                    AssetIntegrationDisciplineAuthority.PARKED_TANK,
+                    site.faction, "armored route defense", 1701L);
+            MapObjectState defendingTank = vehicle(game.world, 12, 5,
+                    AssetIntegrationDisciplineAuthority.PARKED_TANK,
+                    Faction.IMPERIAL_GUARD, "armored route defense", 1702L);
+            staff(attackingTank, "Commander Moss", 6);
+            staff(defendingTank, "Commander Hale", 6);
+            game.world.mapObjects.add(attackingTank);
+            game.world.mapObjects.add(defendingTank);
+            require(VehicleMotorPoolAuthority.assign(game, attackingTank, site,
+                    "armored route defense", "contested combat smoke").success(),
+                    "near-parity test needs a real motor-pool combat vehicle");
+            var balance = FactionVehicleBalanceAuthority.compare(
+                    game, site.faction, Faction.IMPERIAL_GUARD, site);
+            require(balance.attackerPower() > 0 && balance.defenderPower() > 0
+                            && (long) balance.attackerPower() * 100
+                            >= (long) balance.defenderPower() * 70
+                            && (long) balance.attackerPower() * 100
+                            <= (long) balance.defenderPower() * 135,
+                    "armored forces should be roughly comparable in this fixture: "
+                            + balance.summary());
+            FactionStrategicPlan plan = seizurePlan(
+                    "CONTESTED-ENGAGEMENT", 65, 50, game.turn);
+            plan.commandSkill = 100;
+            for (int i = 0; i < 32; i++) {
+                plan.id = "CONTESTED-ENGAGEMENT-" + i;
+                var command = FactionVehicleBalanceAuthority.assess(
+                        game, site.faction, Faction.IMPERIAL_GUARD, site, plan);
+                require(command.willEngage()
+                                && command.actual().equals(balance)
+                                && command.victoryChance() > 0
+                                && command.victoryChance() < 100,
+                        "comparable opposing forces must be willing to fight without a guaranteed victory: "
+                                + command.summary());
+            }
+        } finally {
+            game.shutdownRuntime();
+        }
     }
 
     private static void verifyUnderdogEngagements() {
