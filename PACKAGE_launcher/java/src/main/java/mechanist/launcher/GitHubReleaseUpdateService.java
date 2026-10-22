@@ -87,7 +87,12 @@ final class GitHubReleaseUpdateService {
                 if (!digest.matches("sha256:[a-f0-9]{64}")) continue;
                 long size = longField(asset, "size");
                 if (size < 1024 || size >= MAX_ASSET_SIZE) continue;
-                URI url = validatedAssetUrl(stringField(asset, "browser_download_url"), tag, name);
+                URI url;
+                try {
+                    url = validatedAssetUrl(stringField(asset, "browser_download_url"), tag, name);
+                } catch (IOException unsafeAsset) {
+                    continue; // A malformed asset must not hide an older valid release.
+                }
                 URI page = URI.create("https://github.com/mrcalzon02/TheMechanist/releases/tag/" + tag);
                 newest = new Candidate(tag, "0.9." + run, match.group(2), name, url,
                         page, size, digest.substring(7));
