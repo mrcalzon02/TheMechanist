@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: mechanist-verified-release-main
+  group: mechanist-verified-release-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
