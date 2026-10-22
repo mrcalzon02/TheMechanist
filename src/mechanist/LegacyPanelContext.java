@@ -7220,6 +7220,9 @@ class GamePanel extends LegacyPanelBridgeBase {
         } else {
             sounds.playDistantCue(cue.key, cue.distance, options);
         }
+        WorldPositionalSoundAuthority.playTacticalNoise(
+                this, cue.positioned ? cue.key : null,
+                cue.sourceX, cue.sourceY);
     }
 
     void tickSinglePlayerPassiveWorldTime() {
