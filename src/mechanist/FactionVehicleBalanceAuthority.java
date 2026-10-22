@@ -61,7 +61,7 @@ final class FactionVehicleBalanceAuthority {
                     + " vs " + perceivedDefenderPower
                     + " (" + perceivedPosture.label + "); resolve "
                     + effectiveCommitment + "/" + decisionThreshold
-                    + "; engagement chance " + victoryChance + "%.";
+                    + ".";
         }
     }
 
