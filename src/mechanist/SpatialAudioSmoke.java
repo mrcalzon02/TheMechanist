@@ -124,6 +124,9 @@ final class SpatialAudioSmoke {
                     "sfx-1", "distant gunfire", "gunfire", 14, 10,
                     12, 40, true, false, 0, 5, "live-combat");
             world.noiseSources.add(gunfire);
+            require(WorldPositionalSoundAuthority.nearestTacticalNoise(
+                            world, game.playerX, game.playerY, game.turn) == gunfire,
+                    "actual distant gunfire must not be masked by closer passive ambience");
             emitted = game.passiveAmbientCueForCurrentView();
             require(emitted != null && emitted.positioned()
                             && "weapon_shot".equals(emitted.key())
