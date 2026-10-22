@@ -79,24 +79,20 @@ final class FactionVehicleStrategicAuthority {
                         VehicleRuntimeAuthority.inspect(game.world, target);
                 Faction defender = targetState == null
                         ? Faction.NONE : targetState.ownerFaction();
-                FactionVehicleBalanceAuthority.Contest contest =
-                        FactionVehicleBalanceAuthority.compare(game,
-                                site.faction, defender, site);
+                FactionVehicleBalanceAuthority.Assessment command =
+                        FactionVehicleBalanceAuthority.assess(game,
+                                site.faction, defender, site, plan);
                 if (defender != Faction.NONE
                         && !FactionIdentityAuthority.sameFamily(
                         defender, site.faction)
-                        && !contest.canEscalate(plan.aggression,
-                        plan.ambition)) {
+                        && !command.willEngage()) {
                     return Suggestion.none();
                 }
                 return new Suggestion(VEHICLE_SEIZURE_GOAL,
                         displayName(target),
                         "the active scheme has a physical rival vehicle aligned with faction doctrine; fit "
-                                + assessment.doctrineFit() + "%, fleet posture "
-                                + contest.posture().label + ", commitment "
-                                + contest.commitment(plan.aggression,
-                                plan.ambition) + "/"
-                                + contest.escalationThreshold());
+                                + assessment.doctrineFit() + "%; "
+                                + command.summary());
             }
         }
         return Suggestion.none();
@@ -121,20 +117,17 @@ final class FactionVehicleStrategicAuthority {
         FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
                 FactionVehicleDoctrineAuthority.assess(game, vehicle, site);
         Faction formerFaction = snapshot.ownerFaction();
-        FactionVehicleBalanceAuthority.Contest contest =
-                FactionVehicleBalanceAuthority.compare(game, site.faction,
-                        formerFaction, site);
-        if (formerFaction != null && formerFaction != Faction.NONE
+        FactionVehicleBalanceAuthority.Assessment command =
+                FactionVehicleBalanceAuthority.assess(game, site.faction,
+                        formerFaction, site, plan);
+        FactionVehicleBalanceAuthority.Contest contest = command.actual();
+        boolean hostile = formerFaction != null && formerFaction != Faction.NONE
                 && !FactionIdentityAuthority.sameFamily(
-                formerFaction, site.faction)
-                && !contest.canEscalate(plan.aggression, plan.ambition)) {
+                formerFaction, site.faction);
+        if (hostile && !command.willEngage()) {
             return blocked("vehicle-fleet-deterrence",
                     faction(site.faction) + " declined the seizure of "
-                            + displayName(vehicle) + ". " + contest.summary()
-                            + " Leadership commitment "
-                            + contest.commitment(plan.aggression,
-                            plan.ambition) + "/"
-                            + contest.escalationThreshold() + ".",
+                            + displayName(vehicle) + ". " + command.summary(),
                     site);
         }
         int deterrenceCost = Math.max(0, contest.deterrence() - 50) / 25;
@@ -149,6 +142,18 @@ final class FactionVehicleStrategicAuthority {
         int before = site.stock;
         String formerOwner = snapshot.ownerName();
         site.stock -= cost;
+        if (hostile && !command.victorious()) {
+            // Deployment consumes supplies, but a repulsed seizure never
+            // transfers the rival vehicle or overwrites its persistent state.
+            return new FactionStrategicAssetAuthority.Outcome(true, false,
+                    "vehicle-seizure-repulsed",
+                    faction(site.faction) + " attacked " + displayName(vehicle)
+                            + " but was repulsed. " + command.summary()
+                            + " Battle roll " + command.battleRoll()
+                            + "/100; site stock " + before + " -> "
+                            + site.stock + ".",
+                    -1, before, site.stock, null, null);
+        }
         VehicleRuntimeAuthority.Result result =
                 VehicleRuntimeAuthority.transferToFaction(vehicle, site.faction,
                         game.turn, plan.scheme);
@@ -172,8 +177,10 @@ final class FactionVehicleStrategicAuthority {
                         + " from " + clean(formerOwner, faction(formerFaction))
                         + " through " + plan.scheme + "; doctrine fit "
                         + assessment.doctrineFit() + "%; fleet posture "
-                        + contest.posture().label + "; site stock "
-                        + before + " -> " + site.stock + ".",
+                        + contest.posture().label
+                        + (hostile ? "; " + command.summary()
+                        + " Battle roll " + command.battleRoll() + "/100" : "")
+                        + "; site stock " + before + " -> " + site.stock + ".",
                 -1, before, site.stock, null, null);
     }
 
