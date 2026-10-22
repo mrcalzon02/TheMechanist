@@ -57,6 +57,43 @@ final class SpatialAudioAuthority {
         return output;
     }
 
+    /**
+     * Small early reflections for enclosed rooms. Applied after stereo
+     * positioning; no audio device, global DSP state or sleeping threads.
+     * Positive polarity and decaying echoes preserve speech intelligibility.
+     */
+    static byte[] roomReflectionsPcm16(byte[] dryStereo, int sampleRate,
+                                       double reflectionStrength) {
+        if (dryStereo == null || dryStereo.length % 4 != 0)
+            throw new IllegalArgumentException("Stereo 16-bit PCM required");
+        if (reflectionStrength <= 0 || dryStereo.length == 0)
+            return dryStereo == null ? null : dryStereo.clone();
+        int frames = dryStereo.length / 4;
+        int delay1 = Math.max(1, Math.round(sampleRate * 0.073f));
+        int delay2 = Math.max(1, Math.round(sampleRate * 0.137f));
+        int tailFrames = delay2;
+        byte[] wet = new byte[(frames + tailFrames) * 4];
+        System.arraycopy(dryStereo, 0, wet, 0, dryStereo.length);
+        for (int i = 0; i < frames; i++) {
+            int from = i * 4;
+            for (int ch = 0; ch < 2; ch++) {
+                short sample = sample(dryStereo, from + ch * 2);
+                addReflection(wet, (i + delay1) * 4 + ch * 2,
+                        sample, reflectionStrength * 0.25);
+                addReflection(wet, (i + delay2) * 4 + ch * 2,
+                        sample, reflectionStrength * 0.12);
+            }
+        }
+        return wet;
+    }
+
+    private static void addReflection(byte[] data, int offset,
+                                      short original, double gain) {
+        int sum = sample(data, offset) + (int) Math.round(original * gain);
+        write(data, offset, (short) Math.max(Short.MIN_VALUE,
+                Math.min(Short.MAX_VALUE, sum)));
+    }
+
     private static short sample(byte[] data, int index) {
         return (short) ((data[index] & 0xff)
                 | ((data[index + 1] & 0xff) << 8));
