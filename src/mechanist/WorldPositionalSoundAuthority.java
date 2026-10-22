@@ -62,6 +62,20 @@ final class WorldPositionalSoundAuthority {
         }
     }
 
+    static void playPlayerStep(GamePanel game, int previousX, int previousY) {
+        if (!active(game) || (previousX == game.playerX
+                && previousY == game.playerY)) return;
+        int mode = game.selectedMovementModeIndex;
+        double strength = switch (mode) {
+            case GamePanel.MOTION_SNEAK -> 0.20;
+            case GamePanel.MOTION_RUN -> 0.72;
+            case GamePanel.MOTION_SPRINT -> 0.95;
+            default -> 0.45;
+        };
+        play(game, footstepKey(game.world, game.playerX, game.playerY),
+                game.playerX, game.playerY, strength);
+    }
+
     static void playConfirmedAttack(GamePanel game,
                                     StructuralScaleCombatAuthority.WeaponProfile weapon) {
         if (!active(game) || weapon == null) return;
