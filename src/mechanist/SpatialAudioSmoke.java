@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.util.Arrays;
+import java.util.List;
 
 /** Headless-safe positional mixer and live world emitter binding regression. */
 final class SpatialAudioSmoke {
@@ -61,6 +62,16 @@ final class SpatialAudioSmoke {
                         SpatialAudioAuthority.stereoPcm16(new byte[0], 1, east)),
                 "empty PCM stream must remain empty");
 
+        byte[] reflected = SpatialAudioAuthority.roomReflectionsPcm16(
+                stereo, 44100, 1.0);
+        require(reflected.length > stereo.length
+                        && sample(reflected, 3219 * 4) != 0
+                        && sample(reflected, 3219 * 4 + 2) != 0
+                        && Arrays.equals(stereo, Arrays.copyOf(reflected, stereo.length))
+                        && Arrays.equals(stereo, SpatialAudioAuthority.roomReflectionsPcm16(
+                                stereo, 44100, 0)),
+                "indoor reverberation must preserve the dry source while adding bounded stereo reflections");
+
         GamePanel game = new GamePanel();
         game.shutdownRuntime();
         try {
@@ -108,10 +119,59 @@ final class SpatialAudioSmoke {
             require(emitted != null && !emitted.positioned()
                             && "ambient_press".equals(emitted.key()),
                     "zone-wide ambience must remain diffuse, not incorrectly panned");
+
+            ZoneNoiseSourceRecord gunfire = new ZoneNoiseSourceRecord(
+                    "sfx-1", "distant gunfire", "gunfire", 14, 10,
+                    12, 40, true, false, 0, 5, "live-combat");
+            world.noiseSources.add(gunfire);
+            emitted = game.passiveAmbientCueForCurrentView();
+            require(emitted != null && emitted.positioned()
+                            && "weapon_shot".equals(emitted.key())
+                            && emitted.sourceX() == 14 && emitted.sourceY() == 10,
+                    "active simulated gunfire must retain its actual source location");
+            gunfire.x = 8;
+            emitted = game.passiveAmbientCueForCurrentView();
+            require(emitted != null && emitted.positioned()
+                            && emitted.sourceX() == 8,
+                    "moving sound sources must use live coordinates rather than cached positions");
+            gunfire.active = false;
+            emitted = game.passiveAmbientCueForCurrentView();
+            require(emitted != null && !emitted.positioned(),
+                    "inactive noise records must not continue sounding");
+
+            NpcEntity moving = new NpcEntity();
+            moving.id = "moving-guard";
+            moving.hp = 12;
+            moving.x = 11;
+            moving.y = 10;
+            moving.activeMotionStateIndex = GamePanel.MOTION_RUN;
+            world.tiles[11][10] = '+';
+            var step = WorldPositionalSoundAuthority.movedNpc(
+                    world, moving, 10, 10, game.playerX, game.playerY);
+            require(step != null && step.distance() == 1
+                            && "footstep_grate".equals(step.cue()),
+                    "actual mobile NPC movement must emit material-aware positional footsteps");
+            require(WorldPositionalSoundAuthority.movedNpc(
+                    world, moving, 11, 10, game.playerX, game.playerY) == null,
+                    "stationary NPCs must not emit a footstep");
+            var farStep = new WorldPositionalSoundAuthority.Footstep(
+                    "distant", 20, 10, GamePanel.MOTION_WALK, "footstep_metal", 10);
+            var nearest = WorldPositionalSoundAuthority.nearestSteps(
+                    List.of(farStep, step, farStep), 1);
+            require(nearest.size() == 1 && nearest.get(0) == step,
+                    "crowd footsteps must be capped and favor nearby actors");
+
+            world.roomIds[10][10] = 3;
+            world.roomIds[11][10] = 3;
+            require(WorldPositionalSoundAuthority.sameRoom(world, 10, 10, 11, 10),
+                    "shared enclosed room must be eligible for early reflections");
+            world.roomIds[11][10] = 4;
+            require(!WorldPositionalSoundAuthority.sameRoom(world, 10, 10, 11, 10),
+                    "separate rooms must not sound like a shared reverberant chamber");
         } finally {
             game.shutdownRuntime();
         }
-        System.out.println("SpatialAudioSmoke PASS stereo position, range, facing, occlusion, PCM and live emitter binding");
+        System.out.println("SpatialAudioSmoke PASS stereo position, range, facing, room reflections, NPC footsteps, gunfire and moving emitter binding");
     }
 
     private static short sample(byte[] data, int index) {
