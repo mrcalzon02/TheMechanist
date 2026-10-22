@@ -155,7 +155,7 @@ final class GitHubReleaseUpdateService {
             URI uri = URI.create(value);
             String exactPath = "/mrcalzon02/TheMechanist/releases/download/" + tag + "/" + name;
             if (!"https".equals(uri.getScheme()) || !"github.com".equals(uri.getHost())
-                    || !exactPath.equals(uri.getRawPath()) || uri.getUserInfo() != null
+                    || !exactPath.equals(uri.getPath()) || uri.getUserInfo() != null
                     || uri.getRawQuery() != null || uri.getRawFragment() != null) {
                 throw new IOException("Invalid GitHub installer download URL");
             }
