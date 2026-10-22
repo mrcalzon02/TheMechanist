@@ -5,7 +5,7 @@
 
     <groupId>local.mechanist</groupId>
     <artifactId>the-mechanist</artifactId>
-    <version>0.9.10iz-alpha.5</version>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <name>The Mechanist</name>
@@ -13,6 +13,7 @@
     <url>https://example.invalid/the-mechanist-local-build</url>
 
     <properties>
+        <revision>0.9.10iz-alpha.5</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
         <netty.version>4.1.111.Final</netty.version>
