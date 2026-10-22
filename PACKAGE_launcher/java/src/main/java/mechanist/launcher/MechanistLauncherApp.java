@@ -44,6 +44,7 @@ public final class MechanistLauncherApp {
     private JLabel effectiveAudio;
     private JButton installUpdate;
     private JButton updateButton;
+    private boolean launcherTaskBusy;
     private JButton launch;
     private JButton repair;
     private String lastUpdateStatus = "No package verification has been run in this launcher session.";
@@ -416,7 +417,7 @@ public final class MechanistLauncherApp {
                                 "Update check failed", JOptionPane.WARNING_MESSAGE);
                     }
                 } finally {
-                    updateButton.setEnabled(true);
+                    updateButton.setEnabled(!launcherTaskBusy);
                 }
             }
         };
@@ -608,6 +609,7 @@ public final class MechanistLauncherApp {
     }
 
     private void setBusy(boolean busy, String message) {
+        launcherTaskBusy = busy;
         installUpdate.setEnabled(!busy);
         updateButton.setEnabled(!busy);
         repair.setEnabled(!busy);
