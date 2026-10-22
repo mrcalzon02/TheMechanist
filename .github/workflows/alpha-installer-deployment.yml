@@ -77,6 +77,16 @@ jobs:
             throw 'light.exe remains unavailable after WiX setup.'
           }
 
+      - name: Test prerelease update discovery contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/launcher-updater-smoke
+          javac --release 17 -d dist/launcher-updater-smoke \
+            PACKAGE_launcher/java/src/main/java/mechanist/launcher/GitHubReleaseUpdateService.java \
+            PACKAGE_launcher/java/src/test/java/mechanist/launcher/GitHubReleaseUpdateServiceSmoke.java
+          java -cp dist/launcher-updater-smoke mechanist.launcher.GitHubReleaseUpdateServiceSmoke
+
       - name: Compile release tooling
         shell: bash
         run: |
