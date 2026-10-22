@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.awt.Point;
+import java.util.ArrayList;
 import java.util.Locale;
 
 /**
@@ -61,6 +62,7 @@ final class NpcNeedsDutyRuntimeAuthority {
                 ? NpcTurnBudgetScheduler.HARD_LOCAL_BUDGET + NpcTurnBudgetScheduler.EMERGENCY_EXTRA_BUDGET
                 : (playerSneaking ? NpcTurnBudgetScheduler.QUIET_LOCAL_BUDGET : NpcTurnBudgetScheduler.HARD_LOCAL_BUDGET);
         out.schedulerAudit = selection.auditLine(game.turn, game.playerX, game.playerY, localBudget);
+        ArrayList<WorldPositionalSoundAuthority.Footstep> audibleSteps = new ArrayList<>();
 
         for (NpcEntity npc : selection.selected) {
             if (npc == null) continue;
@@ -76,8 +78,16 @@ final class NpcNeedsDutyRuntimeAuthority {
                 out.passiveDesires++;
                 if (npc.x != beforeX || npc.y != beforeY) out.moved++;
             }
+            if (npc.x != beforeX || npc.y != beforeY) {
+                WorldPositionalSoundAuthority.Footstep step =
+                        WorldPositionalSoundAuthority.movedNpc(
+                                world, npc, beforeX, beforeY,
+                                game.playerX, game.playerY);
+                if (step != null) audibleSteps.add(step);
+            }
             NpcLifeMemoryAuthority.observeState(npc, game.worldTurn, beforeState);
         }
+        WorldPositionalSoundAuthority.playNpcSteps(game, audibleSteps);
         return out;
     }
 
