@@ -215,10 +215,20 @@ class SoundManager {
                         int listenerX, int listenerY,
                         int facingX, int facingY, boolean occluded,
                         GameOptions opt) {
+        playPositional(key, sourceX, sourceY, listenerX, listenerY,
+                facingX, facingY, occluded, false, 1.0, opt);
+    }
+
+    void playPositional(String key, int sourceX, int sourceY,
+                        int listenerX, int listenerY,
+                        int facingX, int facingY, boolean occluded,
+                        boolean enclosed, double strength, GameOptions opt) {
         if (startupCueSuppressed(key) || opt == null || !opt.soundEnabled
                 || opt.volume <= 0 || opt.sfxVolume <= 0
                 || GraphicsEnvironment.isHeadless()) return;
-        int level = Math.min(opt.sfxVolume, 62) * opt.volume / 100;
+        int level = (int) Math.round(Math.min(opt.sfxVolume, 62)
+                * Math.max(0.0, Math.min(1.0, strength))
+                * opt.volume / 100.0);
         SpatialAudioAuthority.Mix mix = SpatialAudioAuthority.mix(
                 listenerX, listenerY, facingX, facingY,
                 sourceX, sourceY, level, 16, occluded);
@@ -257,6 +267,8 @@ class SoundManager {
                             generatedCueBytes(key, 100, mono), 1, mix);
                 }
                 if (samples.length == 0) return;
+                if (enclosed) samples = SpatialAudioAuthority.roomReflectionsPcm16(
+                        samples, Math.round(sampleRate), 1.0);
                 AudioFormat stereo = new AudioFormat(
                         sampleRate, 16, 2, true, false);
                 clip = AudioSystem.getClip();
