@@ -200,6 +200,44 @@ final class Milestone04NpcHappinessFactionRecruitmentSmoke {
                     "successful scheme should transfer the unhappy rival's tracked faction membership");
             require(destination.assigned == beforeAssigned + 1,
                     "successful recruitment should consume destination population capacity");
+            require(destination.id.equals(rival.currentAssignmentLedgerId)
+                            && destination.available == 4,
+                    "recruited actor must be bound to the actual reserve ledger");
+            require(rival.lifeMemories.stream().anyMatch(memory -> memory.contains("allegiance")
+                            && memory.contains(Faction.CIVIC_WARDENS.label)),
+                    "faction recruit failed to remember previous allegiance");
+            NpcEntity restoredRival = NpcEntity.parseLine(rival.saveLine(), world);
+            require(restoredRival != null && restoredRival.faction == Faction.HIVER
+                            && destination.id.equals(restoredRival.currentAssignmentLedgerId)
+                            && NpcLifeMemoryAuthority.save(restoredRival).equals(
+                                    NpcLifeMemoryAuthority.save(rival)),
+                    "saved recruited actor lost allegiance, roster or memories");
+
+            NpcEntity blocked = NpcEntity.create(Faction.CIVIC_WARDENS, world.zoneType,
+                    11, 8, new Random(46));
+            blocked.id = "UNHAPPY-WARDEN-WITHOUT-RESERVE";
+            blocked.name = "Warden Flint";
+            blocked.role = "Watch Member";
+            blocked.ageYears = 29;
+            blocked.happiness = 15;
+            blocked.happinessLastEvaluatedWorldTurn = game.worldTurn;
+            blocked.lastFactionChangeWorldTurn = -1L;
+            world.npcs.add(blocked);
+            destination.available = 0;
+            int priorAssigned = destination.assigned;
+            int priorMemories = blocked.lifeMemories.size();
+            NpcHappinessAuthority.RecruitmentOutcome rejected =
+                    NpcHappinessAuthority.attemptSchemeRecruitment(game, plan);
+            require(!rejected.success() && blocked.faction == Faction.CIVIC_WARDENS
+                            && destination.assigned == priorAssigned
+                            && blocked.lifeMemories.size() == priorMemories,
+                    "missing destination reserves must not silently change an NPC's faction");
+            destination.available = 4;
+            int previousDeaths = destination.dead;
+            PersonnelPopulationApi.recordDeath(world, restoredRival);
+            require(destination.assigned == priorAssigned - 1
+                            && destination.dead == previousDeaths + 1,
+                    "death of recruited member must debit the new faction roster");
             requireContains(plan.lastOutcome, officer.name, "recruiting officer outcome");
             requireContains(plan.lastOutcome, rival.name, "recruited NPC outcome");
         } finally {

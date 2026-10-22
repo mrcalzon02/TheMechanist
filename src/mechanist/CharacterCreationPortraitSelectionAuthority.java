@@ -69,7 +69,11 @@ final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispa
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event == null || event.getID() != KeyEvent.KEY_PRESSED) return false;
         if (panel == null || panel.screen != GamePanel.Screen.CHARACTER || !panel.newGameSetupActive) return false;
-        if (!WorldStartFlowAuthority.isActive(panel)) return false;
+        Object activeOverlay = panel.getClientProperty(
+                WorldStartFlowAuthority.WorldStartFlowOverlay.CLIENT_PROPERTY);
+        if (!(activeOverlay instanceof WorldStartFlowAuthority.WorldStartFlowOverlay overlay)
+                || overlay.stage != WorldStartFlowAuthority.Stage.CHARACTER_CREATION
+                || overlay.nameEditing) return false;
 
         int direction = directionForKey(event.getKeyCode());
         if (direction == 0) return false;
@@ -105,7 +109,7 @@ final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispa
 
     static Rectangle portraitRectForSheet(Rectangle sheet) {
         if (sheet == null) return new Rectangle();
-        int portraitSize = Math.max(88, Math.min(128, Math.min(sheet.width - 24, sheet.height / 3)));
+        int portraitSize = Math.max(72, Math.min(128, Math.min(sheet.width - 24, sheet.height / 4)));
         return new Rectangle(sheet.x + 12, sheet.y + 34, portraitSize, portraitSize);
     }
 

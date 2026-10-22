@@ -86,12 +86,30 @@ final class Milestone04FactionReinforcementLifecycleSmoke {
             require(ledger.assigned == 3 && ledger.available == availableBefore - 3,
                     "bulk arrival should consume one reserve slot per person");
             require(game.turn == earlyTurn + 1, "successful reception should spend one turn");
+            java.util.Set<String> receivedIds = new java.util.HashSet<>();
             for (NpcEntity npc : game.world.npcs) {
                 if (npc == representative) continue;
                 require(npc.provenance != null && "replacement-arrival".equals(npc.provenance.originMode),
                         "arrived personnel should retain replacement provenance");
                 requireContains(npc.provenance.backstory, "replace Patrol Officer", "arrival casualty provenance");
+                require("Patrol Guard".equals(npc.role) && "Reinforcement Intake".equals(npc.state)
+                                && npc.faction == Faction.CIVIC_WARDENS,
+                        "intake should keep the lost NPC's assigned duty role, but not inherit death-state");
+                require(ledger.id.equals(npc.currentAssignmentLedgerId),
+                        "received actor has no durable current faction assignment");
+                require(npc.id != null && receivedIds.add(npc.id),
+                        "two replacement actors were generated with the same persistent identity");
+                require(npc.lifeMemories.stream().anyMatch(line -> line.contains("intake")
+                                && line.contains("Patrol Officer")),
+                        "arrival should retain its own intake memory identifying predecessor");
+                NpcEntity restored = NpcEntity.parseLine(npc.saveLine(), game.world);
+                require(restored != null && restored.id.equals(npc.id)
+                                && restored.faction == npc.faction
+                                && restored.currentAssignmentLedgerId.equals(npc.currentAssignmentLedgerId)
+                                && NpcLifeMemoryAuthority.save(restored).equals(NpcLifeMemoryAuthority.save(npc)),
+                        "received NPC's identity, roster assignment or intake memory was lost on save/load");
             }
+            require(receivedIds.size() == 3, "expected three independently identified replacements");
 
             PersonnelReplacementRequest blocked = addReadyRequest(game.world, ledger, "Patrol Officer Full", game.turn, 1004);
             NpcEntity filler = NpcEntity.create(Faction.CIVIC_WARDENS, game.world.zoneType, 8, 8, new Random(8));
@@ -131,6 +149,8 @@ final class Milestone04FactionReinforcementLifecycleSmoke {
         NpcEntity npc = NpcEntity.create(Faction.CIVIC_WARDENS, world.zoneType, x, y, new Random(id));
         npc.id = "CASUALTY-" + id;
         npc.name = name;
+        npc.role = "Patrol Guard";
+        npc.state = "Patrol";
         npc.provenance = new PersonnelProvenanceRecord();
         npc.provenance.originSiteId = ledger.id;
         npc.provenance.originRoom = ledger.roomName;

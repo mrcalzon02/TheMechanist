@@ -86,7 +86,7 @@ class NpcTurnBudgetScheduler {
             inspected++;
             if (npc == null || already.contains(npc)) continue;
             int dist = manhattan(npc.x, npc.y, playerX, playerY);
-            if (dist > ACTIVE_RADIUS) { out.farDeferred++; continue; }
+            if (dist > ACTIVE_RADIUS) continue;
             out.selected.add(npc);
             already.add(npc);
             out.rotatingLocal++;
@@ -95,7 +95,9 @@ class NpcTurnBudgetScheduler {
         rotatingCursor = (rotatingCursor + Math.max(1, inspected)) % n;
         out.cursorAfter = rotatingCursor;
 
-        // Count the rest as skipped/deferred for profiling.  This is intentionally cheap.
+        // Count every unselected actor exactly once, including distant actors
+        // already inspected by the rotating lane. Double-counting here inflates
+        // the debt passed to abstract distant-zone simulation.
         for (NpcEntity npc : npcs) {
             if (npc == null || already.contains(npc)) continue;
             int dist = manhattan(npc.x, npc.y, playerX, playerY);

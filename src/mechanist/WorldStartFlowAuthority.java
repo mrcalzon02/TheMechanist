@@ -75,7 +75,7 @@ final class WorldStartFlowAuthority {
 
     static final class WorldStartFlowOverlay extends JComponent implements KeyEventDispatcher {
         static final String CLIENT_PROPERTY = "mechanist.worldStartFlowOverlay";
-        static final int CHARACTER_ACTION_COUNT = 8;
+        static final int CHARACTER_ACTION_COUNT = 7;
         static final int WORLD_PICKER_ROW_HEIGHT = 88;
         static final int WORLD_PICKER_ROW_GAP = 10;
         static final String[] CHARACTER_ACTION_LABELS = {
@@ -85,8 +85,7 @@ final class WorldStartFlowAuthority {
                 "Job >",
                 "Reroll",
                 "New Roster",
-                "Edit Name",
-                "Start Run"
+                "Edit Name"
         };
 
         final GamePanel panel;
@@ -96,6 +95,7 @@ final class WorldStartFlowAuthority {
         int worldPickerScroll;
         int worldGenerationOption;
         int characterOption;
+        int characterDossierScroll;
         String status = "";
         boolean nameEditing;
         boolean seedEditing;
@@ -136,8 +136,13 @@ final class WorldStartFlowAuthority {
                 @Override public void mouseReleased(MouseEvent e) { if (stage != Stage.CLOSED) e.consume(); }
             });
             addMouseWheelListener(e -> {
-                if (stage != Stage.WORLD_PICKER) return;
-                scrollWorldPicker(e.getWheelRotation());
+                if (stage == Stage.WORLD_PICKER) {
+                    scrollWorldPicker(e.getWheelRotation());
+                } else if (stage == Stage.CHARACTER_CREATION && characterDossierRect().contains(e.getPoint())) {
+                    characterDossierScroll = Math.max(0,
+                            characterDossierScroll + (int)Math.signum(e.getPreciseWheelRotation())
+                            * Math.max(1, Math.abs(e.getWheelRotation())) * 2);
+                } else return;
                 e.consume();
                 repaintPanel();
             });
@@ -149,10 +154,10 @@ final class WorldStartFlowAuthority {
             clampWorldPickerSelection();
             worldGenerationOption = 0;
             characterOption = 0;
+            characterDossierScroll = 0;
             nameEditing = false;
             seedEditing = false;
             pendingWorldDeleteKey = "";
-            clearPreviewCache();
             status = worlds.isEmpty()
                     ? MenuTextAuthority.text("menu.world_manager.empty", "No generated arcology worlds found. Generate a new world to continue.")
                     : MenuTextAuthority.text("menu.world_manager.status", "Select an existing generated world, inspect its spawn preview, or choose Generate New World.");
@@ -162,7 +167,7 @@ final class WorldStartFlowAuthority {
             panel.panelMode = GamePanel.PanelMode.NONE;
             panel.selectedButton = 0;
             panel.logEvent("World selection opened: " + safe(reason));
-            DebugLog.audit("WORLD_START_FLOW", "open picker worlds=" + worlds.size() + " reason=" + safe(reason));
+            DebugLog.audit("WORLD_START_FLOW", "open picker worlds=" + worlds.size() + " reason=" + safe(reason) + " root=" + CampaignWorldApi.worldDir());
             repaintPanel();
         }
 
@@ -181,15 +186,15 @@ final class WorldStartFlowAuthority {
         }
 
         void openWorldGeneration() {
-            panel.seed = System.currentTimeMillis();
+            if (panel.seed == 0L) panel.seed = System.currentTimeMillis();
             panel.rng = new Random(panel.seed ^ 0x4E475345545550L);
-            panel.worldSetup = WorldSetupSettings.standard();
+            panel.worldSetup = panel.worldSetup == null
+                    ? WorldSetupSettings.standard() : panel.worldSetup.copy();
             worldGenerationOption = 0;
             seedEditing = false;
             seedDraft = Long.toString(panel.seed);
             pendingWorldDeleteKey = "";
-            clearPreviewCache();
-            status = "Configure and generate a new arcology world. This stage does not pick the character.";
+            status = "";
             stage = Stage.WORLD_GENERATION;
             panel.newGameSetupActive = false;
             panel.characterNameEditActive = false;
@@ -238,11 +243,14 @@ final class WorldStartFlowAuthority {
             pendingWorldDeleteKey = "";
             characterOption = 0;
             stage = Stage.CHARACTER_CREATION;
+            characterDossierScroll = 0;
             panel.screen = GamePanel.Screen.CHARACTER;
             panel.panelMode = GamePanel.PanelMode.NONE;
-            status = "Choose the character for " + source + ".";
+            status = panel.atlas != null && panel.atlas.hiveWorld != null
+                    ? "World: " + panel.atlas.hiveWorld.hiveName : source;
             panel.logEvent("Character generation opened for " + source + ".");
-            DebugLog.audit("WORLD_START_FLOW", "open character source=" + source + " candidates=" + panel.candidates.size() + " setup=" + panel.worldSetup.shortSummary());
+            DebugLog.audit("WORLD_START_FLOW", "open character source=" + source + " candidates=" + panel.candidates.size() + " setup=" + panel.worldSetup.shortSummary()
+                    + " rosterAudit=" + CharacterCreationAuditApi.audit(panel.candidates).summaryLine());
             repaintPanel();
         }
 
@@ -280,6 +288,16 @@ final class WorldStartFlowAuthority {
                 return true;
             }
             if (stage == Stage.CLOSED) return false;
+            if (!WorldStartLayoutAuthority.usable(getWidth(), getHeight())) {
+                if (e.getID() == KeyEvent.KEY_PRESSED
+                        && (e.getKeyCode() == KeyEvent.VK_ESCAPE || e.getKeyCode() == KeyEvent.VK_Q)) {
+                    if (stage == Stage.WORLD_PICKER) closeToMainMenu();
+                    else openWorldPicker("back from compact viewport");
+                    repaintPanel();
+                }
+                e.consume();
+                return true;
+            }
             if (e.getID() == KeyEvent.KEY_TYPED) {
                 if (stage == Stage.WORLD_GENERATION && seedEditing) {
                     appendSeedChar(e.getKeyChar());
@@ -345,6 +363,10 @@ final class WorldStartFlowAuthority {
             return true;
         }
 
+        static int portraitKeyDirection(boolean nameEditing, int code) {
+            return nameEditing ? 0 : CharacterCreationPortraitSelectionAuthority.directionForKey(code);
+        }
+
         boolean handleCharacterKey(int code) {
             if (nameEditing) {
                 if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_ESCAPE) { finishNameEdit(); return true; }
@@ -352,7 +374,17 @@ final class WorldStartFlowAuthority {
                 if (code == KeyEvent.VK_DELETE) { clearName(); return true; }
                 return true;
             }
+            // This overlay is the first KeyEventDispatcher installed for staged
+            // creation. Handle portrait browsing here rather than expecting a
+            // later dispatcher to receive a key that this overlay consumes.
+            int portraitDirection = portraitKeyDirection(false, code);
+            if (portraitDirection != 0) {
+                CharacterCreationPortraitSelectionAuthority.cycleSelectedPortrait(panel, portraitDirection);
+                return true;
+            }
             if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q) { openWorldPicker("back from character generation"); return true; }
+            if (code == KeyEvent.VK_PAGE_UP) { characterDossierScroll = Math.max(0, characterDossierScroll - 4); return true; }
+            if (code == KeyEvent.VK_PAGE_DOWN) { characterDossierScroll += 4; return true; }
             if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { characterOption = Math.floorMod(characterOption - 1, CHARACTER_ACTION_COUNT); return true; }
             if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { characterOption = Math.floorMod(characterOption + 1, CHARACTER_ACTION_COUNT); return true; }
             if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { if (characterOption == 2 || characterOption == 3) panel.cycleSelectedCandidateJob(-1); else panel.cycleSelectedCandidate(-1); return true; }
@@ -380,11 +412,19 @@ final class WorldStartFlowAuthority {
             requestFocusInWindow();
         }
 
+        static String appendSeedCharacter(String current, char ch) {
+            String draft = current == null ? "" : current;
+            if (Character.isISOControl(ch)) return draft;
+            if (ch == '-' && draft.isEmpty()) return "-";
+            if (!Character.isDigit(ch)) return draft;
+            // Long.MAX_VALUE needs 19 digits; Long.MIN_VALUE needs a sign
+            // and 19 digits. The previous 18-character limit rejected both.
+            int limit = draft.startsWith("-") ? 20 : 19;
+            return draft.length() < limit ? draft + ch : draft;
+        }
+
         void appendSeedChar(char ch) {
-            if (Character.isISOControl(ch)) return;
-            if (ch == '-' && seedDraft.isEmpty()) { seedDraft = "-"; return; }
-            if (!Character.isDigit(ch)) return;
-            if (seedDraft.length() < 18) seedDraft += ch;
+            seedDraft = appendSeedCharacter(seedDraft, ch);
         }
 
         void backspaceSeed() { if (!seedDraft.isEmpty()) seedDraft = seedDraft.substring(0, seedDraft.length() - 1); }
@@ -410,6 +450,7 @@ final class WorldStartFlowAuthority {
         void backspaceName() { Candidate c = panel.selectedNewGameCandidate(); if (c == null || c.name == null || c.name.isEmpty()) return; c.name = c.name.substring(0, c.name.length() - 1); panel.refreshNameLockedCandidateState(c); panel.active = c; }
         void clearName() { Candidate c = panel.selectedNewGameCandidate(); if (c == null) return; c.name = ""; panel.refreshNameLockedCandidateState(c); panel.active = c; }
         void triggerCharacterAction(int action) {
+            characterDossierScroll = 0;
             switch (Math.floorMod(action, CHARACTER_ACTION_COUNT)) {
                 case 0 -> panel.cycleSelectedCandidate(-1);
                 case 1 -> panel.cycleSelectedCandidate(1);
@@ -418,7 +459,6 @@ final class WorldStartFlowAuthority {
                 case 4 -> panel.rerollSelectedCandidate();
                 case 5 -> panel.rerollNewGameRoster();
                 case 6 -> beginNameEdit();
-                case 7 -> startRun();
                 default -> {}
             }
         }
@@ -489,6 +529,15 @@ final class WorldStartFlowAuthority {
         void handleMouse(MouseEvent e) {
             if (stage == Stage.CLOSED || e == null) return;
             Point p = e.getPoint();
+            if (!WorldStartLayoutAuthority.usable(getWidth(), getHeight())) {
+                if (compactBackRect().contains(p)) {
+                    if (stage == Stage.WORLD_PICKER) closeToMainMenu();
+                    else openWorldPicker("back from compact viewport");
+                }
+                e.consume();
+                repaintPanel();
+                return;
+            }
             if (stage == Stage.WORLD_PICKER) {
                 if (buttonRect(0).contains(p)) { openWorldGeneration(); e.consume(); return; }
                 if (buttonRect(1).contains(p)) { closeToMainMenu(); e.consume(); return; }
@@ -504,7 +553,7 @@ final class WorldStartFlowAuthority {
             } else if (stage == Stage.CHARACTER_CREATION) {
                 if (panel.characterNameEditRect.contains(p)) { beginNameEdit(); e.consume(); repaintPanel(); return; }
                 List<Rectangle> rosterRows = characterRosterRows();
-                for (int i = 0; i < rosterRows.size(); i++) if (rosterRows.get(i).contains(p)) { panel.candidateIndex = i; panel.active = panel.selectedNewGameCandidate(); panel.characterNameEditActive = false; nameEditing = false; status = "Selected candidate " + safe(panel.active == null ? "" : panel.active.name) + "."; e.consume(); repaintPanel(); return; }
+                for (int i = 0; i < rosterRows.size(); i++) if (rosterRows.get(i).contains(p)) { characterDossierScroll = 0; panel.candidateIndex = i; panel.active = panel.selectedNewGameCandidate(); panel.characterNameEditActive = false; nameEditing = false; status = "Selected candidate " + safe(panel.active == null ? "" : panel.active.name) + "."; e.consume(); repaintPanel(); return; }
                 List<Rectangle> rows = characterActionRows();
                 for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { characterOption = i; triggerCharacterAction(i); e.consume(); repaintPanel(); return; }
                 if (buttonRect(0).contains(p)) { startRun(); e.consume(); return; }
@@ -521,10 +570,27 @@ final class WorldStartFlowAuthority {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int w = Math.max(1, getWidth());
                 int h = Math.max(1, getHeight());
-                g.setColor(new Color(0, 0, 0, 208));
+                // Paint our own opaque image base; translucent black over the
+                // previously rendered main menu leaves ghost route labels visible
+                // during world and character selection.
+                BufferedImage backdrop = panel.images == null
+                        ? null : panel.images.get("new_world_backdrop_rebase");
+                if (backdrop != null) {
+                    g.drawImage(backdrop, 0, 0, w, h, null);
+                    g.setColor(new Color(0, 0, 0, 228));
+                } else {
+                    g.setColor(Color.BLACK);
+                }
                 g.fillRect(0, 0, w, h);
                 Rectangle panelRect = panelRect(w, h);
                 drawFrame(g, panelRect, title());
+                if (!WorldStartLayoutAuthority.usable(w, h)) {
+                    drawFitted(g, "Enlarge window to at least 760 x 560 to use this screen.",
+                            panelRect.x + 16, panelRect.y + 82,
+                            Math.max(1, panelRect.width - 32), main());
+                    drawButton(g, compactBackRect(), "Back (Esc)", false);
+                    return;
+                }
                 if (stage == Stage.WORLD_PICKER) paintWorldPicker(g, panelRect);
                 else if (stage == Stage.WORLD_GENERATION) paintWorldGeneration(g, panelRect);
                 else if (stage == Stage.CHARACTER_CREATION) paintCharacterCreation(g, panelRect);
@@ -532,8 +598,7 @@ final class WorldStartFlowAuthority {
         }
 
         void paintWorldPicker(Graphics2D g, Rectangle r) {
-            drawText(g, MenuTextAuthority.text("menu.world_manager.path", "Generated world definitions are read from: {0}").replace("{0}", String.valueOf(CampaignWorldApi.worldDir())), r.x + 24, r.y + 64, r.width - 48, muted());
-            drawText(g, status, r.x + 24, r.y + 94, r.width - 48, main());
+            drawFitted(g, status, r.x + 24, r.y + 64, r.width - 48, main());
             List<Rectangle> rows = worldPickerRows();
             for (int i = 0; i < rows.size(); i++) { int actual = worldPickerScroll + i; drawWorldPickerTile(g, rows.get(i), actual, actual == worldIndex); }
             drawWorldPickerScrollBar(g);
@@ -546,12 +611,11 @@ final class WorldStartFlowAuthority {
 
         void paintWorldGeneration(Graphics2D g, Rectangle r) {
             if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
-            drawText(g, MenuTextAuthority.text("menu.world_generation.header", "World Generation Options"), r.x + 24, r.y + 64, r.width - 48, highlight());
-            drawText(g, panel.worldSetup.shortSummary(), r.x + 24, r.y + 94, r.width - 48, main());
+            drawFitted(g, status, r.x + 24, r.y + 64, r.width - 48, main());
             drawSeedEditor(g);
             ArrayList<String> lines = panel.worldSetup.detailLines();
             List<Rectangle> rows = worldGenerationRows();
-            for (int i = 0; i < lines.size() && i < rows.size(); i++) { Rectangle row = rows.get(i); boolean selected = i == worldGenerationOption; fillRow(g, row, selected); drawText(g, (selected ? "> " : "  ") + lines.get(i), row.x + 12, row.y + 27, row.width - 24, selected ? highlight() : main()); }
+            for (int i = 0; i < lines.size() && i < rows.size(); i++) { Rectangle row = rows.get(i); boolean selected = i == worldGenerationOption; fillRow(g, row, selected); drawFitted(g, (selected ? "> " : "  ") + lines.get(i), row.x + 12, row.y + 23, row.width - 24, selected ? highlight() : main()); }
             drawSpawnPreview(g, spawnPreviewRect());
             drawButton(g, buttonRect(0), "Generate World", true);
             drawButton(g, buttonRect(1), "Back", false);
@@ -560,13 +624,10 @@ final class WorldStartFlowAuthority {
 
         void paintCharacterCreation(Graphics2D g, Rectangle r) {
             Candidate c = panel.selectedNewGameCandidate();
-            drawText(g, "Character Generation", r.x + 24, r.y + 64, r.width - 48, highlight());
-            CharacterCreationAudit audit = CharacterCreationAuditApi.audit(panel.candidates);
-            drawText(g, status + " / " + audit.summaryLine(), r.x + 24, r.y + 94, r.width - 48, main());
+            drawFitted(g, status, r.x + 24, r.y + 64, r.width - 48, main());
             drawCharacterRoster(g, characterRosterRect());
             drawCharacterSheet(g, characterSheetRect(), c);
             drawJobDossier(g, characterDossierRect(), c);
-            drawCharacterRangeBar(g, characterRangeBarRect());
             drawButton(g, buttonRect(0), "Start Run", true);
             drawButton(g, buttonRect(1), "Back", false);
             drawFooter(g, MenuTextAuthority.text("menu.character_generation.footer", "Left/Right cycles candidate or job. [ / ] changes portrait. J/K cycles jobs. R rerolls. E edits name. G starts run. Esc returns."));
@@ -580,7 +641,7 @@ final class WorldStartFlowAuthority {
                 Rectangle row = rows.get(i);
                 boolean selected = i == panel.candidateIndex;
                 fillRow(g, row, selected);
-                String label = (selected ? "> " : "") + (i + 1);
+                String label = (selected ? "> " : "") + (i + 1) + ". " + safe(panel.candidates.get(i).name);
                 drawFitted(g, label, row.x + 12, row.y + row.height / 2 + 5, row.width - 24, selected ? highlight() : main());
             }
         }
@@ -592,7 +653,7 @@ final class WorldStartFlowAuthority {
                 drawText(g, "No character candidates are available.", r.x + 12, r.y + 38, r.width - 24, main());
                 return;
             }
-            int portraitSize = Math.max(88, Math.min(128, Math.min(r.width - 24, r.height / 3)));
+            int portraitSize = Math.max(72, Math.min(128, Math.min(r.width - 24, r.height / 4)));
             Rectangle portraitRect = new Rectangle(r.x + 12, r.y + 34, portraitSize, portraitSize);
             drawPortraitFrame(g, c, portraitRect);
 
@@ -610,7 +671,9 @@ final class WorldStartFlowAuthority {
             drawCompactLine(g, "Age " + c.ageYears + " years / " + safe(c.ageBand), nameX, metaY + 18, nameW, muted());
 
             int statsY = Math.max(portraitRect.y + portraitRect.height + 16, metaY + 38);
-            int statsH = Math.max(216, Math.min(256, r.y + r.height - statsY - 12));
+            int statsH = Math.max(1, Math.min(
+                    WorldStartLayoutAuthority.statPanelHeight(r.width - 24, c.stats.size()),
+                    r.y + r.height - statsY - 8));
             Rectangle stats = new Rectangle(r.x + 12, statsY, r.width - 24, statsH);
             drawSubPanel(g, stats, "Stats");
             drawStatRanges(g, c, stats);
@@ -629,7 +692,7 @@ final class WorldStartFlowAuthority {
                 lines.add("Job " + (jobIdx < 0 ? 1 : jobIdx + 1) + "/" + Math.max(1, c.jobs.size()) + ": " + safe(c.job));
                 if (profile != null) {
                     boolean valid = profile.meets(c);
-                    Rectangle validity = new Rectangle(r.x + 12, detailY, r.width - 24, valid ? 42 : 58);
+                    Rectangle validity = new Rectangle(r.x + 12, detailY, r.width - 24, valid ? 26 : 58);
                     drawJobValidity(g, validity, valid, profile.missingText(c));
                     detailY += validity.height + 8;
                     lines.add("Faction: " + profile.faction.label);
@@ -641,7 +704,7 @@ final class WorldStartFlowAuthority {
                     lines.add("Profile: " + profile.description);
                 }
             }
-            Rectangle details = new Rectangle(r.x + 12, detailY, r.width - 24, Math.max(60, actionTop.y - detailY - 8));
+            Rectangle details = new Rectangle(r.x + 12, detailY, r.width - 24, Math.max(1, actionTop.y - detailY - 8));
             drawLinesClipped(g, lines, details, main());
             drawCharacterActions(g);
         }
@@ -654,8 +717,8 @@ final class WorldStartFlowAuthority {
             g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
             g.setColor(border);
             g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
-            drawFitted(g, valid ? "JOB VALID" : "INVALID JOB", r.x + 10, r.y + 18, r.width - 20, text);
-            drawFitted(g, valid ? "Requirements met." : "Missing: " + safe(missing), r.x + 10, r.y + 36, r.width - 20, text);
+            drawFitted(g, valid ? "Requirements met" : "INVALID JOB", r.x + 10, r.y + 18, r.width - 20, text);
+            if (!valid) drawFitted(g, "Missing: " + safe(missing), r.x + 10, r.y + 36, r.width - 20, text);
         }
 
         void drawCharacterActions(Graphics2D g) {
@@ -676,7 +739,7 @@ final class WorldStartFlowAuthority {
             g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
             BufferedImage img = panel.images.getPlayerPortrait(c);
             if (img != null) g.drawImage(img, r.x + 8, r.y + 8, r.width - 16, r.height - 16, null);
-            else drawAsciiPortrait(g, c, r);
+            else drawMissingPortrait(g, r);
         }
 
         void drawNameEditor(Graphics2D g, Candidate c) {
@@ -694,22 +757,10 @@ final class WorldStartFlowAuthority {
         void drawStatRanges(Graphics2D g, Candidate c, Rectangle r) {
             if (c == null) return;
             ArrayList<Map.Entry<String, Integer>> entries = new ArrayList<>(c.stats.entrySet());
-            int count = Math.max(1, entries.size());
-            int rows = count <= 6 ? 1 : 2;
-            int cols = Math.max(1, (int)Math.ceil(count / (double)rows));
-            int gap = 6;
-            int x0 = r.x + 12;
-            int y0 = r.y + 34;
-            int availableW = Math.max(1, r.width - 24);
-            int availableH = Math.max(1, r.height - 46);
-            int cellW = Math.max(48, (availableW - Math.max(0, cols - 1) * gap) / cols);
-            int cellH = Math.max(44, (availableH - Math.max(0, rows - 1) * gap) / rows);
-            for (int idx = 0; idx < entries.size(); idx++) {
-                Map.Entry<String, Integer> entry = entries.get(idx);
-                int row = idx / cols;
-                int col = idx % cols;
-                Rectangle cell = new Rectangle(x0 + col * (cellW + gap), y0 + row * (cellH + gap), cellW, cellH);
-                drawStatCell(g, cell, entry.getKey(), entry.getValue());
+            List<Rectangle> cells = WorldStartLayoutAuthority.statCells(r, entries.size());
+            for (int i = 0; i < entries.size() && i < cells.size(); i++) {
+                Map.Entry<String, Integer> entry = entries.get(i);
+                drawStatCell(g, cells.get(i), entry.getKey(), entry.getValue());
             }
         }
 
@@ -718,9 +769,14 @@ final class WorldStartFlowAuthority {
             g.fillRoundRect(r.x, r.y, r.width, r.height, 7, 7);
             g.setColor(new Color(145, 118, 64, 120));
             g.drawRoundRect(r.x, r.y, r.width, r.height, 7, 7);
-            int pad = Math.max(5, Math.min(8, r.width / 12));
-            drawFitted(g, key + " " + value, r.x + pad, r.y + 17, r.width - pad * 2, highlight());
-            drawFitted(g, statExplanation(key), r.x + pad, r.y + 37, r.width - pad * 2, main());
+            int pad = Math.max(4, Math.min(8, r.width / 12));
+            String shortKey = key == null ? "?" : key.substring(0, Math.min(3, key.length())).toUpperCase(java.util.Locale.ROOT);
+            String label = (r.width < 94 ? shortKey : key) + " " + value;
+            int lineY = r.y + Math.min(18, Math.max(10, r.height - 5));
+            drawFitted(g, label, r.x + pad, lineY, r.width - pad * 2, highlight());
+            if (r.width >= 94 && r.height >= 48) {
+                drawFitted(g, statExplanation(key), r.x + pad, r.y + 37, r.width - pad * 2, main());
+            }
         }
 
         void drawCharacterRangeBar(Graphics2D g, Rectangle r) {
@@ -736,7 +792,7 @@ final class WorldStartFlowAuthority {
 
         Rectangle characterBodyRect() {
             Rectangle p = panelRect(getWidth(), getHeight());
-            return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(300, p.height - 230));
+            return WorldStartLayoutAuthority.characterBody(p);
         }
 
         Rectangle characterRangeBarRect() {
@@ -746,7 +802,7 @@ final class WorldStartFlowAuthority {
 
         Rectangle characterRosterRect() {
             Rectangle body = characterBodyRect();
-            int leftW = Math.max(84, Math.min(118, body.width / 10));
+            int leftW = Math.max(128, Math.min(180, body.width / 5));
             return new Rectangle(body.x, body.y, leftW, body.height);
         }
 
@@ -754,9 +810,9 @@ final class WorldStartFlowAuthority {
             Rectangle body = characterBodyRect();
             int gap = 14;
             int leftW = characterRosterRect().width;
-            int rightW = Math.max(300, Math.min(380, body.width / 3));
+            int rightW = Math.max(240, Math.min(380, body.width / 3));
             int midW = body.width - leftW - rightW - gap * 2;
-            if (midW < 440) rightW = Math.max(260, rightW - (440 - midW));
+            if (midW < 300) rightW = Math.max(240, rightW - (300 - midW));
             return new Rectangle(body.x + body.width - rightW, body.y, rightW, body.height);
         }
 
@@ -766,7 +822,7 @@ final class WorldStartFlowAuthority {
             Rectangle dossier = characterDossierRect();
             int gap = 14;
             int x = roster.x + roster.width + gap;
-            int w = Math.max(190, dossier.x - x - gap);
+            int w = Math.max(1, dossier.x - x - gap);
             return new Rectangle(x, body.y, w, body.height);
         }
 
@@ -800,7 +856,9 @@ final class WorldStartFlowAuthority {
             for (int i = 0; i < CHARACTER_ACTION_COUNT; i++) {
                 int row = i / cols;
                 int col = i % cols;
-                rows.add(new Rectangle(r.x + 12 + col * (colW + gap), top + row * (rowH + gap), colW, rowH));
+                int width = i == CHARACTER_ACTION_COUNT - 1 && (CHARACTER_ACTION_COUNT % cols) == 1
+                        ? colW * cols + gap : colW;
+                rows.add(new Rectangle(r.x + 12 + col * (colW + gap), top + row * (rowH + gap), width, rowH));
             }
             return rows;
         }
@@ -818,10 +876,36 @@ final class WorldStartFlowAuthority {
         }
 
         void drawLinesClipped(Graphics2D g, List<String> lines, Rectangle area, Color color) {
-            java.awt.Shape oldClip = g.getClip();
+            if (area.width <= 8 || area.height <= 10) return;
+            g.setFont(panel.smallFont);
+            FontMetrics fm = g.getFontMetrics();
+            int lineH = Math.max(15, fm.getHeight() + 2);
+            ArrayList<String> wrapped = new ArrayList<>();
+            if (lines != null) for (String line : lines)
+                wrapped.addAll(GuiLayoutApi.wrapText(line == null ? "" : line, fm, area.width - 8));
+            int rows = Math.max(1, area.height / lineH);
+            boolean overflowing = wrapped.size() > rows;
+            int displayRows = Math.max(1, overflowing ? rows - 1 : rows);
+            characterDossierScroll = Math.max(0, Math.min(characterDossierScroll,
+                    Math.max(0, wrapped.size() - displayRows)));
+            Shape oldClip = g.getClip();
+            Color oldColor = g.getColor();
             g.clip(area);
-            drawLines(g, lines, area.x, area.y + 16, area.width, color);
+            g.setColor(color == null ? main() : color);
+            for (int i = 0; i < displayRows && i + characterDossierScroll < wrapped.size(); i++) {
+                g.drawString(wrapped.get(i + characterDossierScroll),
+                        area.x + 2, area.y + fm.getAscent() + i * lineH);
+            }
+            if (overflowing) {
+                int first = characterDossierScroll + 1;
+                int last = Math.min(wrapped.size(), characterDossierScroll + displayRows);
+                String marker = "PgUp/PgDn or wheel: " + first + "-" + last + "/" + wrapped.size();
+                g.setColor(highlight());
+                g.drawString(GuiLayoutApi.fitLabel(marker, fm, area.width - 8),
+                        area.x + 2, area.y + area.height - fm.getDescent() - 2);
+            }
             g.setClip(oldClip);
+            g.setColor(oldColor);
         }
 
         void drawCompactLine(Graphics2D g, String text, int x, int baseline, int width, Color color) {
@@ -876,13 +960,34 @@ final class WorldStartFlowAuthority {
 
         void drawSeedEditor(Graphics2D g) { Rectangle seed = seedEditRect(); g.setFont(panel.smallFont); g.setColor(muted()); drawBackedText(g, MenuTextAuthority.text("menu.world_generation.seed", "Seed"), seed.x, seed.y - 8, false); g.setColor(seedEditing ? new Color(54, 47, 31, 238) : new Color(16, 18, 16, 224)); g.fillRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8); g.setColor(seedEditing ? highlight() : new Color(145, 118, 64, 140)); g.drawRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8); String text = seedEditing ? seedDraft + "_" : Long.toString(panel.seed); drawText(g, text, seed.x + 10, seed.y + 24, seed.width - 20, seedEditing ? highlight() : main()); }
 
-        void drawWorldManagerPreview(Graphics2D g, Rectangle r) { WorldSaveInfo info = selectedWorldInfo(); if (info != null) requestPreviewFor(info.seed, info.settings == null ? WorldSetupSettings.standard() : info.settings.copy(), "existing:" + info.seed + ":" + safe(info.hiveName), safe(info.hiveName) + " / seed " + info.seed); else { long seed = ensureDraftSeed(); WorldSetupSettings setup = panel.worldSetup == null ? WorldSetupSettings.standard() : panel.worldSetup.copy(); requestPreviewFor(seed, setup, "new:" + seed + ":" + setup.encode(), "Generate New World / seed " + seed); } drawSpawnPreviewBody(g, r, info == null ? MenuTextAuthority.text("menu.world_manager.preview.new", "Preview: Generate New World") : MenuTextAuthority.text("menu.world_manager.preview.selected", "Selected World Spawn Preview")); }
+        void drawWorldManagerPreview(Graphics2D g, Rectangle r) {
+            WorldSaveInfo info = selectedWorldInfo();
+            if (info != null) {
+                requestPreviewFor(info.seed, info.settings == null
+                        ? WorldSetupSettings.standard() : info.settings.copy(),
+                        safe(info.hiveName) + " / seed " + info.seed);
+            } else {
+                long seed = ensureDraftSeed();
+                WorldSetupSettings setup = panel.worldSetup == null
+                        ? WorldSetupSettings.standard() : panel.worldSetup.copy();
+                requestPreviewFor(seed, setup, "New world / seed " + seed);
+            }
+            drawSpawnPreviewBody(g, r, info == null
+                    ? MenuTextAuthority.text("menu.world_manager.preview.new", "Preview: Generate New World")
+                    : MenuTextAuthority.text("menu.world_manager.preview.selected", "Selected World Spawn Preview"));
+        }
         WorldSaveInfo selectedWorldInfo() { return worldIndex >= 0 && worldIndex < worlds.size() ? worlds.get(worldIndex) : null; }
-        void drawSpawnPreview(Graphics2D g, Rectangle r) { if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard(); long safeSeed = ensureDraftSeed(); requestPreviewFor(safeSeed, panel.worldSetup.copy(), "generation:" + safeSeed + ":" + panel.worldSetup.encode(), "Generated hive / seed " + safeSeed); drawSpawnPreviewBody(g, r, MenuTextAuthority.text("menu.world_generation.preview", "Spawn Sector Preview")); }
+        void drawSpawnPreview(Graphics2D g, Rectangle r) {
+            if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
+            long safeSeed = ensureDraftSeed();
+            requestPreviewFor(safeSeed, panel.worldSetup.copy(), "New world / seed " + safeSeed);
+            drawSpawnPreviewBody(g, r,
+                    MenuTextAuthority.text("menu.world_generation.preview", "Spawn Sector Preview"));
+        }
 
         void drawSpawnPreviewBody(Graphics2D g, Rectangle r, String title) {
             g.setColor(new Color(12, 14, 13, 230)); g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10); g.setColor(new Color(145, 118, 64, 170)); g.drawRoundRect(r.x, r.y, r.width, r.height, 10, 10); drawText(g, title, r.x + 14, r.y + 28, r.width - 28, highlight()); drawText(g, previewStatus, r.x + 14, r.y + 54, r.width - 28, muted()); if (previewWorld == null) return;
-            Rectangle map = new Rectangle(r.x + 14, r.y + 78, r.width - 28, Math.max(120, r.height - 122)); g.setColor(new Color(4, 5, 5, 238)); g.fillRect(map.x, map.y, map.width, map.height); Point spawn = previewWorld.startPoint();
+            Rectangle map = new Rectangle(r.x + 14, r.y + 78, r.width - 28, Math.max(1, r.height - 122)); g.setColor(new Color(4, 5, 5, 238)); g.fillRect(map.x, map.y, map.width, map.height); Point spawn = previewWorld.startPoint();
             BufferedImage image = previewOverviewImage;
             if (image != null) {
                 int drawW = map.width;
@@ -909,9 +1014,9 @@ final class WorldStartFlowAuthority {
             drawText(g, "Full zone " + previewWorld.w + "x" + previewWorld.h + " / spawn " + spawn.x + "," + spawn.y + " / " + previewWorld.zoneType.label, r.x + 14, r.y + r.height - 28, r.width - 28, main());
         }
 
-        void requestPreviewFor(long seed, WorldSetupSettings setup, String key, String label) {
+        void requestPreviewFor(long seed, WorldSetupSettings setup, String label) {
             WorldSetupSettings safeSetup = setup == null ? WorldSetupSettings.standard() : setup.copy();
-            String safeKey = key == null ? "preview:" + seed + ":" + safeSetup.encode() : key;
+            String safeKey = "preview:" + seed + ":" + safeSetup.encode();
             if (safeKey.equals(previewKey)) return;
             if (safeKey.equals(previewRequestedKey) && previewWorkerRunning) return;
             if (pendingPreviewRequest != null && safeKey.equals(pendingPreviewRequest.key)) return;
@@ -994,7 +1099,7 @@ final class WorldStartFlowAuthority {
             for (int i = 0; i < max; i++) rows.add(new Rectangle(p.x + 24, top + i * (WORLD_PICKER_ROW_HEIGHT + WORLD_PICKER_ROW_GAP), worldPickerListWidth(p), WORLD_PICKER_ROW_HEIGHT));
             return rows;
         }
-        int worldPickerListTop(Rectangle p) { return p.y + 130; }
+        int worldPickerListTop(Rectangle p) { return p.y + 92; }
         int worldPickerListBottom(Rectangle p) { return p.y + p.height - 112; }
         int worldPickerVisibleCapacity(Rectangle p) { int available = Math.max(WORLD_PICKER_ROW_HEIGHT, worldPickerListBottom(p) - worldPickerListTop(p)); return Math.max(1, Math.min(worlds.size() + 1, (available + WORLD_PICKER_ROW_GAP) / (WORLD_PICKER_ROW_HEIGHT + WORLD_PICKER_ROW_GAP))); }
         void clampWorldPickerSelection() { int count = Math.max(1, worlds.size() + 1); worldIndex = Math.max(0, Math.min(worldIndex, count - 1)); ensureWorldPickerSelectionVisible(); }
@@ -1052,22 +1157,16 @@ final class WorldStartFlowAuthority {
             }
             g.setFont(oldFont);
         }
-        String fitText(FontMetrics fm, String text, int width) {
-            String value = text == null ? "" : text;
-            if (fm.stringWidth(value) <= width) return value;
-            String suffix = "...";
-            int end = value.length();
-            while (end > 0 && fm.stringWidth(value.substring(0, end) + suffix) > width) end--;
-            return end <= 0 ? suffix : value.substring(0, end) + suffix;
-        }
+        String fitText(FontMetrics fm, String text, int width) { return GuiLayoutApi.fitLabel(text, fm, width); }
         long ensureDraftSeed() { if (panel.seed == 0L) { panel.seed = System.currentTimeMillis(); panel.rng = new Random(panel.seed ^ 0x4E475345545550L); seedDraft = Long.toString(panel.seed); } return panel.seed; }
-        int worldPickerListWidth(Rectangle p) { int previewW = Math.max(300, Math.min(430, p.width / 3)); return Math.max(280, p.width - 72 - previewW - 22); }
-        Rectangle worldManagerPreviewRect() { Rectangle p = panelRect(getWidth(), getHeight()); int leftW = worldPickerListWidth(p); int x = p.x + 24 + leftW + 22; int w = Math.max(300, p.x + p.width - 28 - x); return new Rectangle(x, p.y + 130, w, Math.max(300, p.height - 220)); }
-        List<Rectangle> worldGenerationRows() { Rectangle p = panelRect(getWidth(), getHeight()); ArrayList<Rectangle> rows = new ArrayList<>(); int top = p.y + 166; int width = Math.max(300, Math.min(540, p.width - 420)); for (int i = 0; i < 7; i++) rows.add(new Rectangle(p.x + 24, top + i * 42, width, 34)); return rows; }
+        int worldPickerListWidth(Rectangle p) { return WorldStartLayoutAuthority.pickerListWidth(p); }
+        Rectangle worldManagerPreviewRect() { return WorldStartLayoutAuthority.pickerPreview(panelRect(getWidth(), getHeight())); }
+        List<Rectangle> worldGenerationRows() { return WorldStartLayoutAuthority.generationRows(panelRect(getWidth(), getHeight())); }
         List<Rectangle> optionRows(int count) { Rectangle p = panelRect(getWidth(), getHeight()); ArrayList<Rectangle> rows = new ArrayList<>(); int top = p.y + 124; for (int i = 0; i < count; i++) rows.add(new Rectangle(p.x + 24, top + i * 42, p.width - 48, 34)); return rows; }
-        Rectangle seedEditRect() { Rectangle p = panelRect(getWidth(), getHeight()); int width = Math.max(300, Math.min(540, p.width - 420)); return new Rectangle(p.x + 24, p.y + 118, width, 34); }
-        Rectangle spawnPreviewRect() { Rectangle p = panelRect(getWidth(), getHeight()); int leftW = Math.max(300, Math.min(540, p.width - 420)); int x = p.x + 24 + leftW + 24; int w = Math.max(300, p.x + p.width - 28 - x); return new Rectangle(x, p.y + 118, w, Math.max(320, p.height - 206)); }
-        Rectangle panelRect(int w, int h) { int minW = stage == Stage.CHARACTER_CREATION ? 900 : 720; int maxW = stage == Stage.CHARACTER_CREATION ? 1320 : 1060; int margin = stage == Stage.CHARACTER_CREATION ? 48 : 72; int pw = Math.max(minW, Math.min(maxW, w - margin)); int ph = Math.max(stage == Stage.CHARACTER_CREATION ? 620 : 540, Math.min(stage == Stage.CHARACTER_CREATION ? 760 : 720, h - 72)); return new Rectangle(Math.max(20, w / 2 - pw / 2), Math.max(28, h / 2 - ph / 2), pw, ph); }
+        Rectangle seedEditRect() { return WorldStartLayoutAuthority.seed(panelRect(getWidth(), getHeight())); }
+        Rectangle spawnPreviewRect() { return WorldStartLayoutAuthority.generationPreview(panelRect(getWidth(), getHeight())); }
+        Rectangle panelRect(int w, int h) { return WorldStartLayoutAuthority.panelRect(w, h, stage == Stage.CHARACTER_CREATION); }
+        Rectangle compactBackRect() { Rectangle p = panelRect(getWidth(), getHeight()); return new Rectangle(p.x + Math.max(12, (p.width - 154) / 2), p.y + p.height - 52, Math.min(154, Math.max(1, p.width - 24)), 34); }
         Rectangle buttonRect(int index) { Rectangle p = panelRect(getWidth(), getHeight()); if (index == 2) return new Rectangle(p.x + 28, p.y + p.height - 58, 146, 34); int bw = index == 0 ? 178 : 120; int gap = 16; int x = index == 0 ? p.x + p.width - bw - 28 : p.x + p.width - bw - 28 - 178 - gap; return new Rectangle(x, p.y + p.height - 58, bw, 34); }
         String title() { return MenuTextAuthority.text(titleKey(), switch (stage) { case WORLD_PICKER -> "WORLD MANAGEMENT"; case WORLD_GENERATION -> "NEW WORLD GENERATION"; case CHARACTER_CREATION -> "CHARACTER GENERATION"; default -> "START FLOW"; }); }
         String titleKey() { return switch (stage) { case WORLD_PICKER -> "menu.world_manager.title"; case WORLD_GENERATION -> "menu.world_generation.title"; case CHARACTER_CREATION -> "menu.character_generation.title"; default -> ""; }; }
@@ -1076,12 +1175,89 @@ final class WorldStartFlowAuthority {
         void fillRow(Graphics2D g, Rectangle r, boolean selected) { g.setColor(selected ? new Color(76, 62, 32, 232) : new Color(16, 18, 16, 224)); g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8); g.setColor(selected ? highlight() : new Color(145, 118, 64, 120)); g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8); }
         void drawButton(Graphics2D g, Rectangle r, String label, boolean primary) { drawButtonWithColor(g, r, label, primary ? new Color(76, 62, 32, 232) : new Color(16, 18, 16, 224), primary ? highlight() : main(), primary ? highlight() : new Color(145, 118, 64, 140)); }
         void drawDangerButton(Graphics2D g, Rectangle r, String label) { drawButtonWithColor(g, r, label, new Color(58, 18, 14, 232), new Color(236, 168, 142), new Color(192, 74, 58, 180)); }
-        void drawButtonWithColor(Graphics2D g, Rectangle r, String label, Color fill, Color text, Color border) { g.setColor(fill); g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8); g.setColor(border); g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8); g.setColor(text); BufferedImage icon = panel.systemButtonIconForLabel(label); FontMetrics fm = g.getFontMetrics(); int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 6, 30)); int labelW = fm.stringWidth(label); int groupW = labelW + (iconSize > 0 ? iconSize + 8 : 0); int x = r.x + Math.max(8, (r.width - groupW) / 2); if (icon != null) { g.drawImage(icon, x, r.y + (r.height - iconSize) / 2, iconSize, iconSize, null); x += iconSize + 8; } drawBackedText(g, label, x, r.y + 23, false); }
-        void drawFooter(Graphics2D g, String text) { Rectangle p = panelRect(getWidth(), getHeight()); g.setFont(panel.smallFont); g.setColor(muted()); center(g, text, p.x + p.width / 2, p.y + p.height - 78); }
+        void drawButtonWithColor(Graphics2D g, Rectangle r, String label, Color fill, Color text, Color border) {
+            if (r.width <= 1 || r.height <= 1) return;
+            Shape oldClip = g.getClip();
+            g.clip(r);
+            try {
+                g.setColor(fill);
+                g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+                g.setColor(border);
+                g.drawRoundRect(r.x, r.y, r.width - 1, r.height - 1, 8, 8);
+                g.setColor(text);
+                BufferedImage icon = panel.systemButtonIconForLabel(label);
+                FontMetrics fm = g.getFontMetrics();
+                int interior = Math.max(1, r.width - 16);
+                int iconSize = icon == null ? 0 : Math.max(0, Math.min(30, Math.min(r.height - 6, interior / 3)));
+                int textWidth = Math.max(1, interior - (iconSize > 0 ? iconSize + 8 : 0));
+                String shown = GuiLayoutApi.fitLabel(label, fm, textWidth);
+                int groupW = fm.stringWidth(shown) + (iconSize > 0 ? iconSize + 8 : 0);
+                int x = r.x + Math.max(8, (r.width - groupW) / 2);
+                if (iconSize > 0) {
+                    g.drawImage(icon, x, r.y + (r.height - iconSize) / 2, iconSize, iconSize, null);
+                    x += iconSize + 8;
+                }
+                drawBackedText(g, shown, x, r.y + 23, false);
+            } finally {
+                g.setClip(oldClip);
+            }
+        }
+        void drawFooter(Graphics2D g, String text) {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            g.setFont(panel.smallFont);
+            FontMetrics fm = g.getFontMetrics();
+            Rectangle footer = WorldStartLayoutAuthority.footer(p);
+            List<String> parts = GuiLayoutApi.wrapText(text, fm, footer.width);
+            Shape oldClip = g.getClip();
+            g.clip(footer);
+            try {
+                int lineHeight = Math.max(16, fm.getHeight());
+                int rows = Math.min(2, Math.max(1, footer.height / lineHeight));
+                g.setColor(muted());
+                for (int i = 0; i < Math.min(rows, parts.size()); i++) {
+                    String line = GuiLayoutApi.fitLabel(parts.get(i), fm, footer.width);
+                    g.drawString(line, footer.x + (footer.width - fm.stringWidth(line)) / 2,
+                            footer.y + fm.getAscent() + i * lineHeight);
+                }
+            } finally { g.setClip(oldClip); }
+        }
         void drawText(Graphics2D g, String text, int x, int y, int width, Color color) { g.setFont(panel.smallFont); FontMetrics fm = g.getFontMetrics(); List<String> lines = GuiLayoutApi.wrapText(text == null ? "" : text, fm, Math.max(8, width)); drawWrappedTextBlock(g, lines, x, y, width, color, false); }
         void drawLines(Graphics2D g, List<String> lines, int x, int y, int width, Color color) { g.setFont(panel.smallFont); ArrayList<String> wrapped = new ArrayList<>(); FontMetrics fm = g.getFontMetrics(); if (lines != null) for (String line : lines) wrapped.addAll(GuiLayoutApi.wrapText(line == null ? "" : line, fm, Math.max(8, width))); drawWrappedTextBlock(g, wrapped, x, y, width, color, false); }
         void drawWrappedTextBlock(Graphics2D g, List<String> lines, int x, int firstBaseline, int width, Color color, boolean centered) { if (g == null || lines == null || lines.isEmpty()) return; FontMetrics fm = g.getFontMetrics(); int lineH = Math.max(15, fm.getHeight() + 2); int maxW = 0; for (String line : lines) maxW = Math.max(maxW, fm.stringWidth(line == null ? "" : line)); int bx = centered ? x - maxW / 2 - 7 : x - 7; int by = firstBaseline - fm.getAscent() - 5; int bw = Math.max(12, Math.min(Math.max(width, maxW), maxW) + 14); int bh = lineH * lines.size() + 8; Color old = g.getColor(); g.setColor(new Color(0, 0, 0, 118)); g.fillRoundRect(bx, by, bw, bh, 8, 8); g.setColor(new Color(128, 105, 58, 88)); g.drawRoundRect(bx, by, bw, bh, 8, 8); g.setColor(color == null ? old : color); int yy = firstBaseline; for (String raw : lines) { String line = raw == null ? "" : raw; int tx = centered ? x - fm.stringWidth(line) / 2 : x; g.drawString(line, tx, yy); yy += lineH; } g.setColor(old); }
-        void drawAsciiPortrait(Graphics2D g, Candidate c, Rectangle r) { g.setFont(panel.asciiFont.deriveFont(Font.BOLD, 15f)); g.setColor(main()); int y = r.y + 38; if (c == null || c.portrait == null) return; for (String line : c.portrait) { center(g, line, r.x + r.width / 2, y); y += 20; } }
+        void drawMissingPortrait(Graphics2D g, Rectangle r) {
+            // Explicit graphical missing-art state; never hide absent runtime assets behind ASCII portraits.
+            Shape previousClip = g.getClip();
+            Color previousColor = g.getColor();
+            Font previousFont = g.getFont();
+            java.awt.Stroke previousStroke = g.getStroke();
+            g.clip(r);
+            try {
+                int usable = Math.max(12, Math.min(r.width, r.height) - 16);
+                int cx = r.x + r.width / 2;
+                int head = Math.max(10, usable / 3);
+                int headY = r.y + Math.max(10, r.height / 5);
+                g.setColor(new Color(55, 61, 56, 230));
+                g.fillOval(cx - head / 2, headY, head, head);
+                int torsoWidth = Math.max(20, usable * 3 / 5);
+                int torsoHeight = Math.max(12, usable / 3);
+                g.fillRoundRect(cx - torsoWidth / 2, headY + head - 1,
+                        torsoWidth, torsoHeight, 10, 10);
+                g.setColor(new Color(230, 128, 101));
+                g.setStroke(new BasicStroke(2f));
+                g.drawLine(r.x + 8, r.y + 8, r.x + r.width - 8, r.y + r.height - 8);
+                g.setColor(new Color(255, 184, 150));
+                g.setFont(panel.smallFont.deriveFont(Font.BOLD, 10f));
+                FontMetrics metrics = g.getFontMetrics();
+                String label = GuiLayoutApi.fitLabel("ART MISSING", metrics, Math.max(1, r.width - 8));
+                g.drawString(label, cx - metrics.stringWidth(label) / 2, r.y + r.height - 8);
+            } finally {
+                g.setClip(previousClip);
+                g.setColor(previousColor);
+                g.setFont(previousFont);
+                g.setStroke(previousStroke);
+            }
+        }
+
         void center(Graphics2D g, String text, int x, int y) { FontMetrics fm = g.getFontMetrics(); String s = text == null ? "" : text; drawWrappedTextBlock(g, List.of(s), x, y, fm.stringWidth(s), g.getColor(), true); }
         void drawBackedText(Graphics2D g, String text, int x, int y, boolean centered) { if (g == null || text == null || text.isBlank()) return; FontMetrics fm = g.getFontMetrics(); int tw = fm.stringWidth(text); int th = fm.getHeight(); int bx = x - 5; int by = y - fm.getAscent() - 3; Color old = g.getColor(); g.setColor(new Color(0, 0, 0, 104)); g.fillRoundRect(bx, by, tw + 10, th + 5, 7, 7); g.setColor(new Color(128, 105, 58, 76)); g.drawRoundRect(bx, by, tw + 10, th + 5, 7, 7); g.setColor(old); g.drawString(text, x, y); }
         void repaintPanel() { revalidate(); repaint(); if (panel != null) panel.repaint(); }

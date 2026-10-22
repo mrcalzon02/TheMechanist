@@ -57,12 +57,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             Dimension subSize = panel.mainMenuSubtitleDrawSize(subtitle, W, H);
             int sw = subSize.width;
             int sh = subSize.height;
-            int minSubtitleW = Math.max(buttonFrame.width, Math.min(W - 48, buttonFrame.width));
-            if (sw < minSubtitleW && subtitle.getWidth() > 0) {
-                sw = Math.min(W - 48, minSubtitleW);
-                sh = Math.max(1, (int)Math.round(subtitle.getHeight() * (sw / (double) subtitle.getWidth())));
-            }
-            sh = Math.min(sh, Math.max(40, H / 7));
+            sh = Math.min(sh, Math.max(1, H / 13));
             int sy = drawnTitleBottom + 3;
             g.drawImage(subtitle, cx - sw / 2, sy, sw, sh, null);
             panel.stampUiFrameId(g, "I", "subtitle", cx - sw / 2, sy, sw, sh);
@@ -92,7 +87,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             String fallbackLabel = labels.get(i);
             String label = MenuTextAuthority.text(i < ROUTE_KEYS.length ? ROUTE_KEYS[i] : "", fallbackLabel);
             BufferedImage icon = panel.systemButtonIconForLabel(fallbackLabel);
-            int iconSize = icon == null ? 0 : Math.max(36, Math.min((int)Math.round(r.height * 1.16), 57));
+            int iconSize = icon == null ? 0 : routeIconSize(r);
             int iconX = r.x + 12;
             int textX = r.x + 18;
             int textW = r.width - 36;
@@ -111,10 +106,19 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         BufferedImage profilePortrait = LauncherPortraitAssetLoader.selectedProfilePortrait();
         boolean portraitExpected = !"not supplied".equals(portraitId);
         int portraitSize = portraitExpected ? Math.max(40, Math.min(52, H / 15)) : 0;
-        int panelW = Math.min(W - 220, portraitExpected ? 315 : 245);
+        int panelW = portraitExpected ? 315 : 245;
         int panelH = portraitExpected ? Math.max(58, portraitSize + 12) : Math.max(22, Math.min(26, H / 24));
-        int panelX = (W - panelW) / 2;
-        int panelY = Math.max(8, Math.min(H - panelH - 10, buttonFrame.y - panelH - 10));
+        if (buttonFrame.x < panelW + 20) {
+            g.setFont(panel.smallFont.deriveFont(Font.PLAIN, Math.max(10f, Math.min(12f, panel.smallFont.getSize2D()))));
+            FontMetrics fm = g.getFontMetrics();
+            g.setColor(panel.optionColor(GameOptions.TEXT_DIM));
+            String status = shellLines.isEmpty() ? "The Mechanist" : shellLines.get(0);
+            g.drawString(GuiLayoutApi.fitLabel(status, fm, Math.max(1, W - 24)), 12, 18);
+            g.setFont(panel.smallFont);
+            return;
+        }
+        int panelX = Math.max(8, buttonFrame.x - panelW - 12);
+        int panelY = buttonFrame.y + 10;
 
         g.setColor(new Color(0, 0, 0, 150));
         g.fillRoundRect(panelX, panelY, panelW, panelH, 9, 9);
@@ -156,6 +160,12 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             lineY += Math.max(10, fm.getHeight());
         }
         g.setFont(panel.smallFont);
+    }
+
+    /** Keep decorative icons inside the actual clickable button at every viewport. */
+    static int routeIconSize(Rectangle row) {
+        if (row == null || row.width <= 0 || row.height <= 0) return 0;
+        return Math.max(1, Math.min(57, Math.min(row.height - 4, row.width - 24)));
     }
 
     private static void drawCover(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {

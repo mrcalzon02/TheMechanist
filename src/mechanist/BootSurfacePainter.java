@@ -38,7 +38,7 @@ final class BootSurfacePainter implements ScreenPainter {
         }
     }
 
-    private void drawBackdrop(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
+    void drawBackdrop(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
         BufferedImage backdrop = panel.images == null ? null : panel.images.get("new_world_backdrop_rebase");
         if (backdrop != null) {
             drawCover(g, backdrop, 0, 0, w, h);
@@ -73,7 +73,7 @@ final class BootSurfacePainter implements ScreenPainter {
         g.setComposite(old);
     }
 
-    private void drawTitle(Graphics2D g, GamePanel panel, int w, int h) {
+    void drawTitle(Graphics2D g, GamePanel panel, int w, int h) {
         BufferedImage title = panel.images == null ? null : first(panel.images.get("title_mechanist_rebase"), panel.images.get("title_mechanist"));
         BufferedImage subtitle = panel.images == null ? null : panel.images.get("subtitle_rebase");
         int titleY = Math.max(42, h / 8);
@@ -97,15 +97,35 @@ final class BootSurfacePainter implements ScreenPainter {
         }
     }
 
-    private void drawSpinner(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
+    void drawSpinner(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
         BufferedImage frame = bootFrame(panel, elapsed);
         if (frame == null && panel.images != null) frame = panel.images.get("mechanical_skull_gear_emblem");
-        int size = Math.max(96, Math.min(220, Math.min(w, h) / 4));
+        // The legacy imported eight-frame spinner is absent from the compiled
+        // distribution. Use its packaged refresh/reroll SYSTEM image instead of replacing
+        // its art with the old concentric-circle Java2D placeholder.
+        boolean rotateSystemArt = false;
+        if (frame == null && panel.images != null) {
+            frame = panel.images.getCompiledSystemIcon(4, 2, 2);
+            rotateSystemArt = frame != null;
+        }
+        int size = Math.max(32, Math.min(180, Math.min(w, h) / 4));
         int x = w / 2 - size / 2;
-        int y = Math.max(h / 2 - size / 2, h / 2 - 80);
+        int y = Math.max(8, Math.min(h / 2 - size / 2, h - size - 126));
         if (frame != null) {
-            g.drawImage(frame, x, y, size, size, null);
+            if (rotateSystemArt) {
+                java.awt.geom.AffineTransform before = g.getTransform();
+                try {
+                    g.rotate((elapsed % 4600L) * (2.0 * Math.PI / 4600.0),
+                            x + size / 2.0, y + size / 2.0);
+                    g.drawImage(frame, x, y, size, size, null);
+                } finally {
+                    g.setTransform(before);
+                }
+            } else {
+                g.drawImage(frame, x, y, size, size, null);
+            }
         } else {
+            // Diagnostic last resort if neither original nor compiled art ships.
             g.setColor(new Color(185, 225, 150));
             g.setStroke(new BasicStroke(4f));
             int arc = (int)((elapsed / 8L) % 360L);
@@ -147,12 +167,12 @@ final class BootSurfacePainter implements ScreenPainter {
     private void drawBootText(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
         g.setFont(panel.smallFont == null ? new Font("Monospaced", Font.BOLD, 14) : panel.smallFont);
         String[] steps = {
-                "studio intro placeholder",
-                "logo splash placeholder",
-                "loading cogitator frame slices",
-                "binding tile art registries",
-                "indexing portrait pools",
-                "holding main-menu music gate",
+                "preparing session",
+                "loading interface",
+                "preparing environment",
+                "loading art",
+                "preparing character profiles",
+                "initializing menu",
                 "opening main menu"
         };
         long stepMillis = Math.max(1L, BootMenuFlowAuthority.MIN_BOOT_MILLIS / steps.length);
@@ -176,6 +196,6 @@ final class BootSurfacePainter implements ScreenPainter {
     private void drawCentered(Graphics2D g, String text, int x, int y) {
         FontMetrics fm = g.getFontMetrics();
         String s = text == null ? "" : text;
-        g.drawString(s, x - fm.stringWidth(s) / 2, y);
+        EarlyScreenTextAuthority.drawCentered(g, s, x, y, Math.max(1, 2 * x - 24));
     }
 }

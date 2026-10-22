@@ -768,3 +768,12 @@ Publication remains blocked until the intended limited-alpha scope has accepted 
 - checksums;
 - Windows and Linux target-platform results where both are claimed;
 - explicit user authorization to publish.
+
+
+## 23. Development runtime screenshots
+
+The user-authorized `Runtime Visual Verification` workflow is a separate diagnostic lane. Run `.github/workflows/runtime-visual-verification.yml` manually, or change its governed verification tools to trigger a run. It builds a Java 17 development client, stages only `PACKAGE_client/assets` beside the new client JAR outside the checkout, and opens the actual application under Xvfb. `ROOT_tools/verification/RuntimeVisualVerification.java` drives the ordinary world-start controls and captures boot, menu, world selection, generation, character creation, and gameplay at desktop and compact sizes.
+
+The artifact contains PNG screenshots, build/client/driver logs, an exact-commit/JAR-hash report, and runtime evidence. Automated success requires the original title image, a character portrait image, image bindings for every sampled remembered terrain tile, and a material map-pixel difference against a temporary art-disabled render. The test restores the image setting and does not save that diagnostic change. A failed build, missing stage, absent image, glyph fallback, or unchanged image-disabled map fails the run; available failure evidence is uploaded regardless.
+
+Inspect screenshots before claiming visual correctness. `passed-automated-checks` does not certify text readability, every asset family, Windows behavior, native graphics drivers, installed-client freshness, or limited-alpha release readiness. This lane neither publishes a release nor substitutes for the full release gates above.

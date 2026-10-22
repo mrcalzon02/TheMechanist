@@ -67,6 +67,8 @@ final class IndependentHostTransportSessionSmoke {
                                 && relay.activeRemoteSessionCount() == 2,
                         "relay ledger did not register two active server-owned sessions");
 
+                // The second client's attach broadcasts to existing peers only.
+                // The first client receives the authoritative two-player roster.
                 HostedRosterReadout joinRoster = sender.readRoster();
                 require(joinRoster.totalSessions == 2
                                 && joinRoster.activeSessions == 2
@@ -86,6 +88,8 @@ final class IndependentHostTransportSessionSmoke {
                                 && ready.acceptedHostedCommands == 1L
                                 && ready.lastConnectionCommandId == 0L,
                         "sender READY command was not accepted authoritatively");
+                // A joining client is excluded from its own join broadcast,
+                // but does receive subsequent updates from its peer.
                 HostedRosterReadout readyBroadcast = receiver.readRoster();
                 RosterEntryReadout senderReady = readyBroadcast.entryFor(sender.playerId);
                 require(senderReady != null && senderReady.ready,
@@ -198,9 +202,17 @@ final class IndependentHostTransportSessionSmoke {
                 waitForSessionConnected(relay, SENDER_PROFILE, false, 3_000L);
             }
             waitForAuthenticatedClients(relay, 0, 3_000L);
+            // Network removal and durable session disconnect happen in separate
+            // phases of the client worker. Wait for BOTH private identities to
+            // become offline rather than sampling midway through cleanup.
+            waitForSessionConnected(relay, SENDER_PROFILE, false, 3_000L);
+            waitForSessionConnected(relay, RECEIVER_PROFILE, false, 3_000L);
             require(relay.remoteSessionCount() == 2
                             && relay.activeRemoteSessionCount() == 0,
-                    "closed clients were not retained privately as offline resumable sessions");
+                    "closed clients were not retained privately as offline resumable sessions"
+                    + "; ledger=" + relay.remoteSessionPersistence()
+                    + "; sender=" + relay.remoteSessionSnapshot(SENDER_PROFILE)
+                    + "; receiver=" + relay.remoteSessionSnapshot(RECEIVER_PROFILE));
         } finally {
             first.close();
         }

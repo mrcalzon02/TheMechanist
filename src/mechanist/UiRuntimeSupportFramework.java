@@ -96,33 +96,68 @@ class GuiLayoutApi {
         int gap = columnGap(scale);
         return Math.max(scaled(112, scale), (safe.width - gap*(cols-1)) / cols);
     }
-    static String fitLabel(String text, FontMetrics fm, int maxWidth) {
-        String t = text == null ? "" : text;
-        if (fm == null || fm.stringWidth(t) <= maxWidth) return t;
-        String ell = "…";
-        if (fm.stringWidth(ell) > maxWidth) return "";
-        while (t.length() > 1 && fm.stringWidth(t + ell) > maxWidth) t = t.substring(0, t.length()-1);
-        return t + ell;
-    }
-    static java.util.List<String> wrapText(String text, FontMetrics fm, int maxWidth) {
-        java.util.ArrayList<String> out = new java.util.ArrayList<>();
-        String t = text == null ? "" : text.trim();
-        if (t.isEmpty()) { out.add(""); return out; }
-        if (fm == null || maxWidth <= 8) { out.add(t); return out; }
-        StringBuilder line = new StringBuilder();
-        for (String word : t.split("\s+")) {
-            String candidate = line.length() == 0 ? word : line + " " + word;
-            if (fm.stringWidth(candidate) <= maxWidth) line.setLength(0);
-            if (fm.stringWidth(candidate) <= maxWidth) line.append(candidate);
-            else {
-                if (line.length() > 0) out.add(line.toString());
-                line.setLength(0);
-                if (fm.stringWidth(word) <= maxWidth) line.append(word);
-                else out.add(fitLabel(word, fm, maxWidth));
-            }
+    static Font readableButtonFont(Graphics2D g, Font requested, int availableHeight) {
+        Font useFont = requested == null ? new Font("SansSerif", Font.BOLD, 14) : requested;
+        if (g == null) return useFont;
+        float minimum = Math.min(10f, useFont.getSize2D());
+        while (g.getFontMetrics(useFont).getHeight() > availableHeight && useFont.getSize2D() > minimum) {
+            useFont = useFont.deriveFont(Math.max(minimum, useFont.getSize2D() - 1f));
         }
-        if (line.length() > 0) out.add(line.toString());
-        return out;
+        return useFont;
+    }
+
+    static String fitLabel(String text, FontMetrics fm, int maxWidth) {
+        String value = text == null ? "" : text;
+        if (fm == null) return value;
+        if (maxWidth <= 0) return "";
+        if (fm.stringWidth(value) <= maxWidth) return value;
+        String ellipsis = "…";
+        if (fm.stringWidth(ellipsis) > maxWidth) return "";
+        int end = value.length();
+        while (end > 0 && fm.stringWidth(value.substring(0, end) + ellipsis) > maxWidth) {
+            end = value.offsetByCodePoints(end, -1);
+        }
+        return value.substring(0, end) + ellipsis;
+    }
+
+    static java.util.List<String> wrapText(String text, FontMetrics fm, int maxWidth) {
+        java.util.ArrayList<String> lines = new java.util.ArrayList<>();
+        String value = text == null ? "" : text.trim();
+        if (value.isEmpty()) { lines.add(""); return lines; }
+        if (fm == null || maxWidth <= 0) { lines.add(value); return lines; }
+        StringBuilder line = new StringBuilder();
+        for (String word : value.split("\\s+")) {
+            if (word.isEmpty()) continue;
+            if (line.length() > 0 && fm.stringWidth(line + " " + word) <= maxWidth) {
+                line.append(' ').append(word);
+                continue;
+            }
+            if (line.length() > 0) {
+                lines.add(line.toString());
+                line.setLength(0);
+            }
+            if (fm.stringWidth(word) <= maxWidth) {
+                line.append(word);
+                continue;
+            }
+            // Hard-wrap oversized tokens rather than replacing the unseen remainder with ellipsis.
+            // Code-point iteration prevents splitting supplementary Unicode characters.
+            StringBuilder chunk = new StringBuilder();
+            for (int index = 0; index < word.length();) {
+                int codePoint = word.codePointAt(index);
+                String glyph = new String(Character.toChars(codePoint));
+                if (chunk.length() > 0 && fm.stringWidth(chunk.toString() + glyph) > maxWidth) {
+                    lines.add(chunk.toString());
+                    chunk.setLength(0);
+                }
+                chunk.append(glyph);
+                index += Character.charCount(codePoint);
+            }
+            line.append(chunk);
+        }
+        if (line.length() > 0) lines.add(line.toString());
+        if (lines.isEmpty()) lines.add("");
+        return lines;
     }
 }
 
@@ -135,6 +170,8 @@ class ButtonBox {
     void draw(Graphics2D g, Font f, boolean selected, ImageCache images, GameOptions options){
         if (g == null || r == null || r.width <= 0 || r.height <= 0) return;
         Shape oldClip = g.getClip();
+        Font oldFont = g.getFont();
+        Color oldColor = g.getColor();
         g.clipRect(r.x, r.y, Math.max(1, r.width), Math.max(1, r.height));
         try {
             BufferedImage bg = images == null ? null : images.get(selected ? "button_hover" : "button_normal");
@@ -148,9 +185,9 @@ class ButtonBox {
                 g.setColor(selected ? new Color(42,36,28,235) : new Color(18,18,20,220)); g.fillRect(r.x,r.y,r.width,r.height);
                 g.setColor(selected ? new Color(235,205,120) : new Color(170,150,95)); g.drawRect(r.x,r.y,r.width,r.height);
             }
-            Font useFont = f == null ? new Font("SansSerif", Font.BOLD, 14) : f;
             int innerW = Math.max(18, r.width - 18);
             int innerH = Math.max(12, r.height - 10);
+            Font useFont = GuiLayoutApi.readableButtonFont(g, f, innerH);
             g.setFont(useFont);
             FontMetrics fm=g.getFontMetrics();
             boolean squareIconButton = icon != null && r.height >= 42 && r.width <= 96 && r.height <= r.width + 18;
@@ -163,11 +200,6 @@ class ButtonBox {
                 g.drawRect(ix, iy, iconSize, iconSize);
                 if(selected) { g.drawRect(r.x+2,r.y+2,Math.max(1,r.width-4),Math.max(1,r.height-4)); }
                 return;
-            }
-            while ((fm.stringWidth(label == null ? "" : label) > innerW || fm.getHeight() > innerH) && useFont.getSize2D() > 6f) {
-                useFont = useFont.deriveFont(useFont.getSize2D() - 1f);
-                g.setFont(useFont);
-                fm = g.getFontMetrics();
             }
             g.setColor(options == null ? (selected ? new Color(245,220,140) : new Color(210,190,125)) : new Color(options.colorValue(selected ? GameOptions.TEXT_HIGHLIGHT : GameOptions.TEXT_MAIN)));
             if(selected) { g.drawRect(r.x+2,r.y+2,Math.max(1,r.width-4),Math.max(1,r.height-4)); }
@@ -220,6 +252,8 @@ class ButtonBox {
             }
         } finally {
             g.setClip(oldClip);
+            g.setFont(oldFont);
+            g.setColor(oldColor);
         }
     }
 

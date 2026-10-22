@@ -11,12 +11,22 @@ import java.awt.image.BufferedImage;
 final class SaveLoadSurfacePainter implements ScreenPainter {
     @Override
     public void paint(Graphics2D g, GamePanel panel) {
-        Rectangle box = panel.saveLoadPanelRect();
+        SaveLoadLayoutAuthority.Layout geometry = SaveLoadLayoutAuthority.measure(
+                panel.getWidth(), panel.getHeight(), panel.saveLoadSlots().length);
+        Rectangle box = geometry.panel();
         g.setColor(new Color(0, 0, 0, 198));
         g.fillRoundRect(box.x, box.y, box.width, box.height, 14, 14);
         panel.drawSlicedFrame(g, box.x, box.y, box.width, box.height, "inner");
         panel.stampUiFrameId(g, "F", "save-load-menu", box.x, box.y, box.width, box.height);
         MenuTextAuthority.drawMenuReference(g, panel, box, "M002", "menu.save_load.title", "World Management");
+
+        if (!geometry.fits()) {
+            g.setFont(panel.smallFont);
+            g.setColor(panel.optionColor(GameOptions.TEXT_MAIN));
+            g.drawString("Enlarge the window to manage saves.", box.x + 18, box.y + 72);
+            drawButton(g, panel, geometry.back(), "Back", false);
+            return;
+        }
 
         g.setFont(panel.titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, box.height / 12f))));
         g.setColor(panel.optionColor(GameOptions.TEXT_HIGHLIGHT));
@@ -26,7 +36,7 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
         FontMetrics fm = g.getFontMetrics();
         g.setColor(panel.optionColor(GameOptions.TEXT_MAIN));
         MenuTextAuthority.drawWrappedBlock(g, panel, "", safe(panel.saveLoadStatus),
-                new Rectangle(box.x + 34, box.y + 58, box.width - 68, 42), panel.optionColor(GameOptions.TEXT_MAIN));
+                geometry.status(), panel.optionColor(GameOptions.TEXT_MAIN));
 
         int[] slots = panel.saveLoadSlots();
         for (int i = 0; i < slots.length; i++) {
@@ -39,7 +49,7 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
 
             String label = (selected ? "> " : "  ") + SaveSlotSurfaceApi.saveSlotSummary(slots[i]);
             g.setColor(selected ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
-            g.drawString(GuiLayoutApi.fitLabel(label, fm, Math.max(120, row.width - 18)), row.x + 10, row.y + 29);
+            g.drawString(GuiLayoutApi.fitLabel(label, fm, Math.max(1, row.width - 18)), row.x + 10, row.y + 29);
         }
 
         drawButton(g, panel, panel.saveLoadBackRect(), MenuTextAuthority.text("menu.world_manager.button.back", "Back"), false);
@@ -49,12 +59,12 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
         g.setColor(panel.optionColor(GameOptions.TEXT_DIM));
         MenuTextAuthority.drawWrappedBlock(g, panel, "menu.save_load.footer",
                 "Enter loads selected slot. Delete/D deletes selected slot. N starts a new game. Esc returns.",
-                new Rectangle(box.x + 34, box.y + box.height - 98, box.width - 68, 44), panel.optionColor(GameOptions.TEXT_DIM));
+                geometry.footer(), panel.optionColor(GameOptions.TEXT_DIM));
     }
 
     static Rectangle deleteSelectedSlotRect(GamePanel panel) {
-        Rectangle p = panel.saveLoadPanelRect();
-        return new Rectangle(p.x + p.width / 2 - 78, p.y + p.height - 58, 156, 34);
+        return new Rectangle(SaveLoadLayoutAuthority.measure(
+                panel.getWidth(), panel.getHeight(), panel.saveLoadSlots().length).delete());
     }
 
     static boolean handleDeleteClick(GamePanel panel, int mx, int my) {
@@ -123,15 +133,17 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
     private static void drawButtonLabel(Graphics2D g, GamePanel panel, Rectangle r, String label) {
         BufferedImage icon = panel.systemButtonIconForLabel(label);
         FontMetrics fm = g.getFontMetrics();
-        int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 8, 28));
-        int labelW = fm.stringWidth(label);
-        int groupW = labelW + (iconSize > 0 ? iconSize + 8 : 0);
+        int interior = Math.max(1, r.width - 16);
+        int iconSize = icon == null ? 0 : Math.max(0, Math.min(28, Math.min(r.height - 8, interior / 3)));
+        int textWidth = Math.max(1, interior - (iconSize > 0 ? iconSize + 8 : 0));
+        String shown = GuiLayoutApi.fitLabel(label, fm, textWidth);
+        int groupW = fm.stringWidth(shown) + (iconSize > 0 ? iconSize + 8 : 0);
         int x = r.x + Math.max(8, (r.width - groupW) / 2);
-        if (icon != null) {
+        if (iconSize > 0) {
             g.drawImage(icon, x, r.y + (r.height - iconSize) / 2, iconSize, iconSize, null);
             x += iconSize + 8;
         }
-        g.drawString(label, x, r.y + 22);
+        g.drawString(shown, x, r.y + 22);
     }
 
     private static String safe(String text) {

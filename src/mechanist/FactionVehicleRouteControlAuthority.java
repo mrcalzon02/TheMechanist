@@ -78,6 +78,12 @@ final class FactionVehicleRouteControlAuthority {
 
     static Result assign(GamePanel game, NpcFactionSite site,
                          Request request) {
+        return assign(game, site, request, null);
+    }
+
+    /** A strategic plan supplies its commander's saved intelligence skill. */
+    static Result assign(GamePanel game, NpcFactionSite site,
+                         Request request, FactionStrategicPlan plan) {
         ArrayList<String> blockers = new ArrayList<>();
         if (game == null || game.world == null) {
             return Result.blocked("assign route control",
@@ -110,18 +116,25 @@ final class FactionVehicleRouteControlAuthority {
             FactionVehicleBalanceAuthority.Contest contest =
                     FactionVehicleBalanceAuthority.compare(game,
                             site.faction, order.targetFaction(), site);
-            if (!contest.canEscalate(order.aggression(),
-                    order.ambition())) {
-                blockers.add("leadership commitment "
+            FactionVehicleBalanceAuthority.Assessment command =
+                    plan == null ? null : FactionVehicleBalanceAuthority.assess(
+                            game, site.faction, order.targetFaction(), site, plan);
+            boolean approved = command == null
+                    ? contest.canEscalate(order.aggression(), order.ambition())
+                    : command.willEngage();
+            if (!approved) {
+                String reason = command == null
+                        ? "leadership commitment "
                         + contest.commitment(order.aggression(),
                         order.ambition()) + "/"
                         + contest.escalationThreshold()
-                        + " is below the fleet escalation requirement");
-                blockers.add(contest.summary());
+                        + " is below the fleet escalation requirement"
+                        : command.summary();
+                blockers.add(reason);
                 return Result.blocked("assign route control",
                         site.faction.label
                                 + " declined the contested route order. "
-                                + contest.summary(), null, blockers);
+                                + reason, null, blockers);
             }
         }
 

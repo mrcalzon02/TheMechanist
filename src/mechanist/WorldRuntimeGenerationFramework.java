@@ -58,6 +58,8 @@ class WorldAtlas {
         w.sectorX=sx; w.sectorY=sy; w.zoneX=zx; w.zoneY=zy; w.floor=fl; w.sewerLayer=sewerLayer;
         w.hiveName = hiveWorld.hiveName; w.sectorName = hiveWorld.sectorName(sx, sy); w.zoneName = hiveWorld.zoneName(sx, sy, zx, zy, fl, sewerLayer); w.zoneHistory = hiveWorld.historyLine(sx, sy, zx, zy, fl, sewerLayer); w.zoneEpochHistory = WorldHistoryApi.ensureZoneEpoch(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneFacilityHistory = ZoneFacilityHistoryApi.ensureZoneFacilities(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneProductionHistory = ProductionFacilityOutputSimulationApi.ensureZoneProduction(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneStockMovementHistory = ProductionDistributionApi.ensureZoneStockMovements(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneConflictLossHistory = HistoricalConflictLossApi.ensureZoneConflictLoss(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneMaterializedItemHistory = HistoricalItemMaterializationApi.ensureZoneMaterializedItems(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneLaborAssignmentHistory = PopulationWorkAssignmentApi.ensureZoneLaborAssignments(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer));
         w.zoneType = zoneTypeForSlice(zx, zy, fl, sewerLayer);
+        if (!sewerLayer) w.buildingSites = MultiFloorBuildingPlacementAuthority.planSites(
+                seed, sx, sy, zx, zy, w.w, w.h);
         if(sx==1&&sy==1&&zx==2&&zy==2&&fl==4&&!sewerLayer) w.zoneType = ZoneType.NEUTRAL_CIVILIAN_FLOOR;
         w.generate();
         slices[sx-1][sy-1][zx-1][zy-1][(fl-1)*2+(sewerLayer?1:0)] = w;
@@ -159,6 +161,9 @@ class World {
     ArrayList<RoomProfile> roomProfiles = new ArrayList<>();
     ArrayList<Faction> roomFactions = new ArrayList<>();
     ArrayList<Boolean> roomSpecials = new ArrayList<>();
+    java.util.List<MultiFloorBuildingPlacementAuthority.Site> buildingSites = java.util.List.of();
+    java.util.Map<String,Integer> buildingRoomIds = new java.util.LinkedHashMap<>();
+    ArrayList<Rectangle> buildingOpenVolumes = new ArrayList<>();
     ZoneType zoneType = ZoneType.TRASH_WARREN;
     int sectorX = 1, sectorY = 1, zoneX = 1, zoneY = 1, floor = 1;
     boolean sewerLayer = false;
@@ -223,6 +228,9 @@ class World {
         ensureRoomQuotaFromStreetBlocks(state.target);
         applyFactionRoomManifest();
         SectorGenerationTraceAuthority.record(this, "MANIFEST", "Faction room manifest applied to road-first rooms.");
+        int multiFloorRooms = MultiFloorBuildingPlacementAuthority.stampFloor(this);
+        if (multiFloorRooms > 0) SectorGenerationTraceAuthority.record(this, "BUILDING",
+                "Shared cross-floor building plates materialized rooms=" + multiFloorRooms);
         markSpecialRooms();
         SectorGenerationTraceAuthority.record(this, "SPECIAL", "Special room flags marked.");
         placeMartianEmergencyMachineRooms();
@@ -355,6 +363,8 @@ class World {
     void resetGenerationState(long effectiveSeed){
         this.r = new Random(effectiveSeed);
         rooms.clear(); npcs.clear(); replacementQueue.clear(); roomPopulationLedgers.clear(); mapObjects.clear(); lightSources.clear(); noiseSources.clear(); hazardWarnings.clear(); trapRecords.clear(); roadGridGenerationResult = null; noiseFieldTurn = -1; dirtyLightRevision++; dirtyNoiseRevision++; dirtyVisionRevision++; dirtyHazardRevision++; hearingFieldSummary = "No cached noise/hearing field generated."; lightNoiseSummary = "No light/noise metadata generated."; hazardVisibilitySummary = "No hazard warning overlays generated."; trapInteractionSummary = "No trap / booby-trap interaction metadata generated."; economicTopologyGenerationSummary = "Economic topology generation bias has not been applied."; economicTopologyGenerationNotes.clear(); localTopologyMetadataSurface = null; localTopologyMetadataSummary = "Local topology metadata surface has not been cached."; localTopologyMetadataNotes.clear(); economicTopologyReportingOverlaySurface = null; economicTopologyReportingOverlaySummary = "Economic topology reporting overlay has not been built."; economicTopologyReportingOverlayNotes.clear(); economicTopologyMapIntelBridgeSurface = null; economicTopologyMapIntelBridgeSummary = "Economic topology map/intel bridge has not been built."; economicTopologyMapIntelBridgeNotes.clear(); roomProfiles.clear(); roomFactions.clear(); roomSpecials.clear();
+        buildingRoomIds.clear();
+        buildingOpenVolumes.clear();
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) roomIds[x][y] = -1;
     }
 
@@ -513,14 +523,19 @@ class World {
             int[][] dirs = frontageDirectionsForStreet(street);
             if(dirs.length == 0) continue;
             for(int[] dir: dirs){
-                Rectangle rr = roadFirstRoomRectFromStreet(street, dir, size.width, size.height);
+                // Mixed frontage: direct doors, short mews, and set-back block
+                // interiors. Every candidate still earns a valid street connector
+                // before it is accepted, and a shallow fallback preserves quotas.
+                for(int setback: RoadFrontageDepthAuthority.candidateSetbacks(
+                        seed, salt, street.x, street.y, dir[0], dir[1])){
+                Rectangle rr = roadFirstRoomRectFromStreet(street, dir, size.width, size.height, setback);
                 if(rr == null) continue;
                 if(!rectInMap(rr) || rr.x < 2 || rr.y < 2 || rr.x+rr.width >= w-2 || rr.y+rr.height >= h-2){
                     SectorGenerationTraceAuthority.reject(this, "REJECT", "Road-first room outside safe map bounds.", rr);
                     continue;
                 }
-                if(regionTouchesNonWall(rr)){
-                    SectorGenerationTraceAuthority.reject(this, "REJECT", "Road-first room refused because its own one-wall footprint overlapped a road, corridor, room, transition, or prior asset.", rr);
+                if(regionTouchesNonWall(rr) || MultiFloorBuildingPlacementAuthority.reserved(this, rr)){
+                    SectorGenerationTraceAuthority.reject(this, "REJECT", "Road-first room intersects a road, corridor, reserved building stack, room, or transition.", rr);
                     continue;
                 }
                 int before = rooms.size();
@@ -539,8 +554,9 @@ class World {
                 FactionRoomLayoutAuthority.applyInteriorLayout(this, before, rr, spec, layoutPlan);
                 RoomProfile profile = before < roomProfiles.size() ? roomProfiles.get(before) : null;
                 if(profile != null) profile.featureText = FactionRoomLayoutAuthority.decorateFeatureText(profile.featureText, layoutPlan);
-                SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first " + spec.kind + " room " + before + " placed from street frontage. " + layoutPlan.summary(), rr, false);
+                SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first " + spec.kind + " room " + before + " placed with street setback=" + setback + " tiles. " + layoutPlan.summary(), rr, false);
                 return attempts;
+                }
             }
         }
         return attempts;
@@ -606,8 +622,12 @@ class World {
     }
 
     Rectangle roadFirstRoomRectFromStreet(Point street, int[] dir, int rw, int rh){
+        return roadFirstRoomRectFromStreet(street, dir, rw, rh, 2);
+    }
+
+    Rectangle roadFirstRoomRectFromStreet(Point street, int[] dir, int rw, int rh, int setback){
         if(street == null || dir == null) return null;
-        int gap = 2;
+        int gap = Math.max(2, setback);
         int x, y;
         if(dir[0] > 0){ x = street.x + gap; y = street.y - rh/2; }
         else if(dir[0] < 0){ x = street.x - gap - rw + 1; y = street.y - rh/2; }
@@ -2276,6 +2296,11 @@ class World {
         for(int x=rr.x; x<rr.x+rr.width; x++) for(int y=rr.y; y<rr.y+rr.height; y++) if(inBounds(x,y) && roomIds[x][y]==idx){ roomIds[x][y] = -1; tiles[x][y] = '#'; }
         rooms.remove(idx); roomProfiles.remove(idx); roomFactions.remove(idx); roomSpecials.remove(idx);
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) if(roomIds[x][y] > idx) roomIds[x][y]--;
+        // Stable building-space IDs must continue pointing to the correct
+        // remaining room when any earlier generated room is culled.
+        buildingRoomIds.entrySet().removeIf(e -> e.getValue() == null || e.getValue() == idx);
+        for(java.util.Map.Entry<String,Integer> e: buildingRoomIds.entrySet())
+            if(e.getValue() > idx) e.setValue(e.getValue() - 1);
     }
 
     void cullUnreachableRoomsHard(){

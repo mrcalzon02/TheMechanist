@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10kl-light-stable-variety";
+    static final String VERSION = "0.9.10kl-civic-fixture-art-bindings";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -158,6 +158,17 @@ final class ObjectSemanticAssetAuthority {
 
     static Optional<String> runtimeAssetIdForMapObject(MapObjectState object) {
         if (object == null) return Optional.empty();
+
+        // RoadTransitFixtureAuthority/AssetIntegrationDisciplineAuthority already
+        // define durable type identities for vehicles and parking. Bind those
+        // identities to the exact compiled atlas cell instead of allowing the
+        // generic name classifier to resolve "armored car" as an armor item, or
+        // returning a missing-art icon for a real parked vehicle.
+        Optional<String> authoredRoadTransport = runtimeRoadTransportAssetId(object);
+        if (authoredRoadTransport.isPresent()) return authoredRoadTransport;
+        Optional<String> publicFixture = runtimePublicFixtureAssetId(object);
+        if (publicFixture.isPresent()) return publicFixture;
+
         String label = object.label == null ? "" : object.label;
         String type = object.type == null ? "" : object.type;
         String stock = object.stockState == null ? "" : object.stockState;
@@ -172,6 +183,96 @@ final class ObjectSemanticAssetAuthority {
         String authoredHint = assetIdForMapObject(object);
         if ("ITEM-G01".equals(authoredHint)) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
         return SemanticAssetHintResolver.resolve(authoredHint, semantic, MAP_OBJECT_ASSET_TYPES);
+    }
+
+    /**
+     * Runtime image authority for the seven road-transport entity/marker types.
+     * The cells below are actual authored, compiled sprites: top-down vehicles
+     * in Vehicles/ and painted/hatch road bays in Roads/. Keep these bindings
+     * type-specific and fail closed if an asset package omits the chosen cell.
+     *
+     * The general map-object resolver deliberately forbids structural tiles;
+     * roadway markings are the sole explicitly admitted ROAD_TILE objects here.
+     */
+    static Optional<String> runtimeRoadTransportAssetId(MapObjectState object) {
+        if (object == null) return Optional.empty();
+        String type = AssetIntegrationDisciplineAuthority.canonicalType(object.type);
+        if (type == null) return Optional.empty();
+        String filenameStem;
+        AssetType requiredType;
+        switch (type) {
+            case AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR -> {
+                filenameStem = "vehicles_r01c01_"; requiredType = AssetType.MACHINE;
+            }
+            case AssetIntegrationDisciplineAuthority.PARKED_CARGO_TRUCK -> {
+                filenameStem = "vehicles2_r02c02_"; requiredType = AssetType.MACHINE;
+            }
+            case AssetIntegrationDisciplineAuthority.PARKED_UTILITY_BIKE -> {
+                filenameStem = "vehicles_r03c01_"; requiredType = AssetType.MACHINE;
+            }
+            case AssetIntegrationDisciplineAuthority.PARKED_ARMORED_CAR -> {
+                filenameStem = "vehicles2_r01c01_"; requiredType = AssetType.MACHINE;
+            }
+            case AssetIntegrationDisciplineAuthority.PARKED_TANK -> {
+                filenameStem = "vehicles2_r05c01_"; requiredType = AssetType.MACHINE;
+            }
+            case AssetIntegrationDisciplineAuthority.PARKING_LOT_MARKER -> {
+                filenameStem = "road_infrastructure_r02c03_"; requiredType = AssetType.ROAD_TILE;
+            }
+            case AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER -> {
+                filenameStem = "road_infrastructure_r02c05_"; requiredType = AssetType.ROAD_TILE;
+            }
+            default -> { return Optional.empty(); }
+        }
+        String folder = requiredType == AssetType.ROAD_TILE ? "/roads/" : "/vehicles/";
+        for (AssetMetadata asset : AssetManager.registry().byType(requiredType)) {
+            String path = asset.pathOrUri().replace('\\', '/').toLowerCase(Locale.ROOT);
+            for (int resolution : new int[]{32, 64, 128, 256}) {
+                if (path.endsWith(folder + filenameStem + resolution + "px.png")) {
+                    return Optional.of(asset.id());
+                }
+            }
+        }
+        // This is not an invitation to draw a generic item or tile. A missing
+        // authored sprite remains an explicit unresolved binding for CI.
+        return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+    }
+
+    /** Maps authored civic park and broadcast fixtures to their actual Objects atlas art.
+     *  No generic fallback is allowed when a recognized fixture's sprite is absent. */
+    static Optional<String> runtimePublicFixtureAssetId(MapObjectState obj) {
+        if (obj == null) return Optional.empty();
+        String type = AssetIntegrationDisciplineAuthority.canonicalType(obj.type);
+        if (type == null) return Optional.empty();
+        String label = obj.label == null ? "" : obj.label.toLowerCase(Locale.ROOT);
+        String stock = obj.stockState == null ? "" : obj.stockState.toLowerCase(Locale.ROOT);
+        String imageStem;
+        if (AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE.equals(type)) {
+            imageStem = label.contains("pocket park") ? "parks-things_r03c02_"
+                    : label.contains("civic breathing") ? "parks-things_r04c03_"
+                    : "parks-things_r03c01_";
+        } else if ("broadcast-device".equals(type)
+                || AssetIntegrationDisciplineAuthority.CHEAP_RADIO.equals(type)
+                || AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN.equals(type)) {
+            // Generated roadside receivers are typed cheap-radio, not the
+            // older broadcast-device alias. Respect both canonical identities.
+            boolean pict = AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN.equals(type)
+                    || ("broadcast-device".equals(type) &&
+                    (stock.contains("pict") || stock.contains("tv")
+                            || label.contains("pict") || label.contains("television")));
+            imageStem = pict ? "service_items_r03c03_" : "service_items_r05c01_";
+        } else {
+            return Optional.empty();
+        }
+        for (AssetMetadata asset : AssetManager.registry().byType(AssetType.OBJECT)) {
+            String path = asset.pathOrUri().replace('\\', '/').toLowerCase(Locale.ROOT);
+            for (int resolution : new int[]{32, 64, 128, 256}) {
+                if (path.endsWith("/objects/" + imageStem + resolution + "px.png")) {
+                    return Optional.of(asset.id());
+                }
+            }
+        }
+        return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
     }
 
     static Optional<String> runtimeAssetIdForMapObjectSemantic(String semantic) {

@@ -270,8 +270,9 @@ final class IndependentHostTurnAuthoritySmoke {
                     authority.snapshotForPlayer(PLAYER_ID);
             require(firstAfterSecond != null
                             && firstAfterSecond.playerTurn() == 1L
-                            && firstAfterSecond.worldSnapshot() == null
-                            && "none".equals(firstAfterSecond.mutationThread()),
+                            && firstAfterSecond.worldSnapshot() != null
+                            && PLAYER_ID.equals(firstAfterSecond.worldSnapshot().player().id())
+                            && !"none".equals(firstAfterSecond.mutationThread()),
                     "first player inherited the second player's latest world snapshot");
 
             IndependentHostTurnAuthority.TurnSnapshot secondAfterSecond =
@@ -298,6 +299,7 @@ final class IndependentHostTurnAuthoritySmoke {
                     new WaitCommand(PLAYER_ID));
             require(authority.stagingPlayerCount() == 1,
                     "persistence rollback setup did not mount player");
+            long committedSnapshotVersion = authority.snapshotForPlayer(PLAYER_ID).worldSnapshot().version();
             Files.delete(mountedPersistence);
             Files.delete(mountedParent);
             Files.writeString(mountedParent, "block persistence parent");
@@ -313,7 +315,9 @@ final class IndependentHostTurnAuthoritySmoke {
             require(after != null
                             && after.playerTurn() == 1L
                             && after.worldTurn() == 1L
-                            && authority.acceptedCommands() == 1L,
+                            && authority.acceptedCommands() == 1L
+                            && after.worldSnapshot() != null
+                            && after.worldSnapshot().version() == committedSnapshotVersion,
                     "persistence failure did not restore prior turn/accounting state");
             require(authority.stagingPlayerCount() == 1,
                     "persistence failure did not restore prior mounted sector binding");

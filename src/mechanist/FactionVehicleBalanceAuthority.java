@@ -2,6 +2,8 @@ package mechanist;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 
 /**
  * Derived balance-of-power comparison over authoritative faction vehicle
@@ -38,6 +40,77 @@ final class FactionVehicleBalanceAuthority {
         boolean canEscalate(int aggression, int ambition) {
             return commitment(aggression, ambition) >= escalationThreshold;
         }
+    }
+
+    /**
+     * A commander's estimate is deliberately not the actual fleet balance.
+     * Stable inputs keep planning previews and execution in agreement without
+     * consuming the global simulation RNG. A different plan or commander can
+     * make a different assessment of the same physical forces.
+     */
+    record Assessment(Contest actual, int commandSkill, int uncertaintyPct,
+                      int perceivedAttackerPower, int perceivedDefenderPower,
+                      Posture perceivedPosture, int decisionThreshold,
+                      int effectiveCommitment, boolean willEngage,
+                      int victoryChance, int battleRoll) {
+        boolean victorious() { return battleRoll < victoryChance; }
+        String summary() {
+            return "Commander assessment: skill " + commandSkill
+                    + "/100, uncertainty up to " + uncertaintyPct
+                    + "%; estimated strength " + perceivedAttackerPower
+                    + " vs " + perceivedDefenderPower
+                    + " (" + perceivedPosture.label + "); resolve "
+                    + effectiveCommitment + "/" + decisionThreshold
+                    + ".";
+        }
+    }
+
+    static Assessment assess(GamePanel game, Faction attacker,
+                             Faction defender, NpcFactionSite site,
+                             FactionStrategicPlan plan) {
+        Contest actual = compare(game, attacker, defender, site);
+        int skill = plan == null ? 50 : plan.effectiveCommandSkill();
+        int uncertainty = Math.max(4, 40 - skill * 36 / 100);
+        long worldSeed = game == null || game.world == null ? 0L : game.world.seed;
+        long identity = Objects.hash(
+                plan == null ? "" : plan.id,
+                plan == null ? "" : plan.leaderName,
+                plan == null ? "" : plan.deputyName,
+                plan == null ? "" : plan.scheme,
+                plan == null ? 0 : plan.cadenceCycle,
+                actual.attacker().name(), actual.defender().name());
+        Random assessmentRolls = new Random(worldSeed ^ (identity * 0x9E3779B97F4A7C15L));
+        // Commanders know their own forces better than opposing dispositions.
+        int ownError = assessmentRolls.nextInt(uncertainty + 1)
+                - uncertainty / 2;
+        int enemyError = assessmentRolls.nextInt(uncertainty * 2 + 1)
+                - uncertainty;
+        int own = Math.max(0, (int) ((long) actual.attackerPower()
+                * (100 + ownError) / 100));
+        int enemy = Math.max(0, (int) ((long) actual.defenderPower()
+                * (100 + enemyError) / 100));
+        Posture perceived = posture(own, enemy);
+        int threshold = switch (perceived) {
+            case DOMINANT -> 25;
+            case ADVANTAGED -> 40;
+            case CONTESTED -> 60;
+            case DETERRED -> 100;
+            case OUTMATCHED -> 155;
+        };
+        int aggression = plan == null ? 35 : clamp(plan.aggression, 0, 100);
+        int ambition = plan == null ? 35 : clamp(plan.ambition, 0, 100);
+        int resolve = actual.commitment(aggression, ambition)
+                + aggression / 8 + assessmentRolls.nextInt(21) - 10;
+        boolean engage = resolve >= threshold;
+        int total = Math.max(1, actual.attackerPower() + actual.defenderPower());
+        int chance = actual.defenderPower() <= 0 ? 100
+                : clamp(50 + (int) ((long) (actual.attackerPower()
+                - actual.defenderPower()) * 65 / total)
+                + (skill - 50) / 10 + Math.max(0, aggression - 40) / 10,
+                5, 95);
+        int roll = assessmentRolls.nextInt(100);
+        return new Assessment(actual, skill, uncertainty, own, enemy, perceived,
+                threshold, resolve, engage, chance, roll);
     }
 
     private FactionVehicleBalanceAuthority() { }

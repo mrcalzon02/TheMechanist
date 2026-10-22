@@ -448,18 +448,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     Rectangle mainMenuRouteRect(int index) {
-        Rectangle frame = mainMenuButtonFrameRect();
-        java.util.List<String> labels = mainMenuRouteLabels();
-        int count = Math.max(1, labels.size());
-        int buttonW = Math.max(300, frame.width - 58);
-        int gap = Math.max(7, Math.min(11, frame.height / 38));
-        int pad = Math.max(16, Math.min(24, frame.height / 13));
-        int availableH = Math.max(1, frame.height - (pad * 2) - (gap * Math.max(0, count - 1)));
-        int buttonH = Math.max(26, Math.min(48, availableH / count));
-        int usedH = buttonH * count + gap * Math.max(0, count - 1);
-        int top = frame.y + Math.max(pad, (frame.height - usedH) / 2);
-        int x = getWidth() / 2 - buttonW / 2;
-        return new Rectangle(x, top + index * (buttonH + gap), buttonW, buttonH);
+        return MainMenuLayoutAuthority.route(mainMenuButtonFrameRect(), mainMenuRouteLabels().size(), index);
     }
 
     int mainMenuRouteIndexAt(int x, int y) {
@@ -865,28 +854,24 @@ class GamePanel extends LegacyPanelBridgeBase {
         return false;
     }
 
+    private SaveLoadLayoutAuthority.Layout saveLoadLayout() {
+        return SaveLoadLayoutAuthority.measure(getWidth(), getHeight(), saveLoadSlots().length);
+    }
+
     Rectangle saveLoadPanelRect() {
-        int panelW = Math.max(420, Math.min(760, getWidth() - 60));
-        int panelH = Math.max(360, Math.min(560, getHeight() - 80));
-        return new Rectangle(Math.max(20, getWidth() / 2 - panelW / 2), Math.max(40, getHeight() / 2 - panelH / 2), panelW, panelH);
+        return new Rectangle(saveLoadLayout().panel());
     }
 
     Rectangle saveLoadSlotRect(int index) {
-        Rectangle p = saveLoadPanelRect();
-        int rowH = 48;
-        int gap = 8;
-        int top = p.y + 92;
-        return new Rectangle(p.x + 28, top + index * (rowH + gap), p.width - 56, rowH);
+        return saveLoadLayout().slot(index);
     }
 
     Rectangle saveLoadBackRect() {
-        Rectangle p = saveLoadPanelRect();
-        return new Rectangle(p.x + 28, p.y + p.height - 58, 148, 34);
+        return new Rectangle(saveLoadLayout().back());
     }
 
     Rectangle saveLoadNewGameRect() {
-        Rectangle p = saveLoadPanelRect();
-        return new Rectangle(p.x + p.width - 206, p.y + p.height - 58, 178, 34);
+        return new Rectangle(saveLoadLayout().newGame());
     }
 
     void installExistingEarlyScreenInputBridge() {
@@ -1157,8 +1142,11 @@ class GamePanel extends LegacyPanelBridgeBase {
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(viewWorld, wx, wy, ch);
                 g.setColor(auditTileColor(viewWorld, ch, wx, wy));
                 g.fillRect(sx, sy, tile, tile);
-                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, viewWorld, wx, wy, descriptor, ch, sx, sy, tile);
-                if (!drewArt && tile >= 13) {
+                boolean imageMode = options == null || options.tileIconRendering;
+                boolean drewArt = imageMode && drawCompiledTile(g, viewWorld, wx, wy, descriptor, ch, sx, sy, tile);
+                if (!drewArt && imageMode) {
+                    drawMissingWorldArtMarker(g, sx, sy, tile);
+                } else if (!drewArt && tile >= 13) {
                     g.setColor(tileGlyphColor(ch));
                     String s = Character.toString(ch);
                     g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
@@ -1671,8 +1659,11 @@ class GamePanel extends LegacyPanelBridgeBase {
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, wx, wy, ch);
                 g.setColor(tileColor(ch, wx, wy));
                 g.fillRect(sx, sy, tile, tile);
-                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, world, wx, wy, descriptor, ch, sx, sy, tile);
-                if (!drewArt && tile >= 13) {
+                boolean imageMode = options == null || options.tileIconRendering;
+                boolean drewArt = imageMode && drawCompiledTile(g, world, wx, wy, descriptor, ch, sx, sy, tile);
+                if (!drewArt && imageMode) {
+                    drawMissingWorldArtMarker(g, sx, sy, tile);
+                } else if (!drewArt && tile >= 13) {
                     g.setColor(tileGlyphColor(ch));
                     String s = Character.toString(ch);
                     g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
@@ -1681,6 +1672,29 @@ class GamePanel extends LegacyPanelBridgeBase {
                 g.setColor(new java.awt.Color(0, 0, 0, 70));
                 g.drawRect(sx, sy, tile, tile);
             }
+        }
+    }
+
+    /**
+     * Signal missing runtime art rather than silently painting an ASCII glyph.
+     * Only explicitly disabled tile imagery retains the optional glyph view.
+     */
+    private void drawMissingWorldArtMarker(java.awt.Graphics2D g, int sx, int sy, int tile) {
+        if (g == null || tile <= 0) return;
+        java.awt.Color previousColor = g.getColor();
+        try {
+            int pad = Math.max(1, tile / 8);
+            int span = Math.max(1, tile - pad * 2);
+            g.setColor(new java.awt.Color(62, 19, 19, 235));
+            g.fillRect(sx + pad, sy + pad, span, span);
+            g.setColor(new java.awt.Color(242, 88, 71));
+            g.drawRect(sx + pad, sy + pad, Math.max(0, span - 1), Math.max(0, span - 1));
+            g.drawLine(sx + pad + 2, sy + pad + 2,
+                    sx + pad + Math.max(2, span - 3), sy + pad + Math.max(2, span - 3));
+            g.drawLine(sx + pad + Math.max(2, span - 3), sy + pad + 2,
+                    sx + pad + 2, sy + pad + Math.max(2, span - 3));
+        } finally {
+            g.setColor(previousColor);
         }
     }
 
@@ -1831,13 +1845,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (img != null) {
             g.drawImage(img, sx + pad, sy + pad, size, size, null);
         } else {
-            g.setFont(asciiFont.deriveFont(java.awt.Font.BOLD, Math.max(9f, tile * 0.66f)));
-            java.awt.FontMetrics fm = g.getFontMetrics();
-            String s = fallback == null || fallback.isBlank() ? "?" : fallback.substring(0, 1);
-            g.setColor(new java.awt.Color(10, 12, 11, 210));
-            g.fillOval(sx + pad, sy + pad, size, size);
-            g.setColor(outline == null ? new java.awt.Color(230, 190, 88) : outline);
-            g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
+            // An unresolved sprite remains visibly missing, not an ASCII stand-in.
+            drawMissingWorldArtMarker(g, sx, sy, tile);
         }
         g.setColor(outline == null ? new java.awt.Color(230, 190, 88) : outline);
         g.drawRect(sx + pad, sy + pad, size, size);
@@ -7205,7 +7214,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         lastPassiveAmbientMillis = now;
         PassiveAmbientCue cue = passiveAmbientCueForCurrentView();
         if (cue == null) return;
-        sounds.playDistantCue(cue.key, cue.distance, options);
+        if (cue.positioned) {
+            WorldPositionalSoundAuthority.play(this, cue.key,
+                    cue.sourceX, cue.sourceY, 1.0);
+        } else {
+            sounds.playDistantCue(cue.key, cue.distance, options);
+        }
+        WorldPositionalSoundAuthority.playTacticalNoise(
+                this, cue.positioned ? cue.key : null,
+                cue.sourceX, cue.sourceY);
     }
 
     void tickSinglePlayerPassiveWorldTime() {
@@ -7243,45 +7260,74 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     PassiveAmbientCue passiveAmbientCueForCurrentView() {
-        String nearby = nearbyAmbientCue();
-        if (nearby != null) return new PassiveAmbientCue(nearby, 2);
+        PassiveAmbientCue nearby = nearbyAmbientCue();
+        if (nearby != null) return nearby;
         String z = world.zoneType == null ? "" : world.zoneType.name();
-        if (world.sewerLayer || z.contains("SEWER") || z.contains("SUMP")) return new PassiveAmbientCue("ambient_sludge", 6);
-        if (z.contains("MECHANICUS") || z.contains("FORGE") || z.contains("INDUSTR")) return new PassiveAmbientCue("ambient_press", 5);
-        if (z.contains("NEWS") || z.contains("MARKET") || z.contains("INN")) return new PassiveAmbientCue("ambient_radio", 5);
-        if (z.contains("NOBLE") || z.contains("GOVERNOR") || z.contains("CIVIC")) return new PassiveAmbientCue("ambient_chime", 6);
-        if (z.contains("TRASH") || z.contains("MUTANT") || z.contains("WASTE")) return new PassiveAmbientCue("ambient_drip", 7);
-        return new PassiveAmbientCue("ambient_vent", 7);
+        if (world.sewerLayer || z.contains("SEWER") || z.contains("SUMP")) return PassiveAmbientCue.diffuse("ambient_sludge", 6);
+        if (z.contains("MECHANICUS") || z.contains("FORGE") || z.contains("INDUSTR")) return PassiveAmbientCue.diffuse("ambient_press", 5);
+        if (z.contains("NEWS") || z.contains("MARKET") || z.contains("INN")) return PassiveAmbientCue.diffuse("ambient_radio", 5);
+        if (z.contains("NOBLE") || z.contains("GOVERNOR") || z.contains("CIVIC")) return PassiveAmbientCue.diffuse("ambient_chime", 6);
+        if (z.contains("TRASH") || z.contains("MUTANT") || z.contains("WASTE")) return PassiveAmbientCue.diffuse("ambient_drip", 7);
+        return PassiveAmbientCue.diffuse("ambient_vent", 7);
     }
 
-    String nearbyAmbientCue() {
+    PassiveAmbientCue nearbyAmbientCue() {
+        PassiveAmbientCue closest = null;
+        int bestDistance = Integer.MAX_VALUE;
         if (world.mapObjects != null) {
-            int bestDistance = Integer.MAX_VALUE;
-            String best = null;
             for (MapObjectState object : world.mapObjects) {
                 if (object == null) continue;
                 int d = Math.abs(object.x - playerX) + Math.abs(object.y - playerY);
                 if (d > 7 || d >= bestDistance) continue;
                 String type = object.type == null ? "" : object.type.toLowerCase(Locale.ROOT);
-                if (type.contains("broadcast") || type.contains("radio") || type.contains("news")) best = "ambient_radio";
-                else if (type.contains("light")) best = "ambient_spark";
-                else if (type.contains("terminal") || type.contains("bank")) best = "ambient_servo";
-                else if (type.contains("water") || type.contains("recycler")) best = "ambient_pipe";
-                else if (type.contains("machine") || type.contains("utility")) best = "ambient_machine";
-                else if (type.contains("door") || type.contains("security")) best = "ambient_door_servo";
-                if (best != null) bestDistance = d;
+                String key = null;
+                if (type.contains("broadcast") || type.contains("radio") || type.contains("news")) key = "ambient_radio";
+                else if (type.contains("light")) key = "ambient_spark";
+                else if (type.contains("terminal") || type.contains("bank")) key = "ambient_servo";
+                else if (type.contains("water") || type.contains("recycler")) key = "ambient_pipe";
+                else if (type.contains("machine") || type.contains("utility")) key = "ambient_machine";
+                else if (type.contains("door") || type.contains("security")) key = "ambient_door_servo";
+                if (key == null) continue;
+                closest = PassiveAmbientCue.spatial(key, object.x, object.y, d);
+                bestDistance = d;
             }
-            if (best != null) return best;
         }
         if (world.lightSources != null) {
             for (ZoneLightSourceRecord light : world.lightSources) {
-                if (light != null && Math.abs(light.x - playerX) + Math.abs(light.y - playerY) <= 5) return "ambient_spark";
+                if (light == null) continue;
+                int d = Math.abs(light.x - playerX) + Math.abs(light.y - playerY);
+                if (d > 5 || d >= bestDistance) continue;
+                closest = PassiveAmbientCue.spatial(
+                        "ambient_spark", light.x, light.y, d);
+                bestDistance = d;
             }
         }
-        return null;
+        if (world.noiseSources != null) {
+            for (ZoneNoiseSourceRecord source : world.noiseSources) {
+                if (source == null || !world.inBounds(source.x, source.y)
+                        || !WorldPositionalSoundAuthority.noiseActiveThisTurn(source, turn))
+                    continue;
+                int d = Math.abs(source.x - playerX) + Math.abs(source.y - playerY);
+                if (d > Math.min(15, Math.max(1, source.radius))
+                        || d >= bestDistance) continue;
+                String key = WorldPositionalSoundAuthority.noiseCue(source);
+                if (key == null) continue;
+                closest = PassiveAmbientCue.spatial(key, source.x, source.y, d);
+                bestDistance = d;
+            }
+        }
+        return closest;
     }
 
-    record PassiveAmbientCue(String key, int distance) { }
+    record PassiveAmbientCue(String key, int distance,
+                             int sourceX, int sourceY, boolean positioned) {
+        static PassiveAmbientCue diffuse(String key, int distance) {
+            return new PassiveAmbientCue(key, distance, 0, 0, false);
+        }
+        static PassiveAmbientCue spatial(String key, int x, int y, int distance) {
+            return new PassiveAmbientCue(key, distance, x, y, true);
+        }
+    }
 
     boolean hasLineOfSight(int x0, int y0, int x1, int y1) { return traceLightLine(x0, y0, x1, y1, true); }
     boolean hasKnowledge(String knowledge) { return knowledge == null || knowledge.isBlank() || unlockedKnowledges.contains(knowledge); }
@@ -7710,6 +7756,23 @@ final class LegacySoundSurface {
         manager.playDistantCue(key, distance, options);
     }
 
+    void playPositioned(String key, int sourceX, int sourceY,
+                        int listenerX, int listenerY,
+                        int facingX, int facingY, boolean occluded,
+                        GameOptions options) {
+        playPositioned(key, sourceX, sourceY, listenerX, listenerY,
+                facingX, facingY, occluded, false, 1.0, options);
+    }
+
+    void playPositioned(String key, int sourceX, int sourceY,
+                        int listenerX, int listenerY,
+                        int facingX, int facingY, boolean occluded,
+                        boolean enclosed, double strength, GameOptions options) {
+        ensureLoaded();
+        manager.playPositional(key, sourceX, sourceY, listenerX, listenerY,
+                facingX, facingY, occluded, enclosed, strength, options);
+    }
+
     void playIntroCrawlNarration(GameOptions options) {
         ensureLoaded();
         manager.playIntroCrawlNarration(options);
@@ -7853,16 +7916,16 @@ final class LegacyImageSurface {
         ensureLoaded(lastOptions);
         String hint = ObjectSemanticAssetAuthority.assetIdForMapObject(object);
         String id = ObjectSemanticAssetAuthority.runtimeAssetIdForMapObject(object).orElse(hint);
-        BufferedImage img = media.getSemanticAssetImage(id);
-        return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
+        // Semantic image lookup rejects AssetManager's generic missing-asset icon.
+        // Returning that icon from a second lookup used to conceal broken bindings.
+        return media.getSemanticAssetImage(id);
     }
 
     BufferedImage getBaseObjectImage(BaseObject object) {
         ensureLoaded(lastOptions);
         String hint = ObjectSemanticAssetAuthority.assetIdForBaseObject(object);
         String id = ObjectSemanticAssetAuthority.runtimeAssetIdForBaseObject(object).orElse(hint);
-        BufferedImage img = media.getSemanticAssetImage(id);
-        return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
+        return media.getSemanticAssetImage(id);
     }
 
     BufferedImage getNpcPortraitFor(Object npc) {

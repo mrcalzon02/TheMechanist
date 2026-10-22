@@ -32,6 +32,9 @@ class FactionStrategicPlan {
     int secrecy = 35;
     int aggression = 35;
     int ambition = 35;
+    // The planning leader's skill in estimating hostile and friendly strength.
+    // -1 derives a stable value for existing saves and hand-built plans.
+    int commandSkill = -1;
     int officerCadencePct = 100;
     int cadenceCycle = 0;
     int lastPhaseDurationTurns = 0;
@@ -52,6 +55,7 @@ class FactionStrategicPlan {
         p.aggression = aggressionFor(p.faction, r);
         p.secrecy = secrecyFor(p.faction, r);
         p.officerCadencePct = cadenceFor(p.faction, p.leaderName, p.deputyName);
+        p.commandSkill = p.effectiveCommandSkill();
         p.longTermGoal = pick(longTermGoals(p.faction), r);
         p.personalGoal = pick(personalGoals(p.faction), r);
         p.chooseNewImmediateGoal(r, turn);
@@ -77,6 +81,12 @@ class FactionStrategicPlan {
                 + (scheme.isBlank()?"":"; private scheme " + scheme + " vs " + schemeTargetFaction.label)
                 + "; officer cadence " + officerCadencePct + "% with cycle jitter " + signedHours(lastPhaseJitterHours)
                 + "; planning window " + timing.hours() + " hours.");
+    }
+
+    int effectiveCommandSkill() {
+        return commandSkill >= 0 ? Math.max(0, Math.min(100, commandSkill))
+                : 25 + Math.floorMod(Objects.hash(faction == null ? "NONE" : faction.name(), leaderName,
+                        deputyName, "strategic-command-skill"), 71);
     }
 
     int schemeChance() {
@@ -123,11 +133,11 @@ class FactionStrategicPlan {
 
     String saveLine() {
         return enc(id)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+enc(leaderName)+"|"+enc(deputyName)+"|"+enc(phase)+"|"+enc(immediateGoal)+"|"+enc(longTermGoal)+"|"+enc(personalGoal)+"|"+enc(scheme)+"|"+(schemeTargetFaction==null?Faction.NONE.name():schemeTargetFaction.name())+"|"+enc(targetItem)+"|"+enc(targetRoom)+"|"+phaseUntilTurn+"|"+nextDecisionTurn+"|"+success+"|"+failure+"|"+secrecy+"|"+aggression+"|"+ambition+"|"+enc(lastOutcome)+"|"+enc(String.join("~~", history))
-                +"|"+officerCadencePct+"|"+cadenceCycle+"|"+lastPhaseDurationTurns+"|"+lastPhaseJitterHours;
+                +"|"+officerCadencePct+"|"+cadenceCycle+"|"+lastPhaseDurationTurns+"|"+lastPhaseJitterHours+"|"+effectiveCommandSkill();
     }
     static FactionStrategicPlan parse(String s) {
         try {
-            String[] a=s.split("\\|",25); if(a.length<20) return null;
+            String[] a=s.split("\\|",26); if(a.length<20) return null;
             FactionStrategicPlan p=new FactionStrategicPlan();
             p.id=dec(a[0]); p.faction=Faction.valueOf(a[1]); p.leaderName=dec(a[2]); p.deputyName=dec(a[3]); p.phase=dec(a[4]); p.immediateGoal=dec(a[5]); p.longTermGoal=dec(a[6]); p.personalGoal=dec(a[7]); p.scheme=dec(a[8]); p.schemeTargetFaction=Faction.valueOf(a[9]); p.targetItem=dec(a[10]); p.targetRoom=dec(a[11]); p.phaseUntilTurn=Integer.parseInt(a[12]); p.nextDecisionTurn=Integer.parseInt(a[13]); p.success=Integer.parseInt(a[14]); p.failure=Integer.parseInt(a[15]); p.secrecy=Integer.parseInt(a[16]); p.aggression=Integer.parseInt(a[17]); p.ambition=Integer.parseInt(a[18]); p.lastOutcome=dec(a[19]);
             if(a.length>=21){ String h=dec(a[20]); if(!h.isBlank()) for(String line:h.split("~~")) if(!line.isBlank()) p.history.add(line); }
@@ -135,6 +145,7 @@ class FactionStrategicPlan {
             p.cadenceCycle=a.length>=23?Math.max(0,Integer.parseInt(a[22])):0;
             p.lastPhaseDurationTurns=a.length>=24?Math.max(0,Integer.parseInt(a[23])):Math.max(0,p.phaseUntilTurn-p.nextDecisionTurn);
             p.lastPhaseJitterHours=a.length>=25?Math.max(-4,Math.min(4,Integer.parseInt(a[24]))):0;
+            p.commandSkill=a.length>=26?Math.max(0,Math.min(100,Integer.parseInt(a[25]))):p.effectiveCommandSkill();
             return p;
         } catch(Exception e) { return null; }
     }

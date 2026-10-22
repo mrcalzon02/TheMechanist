@@ -43,6 +43,8 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
     private final AuthoritativeWorldRuntime worldRuntime;
     private final Map<String, MutablePlayerState> players = new LinkedHashMap<>();
     private final Map<String, CharacterStateRecord> canonicalCharacters = new LinkedHashMap<>();
+    // Last committed world view is scoped to the player, not the latest global writer.
+    private final Map<String, AuthoritativeWorldSnapshot> lastSnapshotsByPlayer = new LinkedHashMap<>();
     private final Object commandLock = new Object();
 
     private long worldTurn;
@@ -242,6 +244,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                         "independent-host world command could not commit atomically",
                         failure);
             }
+            lastSnapshotsByPlayer.put(playerId, authoritative);
             TurnSnapshot snapshot = snapshot(activeState, authoritative);
             return new TurnCommandResult(
                     commandId,
@@ -277,7 +280,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     safePlayerId(playerId));
             return state == null
                     ? null
-                    : snapshot(state, worldRuntime.latestSnapshot());
+                    : snapshot(state, lastSnapshotsByPlayer.get(state.playerId));
         }
     }
 
@@ -287,6 +290,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             String use = safePlayerId(playerId);
             sectorManager.playerLeftCurrentSector(use);
             canonicalCharacters.remove(use);
+            lastSnapshotsByPlayer.remove(use);
         }
     }
 
@@ -331,6 +335,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     + " worldTurn=" + worldTurn
                     + " acceptedCommands=" + acceptedCommands
                     + " canonicalCharacters=" + canonicalCharacters.size()
+                    + " retainedPlayerSnapshots=" + lastSnapshotsByPlayer.size()
                     + " openCommands=wait"
                     + " movementAuthority=false"
                     + " mapAuthority=false"

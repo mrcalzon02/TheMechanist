@@ -1,0 +1,52 @@
+name: Runtime Visual Verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/runtime-visual-verification.yml'
+      - 'ROOT_tools/verification/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-visual-verification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  snapshots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Install virtual desktop
+        run: sudo apt-get update && sudo apt-get install -y xvfb xauth fonts-dejavu-core libgl1 libasound2t64
+      - name: Build packaged client and capture actual runtime
+        run: xvfb-run -a -s '-screen 0 1920x1080x24 -ac' python3 ROOT_tools/verification/run_runtime_visual_verification.py
+      - name: Upload screenshots and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-visual-verification-${{ github.sha }}
+          path: dist/runtime-visual-verification/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Summarize evidence
+        if: always()
+        run: |
+          echo '## Runtime visual verification' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Actual Java 17 client, isolated runtime assets, Xvfb desktop, keyboard-driven startup and gameplay.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Inspect the artifact screenshots and runtime-evidence.txt. Automated success requires image title, portrait, visible terrain bindings and a map pixel difference when art is disabled.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This is development-package evidence, not Windows, native installer, GPU, or release certification.' >> "$GITHUB_STEP_SUMMARY"
+          if test -f dist/runtime-visual-verification/runtime-evidence.txt; then
+            cat dist/runtime-visual-verification/runtime-evidence.txt >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -176,7 +176,9 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
         game.world.mapObjects.add(nobleTruck);
 
         FactionStrategicPlan plan = new FactionStrategicPlan();
-        plan.id = "STRAT-VEHICLE-SMOKE";
+        // This deterministic scheme is a rare successful underdog diversion.
+        // The competing loss path is covered by FactionVehicleBalanceSmoke.
+        plan.id = "STRAT-VEHICLE-SMOKE-3";
         plan.faction = Faction.MECHANICUS;
         plan.schemeTargetFaction = Faction.NOBLE;
         plan.phase = "EXECUTION";
@@ -190,11 +192,19 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
         game.factionStrategicPlans.add(plan);
 
         PlayerState playerBefore = PlayerState.capture(game);
+        FactionVehicleBalanceAuthority.Contest contest =
+                FactionVehicleBalanceAuthority.compare(game, site.faction, Faction.NOBLE, site);
+        require(contest.canEscalate(plan.aggression, plan.ambition),
+                "committed vehicle operation must meet actual fleet escalation threshold: "
+                        + contest.summary());
         int stockBeforeSeizure = site.stock;
         int resolved = FactionStrategicAssetTickAuthority.tick(game);
         require(resolved == 1 && "COOLDOWN".equals(plan.phase)
                         && plan.success == 1 && plan.failure == 0,
-                "strategy tick should resolve one physical vehicle seizure and skip abstract duplication");
+                "a lucky underdog diversion must still be able to seize a physical vehicle: "
+                        + "resolved=" + resolved + " phase=" + plan.phase
+                        + " success=" + plan.success + " failure=" + plan.failure
+                        + " outcome=" + plan.lastOutcome);
         require(VehicleRuntimeAuthority.factionOwns(nobleTruck, site.faction)
                         && VehicleRuntimeAuthority.seized(nobleTruck)
                         && site.stock < stockBeforeSeizure,

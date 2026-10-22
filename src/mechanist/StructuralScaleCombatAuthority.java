@@ -142,6 +142,8 @@ final class StructuralScaleCombatAuthority {
 
         int ammunition = consumeAmmunition(game, preview.weapon(),
                 preview.ammunitionRequired());
+        // This is an actual executed attack, not a targeting preview.
+        WorldPositionalSoundAuthority.playConfirmedAttack(game, preview.weapon());
         int damage = preview.projectedDamage();
         boolean changed = false;
         String impact;

@@ -1,6 +1,0 @@
-name: Disabled Native Installer Alpha Gate
-
-on:
-  workflow_call:
-
-jobs: {}

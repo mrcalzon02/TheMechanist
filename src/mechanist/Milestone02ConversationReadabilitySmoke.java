@@ -13,6 +13,24 @@ final class Milestone02ConversationReadabilitySmoke {
         requireContains(trusted.relationshipLine(), "trusted", "trusted standing band");
         requireContains(trusted.serviceLine(), "no quest offer is currently listed", "truthful quest availability");
         requireContains(trusted.consequenceLine(), "improve trust", "positive consequence hint");
+        requireContains(String.join(" ", trusted.lines()), "Activity: Contract Desk",
+                "present active speaker state");
+
+        NpcLifeMemoryAuthority.remember(representative, 150, "allegiance",
+                "Joined the Hiver after abandoning the Wardens");
+        ConversationReadabilityAuthority.ConversationReadout remembered =
+                ConversationReadabilityAuthority.describe(representative, 14, 0);
+        requireContains(String.join(" ", remembered.lines()), "Joined the Hiver",
+                "personally remembered faction transfer");
+        requireContains(String.join(" ", remembered.lines()), "turn 150",
+                "remembered event time");
+        World savedWorld = new World(17401L, 18, 18);
+        representative.id = "CONVERSATION-MEMORY-SAVE";
+        representative.ageYears = 35;
+        NpcEntity restored = NpcEntity.parseLine(representative.saveLine(), savedWorld);
+        if (restored == null) throw new AssertionError("speaker failed save/load");
+        requireContains(String.join(" ", ConversationReadabilityAuthority.describe(restored, 14, 0).lines()),
+                "Joined the Hiver", "conversation readback must survive save/load");
 
         representative.state = "Hostile";
         ConversationReadabilityAuthority.ConversationReadout hostile =

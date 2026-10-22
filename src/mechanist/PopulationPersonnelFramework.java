@@ -39,11 +39,12 @@ class PersonnelProvenanceRecord {
 class PersonnelReplacementRequest {
     String deadNpcId, deadName, source, sourceLedgerId, reason;
     String sourceMode = "legacy-roster", sourcePrerequisite = "linked population roster";
+    String formerRole = "", formerState = "";
     Faction faction;
     int requestedTurn, dueTurn, expiresTurn, scriptCost;
     int x,y, sourceRoomId = -1;
-    String saveLine(){ return enc(deadNpcId)+"|"+enc(deadName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+dueTurn+"|"+x+"|"+y+"|"+enc(source)+"|"+enc(reason)+"|"+sourceRoomId+"|"+enc(sourceLedgerId)+"|"+requestedTurn+"|"+expiresTurn+"|"+enc(sourceMode)+"|"+scriptCost+"|"+enc(sourcePrerequisite); }
-    static PersonnelReplacementRequest parse(String s){ try{ String[] a=s.split("\\|",15); if(a.length<8) return null; PersonnelReplacementRequest r=new PersonnelReplacementRequest(); r.deadNpcId=dec(a[0]); r.deadName=dec(a[1]); r.faction=Faction.valueOf(a[2]); r.dueTurn=Integer.parseInt(a[3]); r.x=Integer.parseInt(a[4]); r.y=Integer.parseInt(a[5]); r.source=dec(a[6]); r.reason=dec(a[7]); if(a.length>=9) try{ r.sourceRoomId=Integer.parseInt(a[8]); }catch(Exception ignored){} if(a.length>=10) r.sourceLedgerId=dec(a[9]); r.requestedTurn=a.length>=11?Integer.parseInt(a[10]):Math.max(0,r.dueTurn-84); r.expiresTurn=a.length>=12?Integer.parseInt(a[11]):r.dueTurn+FactionReinforcementAuthority.ARRIVAL_WINDOW_TURNS; if(a.length>=13&&!dec(a[12]).isBlank()) r.sourceMode=dec(a[12]); r.scriptCost=a.length>=14?Math.max(0,Integer.parseInt(a[13])):0; if(a.length>=15&&!dec(a[14]).isBlank()) r.sourcePrerequisite=dec(a[14]); return r; }catch(Exception e){ return null; } }
+    String saveLine(){ return enc(deadNpcId)+"|"+enc(deadName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+dueTurn+"|"+x+"|"+y+"|"+enc(source)+"|"+enc(reason)+"|"+sourceRoomId+"|"+enc(sourceLedgerId)+"|"+requestedTurn+"|"+expiresTurn+"|"+enc(sourceMode)+"|"+scriptCost+"|"+enc(sourcePrerequisite)+"|"+enc(formerRole)+"|"+enc(formerState); }
+    static PersonnelReplacementRequest parse(String s){ try{ String[] a=s.split("\\|",-1); if(a.length<8) return null; PersonnelReplacementRequest r=new PersonnelReplacementRequest(); r.deadNpcId=dec(a[0]); r.deadName=dec(a[1]); r.faction=Faction.valueOf(a[2]); r.dueTurn=Integer.parseInt(a[3]); r.x=Integer.parseInt(a[4]); r.y=Integer.parseInt(a[5]); r.source=dec(a[6]); r.reason=dec(a[7]); if(a.length>=9) try{ r.sourceRoomId=Integer.parseInt(a[8]); }catch(Exception ignored){} if(a.length>=10) r.sourceLedgerId=dec(a[9]); r.requestedTurn=a.length>=11?Integer.parseInt(a[10]):Math.max(0,r.dueTurn-84); r.expiresTurn=a.length>=12?Integer.parseInt(a[11]):r.dueTurn+FactionReinforcementAuthority.ARRIVAL_WINDOW_TURNS; if(a.length>=13&&!dec(a[12]).isBlank()) r.sourceMode=dec(a[12]); r.scriptCost=a.length>=14?Math.max(0,Integer.parseInt(a[13])):0; if(a.length>=15&&!dec(a[14]).isBlank()) r.sourcePrerequisite=dec(a[14]); if(a.length>=16) r.formerRole=dec(a[15]); if(a.length>=17) r.formerState=dec(a[16]); return r; }catch(Exception e){ return null; } }
     static String enc(String s){ return Base64.getUrlEncoder().withoutPadding().encodeToString((s==null?"":s).getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     static String dec(String s){ try{return new String(Base64.getUrlDecoder().decode(s), java.nio.charset.StandardCharsets.UTF_8);}catch(Exception e){return "";} }
 }
@@ -344,6 +345,7 @@ class AnimalPopulationApi {
         n.portraitIndex = (p == null ? 350 : p.portraitBase) + Math.floorMod(r.nextInt(), 25);
         n.numericId = Math.abs(Objects.hash(n.name, n.animalProfileId, x, y, r.nextInt()));
         n.id = "ANIMAL-" + n.animalProfileId + "-" + n.numericId;
+        n.portraitIndex = NpcPortraitSelectionAuthority.stableIndex(0L, n);
         n.companionOf = owner == null ? "" : owner.id;
         n.factionRank = 8; n.factionRankTitle = "Unranked animal"; n.factionRankScope = "not part of faction command";
         n.equippedMeleeWeapon=""; n.equippedRangedWeapon=""; n.equippedArmor=""; n.equippedExplosive=""; n.loadedShots=0; n.ammoReloadsRemaining=0;
@@ -476,15 +478,53 @@ class PersonnelPopulationApi {
         ensureLedgers(w, r);
         int rid = req == null ? -1 : req.sourceRoomId;
         if(rid >= 0 && rid < w.rooms.size()){
-            Point p = w.randomOpenPointInRoom(w.rooms.get(rid));
+            Point p = deterministicRoomReplacementPoint(w, w.rooms.get(rid), r);
             if(p != null) return p;
         }
         RoomPopulationLedger l = ledgerById(w, req == null ? null : req.sourceLedgerId);
         if(l != null && l.roomId >= 0 && l.roomId < w.rooms.size()){
-            Point p = w.randomOpenPointInRoom(w.rooms.get(l.roomId));
+            Point p = deterministicRoomReplacementPoint(w, w.rooms.get(l.roomId), r);
             if(p != null) return p;
         }
-        return w.randomOpenPoint(r==null?new Random():r);
+        Random rng = r == null ? new Random(w.seed) : r;
+        if (!w.rooms.isEmpty()) {
+            for (int tries = 0; tries < 120; tries++) {
+                Point point = deterministicRoomReplacementPoint(w,
+                        w.rooms.get(rng.nextInt(w.rooms.size())), rng);
+                if (point != null) return point;
+            }
+        }
+        for (int tries = 0; tries < 300; tries++) {
+            int x = 1 + rng.nextInt(Math.max(1, w.w - 2));
+            int y = 1 + rng.nextInt(Math.max(1, w.h - 2));
+            if (isAvailableReplacementPoint(w, x, y, false)) return new Point(x, y);
+        }
+        for (int x = 0; x < w.w; x++) for (int y = 0; y < w.h; y++)
+            if (isAvailableReplacementPoint(w, x, y, false)) return new Point(x, y);
+        // Do not resurrect an occupied player spawn point as a last resort.
+        return null;
+    }
+
+    private static Point deterministicRoomReplacementPoint(World w, Rectangle room, Random random) {
+        if (w == null || room == null) return null;
+        Random rng = random == null ? new Random(w.seed ^ room.x ^ room.y) : random;
+        for (int tries = 0; tries < 80; tries++) {
+            int x = room.x + 1 + rng.nextInt(Math.max(1, room.width - 2));
+            int y = room.y + 1 + rng.nextInt(Math.max(1, room.height - 2));
+            if (isAvailableReplacementPoint(w, x, y, true)) return new Point(x, y);
+        }
+        int cx = room.x + room.width / 2, cy = room.y + room.height / 2;
+        if (isAvailableReplacementPoint(w, cx, cy, false)) return new Point(cx, cy);
+        for (int x = room.x; x < room.x + room.width; x++)
+            for (int y = room.y; y < room.y + room.height; y++)
+                if (isAvailableReplacementPoint(w, x, y, true)) return new Point(x, y);
+        return null;
+    }
+
+    private static boolean isAvailableReplacementPoint(World w, int x, int y, boolean requireRoom) {
+        return w.inBounds(x, y) && w.walkable(x, y)
+                && (!requireRoom || w.roomIds[x][y] >= 0)
+                && w.npcAt(x, y) == null && w.mapObjectAt(x, y) == null;
     }
 
     static void consumeReplacementSlot(World w, PersonnelReplacementRequest req, Random r){
@@ -496,9 +536,13 @@ class PersonnelPopulationApi {
     }
 
     static void recordDeath(World w, NpcEntity dead){
-        if(w == null || dead == null || dead.provenance == null) return;
-        RoomPopulationLedger l = ledgerById(w, dead.provenance.originSiteId);
-        if(l != null){ l.assigned = Math.max(0, l.assigned - 1); l.dead++; }
+        if(w == null || dead == null) return;
+        RoomPopulationLedger l = ledgerById(w, dead.currentAssignmentLedgerId.isBlank()
+                ? (dead.provenance == null ? "" : dead.provenance.originSiteId)
+                : dead.currentAssignmentLedgerId);
+        if(l != null && FactionIdentityAuthority.sameFamily(l.faction, dead.faction)){
+            l.assigned = Math.max(0, l.assigned - 1); l.dead++;
+        }
     }
 
     static int pruneReplacementQueueToCapacity(World w){
@@ -585,6 +629,7 @@ class PersonnelPopulationApi {
         if(ledger != null){
             p.originRoom = ledger.roomName + " #" + ledger.roomId;
             p.originSiteId = ledger.id;
+            npc.currentAssignmentLedgerId = ledger.id;
             p.populationPool = ledger.sourceLabel;
             p.originMode = originModeFor(ledger.sourceKind);
             p.upbringing = upbringingFromLedger(ledger, w.zoneType);
@@ -645,6 +690,7 @@ class PersonnelProvenanceApi {
         p.upbringing = ledger == null ? p.upbringing : PersonnelPopulationApi.upbringingFromLedger(ledger, world.zoneType);
         p.backstory = "Arrived from " + req.source + " to replace " + req.deadName + " after " + req.reason + "; replacement source room=" + req.sourceRoomId + "; linked facility=" + facility + "; current pool=" + p.populationPool + ".";
         npc.provenance = p;
+        npc.currentAssignmentLedgerId = req.sourceLedgerId == null ? "" : req.sourceLedgerId;
     }
 
     static PersonnelProvenanceRecord create(Faction faction, ZoneType zone, String room, int sx, int sy, int zx, int zy, int floor, boolean sewer, Random r){
@@ -665,11 +711,17 @@ class PersonnelProvenanceApi {
         if(world == null || dead == null) return null;
         PersonnelReplacementRequest req = new PersonnelReplacementRequest();
         req.deadNpcId = dead.id; req.deadName = dead.name; req.faction = dead.faction; req.x = dead.x; req.y = dead.y; req.reason = reason == null ? "unrecorded death" : reason;
-        req.source = replacementSource(dead.faction, world.zoneType, r);
+        req.formerRole = dead.role == null ? "" : dead.role;
+        req.formerState = dead.state == null ? "" : dead.state;
+        // This casualty's reinforcement rate and source must not depend on
+        // unrelated world-RNG draws or the order other NPCs were processed.
+        Random deterministic = new Random(Objects.hash(world.seed, dead.id, dead.faction == null ? "NONE" : dead.faction.name(),
+                turn, "casualty-intake"));
+        req.source = replacementSource(dead.faction, world.zoneType, deterministic);
         PersonnelPopulationApi.recordDeath(world, dead);
-        PersonnelPopulationApi.fillReplacementRequest(world, req, r);
+        PersonnelPopulationApi.fillReplacementRequest(world, req, deterministic);
         req.requestedTurn = turn;
-        FactionReinforcementAuthority.configureInitialSource(world, req, turn, r);
+        FactionReinforcementAuthority.configureInitialSource(world, req, turn, deterministic);
         world.replacementQueue.add(req);
         DebugLog.audit("PERSONNEL_DEATH_SCHEDULE", "dead=" + dead.id + " name=" + dead.name + " faction=" + dead.faction.label + " source=" + req.source + " due=" + req.dueTurn + " reason=" + req.reason + " provenance=" + dead.originSummary());
         return req;
@@ -756,6 +808,9 @@ class NpcEntity {
     long lastPaidWorldTurn = -1L;
     long lastFactionChangeWorldTurn = -1L;
     String happinessReason = "settled living conditions";
+    // Provenance is immutable origin; assignment is mutable, faction-owned roster truth.
+    String currentAssignmentLedgerId = "";
+    ArrayList<String> lifeMemories = new ArrayList<>();
     String ageBand = "adult";
     String nameLockedProfileKey = "";
     String factionRankTitle = "";
@@ -774,6 +829,8 @@ class NpcEntity {
         n.role = roleFor(n.faction, z, r);
         AgeAndWorldTimeAuthority.initializeNpcAge(n, z, r);
         n.ensureRankIdentity(r);
+        // Consume the same RNG draw for world-generation compatibility; the
+        // final image slot is set from persistent NPC identity below.
         n.portraitIndex = r.nextInt(256);
         n.idleBias = 2 + r.nextInt(5);
         n.hunger = r.nextInt(4);
@@ -782,6 +839,7 @@ class NpcEntity {
         n.routineOffset = r.nextInt(24);
         n.numericId = Math.abs(Objects.hash(n.faction.name(), n.name, x, y, n.portraitIndex, r.nextInt()));
         n.id = n.faction.name() + "-" + n.numericId;
+        n.portraitIndex = NpcPortraitSelectionAuthority.stableIndex(0L, n);
         n.provenance = PersonnelProvenanceApi.create(n.faction, z, "unassigned spawn point", 0,0,0,0,0,false, r);
         n.ensureCombatLoadout(r);
         return n;
@@ -1020,12 +1078,13 @@ class NpcEntity {
 
     void tick(World w, int px, int py, int turn) {
         if (turn == lastTickTurn) return;
+        int previousTickTurn = lastTickTurn;
         lastTickTurn = turn;
         if (crowdShuffleCooldown > 0) crowdShuffleCooldown--;
         activeMotionStateIndex = GamePanel.MOTION_STATIONARY;
         selectedMovementModeIndex = chooseMovementModeIndex(turn);
         if (isAnimalActor()) { tickAnimal(w, px, py, turn); return; }
-        updateNeeds(turn);
+        updateNeeds(turn, previousTickTurn);
         updateRoutine(turn);
         if (turn % idleBias != 0) return;
         if (state.equals("Sleep")) { sleepDebt = Math.max(0, sleepDebt - 1); return; }
@@ -1042,7 +1101,7 @@ class NpcEntity {
             if (owner != null) {
                 int d = Math.abs(x-owner.x)+Math.abs(y-owner.y);
                 if (d > 1) { stepToward(w, owner.x, owner.y, px, py); return; }
-                if (turn % Math.max(2, idleBias) == 0) wanderNear(w, owner.x, owner.y, 2, px, py);
+                if (turn % Math.max(2, idleBias) == 0) wanderNear(w, owner.x, owner.y, 2, px, py, turn);
                 return;
             }
         }
@@ -1050,18 +1109,32 @@ class NpcEntity {
         if (turn % Math.max(2, idleBias) == 0) wander(w, turn, px, py);
     }
 
-    void wanderNear(World w, int cx, int cy, int radius, int blockX, int blockY) {
+    void wanderNear(World w, int cx, int cy, int radius, int blockX, int blockY, int turn) {
         if (w == null) return;
         int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{0,0}};
-        int[] d=dirs[Math.floorMod(Objects.hash(id, w.seed, cx, cy, System.nanoTime()), dirs.length)];
+        int[] d=dirs[Math.floorMod(Objects.hash(id, w.seed, cx, cy, turn), dirs.length)];
         int nx=x+d[0], ny=y+d[1];
         if(Math.abs(nx-cx)+Math.abs(ny-cy) <= Math.max(1,radius) && canNpcStep(w,nx,ny,blockX,blockY)) moveTo(nx,ny);
     }
 
     void updateNeeds(int turn) {
-        if (turn > 0 && turn % 18 == 0) sleepDebt = Math.min(30, sleepDebt + 1);
-        if (turn > 0 && turn % 24 == 0) hunger = Math.min(20, hunger + 1);
-        if (turn > 0 && turn % 18 == 0) thirst = Math.min(20, thirst + 1);
+        updateNeeds(turn, turn - 1);
+    }
+
+    /**
+     * Budget-deferred NPCs must age their needs by the elapsed world ticks,
+     * not merely whether the current tick happens to align with a cadence.
+     * A never-simulated spawn starts at its first observed turn, while a
+     * restored actor resumes from its persisted lastTickTurn.
+     */
+    void updateNeeds(int turn, int previousTickTurn) {
+        if (turn > 0) {
+            int prior = previousTickTurn < 0 || previousTickTurn > turn
+                    ? turn - 1 : previousTickTurn;
+            sleepDebt = Math.min(30, sleepDebt + turn / 18 - prior / 18);
+            hunger = Math.min(20, hunger + turn / 24 - prior / 24);
+            thirst = Math.min(20, thirst + turn / 18 - prior / 18);
+        }
         if (hunger > 14 || thirst > 14) state = "Search Needs";
     }
 
@@ -1249,7 +1322,12 @@ class NpcEntity {
         ensureRankIdentity(new Random(numericId == 0 ? Objects.hash(name, faction) : numericId));
         return enc(id)+"|"+numericId+"|"+enc(name)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+symbol+"|"+x+"|"+y+"|"+homeX+"|"+homeY+"|"+enc(state)+"|"+enc(role)+"|"+hunger+"|"+thirst+"|"+sleepDebt+"|"+portraitIndex+"|"+enc(provenance==null?"":provenance.save())+"|"+intellect+"|"+equipmentTier+"|"+enc(equippedMeleeWeapon)+"|"+enc(equippedRangedWeapon)+"|"+enc(equippedArmor)+"|"+enc(equippedExplosive)+"|"+loadedShots+"|"+ammoReloadsRemaining+"|"+factionRank+"|"+enc(factionRankTitle)+"|"+enc(factionRankScope)+"|"+enc(creatureKind)+"|"+enc(animalProfileId)+"|"+enc(companionOf)+"|"+ageYears+"|"+birthWorldTurn+"|"+enc(ageBand)+"|"+enc(nameLockedProfileKey)+"|"+pregnancyDueWorldTurn
                 +"|"+happiness+"|"+happinessLastEvaluatedWorldTurn+"|"+severeUnhappinessSinceWorldTurn
-                +"|"+lastPaidWorldTurn+"|"+lastFactionChangeWorldTurn+"|"+enc(happinessReason);
+                +"|"+lastPaidWorldTurn+"|"+lastFactionChangeWorldTurn+"|"+enc(happinessReason)
+                +"|"+enc(NpcLifeMemoryAuthority.save(this))+"|"+enc(currentAssignmentLedgerId)
+                +"|"+Math.max(1, idleBias)+"|"+routineOffset+"|"+lastTickTurn+"|"+hp
+                +"|"+enc(needTargetKind)+"|"+(needTarget==null?-1:needTarget.x)
+                +"|"+(needTarget==null?-1:needTarget.y)
+                +"|"+facingDx+"|"+facingDy+"|"+crowdShuffleCooldown+"|"+suspiciousBarkCooldown;
     }
 
     static NpcEntity parseLine(String s, World w){
@@ -1293,6 +1371,23 @@ class NpcEntity {
         if (a.length >= 39) try { n.lastPaidWorldTurn = Long.parseLong(a[38]); } catch(Exception ignored) {}
         if (a.length >= 40) try { n.lastFactionChangeWorldTurn = Long.parseLong(a[39]); } catch(Exception ignored) {}
         if (a.length >= 41 && !dec(a[40]).isBlank()) n.happinessReason = dec(a[40]);
+        if (a.length >= 42) NpcLifeMemoryAuthority.restore(n, dec(a[41]));
+        if (a.length >= 43) n.currentAssignmentLedgerId = dec(a[42]);
+        // Trailing fields are optional for old saves. A saved NPC must retain
+        // its cadence, active need target, health and tick guard across reload.
+        if (a.length >= 44) try { n.idleBias = Math.max(1, Integer.parseInt(a[43])); } catch(Exception ignored) {}
+        if (a.length >= 45) try { n.routineOffset = Integer.parseInt(a[44]); } catch(Exception ignored) {}
+        if (a.length >= 46) try { n.lastTickTurn = Integer.parseInt(a[45]); } catch(Exception ignored) {}
+        if (a.length >= 47) try { n.hp = Integer.parseInt(a[46]); } catch(Exception ignored) {}
+        if (a.length >= 48) n.needTargetKind = dec(a[47]);
+        int targetX = -1, targetY = -1;
+        if (a.length >= 49) try { targetX = Integer.parseInt(a[48]); } catch(Exception ignored) {}
+        if (a.length >= 50) try { targetY = Integer.parseInt(a[49]); } catch(Exception ignored) {}
+        if (targetX >= 0 && targetY >= 0) n.needTarget = new Point(targetX, targetY);
+        if (a.length >= 51) try { n.facingDx = Integer.parseInt(a[50]); } catch(Exception ignored) {}
+        if (a.length >= 52) try { n.facingDy = Integer.parseInt(a[51]); } catch(Exception ignored) {}
+        if (a.length >= 53) try { n.crowdShuffleCooldown = Math.max(0, Integer.parseInt(a[52])); } catch(Exception ignored) {}
+        if (a.length >= 54) try { n.suspiciousBarkCooldown = Math.max(0, Integer.parseInt(a[53])); } catch(Exception ignored) {}
         if (n.creatureKind == null || n.creatureKind.isBlank()) n.creatureKind = "humanoid";
         if (!n.isAnimalActor() && n.ageYears <= 0) AgeAndWorldTimeAuthority.initializeNpcAge(n, w == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : w.zoneType, new Random(n.numericId == 0 ? 1 : n.numericId));
         AgeAndWorldTimeAuthority.synchronizeNpc(n, 0L);

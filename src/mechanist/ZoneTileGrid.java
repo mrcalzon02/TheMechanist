@@ -72,6 +72,10 @@ final class ZoneTileGrid {
         forEach(bounds, state -> state.markCorridor(corridorId));
     }
 
+    void markOpenVolume(Rectangle bounds, String buildingId) {
+        forEach(bounds, state -> state.markOpenVolume(buildingId));
+    }
+
     void markRoad(Rectangle bounds, String roadNetworkId) {
         forEach(bounds, state -> state.markRoad(roadNetworkId));
     }

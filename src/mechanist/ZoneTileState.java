@@ -17,7 +17,7 @@ import java.util.Map;
  */
 final class ZoneTileState {
     enum BaseTileType { VOID, FLOOR, WALL, ROAD, SIDEWALK, DOOR, WATER, SEWER, STAIRS, ELEVATOR, MANHOLE, DRAIN, UNKNOWN }
-    enum SpaceType { UNASSIGNED, ROOM, CORRIDOR, ROAD_NETWORK, CENTRAL_PLAZA, TRANSITION_ROOM, PARKING_LOT, UTILITY_SPACE, SEWER_NETWORK, EXTERIOR_EDGE }
+    enum SpaceType { UNASSIGNED, ROOM, CORRIDOR, ROAD_NETWORK, CENTRAL_PLAZA, TRANSITION_ROOM, PARKING_LOT, UTILITY_SPACE, SEWER_NETWORK, EXTERIOR_EDGE, OPEN_VOLUME }
     enum TileFlag { BLOCKS_MOVEMENT, BLOCKS_ROOM_PLACEMENT, RESERVED, ROAD_INFRASTRUCTURE, DOOR_BUFFER, TRANSITION_ANCHOR, VERTICAL_TRANSITION, HAS_LIGHT, HAS_OBJECT, HAS_CONTAINER, HAS_ITEM, HAS_ENTITY, HAS_PET, HAS_VEHICLE, FACTION_CONTROLLED, NEUTRAL, LEGACY_IMPORTED }
     enum LightKind { NONE, AMBIENT, STREET_LIGHT, ROOM_LIGHT, WARNING_LIGHT, EMERGENCY_LIGHT, MACHINE_GLOW }
     enum TileSlot { SURFACE, SPACE, OWNER, ROOM, CORRIDOR, ROAD_NETWORK, TRANSITION, VERTICAL_TRANSITION, RESERVATION, FIXTURE, CONTAINER, LOOSE_ITEM, ENTITY, PET, VEHICLE, LIGHT, OVERLAY }
@@ -158,6 +158,13 @@ final class ZoneTileState {
     ZoneTileState setOwnerFaction(Faction ownerFaction) { this.ownerFaction = ownerFaction == null ? Faction.NONE : ownerFaction; if (this.ownerFaction == Faction.NONE) flags.add(TileFlag.NEUTRAL); else flags.add(TileFlag.FACTION_CONTROLLED); replaceSingleSlot(TileSlot.OWNER, this.ownerFaction.name(), "faction", this.ownerFaction.name().toLowerCase().replace('_', ' '), false); return this; }
     ZoneTileState markRoom(String roomId, Faction faction) { this.roomId = safe(roomId); this.spaceType = SpaceType.ROOM; replaceSingleSlot(TileSlot.ROOM, this.roomId, "room", "room " + this.roomId, false); replaceSingleSlot(TileSlot.SPACE, SpaceType.ROOM.name(), "space", "room", false); setOwnerFaction(faction); return this; }
     ZoneTileState markCorridor(String corridorId) { this.corridorId = safe(corridorId); this.spaceType = SpaceType.CORRIDOR; replaceSingleSlot(TileSlot.CORRIDOR, this.corridorId, "corridor", "corridor " + this.corridorId, false); replaceSingleSlot(TileSlot.SPACE, SpaceType.CORRIDOR.name(), "space", "corridor", false); return this; }
+    ZoneTileState markOpenVolume(String buildingId) {
+        setBaseType(BaseTileType.VOID, ' ');
+        setSpaceType(SpaceType.OPEN_VOLUME);
+        reserve("building-open-volume:" + safe(buildingId));
+        flags.add(TileFlag.BLOCKS_MOVEMENT);
+        return this;
+    }
     ZoneTileState markRoad(String roadNetworkId) { this.roadNetworkId = safe(roadNetworkId); this.spaceType = SpaceType.ROAD_NETWORK; this.baseType = BaseTileType.ROAD; this.legacyGlyph = 'R'; replaceSingleSlot(TileSlot.SURFACE, "R", BaseTileType.ROAD.name(), "road", false); replaceSingleSlot(TileSlot.ROAD_NETWORK, this.roadNetworkId, "road network", "road network " + this.roadNetworkId, false); flags.add(TileFlag.ROAD_INFRASTRUCTURE); flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT); return this; }
     ZoneTileState markTransition(String transitionId, boolean vertical) { this.transitionId = safe(transitionId); replaceSingleSlot(TileSlot.TRANSITION, this.transitionId, "transition", "transition " + this.transitionId, false); flags.add(TileFlag.TRANSITION_ANCHOR); flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT); if (vertical) { this.verticalTransitionId = safe(transitionId); replaceSingleSlot(TileSlot.VERTICAL_TRANSITION, this.verticalTransitionId, "vertical transition", "vertical transition " + this.verticalTransitionId, false); flags.add(TileFlag.VERTICAL_TRANSITION); } return this; }
     ZoneTileState reserve(String label) { this.reservationLabel = safe(label); replaceSingleSlot(TileSlot.RESERVATION, this.reservationLabel, "reservation", this.reservationLabel, false); flags.add(TileFlag.RESERVED); flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT); return this; }
@@ -176,7 +183,8 @@ final class ZoneTileState {
                 || spaceType == SpaceType.ROAD_NETWORK
                 || spaceType == SpaceType.CENTRAL_PLAZA
                 || spaceType == SpaceType.TRANSITION_ROOM
-                || spaceType == SpaceType.SEWER_NETWORK;
+                || spaceType == SpaceType.SEWER_NETWORK
+                || spaceType == SpaceType.OPEN_VOLUME;
     }
 
     boolean hasFloorSpaceContent() {

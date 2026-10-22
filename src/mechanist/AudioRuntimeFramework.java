@@ -206,6 +206,89 @@ class SoundManager {
             } catch (Throwable t) { DebugLog.error("AUDIO_PLAY", "Failed to play scaled " + key + " from " + f, t); }
         }, "sound-" + key).start();
     }
+    /**
+     * Position a short world cue relative to the player rather than the look
+     * cursor. The stereo samples are rendered in software so mono recordings
+     * and mixers without hardware PAN controls both work.
+     */
+    void playPositional(String key, int sourceX, int sourceY,
+                        int listenerX, int listenerY,
+                        int facingX, int facingY, boolean occluded,
+                        GameOptions opt) {
+        playPositional(key, sourceX, sourceY, listenerX, listenerY,
+                facingX, facingY, occluded, false, 1.0, opt);
+    }
+
+    void playPositional(String key, int sourceX, int sourceY,
+                        int listenerX, int listenerY,
+                        int facingX, int facingY, boolean occluded,
+                        boolean enclosed, double strength, GameOptions opt) {
+        if (startupCueSuppressed(key) || opt == null || !opt.soundEnabled
+                || opt.volume <= 0 || opt.sfxVolume <= 0
+                || GraphicsEnvironment.isHeadless()) return;
+        int level = (int) Math.round(Math.min(opt.sfxVolume, 62)
+                * Math.max(0.0, Math.min(1.0, strength))
+                * opt.volume / 100.0);
+        SpatialAudioAuthority.Mix mix = SpatialAudioAuthority.mix(
+                listenerX, listenerY, facingX, facingY,
+                sourceX, sourceY, level, 16, occluded);
+        if (!mix.audible()) return;
+        File file = sounds.get(key);
+        // Retain procedural fallback when an asset is absent, but pan it too.
+        new Thread(() -> {
+            Clip clip = null;
+            try {
+                byte[] samples;
+                float sampleRate;
+                if (file != null) {
+                    try (AudioInputStream original =
+                                 AudioSystem.getAudioInputStream(file)) {
+                        AudioFormat source = original.getFormat();
+                        int channels = source.getChannels();
+                        if (channels != 1 && channels != 2)
+                            throw new UnsupportedAudioFileException(
+                                    "World cues require mono or stereo WAV");
+                        sampleRate = source.getSampleRate();
+                        AudioFormat pcm = new AudioFormat(
+                                AudioFormat.Encoding.PCM_SIGNED,
+                                sampleRate, 16, channels, channels * 2,
+                                sampleRate, false);
+                        try (AudioInputStream decoded =
+                                     AudioSystem.getAudioInputStream(pcm, original)) {
+                            samples = SpatialAudioAuthority.stereoPcm16(
+                                    decoded.readAllBytes(), channels, mix);
+                        }
+                    }
+                } else {
+                    sampleRate = 44100f;
+                    AudioFormat mono = new AudioFormat(
+                            sampleRate, 16, 1, true, false);
+                    samples = SpatialAudioAuthority.stereoPcm16(
+                            generatedCueBytes(key, 100, mono), 1, mix);
+                }
+                if (samples.length == 0) return;
+                if (enclosed) samples = SpatialAudioAuthority.roomReflectionsPcm16(
+                        samples, Math.round(sampleRate), 1.0);
+                AudioFormat stereo = new AudioFormat(
+                        sampleRate, 16, 2, true, false);
+                clip = AudioSystem.getClip();
+                clip.open(stereo, samples, 0, samples.length);
+                Clip playing = clip;
+                clip.addLineListener(ev -> {
+                    if (ev.getType() == LineEvent.Type.STOP) playing.close();
+                });
+                clip.start();
+            } catch (Throwable error) {
+                if (clip != null) {
+                    try { clip.close(); } catch (Throwable ignored) { }
+                }
+                DebugLog.warn("AUDIO_PLAY", "Positional sound unavailable: "
+                        + key + " (" + error.getClass().getSimpleName()
+                        + ": " + error.getMessage() + ")");
+            }
+        }, "spatial-sound-" + key).start();
+    }
+
     void playWeaponEffect(String weapon, boolean ranged, GameOptions opt) {
         play(weaponEffectKey(weapon, ranged), opt);
     }
