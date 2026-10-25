@@ -2,6 +2,12 @@ name: Alpha Installer Deployment
 
 on:
   workflow_call:
+    inputs:
+      release_version:
+        description: Optional unique Maven/native installer version for automatic releases
+        type: string
+        required: false
+        default: ''
 
 concurrency:
   group: alpha-installer-deployment-${{ github.ref }}
@@ -71,6 +77,16 @@ jobs:
             throw 'light.exe remains unavailable after WiX setup.'
           }
 
+      - name: Test prerelease update discovery contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/launcher-updater-smoke
+          javac --release 17 -d dist/launcher-updater-smoke \
+            PACKAGE_launcher/java/src/main/java/mechanist/launcher/GitHubReleaseUpdateService.java \
+            PACKAGE_launcher/java/src/test/java/mechanist/launcher/GitHubReleaseUpdateServiceSmoke.java
+          java -cp dist/launcher-updater-smoke mechanist.launcher.GitHubReleaseUpdateServiceSmoke
+
       - name: Compile release tooling
         shell: bash
         run: |
@@ -81,11 +97,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python ROOT_build/ci/build_runnable_distribution.py \
-            --repo . \
-            --commit "$GITHUB_SHA" \
-            --release-hardened \
-            --output dist/alpha-installer/releases \
+          args=(--repo . --commit "$GITHUB_SHA" --release-hardened --output dist/alpha-installer/releases)
+          if [[ -n "${{ inputs.release_version }}" ]]; then
+            args+=(--version "${{ inputs.release_version }}")
+          fi
+          python ROOT_build/ci/build_runnable_distribution.py "${args[@]}" \
             2>&1 | tee "dist/alpha-installer-build-${{ matrix.platform }}.log"
 
       - name: Resolve and verify canonical distribution
@@ -266,7 +282,10 @@ jobs:
         with:
           name: Alpha-Installer-Deployment-${{ matrix.platform }}
           path: |
-            dist/alpha-installer/**
+            dist/alpha-installer/**/*.json
+            dist/alpha-installer/**/*.log
+            dist/alpha-installer/**/*.msi
+            dist/alpha-installer/**/*.deb
             dist/alpha-installer-build-${{ matrix.platform }}.log
           if-no-files-found: warn
           retention-days: 30

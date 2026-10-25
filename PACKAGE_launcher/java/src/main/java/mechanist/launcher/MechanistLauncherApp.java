@@ -27,6 +27,7 @@ import java.util.List;
 public final class MechanistLauncherApp {
     private final LauncherConfig config = LauncherConfig.defaults();
     private final PackageInstallService packages = new PackageInstallService(config);
+    private final GitHubReleaseUpdateService releaseUpdates = new GitHubReleaseUpdateService();
     private final LauncherSoundFeedback sound = new LauncherSoundFeedback(config);
     private final DiagnosticReporter diagnostics = new DiagnosticReporter(config);
     private final List<PackageTier> graphicsTiers = PackageCatalog.defaultGraphicsTiers(config);
@@ -42,6 +43,8 @@ public final class MechanistLauncherApp {
     private JLabel effectiveGraphics;
     private JLabel effectiveAudio;
     private JButton installUpdate;
+    private JButton updateButton;
+    private boolean launcherTaskBusy;
     private JButton launch;
     private JButton repair;
     private String lastUpdateStatus = "No package verification has been run in this launcher session.";
@@ -74,6 +77,7 @@ public final class MechanistLauncherApp {
         appendLog("Icon authority: " + LauncherIconAuthority.status(config));
         appendLog("Distribution policy: " + LauncherDistributionPolicy.auditSummary(config));
         refreshState();
+        checkForUpdates(false);
     }
 
     private JPanel buildHeader() {
@@ -241,6 +245,10 @@ public final class MechanistLauncherApp {
         buttons.setOpaque(false);
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(0, 5, 0, 5);
+        updateButton = button(
+                "Check Updates",
+                "Check verified alpha installers published in GitHub Releases; download and install only with confirmation.",
+                () -> checkForUpdates(true));
         installUpdate = button(
                 "Verify Packages",
                 "Verify the bundled manifest-described client, server, and support package set without cloning the development repository.",
@@ -269,6 +277,7 @@ public final class MechanistLauncherApp {
                 "Open Folder",
                 "Open the detected installation folder in the operating system file browser.",
                 this::openInstallFolder);
+        buttons.add(updateButton, constraints);
         buttons.add(installUpdate, constraints);
         buttons.add(repair, constraints);
         buttons.add(writeSelections, constraints);
@@ -341,6 +350,103 @@ public final class MechanistLauncherApp {
                 } finally {
                     setBusy(false, status.getText());
                     refreshState();
+                }
+            }
+        };
+        worker.execute();
+    }
+
+
+    /** Network lookup is asynchronous; the bundled game remains playable offline. */
+    private void checkForUpdates(boolean interactive) {
+        updateButton.setEnabled(false);
+        updateButton.setText("Checking...");
+        SwingWorker<GitHubReleaseUpdateService.Candidate, Void> worker = new SwingWorker<>() {
+            @Override
+            protected GitHubReleaseUpdateService.Candidate doInBackground() throws Exception {
+                String installedCommit;
+                try {
+                    installedCommit = LauncherBuildIdentity.read(config).commit();
+                } catch (java.io.IOException missingInstallation) {
+                    installedCommit = "unknown";
+                }
+                String os = System.getProperty("os.name", "").toLowerCase();
+                String platform = (os.contains("win") ? "windows-" :
+                        os.contains("linux") ? "linux-" : "unsupported-")
+                        + (System.getProperty("os.arch", "").contains("64") ? "x64" : "other");
+                return releaseUpdates.check(platform, installedCommit);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    GitHubReleaseUpdateService.Candidate candidate = get();
+                    if (candidate == null) {
+                        updateButton.setText("Check Updates");
+                        if (interactive) {
+                            JOptionPane.showMessageDialog(frame,
+                                    "No newer compatible verified alpha installer is available.",
+                                    "The Mechanist Updates", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    } else {
+                        updateButton.setText("Install Update");
+                        status.setText("New verified alpha installer: " + candidate.version());
+                        appendLog("GitHub update: " + candidate.tag() + " / "
+                                + candidate.assetName() + " / SHA-256: " + candidate.sha256());
+                        if (interactive) {
+                            int choice = JOptionPane.showConfirmDialog(frame,
+                                    "A verified installer is available: " + candidate.version()
+                                            + "\nPlatform package: " + candidate.assetName()
+                                            + "\nDownload, verify SHA-256, and open the OS installer?\n"
+                                            + "The launcher will close so it can be upgraded.",
+                                    "Install The Mechanist Update",
+                                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                            if (choice == JOptionPane.YES_OPTION) {
+                                downloadAndLaunchUpdate(candidate);
+                            }
+                        }
+                    }
+                } catch (Exception exception) {
+                    Throwable cause = exception.getCause() == null ? exception : exception.getCause();
+                    appendLog("GitHub update check unavailable: " + cause.getMessage());
+                    updateButton.setText("Check Updates");
+                    if (interactive) {
+                        JOptionPane.showMessageDialog(frame,
+                                "Update check failed: " + cause.getMessage()
+                                        + "\nExisting game files were not changed.",
+                                "Update check failed", JOptionPane.WARNING_MESSAGE);
+                    }
+                } finally {
+                    updateButton.setEnabled(!launcherTaskBusy);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    /** Installer runs as a separate process, never overlaid onto running JARs. */
+    private void downloadAndLaunchUpdate(GitHubReleaseUpdateService.Candidate candidate) {
+        setBusy(true, "Downloading verified installer...");
+        SwingWorker<Path, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Path doInBackground() throws Exception {
+                return releaseUpdates.download(candidate, config.cacheDir.resolve("installer-updates"));
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    Path installer = get();
+                    releaseUpdates.launchInstaller(installer, candidate);
+                    appendLog("Verified installer opened: " + installer);
+                    status.setText("Installer opened. Close the launcher for installation.");
+                    frame.dispose();
+                    System.exit(0);
+                } catch (Exception exception) {
+                    sound.warning();
+                    Throwable cause = exception.getCause() == null ? exception : exception.getCause();
+                    appendLog("Update aborted (existing installation intact): " + cause.getMessage());
+                    setBusy(false, "Installer update failed; original game remains available.");
                 }
             }
         };
@@ -503,7 +609,9 @@ public final class MechanistLauncherApp {
     }
 
     private void setBusy(boolean busy, String message) {
+        launcherTaskBusy = busy;
         installUpdate.setEnabled(!busy);
+        updateButton.setEnabled(!busy);
         repair.setEnabled(!busy);
         launch.setEnabled(!busy && packages.gameLauncherPresent());
         progress.setIndeterminate(busy);

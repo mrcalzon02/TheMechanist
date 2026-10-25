@@ -422,7 +422,7 @@ def main() -> int:
     distribution.mkdir(parents=True, exist_ok=True)
 
     maven = maven_command()
-    root_package = [maven, "-B", "-DskipTests", "clean", "package"]
+    root_package = [maven, "-B", "-DskipTests", f"-Drevision={version}", "clean", "package"]
     if release_hardened:
         root_package.insert(2, "-Prelease-obfuscation")
     run(root_package, repo)
