@@ -103,6 +103,7 @@ final class FirstPersonRenderViewport {
                 return true;
             }
             case KeyEvent.VK_Q, KeyEvent.VK_TAB -> { panel.cycleEquippedWeaponHand(); return true; }
+            case KeyEvent.VK_HOME -> { camera.addYawPitch(0, -camera.pitchRadians()); return true; }
             case KeyEvent.VK_X -> { panel.reloadCurrentRangedWeapon(); return true; }
             case KeyEvent.VK_OPEN_BRACKET -> { panel.options.doomModeFovDegrees = Math.max(60, panel.options.doomModeFovDegrees - 5); panel.options.save(); return true; }
             case KeyEvent.VK_CLOSE_BRACKET -> { panel.options.doomModeFovDegrees = Math.min(110, panel.options.doomModeFovDegrees + 5); panel.options.save(); return true; }
@@ -140,7 +141,7 @@ final class FirstPersonRenderViewport {
         long now = System.nanoTime();
         double dt = Math.max(0.0, Math.min(0.10, (now - lastContinuousMotionNanos) / 1_000_000_000.0));
         lastContinuousMotionNanos = now;
-        if (mouseInput.lookIdleSeconds(now) >= 0.85) camera.driftTowardCardinal(dt);
+        // Keep full mouse look where the player leaves it; no idle yaw/pitch drift.
         continuousPlayer.setLookAngleRadians(camera.yawRadians());
         ContinuousPlayerState state = continuousPlayer.update(new MechanistContinuousCollisionGrid(panel.world, panel.playerX, panel.playerY), dt);
         if (state.velocityX() * state.velocityX() + state.velocityY() * state.velocityY() > 0.000625) cameraJuice.noteMovementImpulse();
@@ -211,6 +212,8 @@ final class FirstPersonRenderViewport {
     private void syncCameraToPlayer(GamePanel panel) {
         ensureContinuousPlayerSynced(panel);
         camera.setPosition(continuousPlayer.posX(), cameraHeightFor(panel), continuousPlayer.posY());
+        panel.setFacingToward(panel.playerX + (int)Math.round(Math.cos(camera.yawRadians()) * 1024),
+                panel.playerY + (int)Math.round(Math.sin(camera.yawRadians()) * 1024), "doom camera facing");
         lastPlayerX = panel.playerX;
         lastPlayerY = panel.playerY;
     }
@@ -463,12 +466,12 @@ final class FirstPersonRenderViewport {
         World world = panel.world;
         if (world != null) {
             for (NpcEntity n : world.npcs) {
-                if (n == null || n.hp <= 0) continue;
+                if (n == null || n.hp <= 0 || !panel.isVisible(n.x, n.y)) continue;
                 BufferedImage img = panel.images == null ? null : panel.images.getNpcPortraitFor(n);
                 spriteScratch.add(new RenderableSprite(n.x + 0.5, 0.55, n.y + 0.5, n.symbol, n.name == null ? "entity" : n.name, 0xFFE2C46B, true, img));
             }
             for (MapObjectState o : world.mapObjects) {
-                if (o == null) continue;
+                if (o == null || !panel.isVisible(o.x, o.y)) continue;
                 if (o.glyph == '*' && world.inBounds(o.x, o.y) && !world.walkable(o.x, o.y)) continue;
                 char glyph = o.glyph == 0 ? 'o' : o.glyph;
                 BufferedImage img = ObjectSemanticAssetAuthority.imageForMapObject(o);
@@ -678,11 +681,11 @@ final class FirstPersonCamera {
         viewX = baseX - (lookX / flatLen) * s.backwardOffset();
         viewY = baseY + s.verticalOffset();
         viewZ = baseZ - (lookZ / flatLen) * s.backwardOffset();
-        viewPitch = Math.max(Math.toRadians(-60), Math.min(Math.toRadians(60), pitch + s.pitchOffsetRadians()));
+        viewPitch = Math.max(Math.toRadians(-89), Math.min(Math.toRadians(89), pitch + s.pitchOffsetRadians()));
     }
     void addYawPitch(double dyaw, double dpitch) {
         yaw = normalizeAngle(yaw + dyaw);
-        pitch = Math.max(Math.toRadians(-55), Math.min(Math.toRadians(55), pitch + dpitch));
+        pitch = Math.max(Math.toRadians(-89), Math.min(Math.toRadians(89), pitch + dpitch));
         updateLookVector();
     }
     void driftTowardCardinal(double dtSeconds) {
@@ -728,7 +731,7 @@ final class FirstPersonMouseInput {
     private boolean cursorHidden = false;
     private long lastLookInputNanos = System.nanoTime();
 
-    void ensureLock(GamePanel panel) {
+    void ensureLock(Component panel) {
         if (panel == null || !panel.isShowing()) return;
         hideCursor(panel);
         if (robot == null) {
@@ -738,7 +741,7 @@ final class FirstPersonMouseInput {
         if (!centered) centerMouse(panel);
     }
 
-    void release(GamePanel panel) {
+    void release(Component panel) {
         centered = false;
         recentering = false;
         lastLookInputNanos = System.nanoTime();
@@ -748,7 +751,7 @@ final class FirstPersonMouseInput {
         }
     }
 
-    void handleMove(FirstPersonCamera camera, GamePanel panel, int x, int y) {
+    void handleMove(FirstPersonCamera camera, Component panel, int x, int y) {
         Objects.requireNonNull(camera, "camera");
         int viewportW = Math.max(1, panel == null ? 1 : panel.getWidth());
         int viewportH = Math.max(1, panel == null ? 1 : panel.getHeight());
@@ -775,7 +778,7 @@ final class FirstPersonMouseInput {
         return Math.max(0.0, (nowNanos - lastLookInputNanos) / 1_000_000_000.0);
     }
 
-    private void centerMouse(GamePanel panel) {
+    private void centerMouse(Component panel) {
         if (panel == null || robot == null || !panel.isShowing()) return;
         try {
             Point p = panel.getLocationOnScreen();
@@ -787,7 +790,7 @@ final class FirstPersonMouseInput {
         } catch (Throwable ignored) { centered = false; }
     }
 
-    private void hideCursor(GamePanel panel) {
+    private void hideCursor(Component panel) {
         if (panel == null || cursorHidden) return;
         try {
             BufferedImage blank = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);

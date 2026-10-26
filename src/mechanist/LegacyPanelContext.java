@@ -1792,7 +1792,6 @@ class GamePanel extends LegacyPanelBridgeBase {
             }
         }
         drawQuestObjectiveWorldGuidance(g, cols, rows, tile);
-        drawFacingVisionConeOverlay(g, cols, rows, tile);
         drawMovementPlannerOverlay(g, cols, rows, tile);
         drawTargetCursor(g, lookX, lookY, cols, rows, tile, lookCursorActive || panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT, new java.awt.Color(116, 188, 235));
         drawTargetCursor(g, combatX, combatY, cols, rows, tile, panelMode == PanelMode.COMBAT, new java.awt.Color(235, 88, 74));
@@ -1885,26 +1884,6 @@ class GamePanel extends LegacyPanelBridgeBase {
                     ? new java.awt.Color(238, 90, 70, readout.pulsing() ? 245 : 145)
                     : new java.awt.Color(244, 205, 84, readout.pulsing() ? 245 : 145);
             drawTargetCursor(g, readout.targetX(), readout.targetY(), cols, rows, tile, true, color);
-        }
-    }
-
-    private void drawFacingVisionConeOverlay(java.awt.Graphics2D g, int cols, int rows, int tile) {
-        if (world == null) return;
-        int range = visionRange();
-        double originX = playerRenderWorldX();
-        double originY = playerRenderWorldY();
-        java.awt.Color fill = new java.awt.Color(86, 148, 178, 32);
-        java.awt.Color edge = new java.awt.Color(140, 210, 236, 54);
-        for (int y = Math.max(0, lastWorldViewMinY); y < Math.min(world.h, lastWorldViewMinY + rows); y++) {
-            for (int x = Math.max(0, lastWorldViewMinX); x < Math.min(world.w, lastWorldViewMinX + cols); x++) {
-                if (Math.hypot(x - originX, y - originY) <= 0.35 || !isVisible(x, y) || !withinFacingVisionConeVisual(x, y, range, originX, originY)) continue;
-                int sx = lastWorldViewOriginX + (x - lastWorldViewMinX) * tile;
-                int sy = lastWorldViewOriginY + (y - lastWorldViewMinY) * tile;
-                g.setColor(fill);
-                g.fillRect(sx + 1, sy + 1, Math.max(1, tile - 2), Math.max(1, tile - 2));
-                g.setColor(edge);
-                g.drawRect(sx + 2, sy + 2, Math.max(1, tile - 5), Math.max(1, tile - 5));
-            }
         }
     }
 
@@ -6349,10 +6328,6 @@ class GamePanel extends LegacyPanelBridgeBase {
         int dy = y - playerY;
         if (dx == 0 && dy == 0) return true;
         return DirectionalVisionAuthority.contains(this, x, y, range);
-    }
-
-    private boolean withinFacingVisionConeVisual(int x, int y, int range, double originX, double originY) {
-        return DirectionalVisionAuthority.containsAt(this, x, y, range, originX, originY);
     }
 
     private void invalidateMovementPlans(String reason) {

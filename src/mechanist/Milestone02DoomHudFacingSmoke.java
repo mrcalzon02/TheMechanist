@@ -16,6 +16,69 @@ final class Milestone02DoomHudFacingSmoke {
         verifyHudStateAndPaint();
         verifyNpcFacingPersistence();
         verifyTriangleDirections();
+        verifySpriteVisibilityCulling();
+    }
+
+    private static void verifySpriteVisibilityCulling() {
+        GamePanel panel = new GamePanel();
+        panel.timer.stop();
+        panel.world = new World(405L, 24, 18);
+        panel.world.zoneType = ZoneType.NEUTRAL_CIVILIAN_FLOOR;
+        panel.world.floor = 4;
+        for (char[] column : panel.world.tiles) java.util.Arrays.fill(column, '.');
+        panel.world.tiles[8][5] = '#';
+        panel.playerX = 4;
+        panel.playerY = 5;
+        panel.facingDx = 1;
+        panel.facingDy = 0;
+        panel.visibleTiles = new boolean[24][18];
+        panel.rememberedTiles = new boolean[24][18];
+        panel.rememberedTiles[9][5] = true;
+        for (int x : new int[]{6, 9, 22}) {
+            NpcEntity npc = new NpcEntity();
+            npc.x = x; npc.y = 5; npc.hp = 10; npc.name = "culling " + x;
+            npc.faction = Faction.NONE;
+            panel.world.npcs.add(npc);
+            MapObjectState object = new MapObjectState();
+            object.x = x; object.y = 5; object.glyph = 'o'; object.label = "culling " + x;
+            panel.world.mapObjects.add(object);
+        }
+        panel.updateSensoryModel("Doom visibility regression");
+        require(panel.isVisible(6, 5), "The nearby lit tile must remain visible.");
+        require(!panel.isVisible(9, 5) && !panel.isVisible(22, 5),
+                "Walls and vision range must exclude hidden and distant sprites.");
+        FirstPersonRenderViewport viewport = new FirstPersonRenderViewport();
+        BufferedImage image = new BufferedImage(320, 200, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        try {
+            java.lang.reflect.Method render = FirstPersonRenderViewport.class.getDeclaredMethod(
+                    "renderSpritesAndEffects", Graphics2D.class, GamePanel.class,
+                    int.class, int.class, long.class, double.class);
+            render.setAccessible(true);
+            render.invoke(viewport, g, panel, 320, 200, 0L, 0.0);
+            java.lang.reflect.Field scratch = FirstPersonRenderViewport.class.getDeclaredField("spriteScratch");
+            scratch.setAccessible(true);
+            java.util.List<?> sprites = (java.util.List<?>)scratch.get(viewport);
+            require(sprites.size() == 2, "Only the visible NPC and object may reach sprite rendering; remembered and distant tiles must be culled.");
+            for (Object value : sprites) {
+                RenderableSprite sprite = (RenderableSprite)value;
+                require(sprite.x() == 6.5 && sprite.z() == 5.5,
+                        "Hidden actors and fixtures must be culled before artwork lookup.");
+            }
+            java.lang.reflect.Field cameraField = FirstPersonRenderViewport.class.getDeclaredField("camera");
+            cameraField.setAccessible(true);
+            ((FirstPersonCamera)cameraField.get(viewport)).addYawPitch(Math.PI / 2.0, 0.0);
+            java.lang.reflect.Method sync = FirstPersonRenderViewport.class.getDeclaredMethod("syncCameraToPlayer", GamePanel.class);
+            sync.setAccessible(true);
+            sync.invoke(viewport, panel);
+            require(panel.facingDx == 0 && panel.facingDy == 1 && panel.playerX == 4 && panel.playerY == 5,
+                    "Mouse-look direction must update sensory facing without moving the player.");
+        } catch (ReflectiveOperationException failure) {
+            throw new AssertionError("Could not inspect Doom sprite culling", failure);
+        } finally {
+            g.dispose();
+            panel.shutdownRuntime();
+        }
     }
 
     private static void verifyDoomUnlockRouting() {

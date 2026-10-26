@@ -1,5 +1,13 @@
 # Development History
 
+### Generated-world rendering baseline and visibility cleanup (2026-10-25)
+
+- Captured 34 original and 34 matched updated offscreen frames through the existing `GamePanel.paint` path at 1280x800: seeds 466713, 20261025 and 8675309; insertion, street and room positions; additional floor 4B sewer and floor 8 slices; FOV 60/80/110 and pitch +/-60 probes. Evidence, coordinates, hashes and a comparison gallery are under `diagnostics/render-baseline-20261025/`.
+- Removed the temporary blue facing-vision tile fill/outline and its visual-only helper from `LegacyPanelContext`. Existing sensory visibility, lighting, exploration and action overlays retain their authorities.
+- `FirstPersonRenderViewport` now rejects invisible NPCs and map objects before resolving artwork, using the same directional range, light and line-of-sight field as the normal game view. Camera yaw updates sensory facing while looking without moving the player. Existing uncommitted camera/chamber work was preserved.
+- Extended `Milestone02DoomHudFacingSmoke` with a lit visible tile, a remembered tile hidden behind a wall, a distant tile, NPC/object sprite-list assertions, and camera-facing synchronization. This smoke, HUD layout, lighting falloff, rendering doctrine, multi-floor placement/transit and world-setup persistence checks passed in the diagnostic build. Compiled with `--release 17`; diagnostic classfile scan is recorded in the report.
+- Verification limit: the checkout does not compile as-is because `VehicleStrategicTransitCommitAuthority` contains merge markers and duplicate locals, and `Milestone06FactionVehicleRouteTransitCommitSmoke` contains a duplicate local. Only diagnostic copies of those two files were repaired. Diagnostic semantic lookup caches avoid repeated immutable registry scans; capture timings are not untouched baseline or release-performance evidence. No client/server package was rebuilt or replaced. The semantic texture-variant cohort smoke also fails with the original resolver and remains unresolved. Full multi-level depth/projection work remains separate from this visibility repair.
+
 This is the active development ledger for The Mechanist after the continuity reset of 2026-07-17.
 
 The complete prior active ledger is preserved unchanged at:
