@@ -38,6 +38,8 @@ final class CharacterSaveManagerRegressionSmoke {
                             && reloaded.health() == progressed.health(),
                     "canonical character progress was lost on reload");
 
+            verifyHostedMapStep(manager, root);
+
             PlayerIdentity corrupt =
                     PlayerIdentity.fallbackFromCredential("character-corrupt-profile");
             Path corruptPath = manager.profilePath(corrupt);
@@ -164,6 +166,7 @@ final class CharacterSaveManagerRegressionSmoke {
                     + " corruptScalarFailClosed=true"
                     + " strictStructureFailClosed=true"
                     + " nonFinitePositionRejected=true"
+                    + " hostedMapCheckedPositionPersistence=true"
                     + " asyncFailuresVisible=true"
                     + " hardLinkProtection=" + (hardLinkChecked ? "verified" : "unsupported")
                     + " symlinkProtection=" + (symlinkChecked ? "verified" : "unsupported"));
@@ -174,6 +177,120 @@ final class CharacterSaveManagerRegressionSmoke {
                 }
             }
         }
+    }
+
+    private static void verifyHostedMapStep(
+            CharacterSaveManager manager, Path root) throws Exception {
+        PlayerIdentity identity =
+                PlayerIdentity.fallbackFromCredential("hosted-map-step-profile");
+        CharacterStateRecord initial = CharacterStateRecord.fresh(identity, "Map Citizen");
+        CharacterStateRecord seed = new CharacterStateRecord(
+                initial.identityKey(), initial.characterName(),
+                1, 1, 0, "hosted-test-zone", 81,
+                List.of("mechanics"), List.of("ration-pack", "toolkit"),
+                Map.of("civic-authority", 7), initial.updatedAt());
+        manager.atomicSaveSync(seed);
+        CharacterStateRecord before =
+                manager.loadOrCreateStrict(identity, "Ignored");
+        World map = new World(9123L, 4, 4);
+        for (int x = 0; x < map.w; x++) {
+            for (int y = 0; y < map.h; y++) map.tiles[x][y] = '.';
+        }
+        map.tiles[2][1] = '#';
+
+        expectRejectedHostedStep(manager, identity, before,
+                null, "hosted-test-zone", 0, 1,
+                IllegalStateException.class, "missing canonical map");
+        expectRejectedHostedStep(manager, identity, before,
+                map, "wrong-zone", 0, 1,
+                IllegalStateException.class, "cross-zone request");
+        expectRejectedHostedStep(manager, identity, before,
+                map, "hosted-test-zone", 1, 0,
+                IllegalArgumentException.class, "solid destination");
+        expectRejectedHostedStep(manager, identity, before,
+                map, "hosted-test-zone", 0, 0,
+                IllegalArgumentException.class, "zero step");
+        expectRejectedHostedStep(manager, identity, before,
+                map, "hosted-test-zone", 1, 1,
+                IllegalArgumentException.class, "diagonal step");
+        expectRejectedHostedStep(manager, identity, before,
+                map, "hosted-test-zone", 2, 0,
+                IllegalArgumentException.class, "multi-tile step");
+
+        PlayerIdentity other =
+                PlayerIdentity.fallbackFromCredential("other-hosted-profile");
+        expectRejectedHostedStep(manager, other, before,
+                map, "hosted-test-zone", 0, 1,
+                SecurityException.class, "cross-profile request");
+        CharacterStateRecord fractional = new CharacterStateRecord(
+                before.identityKey(), before.characterName(),
+                1.5, before.y(), before.z(), before.zoneId(),
+                before.health(), before.selectedSkills(), before.startingItems(),
+                before.factionReputation(), before.updatedAt());
+        expectRejectedHostedStep(manager, identity, fractional,
+                map, "hosted-test-zone", 0, 1,
+                IllegalArgumentException.class, "fractional grid origin");
+
+        CharacterStateRecord moved = manager.commitHostedCardinalStep(
+                identity, before, map, "hosted-test-zone", 0, 1);
+        check(moved.x() == 1 && moved.y() == 2
+                        && moved.z() == before.z()
+                        && moved.health() == before.health()
+                        && moved.zoneId().equals(before.zoneId())
+                        && moved.selectedSkills().equals(before.selectedSkills())
+                        && moved.startingItems().equals(before.startingItems())
+                        && moved.factionReputation().equals(before.factionReputation()),
+                "canonical map step lost durable character state");
+        check(moved.equals(manager.loadOrCreateStrict(identity, "Ignored")),
+                "committed hosted step was not reloaded from canonical storage");
+
+        expectRejectedHostedStep(manager, identity, before,
+                map, "hosted-test-zone", 0, 1,
+                IllegalStateException.class, "stale movement replay");
+        map.tiles[1][2] = '#';
+        expectRejectedHostedStep(manager, identity, moved,
+                map, "hosted-test-zone", 0, 1,
+                IllegalArgumentException.class, "blocked origin");
+        map.tiles[1][2] = '.';
+
+        try (CharacterSaveManager restarted = new CharacterSaveManager(root)) {
+            CharacterStateRecord recovered =
+                    restarted.loadOrCreateStrict(identity, "Ignored");
+            check(recovered.equals(moved),
+                    "canonical hosted position was lost on manager restart");
+        }
+
+        PlayerIdentity missing =
+                PlayerIdentity.fallbackFromCredential("never-created-hosted-profile");
+        try {
+            manager.commitHostedCardinalStep(
+                    missing, CharacterStateRecord.fresh(missing, "Missing"),
+                    map, "origin-zone", 0, 1);
+            throw new AssertionError("missing hosted character was silently created");
+        } catch (IOException expected) {
+            check(!Files.exists(manager.profilePath(missing)),
+                    "failed hosted movement created a new character");
+        }
+    }
+
+    private static void expectRejectedHostedStep(
+            CharacterSaveManager manager, PlayerIdentity identity,
+            CharacterStateRecord expected, World map, String zone,
+            int dx, int dy, Class<? extends Exception> failureType,
+            String scenario) throws Exception {
+        Path path = manager.profilePath(
+                PlayerIdentity.fallbackFromCredential("hosted-map-step-profile"));
+        String original = Files.readString(path, StandardCharsets.UTF_8);
+        try {
+            manager.commitHostedCardinalStep(
+                    identity, expected, map, zone, dx, dy);
+            throw new AssertionError("hosted step accepted " + scenario);
+        } catch (IOException | RuntimeException failure) {
+            check(failureType.isInstance(failure),
+                    "wrong hosted step refusal for " + scenario + ": " + failure);
+        }
+        check(original.equals(Files.readString(path, StandardCharsets.UTF_8)),
+                "rejected hosted step mutated canonical character: " + scenario);
     }
 
     /** A hard link is not a symlink; existing .tmp paths must never be truncated. */
