@@ -1,5 +1,12 @@
 # Development History
 
+### 06.R hosted-map checked canonical position prerequisite (2026-10-27)
+
+- Added `CharacterSaveManager.commitHostedCardinalStep` as a **server-side prerequisite**, not a remotely exposed MOVE command. It accepts the existing canonical `World` map and persisted `CharacterStateRecord` through the existing character owner; refuses missing maps, cross-profile/zone requests, non-cardinal or fractional-origin steps, and impassable tiles before any save. The movement source must already hold the hosted world's authoritative single-writer lock. No new map, character, session or position ledger was created.
+- A successful one-tile step writes through the existing atomic character save path and returns a fresh durable readback. A stale character snapshot is refused rather than overwriting a newer position or unrelated health, skills, inventory or reputation. Missing characters are not created by movement.
+- Extended the existing `CharacterSaveManagerRegressionSmoke` (already registered in Gate 3) with blocked-map, missing-map, wrong-zone, wrong-profile, invalid-vector, fractional-coordinate, stale replay, blocked-origin, missing-character, successful cardinal movement and reopened-manager persistence assertions. The repository's existing Java 17 milestone and multiplayer workflows are the actual compilation/regression acceptance gates; **no successful run is claimed until the exact commit is observed passing**.
+- The independent host still has no canonical hosted map mounted in `IndependentHostTurnAuthority`, and `WORLD_COMMAND` remains WAIT-only. This change does not enable network movement, guarantee actor occupancy/corner collision, certify a server game session or unblock limited-alpha release. Next bind a real hosted `World` and zone to the single-writer command lane, then route authenticated movement through this guarded persistence owner with exact sequencing and rollback tests.
+
 ### Scheduled contract-proof sale protection and systemic regression (2026-10-27)
 
 - Reproduced an ordinary-trade protection gap: generated bounty proof (`Ident chip B-...`) and fetch proof (`Sealed object F-...`) did not contain any of the shared mission/evidence keywords and could pass the Sell guard. Extended ContainerReadabilityAuthority's existing risk classification for these generated proof prefixes, including quality-prefixed variants. Trade and transfer previews consume that same classification; ordinary identification equipment remains eligible for sale.
