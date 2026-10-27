@@ -1,0 +1,10 @@
+turn	actor	target	weapon	outcome	chance	roll	damage	ammo	region	armor
+1	MATCH-0-0	MATCH-0-0	USE Street Stimm heal=0 requested=0 duration=6	SUPPORT	0	0	0	0		0
+1	MATCH-1-0	MATCH-0-0	Light Rifle	HIT	42	32	14	1	R Hand	0
+2	MATCH-0-0	MATCH-1-0	Light Rifle	MISS	42	81	0	1		0
+2	MATCH-1-0	MATCH-0-0	Light Rifle	MISS	42	68	0	1		0
+3	MATCH-0-0	MATCH-1-0	Light Rifle	HIT	42	19	15	1	Torso	0
+3	MATCH-1-0	MATCH-0-0	Light Rifle	MISS	30	92	0	1		0
+4	MATCH-0-0	MATCH-1-0	Light Rifle	MISS	42	64	0	1		0
+4	MATCH-1-0	MATCH-0-0	Light Rifle	MISS	30	93	0	1		0
+5	MATCH-0-0	MATCH-1-0	Light Rifle	KILL	42	7	15	1	Torso	0

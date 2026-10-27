@@ -1,0 +1,6 @@
+C:\GITS\The Mechanist\TheMechanist\scripts\BUILD_MERMAID_CODE_MAP.py:13: SyntaxWarning: invalid escape sequence '\B'
+  py -3 scripts\BUILD_MERMAID_CODE_MAP.py --apply
+Java modules found: 925
+Unpositioned modules: 0
+Wrote C:\GITS\The Mechanist\TheMechanist\ROOT_docs\functionmap\Mermaid_Code_Map_Master.md
+Wrote generated ledgers under C:\GITS\The Mechanist\TheMechanist\ROOT_docs\functionmap\generated

@@ -1,0 +1,2 @@
+[14:59:20.391] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+MedicalTreatmentBoundarySmoke PASS checks=34 stabilization=true missing-limbs=true destroyed-parts=true no-cybernetic-healing=true overtime=true finite=true body-save=true npc=true draught-reserved=true

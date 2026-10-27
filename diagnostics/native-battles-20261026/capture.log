@@ -1,0 +1,5 @@
+[00:00:36.303] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+20v20-rifles-open / Arena A=5 B=0 / A wins / movement steps 123 / moving actors 27 / cover attacks 0 / native cues 306 / frames 66
+20v20-rifles-cover / Arena A=5 B=0 / A wins / movement steps 148 / moving actors 28 / cover attacks 90 / native cues 354 / frames 81
+20v20-mixed-cover / Arena A=20 B=0 / A wins / movement steps 330 / moving actors 40 / cover attacks 162 / native cues 263 / frames 57
+10v10-pursuit-cover / Arena A=0 B=3 / B wins / movement steps 220 / moving actors 20 / cover attacks 156 / native cues 293 / frames 117

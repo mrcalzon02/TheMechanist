@@ -1,0 +1,17 @@
+turn	actor	target	weapon	outcome	chance	roll	damage	ammo	region	armor
+1	MATCH-0-0	MATCH-1-0	Light Rifle	HIT	42	32	14	1	R Hand	0
+1	MATCH-1-0	MATCH-0-0	Light Rifle	MISS	34	81	0	1		0
+2	MATCH-0-0	MATCH-1-0	Light Rifle	MISS	42	68	0	1		0
+2	MATCH-1-0	MATCH-0-0	Light Rifle	HIT	34	19	13	1	Torso	0
+3	MATCH-0-0	MATCH-0-0	USE Medkit heal=10 requested=10 duration=0	SUPPORT	0	0	0	0		0
+3	MATCH-1-0	MATCH-0-0	Light Rifle	MISS	34	92	0	1		0
+4	MATCH-0-0	MATCH-1-0	Light Rifle	MISS	34	64	0	1		0
+4	MATCH-1-0	MATCH-0-0	Light Rifle	MISS	34	93	0	1		0
+5	MATCH-0-0	MATCH-1-0	Light Rifle	HIT	34	7	13	1	Torso	0
+5	MATCH-1-0	MATCH-0-0	Light Rifle	HIT	30	5	13	1	Torso	0
+6	MATCH-0-0	MATCH-1-0	Light Rifle	MISS	30	59	0	1		0
+6	MATCH-1-0	MATCH-0-0	Light Rifle	MISS	30	46	0	1		0
+7	MATCH-0-0	MATCH-1-0	Light Rifle	MISS	30	32	0	1		0
+7	MATCH-1-0	MATCH-0-0	Light Rifle	HIT	30	29	13	1	L Lower Leg	0
+8	MATCH-0-0	MATCH-1-0	Light Rifle	MISS	30	80	0	1		0
+8	MATCH-1-0	MATCH-0-0	Light Rifle	KILL	30	21	1	1	Torso	0

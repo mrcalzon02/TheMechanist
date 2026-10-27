@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-26",
+  "runtime": "Java 17",
+  "scope": "Limb prosthetics and surgery; not the entire Milestone 08 roadmap",
+  "checks": [
+    {
+      "log": "CyberneticLimbExecutionSmoke.log",
+      "exitCode": 0,
+      "test": "CyberneticLimbExecutionSmoke"
+    },
+    {
+      "log": "CyberneticBattleReplayProbe.log",
+      "exitCode": 0,
+      "test": "CyberneticBattleReplayProbe"
+    },
+    {
+      "log": "MedicalTreatmentBoundarySmoke.log",
+      "exitCode": 0,
+      "test": "MedicalTreatmentBoundarySmoke"
+    },
+    {
+      "log": "CombatSupportExecutionSmoke.log",
+      "exitCode": 0,
+      "test": "CombatSupportExecutionSmoke"
+    },
+    {
+      "log": "ActorCombatExecutionSmoke.log",
+      "exitCode": 0,
+      "test": "ActorCombatExecutionSmoke"
+    },
+    {
+      "log": "DeveloperFacilitySmoke.log",
+      "exitCode": 0,
+      "test": "DeveloperFacilitySmoke"
+    },
+    {
+      "log": "NpcContinuityDeterminismSmoke.log",
+      "exitCode": 0,
+      "test": "NpcContinuityDeterminismSmoke"
+    },
+    {
+      "log": "Milestone02MedicalTreatmentReadabilitySmoke.log",
+      "exitCode": 0,
+      "test": "Milestone02MedicalTreatmentReadabilitySmoke"
+    },
+    {
+      "log": "Milestone02BodyConditionReadabilitySmoke.log",
+      "exitCode": 0,
+      "test": "Milestone02BodyConditionReadabilitySmoke"
+    },
+    {
+      "log": "Milestone06StructuralScaleCombatSmoke.log",
+      "exitCode": 0,
+      "test": "Milestone06StructuralScaleCombatSmoke"
+    },
+    {
+      "log": "Milestone04MedicalSupplyProvenanceSmoke.log",
+      "exitCode": 0,
+      "test": "Milestone04MedicalSupplyProvenanceSmoke"
+    }
+  ],
+  "packages": [
+    {
+      "name": "TheMechanist-all.jar",
+      "sha256": "5d2ec96aa661cd74890a8cdfd0de553f0fd49f8d26ad8bfe27ab0af32d71a076",
+      "baseClassMajor": 61,
+      "bytes": 557792374
+    },
+    {
+      "name": "TheMechanistServer-all.jar",
+      "sha256": "8e80e6b9c7f5495131c6268c2795da8c68f9df304823481151c95d1c86acd8a5",
+      "baseClassMajor": 61,
+      "bytes": 557792381
+    }
+  ],
+  "battles": 24,
+  "resolved": 24,
+  "candidatePool": {
+    "chance": 25,
+    "fitted": 499,
+    "candidates": 2000
+  },
+  "limits": [
+    "One seed per battle configuration; functional regression evidence, not a balance conclusion.",
+    "Replays are omniscient diagrams of recorded state, not native game renderer captures.",
+    "Paper-doll selection has a separately recorded pre-existing failure.",
+    "Organic transplantation, neural/sensory implants, autonomous specialist surgery and full faction/social implant policy remain future work.",
+    "No full Gate 3, installer certification or installed-distribution replacement claimed."
+  ],
+  "sourceSha256": {
+    "CyberneticBattleReplayProbe.java": "afe5976c4bc64e23e3e1bb9f6c980c38545996e4f74341d14e416a404042a458",
+    "CyberneticCommand.java": "da6af2c7a798b1575a32f9e16fa2726d93cfe95ab15052d85adfd08304295f08",
+    "CyberneticControlSurface.java": "edb56c3daf5327c2200524996159c77860133fc03d5a64affb7f0c564373773e",
+    "CyberneticLimbAuthority.java": "2a60e6c30843717c0d162348fef3f4674533ece91205f983306665d9e223540a",
+    "CyberneticLimbExecutionSmoke.java": "142f67792c6f11bb3de80ff6e21375d2e3007f0b1f92ae42083d01cbdcb4e9cb"
+  }
+}

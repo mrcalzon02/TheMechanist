@@ -1,0 +1,2 @@
+Exception in thread "main" java.lang.AssertionError: paper-doll body region selection contract returned no region
+	at mechanist.Milestone02CharacterEquipmentMedicalSmoke.main(Milestone02CharacterEquipmentMedicalSmoke.java:62)

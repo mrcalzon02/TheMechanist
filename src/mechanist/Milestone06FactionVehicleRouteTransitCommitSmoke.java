@@ -69,7 +69,6 @@ final class Milestone06FactionVehicleRouteTransitCommitSmoke {
             int suspicionBefore = game.suspicion;
             List<String> inventoryBefore = List.copyOf(game.inventory);
 
-            String destinationKey = Integer.toString(destination.locationKey());
             FactionStrategicPlan plan = new FactionStrategicPlan();
             plan.id = "STRAT-ROUTE-RESOLVED-COMMIT";
             plan.faction = Faction.MECHANICUS;

@@ -37,6 +37,7 @@ final class FirstPersonRenderViewport {
     private final java.util.HashMap<Long, BufferedImage> firstPersonWallTextureCache = new java.util.HashMap<>();
     private BufferedImage frame;
     private int[] pixels = new int[0];
+    private double[] wallDepth = new double[0];
     private long lastFrameMillis = System.currentTimeMillis();
     private long lastContinuousMotionNanos = System.nanoTime();
     private int lastPlayerX = Integer.MIN_VALUE, lastPlayerY = Integer.MIN_VALUE;
@@ -256,6 +257,7 @@ final class FirstPersonRenderViewport {
 
     private void ensureContinuousPlayerSynced(GamePanel panel) {
         if (panel == null || panel.world == null) return;
+        if(!continuousMovementInitialized && Math.abs(camera.yawRadians())<1e-9 && Math.abs(camera.pitchRadians())<1e-9) camera.addYawPitch(Math.atan2(panel.facingDy,panel.facingDx)-camera.yawRadians(),0);
         LogicalTile current = continuousPlayer.currentLogicalTile();
         boolean tileMismatch = current.x() != panel.playerX || current.y() != panel.playerY;
         if (!continuousMovementInitialized || tileMismatch) {
@@ -294,12 +296,15 @@ final class FirstPersonRenderViewport {
         double yaw = camera.yawRadians();
         double scale = 1.0 / Math.tan(fov / 2.0);
         double aspect = (double) w / Math.max(1.0, h);
+        if (wallDepth.length != w) wallDepth = new double[w];
+        java.util.Arrays.fill(wallDepth, Double.POSITIVE_INFINITY);
         for (int sx = 0; sx < w; sx++) {
             double cameraX = (2.0 * sx / Math.max(1.0, w - 1.0) - 1.0) * aspect / scale;
             double rayAngle = yaw + Math.atan(cameraX);
             RaycastHit hit = raycaster.cast(world, camera.x(), camera.z(), rayAngle, 32.0, false);
             if (!hit.hit()) continue;
             double dist = Math.max(0.05, hit.distance() * Math.cos(rayAngle - yaw));
+            wallDepth[sx] = dist;
             int wallH = Math.min(h * 3, (int) Math.round(h / dist));
             int y0 = Math.max(0, horizon - wallH / 2);
             int y1 = Math.min(h - 1, horizon + wallH / 2);
@@ -462,25 +467,10 @@ final class FirstPersonRenderViewport {
     }
 
     private void renderSpritesAndEffects(Graphics2D g, GamePanel panel, int w, int h, long now, double dt) {
-        spriteScratch.clear();
-        World world = panel.world;
-        if (world != null) {
-            for (NpcEntity n : world.npcs) {
-                if (n == null || n.hp <= 0 || !panel.isVisible(n.x, n.y)) continue;
-                BufferedImage img = panel.images == null ? null : panel.images.getNpcPortraitFor(n);
-                spriteScratch.add(new RenderableSprite(n.x + 0.5, 0.55, n.y + 0.5, n.symbol, n.name == null ? "entity" : n.name, 0xFFE2C46B, true, img));
-            }
-            for (MapObjectState o : world.mapObjects) {
-                if (o == null || !panel.isVisible(o.x, o.y)) continue;
-                if (o.glyph == '*' && world.inBounds(o.x, o.y) && !world.walkable(o.x, o.y)) continue;
-                char glyph = o.glyph == 0 ? 'o' : o.glyph;
-                BufferedImage img = ObjectSemanticAssetAuthority.imageForMapObject(o);
-                spriteScratch.add(new RenderableSprite(o.x + 0.5, 0.38, o.y + 0.5, glyph, o.label == null ? "object" : o.label, 0xFF8FD0A6, false, img));
-            }
-        }
+        FirstPersonBillboardAuthority.collect(panel, spriteScratch, true);
         spriteScratch.sort(Comparator.comparingDouble(s -> -dist2(s.x(), s.z())));
-        billboardRenderer.renderSprites(g, camera, spriteScratch, Math.toRadians(panel.options.doomModeFovDegrees), w, h, DoomFogSettings.fromOptions(panel.options), fog);
-        projectileRenderer.render(g, camera, Math.toRadians(panel.options.doomModeFovDegrees), w, h, now);
+        billboardRenderer.renderSprites(g, camera, spriteScratch, Math.toRadians(panel.options.doomModeFovDegrees), w, h, DoomFogSettings.fromOptions(panel.options), fog, wallDepth);
+        ActorCombatFeedbackAuthority.renderDoom(g,panel,camera,w,h,wallDepth);
         particles.render(g, camera, Math.toRadians(panel.options.doomModeFovDegrees), w, h, now);
     }
 
@@ -538,7 +528,9 @@ final class FirstPersonRenderViewport {
     }
 
     private DoomRayTarget acquireTarget(GamePanel panel) {
-        RaycastHit hit = raycaster.cast(panel.world, camera, Math.toRadians(panel.options.doomModeFovDegrees), DoomRayTarget.MAX_RANGE, true);
+        panel.ensureSensoryModelCurrent("doom examination");
+        FirstPersonBillboardAuthority.collect(panel, spriteScratch, false);
+        RaycastHit hit = FirstPersonBillboardAuthority.target(panel, camera, spriteScratch, raycaster, DoomRayTarget.MAX_RANGE);
         return DoomRayTarget.from(hit);
     }
 
@@ -940,62 +932,62 @@ final class ViewportRaycaster {
 
 final class BillboardSpriteRenderer {
     void renderSprites(Graphics2D g, FirstPersonCamera camera, List<RenderableSprite> sprites, double fov, int w, int h, DoomFogSettings fogSettings, DoomDepthFog fog) {
+        renderSprites(g,camera,sprites,fov,w,h,fogSettings,fog,null);
+    }
+
+    void renderSprites(Graphics2D g, FirstPersonCamera camera, List<RenderableSprite> sprites, double fov, int w, int h, DoomFogSettings fogSettings, DoomDepthFog fog, double[] wallDepth) {
         if (sprites == null || sprites.isEmpty()) return;
-        double scale = 1.0 / Math.tan(fov / 2.0);
-        Font font = new Font("Monospaced", Font.BOLD, 13);
-        g.setFont(font);
-        for (RenderableSprite s : sprites) {
-            ScreenPoint p = project(camera, s.x(), s.y(), s.z(), fov, w, h);
-            if (!p.visible()) continue;
-            int size = Math.max(10, Math.min(72, (int)Math.round((h / Math.max(0.2, p.depth())) * 0.30 * scale)));
-            int alpha = Math.max(45, Math.min(230, (int)(230.0 / Math.max(1.0, p.depth() * 0.45))));
-            int foggedColor;
-            if (fog == null) foggedColor = s.color();
-            else if (fogSettings != null && fogSettings.mode() == DoomFogMode.RADIAL_DISTANCE) {
-                double dx = s.x() - camera.x();
-                double dz = s.z() - camera.z();
-                foggedColor = fog.applyFogArgbDistanceSquared(s.color(), fogSettings, (float)(dx * dx + dz * dz));
-            } else {
-                foggedColor = fog.applyFogArgb(s.color(), fogSettings, (float)p.depth());
-            }
-            Color c = new Color((foggedColor >> 16) & 255, (foggedColor >> 8) & 255, foggedColor & 255, alpha);
-            g.setColor(new Color(0, 0, 0, Math.min(180, alpha)));
-            g.fillOval(p.x() - size / 2, p.y() + size / 3, size, size / 5);
-            BufferedImage img = s.image();
-            if (img != null) {
-                Composite oldComposite = g.getComposite();
-                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha / 255f));
-                int drawH = Math.max(size, (int)Math.round(size * (s.entity() ? 1.35 : 1.0)));
-                int drawW = Math.max(size, (int)Math.round(drawH * (img.getWidth() / (double)Math.max(1, img.getHeight()))));
-                g.drawImage(img, p.x() - drawW / 2, p.y() - drawH, drawW, drawH, null);
-                g.setComposite(oldComposite);
-            } else {
-                g.setColor(c);
-                g.fillRoundRect(p.x() - size / 2, p.y() - size, size, size, 8, 8);
-                g.setColor(new Color(255, 245, 190, alpha));
-                String label = String.valueOf(s.glyph());
-                FontMetrics fm = g.getFontMetrics();
-                g.drawString(label, p.x() - fm.stringWidth(label) / 2, p.y() - size / 2 + fm.getAscent() / 2);
-            }
+        double focal = h*.5/Math.tan(fov*.5);
+        for (RenderableSprite sprite : sprites) {
+            ScreenPoint foot = FirstPersonBillboardAuthority.project(camera,sprite.x(),sprite.y(),sprite.z(),fov,w,h);
+            ScreenPoint top = FirstPersonBillboardAuthority.project(camera,sprite.x(),sprite.y()+FirstPersonBillboardAuthority.height(sprite),sprite.z(),fov,w,h);
+            if (foot.depth() <= .05 || top.depth() <= .05) continue;
+            int height = Math.max(2,Math.min(h*4,Math.abs(foot.y()-top.y())));
+            int width = Math.max(2,Math.min(w*4,(int)Math.round(FirstPersonBillboardAuthority.width(sprite)*focal/Math.max(.05,(foot.depth()+top.depth())*.5))));
+            int left = (foot.x()+top.x())/2-width/2;
+            int upper = Math.min(foot.y(),top.y());
+            if (left>=w || left+width<0 || upper>=h || upper+height<0) continue;
+            double dx = sprite.x()-camera.x(), dz = sprite.z()-camera.z();
+            double depth = dx*Math.cos(camera.yawRadians())+dz*Math.sin(camera.yawRadians());
+            int color = fog == null ? sprite.color() : fog.applyFogArgb(sprite.color(),fogSettings,(float)depth);
+            Shape originalClip = g.getClip();
+            try {
+                if (wallDepth == null || wallDepth.length != w) {
+                    drawSprite(g,sprite,left,upper,width,height,color);
+                } else {
+                    int start = Math.max(0,left), end = Math.min(w,left+width);
+                    while (start < end) {
+                        while (start < end && depth >= wallDepth[start]) start++;
+                        int first = start;
+                        while (start < end && depth < wallDepth[start]) start++;
+                        if (first == start) continue;
+                        g.setClip(originalClip);
+                        g.clipRect(first,0,start-first,h);
+                        drawSprite(g,sprite,left,upper,width,height,color);
+                    }
+                }
+            } finally { g.setClip(originalClip); }
         }
     }
 
-    private ScreenPoint project(FirstPersonCamera camera, double wx, double wy, double wz, double fov, int w, int h) {
-        double dx = wx - camera.x(), dy = wy - camera.y(), dz = wz - camera.z();
-        double sin = Math.sin(-camera.yawRadians()), cos = Math.cos(-camera.yawRadians());
-        double rx = dx * cos - dz * sin;
-        double rz = dx * sin + dz * cos;
-        double ps = Math.sin(-camera.pitchRadians()), pc = Math.cos(-camera.pitchRadians());
-        double ry = dy * pc - rz * ps;
-        double rz2 = dy * ps + rz * pc;
-        if (rz2 <= 0.05) return new ScreenPoint(0,0,false,rz2);
-        double scale = 1.0 / Math.tan(fov / 2.0);
-        int sx = (int)Math.round(w * 0.5 + (rx / rz2) * w * 0.5 * scale);
-        int sy = (int)Math.round(h * 0.5 - (ry / rz2) * h * 0.5 * scale);
-        return new ScreenPoint(sx, sy, sx > -80 && sx < w + 80 && sy > -120 && sy < h + 80, rz2);
+    private void drawSprite(Graphics2D g, RenderableSprite sprite, int x, int y, int w, int h, int color) {
+        g.setColor(new Color(0,0,0,100));
+        g.fillOval(x,y+h-Math.max(1,h/18),w,Math.max(2,h/9));
+        if (sprite.image() != null) {
+            g.drawImage(sprite.image(),x,y,w,h,null);
+        } else {
+            Color tint = new Color(color,true);
+            int rim = Math.max(1,Math.min(w/5,h/5));
+            g.setColor(tint.darker());
+            g.fillRect(x,y,w,h);
+            g.setColor(tint);
+            g.fillRect(x+rim,y+rim,Math.max(1,w-rim*2),Math.max(1,h-rim*2));
+            g.setColor(tint.brighter());
+            g.drawLine(x,y,x+w-1,y);
+            g.drawLine(x,y,x,y+h-1);
+        }
     }
 }
-
 enum DoomFogMode {
     LINEAR_DEPTH, RADIAL_DISTANCE;
 

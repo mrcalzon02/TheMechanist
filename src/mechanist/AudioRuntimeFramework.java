@@ -238,6 +238,38 @@ class SoundManager {
         new Thread(() -> {
             Clip clip = null;
             try {
+                PositionedPcm rendered=renderPositioned(key,mix,enclosed);
+                if(rendered==null)return;
+                byte[] samples=rendered.samples();float sampleRate=rendered.sampleRate();
+                AudioFormat stereo = new AudioFormat(
+                        sampleRate, 16, 2, true, false);
+                clip = AudioSystem.getClip();
+                clip.open(stereo, samples, 0, samples.length);
+                Clip playing = clip;
+                clip.addLineListener(ev -> {
+                    if (ev.getType() == LineEvent.Type.STOP) playing.close();
+                });
+                clip.start();
+            } catch (Throwable error) {
+                if (clip != null) {
+                    try { clip.close(); } catch (Throwable ignored) { }
+                }
+                DebugLog.warn("AUDIO_PLAY", "Positional sound unavailable: "
+                        + key + " (" + error.getClass().getSimpleName()
+                        + ": " + error.getMessage() + ")");
+            }
+        }, "spatial-sound-" + key).start();
+    }
+
+    void playWeaponEffect(String weapon, boolean ranged, GameOptions opt) {
+        play(weaponEffectKey(weapon, ranged), opt);
+    }
+    void playReloadEffect(GameOptions opt) { play("weapon_reload", opt); }
+    record PositionedPcm(byte[] samples,float sampleRate) { }
+    /** The exact live cue decoder/mixer, also usable by headless recording without a sound device. */
+    PositionedPcm renderPositioned(String key,SpatialAudioAuthority.Mix mix,boolean enclosed) throws Exception {
+        if(!mix.audible())return null;
+        File file=sounds.get(key);
                 byte[] samples;
                 float sampleRate;
                 if (file != null) {
@@ -266,33 +298,12 @@ class SoundManager {
                     samples = SpatialAudioAuthority.stereoPcm16(
                             generatedCueBytes(key, 100, mono), 1, mix);
                 }
-                if (samples.length == 0) return;
+                if (samples.length == 0) return null;
                 if (enclosed) samples = SpatialAudioAuthority.roomReflectionsPcm16(
                         samples, Math.round(sampleRate), 1.0);
-                AudioFormat stereo = new AudioFormat(
-                        sampleRate, 16, 2, true, false);
-                clip = AudioSystem.getClip();
-                clip.open(stereo, samples, 0, samples.length);
-                Clip playing = clip;
-                clip.addLineListener(ev -> {
-                    if (ev.getType() == LineEvent.Type.STOP) playing.close();
-                });
-                clip.start();
-            } catch (Throwable error) {
-                if (clip != null) {
-                    try { clip.close(); } catch (Throwable ignored) { }
-                }
-                DebugLog.warn("AUDIO_PLAY", "Positional sound unavailable: "
-                        + key + " (" + error.getClass().getSimpleName()
-                        + ": " + error.getMessage() + ")");
-            }
-        }, "spatial-sound-" + key).start();
+        return new PositionedPcm(samples,sampleRate);
     }
 
-    void playWeaponEffect(String weapon, boolean ranged, GameOptions opt) {
-        play(weaponEffectKey(weapon, ranged), opt);
-    }
-    void playReloadEffect(GameOptions opt) { play("weapon_reload", opt); }
     void playGeneratedCue(String key, GameOptions opt, int volumePercent) {
         if (startupCueSuppressed(key)) return;
         if (opt == null || !opt.soundEnabled || volumePercent <= 0) return;

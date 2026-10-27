@@ -85,6 +85,10 @@ final class WorldPositionalSoundAuthority {
         play(game, key, game.playerX, game.playerY, 1.0);
     }
 
+    static void playAttackAt(GamePanel game,String weapon,boolean ranged,int x,int y) {
+        if(!active(game))return;play(game,new SoundManager().weaponEffectKey(weapon,ranged),x,y,1.0);
+    }
+
     static String noiseCue(ZoneNoiseSourceRecord noise) {
         if (noise == null || !noise.active) return null;
         String kind = (noise.kind == null ? "" : noise.kind).toLowerCase(Locale.ROOT);
@@ -160,6 +164,7 @@ final class WorldPositionalSoundAuthority {
                 game.playerX, game.playerY, x, y);
         boolean echo = sameRoom(game.world,
                 game.playerX, game.playerY, x, y);
+        ActorCombatFeedbackAuthority.recordAudio(game,cue,x,y,occluded,echo,strength);
         game.sounds.playPositioned(cue, x, y,
                 game.playerX, game.playerY, game.facingDx, game.facingDy,
                 occluded, echo, strength, game.options);

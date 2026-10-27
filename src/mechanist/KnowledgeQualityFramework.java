@@ -171,6 +171,7 @@ class KnowledgeDef {
         add(m, "Basic Bandaging", "medical/first-aid", 2, "bandage rolls, medicae stalls, field notes", "basic bandaging, bleeding control, and early medical recipes");
         add(m, "Pain and Shock Management", "medical/first-aid", 3, "field medics, bad recoveries, clinic slates", "pain and shock management in injuries and treatment text");
         add(m, "Field Treatment", "medical/first-aid", 4, "military aid manuals, medicae workers, battlefield triage", "field treatment and portable care practice");
+        add(m, "Cybernetic Surgery", "medical/craft", 10, "augmetic specialists, sterile clinics, surgery manuals", "direct-interface prosthetic installation, replacement and surgical removal; Mechanics and Intellect 6");
         add(m, "Clinic Procedure", "medical/first-aid", 6, "clinic slates, medicae queues, sterile-room discipline", "clinic procedure and treatment-room permissions");
         add(m, "Emergency Medical Authority", "medical/first-aid", 9, "emergency clinics, medicae sanction, triage command", "emergency medical authority and stronger recovery services");
         add(m, "Filth Recognition", "medical/sanitation", 1, "trash rooms, corpse odor, sewer life", "filth recognition and contamination warnings");

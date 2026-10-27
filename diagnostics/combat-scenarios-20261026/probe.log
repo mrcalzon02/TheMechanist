@@ -1,0 +1,14 @@
+[00:44:02.368] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+CombatScenarioBaselineProbe progress runs=40 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=80 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=120 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=160 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=200 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=240 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=280 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=320 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=360 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=400 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=440 damaging=0 resolved=0
+CombatScenarioBaselineProbe progress runs=480 damaging=0 resolved=0
+CombatScenarioBaselineProbe COMPLETE runs=480 damaging=0 resolved=0 movement=14630 actorTicks=1036800

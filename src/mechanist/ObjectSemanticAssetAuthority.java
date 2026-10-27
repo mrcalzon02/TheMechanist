@@ -158,6 +158,16 @@ final class ObjectSemanticAssetAuthority {
 
     static Optional<String> runtimeAssetIdForMapObject(MapObjectState object) {
         if (object == null) return Optional.empty();
+        String developerAlias = switch (object.type == null ? "" : object.type) {
+            case "developer-portal" -> "elevator";
+            case "developer-control" -> "security_cogitator";
+            case "developer-catalog-container" -> "storage_crate";
+            default -> null;
+        };
+        if (developerAlias != null) {
+            Optional<String> asset = TileSemanticAssetAuthority.assetIdForAlias(developerAlias);
+            if (asset.isPresent()) return asset;
+        }
 
         // RoadTransitFixtureAuthority/AssetIntegrationDisciplineAuthority already
         // define durable type identities for vehicles and parking. Bind those
@@ -437,12 +447,29 @@ final class ObjectSemanticAssetAuthority {
     private static Optional<String> runtimeExactForNames(Set<AssetType> allowedTypes, String... names) {
         if (names == null) return Optional.empty();
         for (String name : names) {
+            Optional<String> cover=runtimeCoverAssetId(name);
+            if(cover.isPresent()) return cover;
             String hint = EXACT.get(normalize(name));
             if (hint == null || hint.isBlank() || "ITEM-G01".equals(hint)) continue;
             Optional<String> resolved = SemanticAssetHintResolver.resolve(hint, normalize(name), allowedTypes);
             if (resolved.isPresent()) return resolved;
         }
         return Optional.empty();
+    }
+
+    /** Reviewed authored cover cells; legacy BLD IDs may point at unrelated broadcast hardware. */
+    private static Optional<String> runtimeCoverAssetId(String name) {
+        String stem=switch(normalize(name)) {
+            case "sandbag line", "sandbag barricade" -> "defenses_r01c01_";
+            case "scrap barricade", "barricade" -> "pdf_defenses_r03c01_";
+            default -> null;
+        };
+        if(stem==null)return Optional.empty();
+        for(AssetMetadata asset:AssetManager.registry().byType(AssetType.FIXTURE)) {
+            String path=asset.pathOrUri().replace('\\','/').toLowerCase(Locale.ROOT);
+            for(int resolution:new int[]{32,64,128,256}) if(path.endsWith("/defenses/"+stem+resolution+"px.png")) return Optional.of(asset.id());
+        }
+        return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
     }
 
     static String semanticSummaryForName(String name) {

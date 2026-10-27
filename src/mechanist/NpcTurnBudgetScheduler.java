@@ -58,6 +58,7 @@ class NpcTurnBudgetScheduler {
         // Emergency lane: very close hostile/danger actors should not be delayed by the fairness cursor.
         for (NpcEntity npc : npcs) {
             if (npc == null) { out.nullEntries++; continue; }
+            if ((npc.developerStationary || npc.hp<=0)) continue;
             int dist = manhattan(npc.x, npc.y, playerX, playerY);
             if (dist <= CRITICAL_RADIUS && looksDangerous(npc) && out.selected.size() < budget) {
                 out.selected.add(npc);
@@ -68,7 +69,7 @@ class NpcTurnBudgetScheduler {
 
         // Priority local lane: nearby actors receive service before distant room-noise actors.
         for (NpcEntity npc : npcs) {
-            if (npc == null || already.contains(npc)) continue;
+            if (npc == null || (npc.developerStationary || npc.hp<=0) || already.contains(npc)) continue;
             int dist = manhattan(npc.x, npc.y, playerX, playerY);
             if (dist <= CRITICAL_RADIUS && out.selected.size() < budget) {
                 out.selected.add(npc);
@@ -84,7 +85,7 @@ class NpcTurnBudgetScheduler {
             int idx = (rotatingCursor + inspected) % n;
             NpcEntity npc = npcs.get(idx);
             inspected++;
-            if (npc == null || already.contains(npc)) continue;
+            if (npc == null || (npc.developerStationary || npc.hp<=0) || already.contains(npc)) continue;
             int dist = manhattan(npc.x, npc.y, playerX, playerY);
             if (dist > ACTIVE_RADIUS) continue;
             out.selected.add(npc);
@@ -99,7 +100,7 @@ class NpcTurnBudgetScheduler {
         // already inspected by the rotating lane. Double-counting here inflates
         // the debt passed to abstract distant-zone simulation.
         for (NpcEntity npc : npcs) {
-            if (npc == null || already.contains(npc)) continue;
+            if (npc == null || (npc.developerStationary || npc.hp<=0) || already.contains(npc)) continue;
             int dist = manhattan(npc.x, npc.y, playerX, playerY);
             if (dist > ACTIVE_RADIUS) out.farDeferred++; else out.budgetLimited++;
         }
@@ -117,7 +118,7 @@ class NpcTurnBudgetScheduler {
     }
 
     static boolean looksDangerous(NpcEntity npc) {
-        if (npc == null || npc.isUntargetableAnchor()) return false;
+        if (npc == null || npc.hp<=0 || npc.isUntargetableAnchor()) return false;
         if ("Hostile".equalsIgnoreCase(npc.state)) return true;
         Faction f = npc.faction;
         return f == Faction.MUTANT || f == Faction.CULTIST || f == Faction.HERETIC || f == Faction.ROGUE_MACHINE || f == Faction.BANDIT || (f != null && f.name().startsWith("GANGER"));

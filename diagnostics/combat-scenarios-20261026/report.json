@@ -1,0 +1,31 @@
+{
+  "runs": 480,
+  "turnsPerRun": 120,
+  "damagingRuns": 0,
+  "resolvedRuns": 0,
+  "movementSteps": 14630,
+  "actorTicks": 1036800,
+  "combatSkillsAvailable": false,
+  "status": "COMBAT_CAPABILITY_GAP: no damaging or resolved actor encounters",
+  "playerConfirmation": {
+    "confirmations": 10,
+    "turnsAdvanced": 10,
+    "targetHpLost": 0,
+    "loadedBefore": 8,
+    "loadedAfter": 8
+  },
+  "repeatability": "480/480 outcomes and update/movement counts identical on second run; elapsed time excluded",
+  "missingActorTicks": 0,
+  "execution": "New probe compiled directly with javac --release 17, ahead of prior packaged client on classpath. No combat runtime changes or new package build.",
+  "limitations": [
+    "120-turn windows are baseline observations, not win-rate estimates.",
+    "A/B are experiment labels; runtime has no team-targeting input. Factions are Imperial Guard and Cultist, with equal HP30 and quality tier2.",
+    "NPC combat skill does not exist; intellect2/12 is recorded separately, not called combat skill.",
+    "Scenario walls and placement are test setup. Movement, needs, target confirmation and rendering use actual game paths.",
+    "Replay is an omniscient visualization of sampled positions; game screenshots preserve actual visibility.",
+    "Headless observation, no manual desktop fight or balance certification."
+  ],
+  "sourceSha256": "f54cad28940b2f2d3ec8a78808dbdd472ea194dfbb74652ba51fb46da947ba10",
+  "probeClassMajor": 61,
+  "clientJarSha256": "dff3a9da811d5ec90b2b1c5922119946fb3046826bac0efc9092ff54e2493fb5"
+}

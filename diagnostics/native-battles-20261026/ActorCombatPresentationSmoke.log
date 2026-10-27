@@ -1,0 +1,2 @@
+[00:00:36.303] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+ActorCombatPresentationSmoke PASS checks=101 npc-sound=true real-shot-feedback=true lane-routing=true pursuit=true cover-seed=true cover-traversal=true

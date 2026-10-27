@@ -3455,7 +3455,7 @@ class World {
         return false;
     }
 
-    NpcEntity npcAt(int x,int y){ for(NpcEntity n:npcs) if(n.x==x && n.y==y) return n; return null; }
+    NpcEntity npcAt(int x,int y){ for(NpcEntity n:npcs) if(n.hp>0 && n.x==x && n.y==y) return n; return null; }
     NpcEntity npcById(String id){ if(id == null || id.isBlank()) return null; for(NpcEntity n:npcs) if(n != null && id.equals(n.id)) return n; return null; }
     boolean hasFlickeringLights(){ for(ZoneLightSourceRecord l: lightSources) if(l != null && l.flicker && l.on && l.powered) return true; return false; }
 

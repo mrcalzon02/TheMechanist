@@ -272,6 +272,8 @@ final class FactionReinforcementAuthority {
                 npc.role = request.formerRole;
             }
             npc.state = "Reinforcement Intake";
+            // The receive action spends the next turn; do not grant its arrivals a second action in that same turn.
+            npc.lastTickTurn = turn + 1;
             PersonnelProvenanceApi.assignReplacementProvenance(npc, world, request, actorRandom);
             NpcLifeMemoryAuthority.remember(npc, turn, "intake",
                     "Assigned to " + request.faction.label + " as " + npc.role

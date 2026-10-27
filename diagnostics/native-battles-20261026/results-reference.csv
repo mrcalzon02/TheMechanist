@@ -1,0 +1,5 @@
+case,size,preset,cover,seed,turns,winner,movementSteps,movingActors,coverAffectedAttacks,audioCues,audioFallbacks
+20v20-rifles-open,20,rifles,0,71000,21,Arena A=5 B=0 / A wins,123,27,0,306,0
+20v20-rifles-cover,20,rifles,16,71000,26,Arena A=5 B=0 / A wins,148,28,32,354,0
+20v20-mixed-cover,20,mixed,16,71000,18,Arena A=20 B=0 / A wins,330,40,78,263,0
+10v10-pursuit-cover,10,pursuit,12,71000,38,Arena A=0 B=3 / B wins,220,20,85,293,0

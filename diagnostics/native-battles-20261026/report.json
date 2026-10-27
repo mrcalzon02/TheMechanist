@@ -1,0 +1,238 @@
+{
+  "startDate": "2026-10-26",
+  "capture": "Native GamePanel.paint / normal tile renderer and Doom software renderer; no substitute diagrams",
+  "audio": "The same packaged cue decoder, positional stereo mixer and room reflections used live. Offline summation has an anti-clipping peak limiter; no desktop or microphone audio was captured.",
+  "settings": {
+    "seed": 71000,
+    "coverSeed": 81000,
+    "cyberneticChance": 25,
+    "observerVisionStat": 42,
+    "visionRangeCap": 14,
+    "doomFov": 110,
+    "worldZoomPercent": 100,
+    "videoFps": 6,
+    "turnDurationMs": 500
+  },
+  "results": [
+    {
+      "case": "20v20-rifles-open",
+      "size": "20",
+      "preset": "rifles",
+      "cover": "0",
+      "seed": "71000",
+      "turns": "21",
+      "winner": "Arena A=5 B=0 / A wins",
+      "movementSteps": "123",
+      "movingActors": "27",
+      "coverAffectedAttacks": "0",
+      "audioCues": "306",
+      "audioFallbacks": "0"
+    },
+    {
+      "case": "20v20-rifles-cover",
+      "size": "20",
+      "preset": "rifles",
+      "cover": "16",
+      "seed": "71000",
+      "turns": "26",
+      "winner": "Arena A=5 B=0 / A wins",
+      "movementSteps": "148",
+      "movingActors": "28",
+      "coverAffectedAttacks": "90",
+      "audioCues": "354",
+      "audioFallbacks": "0"
+    },
+    {
+      "case": "20v20-mixed-cover",
+      "size": "20",
+      "preset": "mixed",
+      "cover": "16",
+      "seed": "71000",
+      "turns": "18",
+      "winner": "Arena A=20 B=0 / A wins",
+      "movementSteps": "330",
+      "movingActors": "40",
+      "coverAffectedAttacks": "162",
+      "audioCues": "263",
+      "audioFallbacks": "0"
+    },
+    {
+      "case": "10v10-pursuit-cover",
+      "size": "10",
+      "preset": "pursuit",
+      "cover": "12",
+      "seed": "71000",
+      "turns": "38",
+      "winner": "Arena A=0 B=3 / B wins",
+      "movementSteps": "220",
+      "movingActors": "20",
+      "coverAffectedAttacks": "156",
+      "audioCues": "293",
+      "audioFallbacks": "0"
+    }
+  ],
+  "videos": [
+    {
+      "id": "20v20-rifles-open-2d",
+      "file": "20v20-rifles-open-2d.mp4",
+      "poster": "20v20-rifles-open-2d-poster.png",
+      "case": "20v20-rifles-open",
+      "view": "2d"
+    },
+    {
+      "id": "20v20-rifles-open-doom",
+      "file": "20v20-rifles-open-doom.mp4",
+      "poster": "20v20-rifles-open-doom-poster.png",
+      "case": "20v20-rifles-open",
+      "view": "doom"
+    },
+    {
+      "id": "20v20-rifles-cover-2d",
+      "file": "20v20-rifles-cover-2d.mp4",
+      "poster": "20v20-rifles-cover-2d-poster.png",
+      "case": "20v20-rifles-cover",
+      "view": "2d"
+    },
+    {
+      "id": "20v20-rifles-cover-doom",
+      "file": "20v20-rifles-cover-doom.mp4",
+      "poster": "20v20-rifles-cover-doom-poster.png",
+      "case": "20v20-rifles-cover",
+      "view": "doom"
+    },
+    {
+      "id": "20v20-mixed-cover-2d",
+      "file": "20v20-mixed-cover-2d.mp4",
+      "poster": "20v20-mixed-cover-2d-poster.png",
+      "case": "20v20-mixed-cover",
+      "view": "2d"
+    },
+    {
+      "id": "20v20-mixed-cover-doom",
+      "file": "20v20-mixed-cover-doom.mp4",
+      "poster": "20v20-mixed-cover-doom-poster.png",
+      "case": "20v20-mixed-cover",
+      "view": "doom"
+    },
+    {
+      "id": "10v10-pursuit-cover-2d",
+      "file": "10v10-pursuit-cover-2d.mp4",
+      "poster": "10v10-pursuit-cover-2d-poster.png",
+      "case": "10v10-pursuit-cover",
+      "view": "2d"
+    },
+    {
+      "id": "10v10-pursuit-cover-doom",
+      "file": "10v10-pursuit-cover-doom.mp4",
+      "poster": "10v10-pursuit-cover-doom-poster.png",
+      "case": "10v10-pursuit-cover",
+      "view": "doom"
+    }
+  ],
+  "checks": [
+    {
+      "log": "ActorCombatPresentationSmoke.log",
+      "exitCode": 0,
+      "test": "ActorCombatPresentationSmoke"
+    },
+    {
+      "log": "CyberneticLimbExecutionSmoke.log",
+      "exitCode": 0,
+      "test": "CyberneticLimbExecutionSmoke"
+    },
+    {
+      "log": "MedicalTreatmentBoundarySmoke.log",
+      "exitCode": 0,
+      "test": "MedicalTreatmentBoundarySmoke"
+    },
+    {
+      "log": "CombatSupportExecutionSmoke.log",
+      "exitCode": 0,
+      "test": "CombatSupportExecutionSmoke"
+    },
+    {
+      "log": "ActorCombatExecutionSmoke.log",
+      "exitCode": 0,
+      "test": "ActorCombatExecutionSmoke"
+    },
+    {
+      "log": "DeveloperFacilitySmoke.log",
+      "exitCode": 0,
+      "test": "DeveloperFacilitySmoke"
+    },
+    {
+      "log": "NpcContinuityDeterminismSmoke.log",
+      "exitCode": 0,
+      "test": "NpcContinuityDeterminismSmoke"
+    },
+    {
+      "log": "Milestone02DoomHudFacingSmoke.log",
+      "exitCode": 0,
+      "test": "Milestone02DoomHudFacingSmoke"
+    },
+    {
+      "log": "LightingFalloffStreetLightSmoke.log",
+      "exitCode": 0,
+      "test": "LightingFalloffStreetLightSmoke"
+    },
+    {
+      "log": "Milestone02RenderAssetBindingDoctrineSmoke.log",
+      "exitCode": 0,
+      "test": "Milestone02RenderAssetBindingDoctrineSmoke"
+    },
+    {
+      "log": "Milestone02MedicalTreatmentReadabilitySmoke.log",
+      "exitCode": 0,
+      "test": "Milestone02MedicalTreatmentReadabilitySmoke"
+    },
+    {
+      "log": "Milestone02BodyConditionReadabilitySmoke.log",
+      "exitCode": 0,
+      "test": "Milestone02BodyConditionReadabilitySmoke"
+    },
+    {
+      "log": "Milestone06StructuralScaleCombatSmoke.log",
+      "exitCode": 0,
+      "test": "Milestone06StructuralScaleCombatSmoke"
+    },
+    {
+      "log": "Milestone04MedicalSupplyProvenanceSmoke.log",
+      "exitCode": 0,
+      "test": "Milestone04MedicalSupplyProvenanceSmoke"
+    }
+  ],
+  "packages": [
+    {
+      "name": "TheMechanist-all.jar",
+      "sha256": "e00f571b22f72b666c453d664aed78c953447943a017e92ff9ad4cd263cf8a24",
+      "bytes": 557827439,
+      "maximumBaseClassVersion": 61
+    },
+    {
+      "name": "TheMechanistServer-all.jar",
+      "sha256": "c19820a7994604ece0349529d81dcd067c949276e13fd6d17b76651266072e52",
+      "bytes": 557827446,
+      "maximumBaseClassVersion": 61
+    }
+  ],
+  "repeatability": "All four outcomes and all recorded actor positions match the prior capture. Cover diagnostics now retain the exact modifier at attack time rather than inferring it from end-of-turn positions.",
+  "limits": [
+    "Four fixed-seed scenarios are regression examples, not balance certification.",
+    "Turn-based actors move on authoritative turns; the recording does not invent between-turn movement.",
+    "Normal directional vision, lighting and wall culling apply; offscreen actors remain culled.",
+    "Cover uses existing adjacent-object accuracy penalties; directional cover tactics and deliberate cover-seeking AI are not implemented.",
+    "No complete Gate 3, installer/native deployment certification or installed-client replacement claimed.",
+    "The known pre-existing paper-doll selection failure remains in the historical combat-execution logs."
+  ],
+  "sourceSha256": {
+    "ActorCombatAuthority.java": "2152d5208d28dca253056f0ceed284aa319678a5342f31ae63f52e22f89416c6",
+    "ActorCombatFeedbackAuthority.java": "0a4595d762fc476ddb5c302ba640a9d6698f4389d27fab92bd1200dc5df1a2bc",
+    "ActorCombatPresentationSmoke.java": "192be47234b954a23c9f55e8d5615cd68e9a778c6599a06bb3411138f646b9db",
+    "NativeBattleCaptureProbe.java": "c09e5fd9d87149315dfdd5612c35858bdcf2840bd9e45425e8ac2568d631d937",
+    "DeveloperCoverLayoutAuthority.java": "d0a0bb52c595a1f06f7017001fb93eb3b20602be72d8c3280e2a503cd03c132c",
+    "ObjectSemanticAssetAuthority.java": "a8a8eec3f4e189163d52d677426bdfedcd5a20b8d81d328527b1b8934306dfae",
+    "WorldPositionalSoundAuthority.java": "2dc4262a1f6a3cfaaec46e391300c1f463091fa8e904e065a729139a3f5c4be2",
+    "AudioRuntimeFramework.java": "4bc88c5dcb8d45476d568fcba1d8fb5dd79270f820631c53b7d770f91fd18cd4",
+    "FirstPerson3DFramework.java": "7f3d302ff210bb813b143fac2e049d363e3d0d00917f6878a36cacc3f037b4e7"
+  }
+}

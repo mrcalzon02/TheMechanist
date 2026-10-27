@@ -1,0 +1,213 @@
+Access is denied.
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< local.mechanist:the-mechanist >--------------------
+[INFO] Building The Mechanist 0.9.10iz-alpha.5
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ the-mechanist ---
+[INFO] Copying 6096 resources from PACKAGE_client\assets to target\classes\assets
+[INFO] skip non existing resourceDirectory C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\modding
+[INFO] Copying 5 resources from PACKAGE_client to target\classes
+[INFO] Copying 1 resource from PACKAGE_installer to target\classes\installer
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ the-mechanist ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 949 source files with javac [debug release 17] to target\classes
+[INFO] /C:/GITS/The Mechanist/TheMechanist/src/mechanist/NettyResourceSafetyBridge.java: C:\GITS\The Mechanist\TheMechanist\src\mechanist\NettyResourceSafetyBridge.java uses unchecked or unsafe operations.
+[INFO] /C:/GITS/The Mechanist/TheMechanist/src/mechanist/NettyResourceSafetyBridge.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ the-mechanist ---
+[INFO] skip non existing resourceDirectory C:\GITS\The Mechanist\TheMechanist\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ the-mechanist ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ the-mechanist ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ the-mechanist ---
+[INFO] Building jar: C:\GITS\The Mechanist\TheMechanist\target\the-mechanist-0.9.10iz-alpha.5.jar
+[INFO] 
+[INFO] --- shade:3.6.0:shade (shade-desktop-fat-jar) @ the-mechanist ---
+[INFO] Including io.netty:netty-all:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-buffer:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-dns:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-haproxy:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-http:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-http2:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-memcache:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-mqtt:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-redis:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-smtp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-socks:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-stomp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-xml:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-common:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-handler:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-unix-common:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-handler-proxy:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-handler-ssl-ocsp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-rxtx:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-sctp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-udt:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-classes-epoll:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-classes-kqueue:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns-classes-macos:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-epoll:jar:linux-x86_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-epoll:jar:linux-aarch_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-epoll:jar:linux-riscv64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-kqueue:jar:osx-x86_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-kqueue:jar:osx-aarch_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns-native-macos:jar:osx-x86_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns-native-macos:jar:osx-aarch_64:4.1.111.Final in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-glfw:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-opengl:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-stb:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-glfw:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-opengl:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-stb:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-glfw:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-opengl:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-stb:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including com.github.WilliamAHartman:Jamepad:jar:1.4.0 in the shaded jar.
+[WARNING] lwjgl-glfw-3.4.1-natives-linux.jar, lwjgl-glfw-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/glfw/libglfw.so.sha1
+[WARNING] netty-all-4.1.111.Final.jar, netty-buffer-4.1.111.Final.jar, netty-codec-4.1.111.Final.jar, netty-codec-dns-4.1.111.Final.jar, netty-codec-haproxy-4.1.111.Final.jar, netty-codec-http-4.1.111.Final.jar, netty-codec-http2-4.1.111.Final.jar, netty-codec-memcache-4.1.111.Final.jar, netty-codec-mqtt-4.1.111.Final.jar, netty-codec-redis-4.1.111.Final.jar, netty-codec-smtp-4.1.111.Final.jar, netty-codec-socks-4.1.111.Final.jar, netty-codec-stomp-4.1.111.Final.jar, netty-codec-xml-4.1.111.Final.jar, netty-common-4.1.111.Final.jar, netty-handler-4.1.111.Final.jar, netty-handler-proxy-4.1.111.Final.jar, netty-handler-ssl-ocsp-4.1.111.Final.jar, netty-resolver-4.1.111.Final.jar, netty-resolver-dns-4.1.111.Final.jar, netty-resolver-dns-classes-macos-4.1.111.Final.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar, netty-transport-4.1.111.Final.jar, netty-transport-classes-epoll-4.1.111.Final.jar, netty-transport-classes-kqueue-4.1.111.Final.jar, netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar, netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar, netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar, netty-transport-native-unix-common-4.1.111.Final.jar, netty-transport-rxtx-4.1.111.Final.jar, netty-transport-sctp-4.1.111.Final.jar, netty-transport-udt-4.1.111.Final.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/io.netty.versions.properties
+[WARNING] lwjgl-3.4.1-natives-windows.jar, lwjgl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/lwjgl.dll.sha1
+[WARNING] netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar define 2 overlapping resources: 
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-kqueue/pom.properties
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-kqueue/pom.xml
+[WARNING] lwjgl-opengl-3.4.1-natives-windows.jar, lwjgl-opengl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/opengl/lwjgl_opengl.dll.sha1
+[WARNING] lwjgl-stb-3.4.1-natives-windows.jar, lwjgl-stb-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/stb/lwjgl_stb.dll.sha1
+[WARNING] netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar define 2 overlapping resources: 
+[WARNING]   - META-INF/maven/io.netty/netty-resolver-dns-native-macos/pom.properties
+[WARNING]   - META-INF/maven/io.netty/netty-resolver-dns-native-macos/pom.xml
+[WARNING] lwjgl-glfw-3.4.1-natives-windows.jar, lwjgl-glfw-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/glfw/glfw.dll.sha1
+[WARNING] lwjgl-opengl-3.4.1-natives-linux.jar, lwjgl-opengl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/opengl/liblwjgl_opengl.so.sha1
+[WARNING] lwjgl-stb-3.4.1-natives-linux.jar, lwjgl-stb-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/stb/liblwjgl_stb.so.sha1
+[WARNING] netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar, netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar, netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar define 2 overlapping resources: 
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-epoll/pom.properties
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-epoll/pom.xml
+[WARNING] lwjgl-3.4.1-natives-linux.jar, lwjgl-3.4.1-natives-windows.jar, lwjgl-3.4.1.jar, lwjgl-glfw-3.4.1-natives-linux.jar, lwjgl-glfw-3.4.1-natives-windows.jar, lwjgl-glfw-3.4.1.jar, lwjgl-opengl-3.4.1-natives-linux.jar, lwjgl-opengl-3.4.1-natives-windows.jar, lwjgl-opengl-3.4.1.jar, lwjgl-stb-3.4.1-natives-linux.jar, lwjgl-stb-3.4.1-natives-windows.jar, lwjgl-stb-3.4.1.jar define 1 overlapping classes: 
+[WARNING]   - META-INF.versions.11.module-info
+[WARNING] lwjgl-3.4.1-natives-linux.jar, lwjgl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/liblwjgl.so.sha1
+[WARNING] Jamepad-1.4.0.jar, lwjgl-3.4.1-natives-linux.jar, lwjgl-3.4.1-natives-windows.jar, lwjgl-3.4.1.jar, lwjgl-glfw-3.4.1-natives-linux.jar, lwjgl-glfw-3.4.1-natives-windows.jar, lwjgl-glfw-3.4.1.jar, lwjgl-opengl-3.4.1-natives-linux.jar, lwjgl-opengl-3.4.1-natives-windows.jar, lwjgl-opengl-3.4.1.jar, lwjgl-stb-3.4.1-natives-linux.jar, lwjgl-stb-3.4.1-natives-windows.jar, lwjgl-stb-3.4.1.jar, netty-all-4.1.111.Final.jar, netty-buffer-4.1.111.Final.jar, netty-codec-4.1.111.Final.jar, netty-codec-dns-4.1.111.Final.jar, netty-codec-haproxy-4.1.111.Final.jar, netty-codec-http-4.1.111.Final.jar, netty-codec-http2-4.1.111.Final.jar, netty-codec-memcache-4.1.111.Final.jar, netty-codec-mqtt-4.1.111.Final.jar, netty-codec-redis-4.1.111.Final.jar, netty-codec-smtp-4.1.111.Final.jar, netty-codec-socks-4.1.111.Final.jar, netty-codec-stomp-4.1.111.Final.jar, netty-codec-xml-4.1.111.Final.jar, netty-common-4.1.111.Final.jar, netty-handler-4.1.111.Final.jar, netty-handler-proxy-4.1.111.Final.jar, netty-handler-ssl-ocsp-4.1.111.Final.jar, netty-resolver-4.1.111.Final.jar, netty-resolver-dns-4.1.111.Final.jar, netty-resolver-dns-classes-macos-4.1.111.Final.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar, netty-transport-4.1.111.Final.jar, netty-transport-classes-epoll-4.1.111.Final.jar, netty-transport-classes-kqueue-4.1.111.Final.jar, netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar, netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar, netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar, netty-transport-native-unix-common-4.1.111.Final.jar, netty-transport-rxtx-4.1.111.Final.jar, netty-transport-sctp-4.1.111.Final.jar, netty-transport-udt-4.1.111.Final.jar, the-mechanist-0.9.10iz-alpha.5.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/MANIFEST.MF
+[WARNING] maven-shade-plugin has detected that some files are
+[WARNING] present in two or more JARs. When this happens, only one
+[WARNING] single version of the file is copied to the uber jar.
+[WARNING] Usually this is not harmful and you can skip these warnings,
+[WARNING] otherwise try to manually exclude artifacts based on
+[WARNING] mvn dependency:tree -Ddetail=true and the above output.
+[WARNING] See https://maven.apache.org/plugins/maven-shade-plugin/
+[INFO] 
+[INFO] --- shade:3.6.0:shade (shade-headless-server-fat-jar) @ the-mechanist ---
+[INFO] Including io.netty:netty-all:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-buffer:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-dns:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-haproxy:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-http:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-http2:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-memcache:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-mqtt:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-redis:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-smtp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-socks:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-stomp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-codec-xml:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-common:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-handler:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-unix-common:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-handler-proxy:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-handler-ssl-ocsp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-rxtx:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-sctp:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-udt:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-classes-epoll:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-classes-kqueue:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns-classes-macos:jar:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-epoll:jar:linux-x86_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-epoll:jar:linux-aarch_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-epoll:jar:linux-riscv64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-kqueue:jar:osx-x86_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-transport-native-kqueue:jar:osx-aarch_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns-native-macos:jar:osx-x86_64:4.1.111.Final in the shaded jar.
+[INFO] Including io.netty:netty-resolver-dns-native-macos:jar:osx-aarch_64:4.1.111.Final in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-glfw:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-opengl:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-stb:jar:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-glfw:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-opengl:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-stb:jar:natives-linux:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-glfw:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-opengl:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including org.lwjgl:lwjgl-stb:jar:natives-windows:3.4.1 in the shaded jar.
+[INFO] Including com.github.WilliamAHartman:Jamepad:jar:1.4.0 in the shaded jar.
+[WARNING] lwjgl-glfw-3.4.1-natives-linux.jar, lwjgl-glfw-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/glfw/libglfw.so.sha1
+[WARNING] netty-all-4.1.111.Final.jar, netty-buffer-4.1.111.Final.jar, netty-codec-4.1.111.Final.jar, netty-codec-dns-4.1.111.Final.jar, netty-codec-haproxy-4.1.111.Final.jar, netty-codec-http-4.1.111.Final.jar, netty-codec-http2-4.1.111.Final.jar, netty-codec-memcache-4.1.111.Final.jar, netty-codec-mqtt-4.1.111.Final.jar, netty-codec-redis-4.1.111.Final.jar, netty-codec-smtp-4.1.111.Final.jar, netty-codec-socks-4.1.111.Final.jar, netty-codec-stomp-4.1.111.Final.jar, netty-codec-xml-4.1.111.Final.jar, netty-common-4.1.111.Final.jar, netty-handler-4.1.111.Final.jar, netty-handler-proxy-4.1.111.Final.jar, netty-handler-ssl-ocsp-4.1.111.Final.jar, netty-resolver-4.1.111.Final.jar, netty-resolver-dns-4.1.111.Final.jar, netty-resolver-dns-classes-macos-4.1.111.Final.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar, netty-transport-4.1.111.Final.jar, netty-transport-classes-epoll-4.1.111.Final.jar, netty-transport-classes-kqueue-4.1.111.Final.jar, netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar, netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar, netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar, netty-transport-native-unix-common-4.1.111.Final.jar, netty-transport-rxtx-4.1.111.Final.jar, netty-transport-sctp-4.1.111.Final.jar, netty-transport-udt-4.1.111.Final.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/io.netty.versions.properties
+[WARNING] lwjgl-3.4.1-natives-windows.jar, lwjgl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/lwjgl.dll.sha1
+[WARNING] netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar define 2 overlapping resources: 
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-kqueue/pom.properties
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-kqueue/pom.xml
+[WARNING] lwjgl-opengl-3.4.1-natives-windows.jar, lwjgl-opengl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/opengl/lwjgl_opengl.dll.sha1
+[WARNING] lwjgl-stb-3.4.1-natives-windows.jar, lwjgl-stb-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/stb/lwjgl_stb.dll.sha1
+[WARNING] netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar define 2 overlapping resources: 
+[WARNING]   - META-INF/maven/io.netty/netty-resolver-dns-native-macos/pom.properties
+[WARNING]   - META-INF/maven/io.netty/netty-resolver-dns-native-macos/pom.xml
+[WARNING] lwjgl-glfw-3.4.1-natives-windows.jar, lwjgl-glfw-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/windows/x64/org/lwjgl/glfw/glfw.dll.sha1
+[WARNING] lwjgl-opengl-3.4.1-natives-linux.jar, lwjgl-opengl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/opengl/liblwjgl_opengl.so.sha1
+[WARNING] lwjgl-stb-3.4.1-natives-linux.jar, lwjgl-stb-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/stb/liblwjgl_stb.so.sha1
+[WARNING] netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar, netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar, netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar define 2 overlapping resources: 
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-epoll/pom.properties
+[WARNING]   - META-INF/maven/io.netty/netty-transport-native-epoll/pom.xml
+[WARNING] lwjgl-3.4.1-natives-linux.jar, lwjgl-3.4.1-natives-windows.jar, lwjgl-3.4.1.jar, lwjgl-glfw-3.4.1-natives-linux.jar, lwjgl-glfw-3.4.1-natives-windows.jar, lwjgl-glfw-3.4.1.jar, lwjgl-opengl-3.4.1-natives-linux.jar, lwjgl-opengl-3.4.1-natives-windows.jar, lwjgl-opengl-3.4.1.jar, lwjgl-stb-3.4.1-natives-linux.jar, lwjgl-stb-3.4.1-natives-windows.jar, lwjgl-stb-3.4.1.jar define 1 overlapping classes: 
+[WARNING]   - META-INF.versions.11.module-info
+[WARNING] lwjgl-3.4.1-natives-linux.jar, lwjgl-3.4.1.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/linux/x64/org/lwjgl/liblwjgl.so.sha1
+[WARNING] Jamepad-1.4.0.jar, lwjgl-3.4.1-natives-linux.jar, lwjgl-3.4.1-natives-windows.jar, lwjgl-3.4.1.jar, lwjgl-glfw-3.4.1-natives-linux.jar, lwjgl-glfw-3.4.1-natives-windows.jar, lwjgl-glfw-3.4.1.jar, lwjgl-opengl-3.4.1-natives-linux.jar, lwjgl-opengl-3.4.1-natives-windows.jar, lwjgl-opengl-3.4.1.jar, lwjgl-stb-3.4.1-natives-linux.jar, lwjgl-stb-3.4.1-natives-windows.jar, lwjgl-stb-3.4.1.jar, netty-all-4.1.111.Final.jar, netty-buffer-4.1.111.Final.jar, netty-codec-4.1.111.Final.jar, netty-codec-dns-4.1.111.Final.jar, netty-codec-haproxy-4.1.111.Final.jar, netty-codec-http-4.1.111.Final.jar, netty-codec-http2-4.1.111.Final.jar, netty-codec-memcache-4.1.111.Final.jar, netty-codec-mqtt-4.1.111.Final.jar, netty-codec-redis-4.1.111.Final.jar, netty-codec-smtp-4.1.111.Final.jar, netty-codec-socks-4.1.111.Final.jar, netty-codec-stomp-4.1.111.Final.jar, netty-codec-xml-4.1.111.Final.jar, netty-common-4.1.111.Final.jar, netty-handler-4.1.111.Final.jar, netty-handler-proxy-4.1.111.Final.jar, netty-handler-ssl-ocsp-4.1.111.Final.jar, netty-resolver-4.1.111.Final.jar, netty-resolver-dns-4.1.111.Final.jar, netty-resolver-dns-classes-macos-4.1.111.Final.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar, netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar, netty-transport-4.1.111.Final.jar, netty-transport-classes-epoll-4.1.111.Final.jar, netty-transport-classes-kqueue-4.1.111.Final.jar, netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar, netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar, netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar, netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar, netty-transport-native-unix-common-4.1.111.Final.jar, netty-transport-rxtx-4.1.111.Final.jar, netty-transport-sctp-4.1.111.Final.jar, netty-transport-udt-4.1.111.Final.jar, the-mechanist-0.9.10iz-alpha.5.jar define 1 overlapping resource: 
+[WARNING]   - META-INF/MANIFEST.MF
+[WARNING] maven-shade-plugin has detected that some files are
+[WARNING] present in two or more JARs. When this happens, only one
+[WARNING] single version of the file is copied to the uber jar.
+[WARNING] Usually this is not harmful and you can skip these warnings,
+[WARNING] otherwise try to manually exclude artifacts based on
+[WARNING] mvn dependency:tree -Ddetail=true and the above output.
+[WARNING] See https://maven.apache.org/plugins/maven-shade-plugin/
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:03 min
+[INFO] Finished at: 2026-10-26T23:59:57-08:00
+[INFO] ------------------------------------------------------------------------

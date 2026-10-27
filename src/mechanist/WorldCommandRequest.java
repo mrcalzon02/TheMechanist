@@ -7,7 +7,7 @@ package mechanist;
  * overload remains only as an adapter seam while the authoritative runtime is
  * being split out.
  */
-sealed interface WorldCommandRequest permits MovePlayerCommand, WaitCommand, ConfirmInteractionCommand, ConfirmCombatCommand, UseInventoryCommand, UnequipEquipmentCommand, ChangeZoneCommand, AdminAddMoneyCommand, AdminAdvanceTurnCommand, AdminTeleportCommand, AdminSpawnItemCommand {
+sealed interface WorldCommandRequest permits MovePlayerCommand, WaitCommand, ConfirmInteractionCommand, ConfirmCombatCommand, UseInventoryCommand, UnequipEquipmentCommand, ChangeZoneCommand, AdminAddMoneyCommand, AdminAdvanceTurnCommand, AdminTeleportCommand, AdminSpawnItemCommand, DeveloperFacilityCommand, CyberneticCommand {
     String playerId();
     String reason();
     void apply(WorldCommandRuntimeContext runtime);
@@ -65,7 +65,7 @@ record ConfirmCombatCommand(String playerId, int x, int y) implements WorldComma
         if (!runtime.inBounds(x, y)) return "invalid combat target";
         return "";
     }
-    public void apply(WorldCommandRuntimeContext runtime) { if (runtime != null) runtime.confirmCombatTarget(); }
+    public void apply(WorldCommandRuntimeContext runtime) { if (runtime != null) runtime.confirmCombatTarget(x,y); }
 }
 
 record UseInventoryCommand(String playerId, String itemName) implements WorldCommandRequest {

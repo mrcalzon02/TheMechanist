@@ -75,6 +75,12 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02ZoneTileLayerMappingSmoke.main(args);
         Milestone02ZoneTilePushSqueezeMovementSmoke.main(args);
         Milestone02DoomHudFacingSmoke.main(args);
+        DeveloperFacilitySmoke.main(args);
+        ActorCombatExecutionSmoke.main(args);
+        CombatSupportExecutionSmoke.main(args);
+        MedicalTreatmentBoundarySmoke.main(args);
+        CyberneticLimbExecutionSmoke.main(args);
+        ActorCombatPresentationSmoke.main(args);
         Milestone02TradeReadabilitySmoke.main(args);
         Milestone02InventoryReadabilitySmoke.main(args);
         Milestone02ContainerReadabilitySmoke.main(args);

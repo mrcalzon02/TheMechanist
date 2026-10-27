@@ -1,0 +1,2 @@
+[14:32:44.148] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+CombatSupportExecutionSmoke PASS checks=9125 profiles=49 armor=97 qualities=8 player=true npc=true health=true actual-attacks=true finite=true expiry=true persistence=true

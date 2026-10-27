@@ -8,8 +8,8 @@ final class Milestone02MedicalTreatmentReadabilitySmoke {
                 List.of("Stub pistol", "Bandage roll", "Medkit", "Street Stimm"), 3, 2, 4, 3);
         requireContains(supplied, "Bandage roll", "carried bandage");
         requireContains(supplied, "Medkit", "carried medkit");
-        requireContains(supplied, "reduces wound burden, bleeding, infection risk, and pain", "runtime treatment effect");
-        requireContains(supplied, "specialized effects are not active", "drug-system boundary");
+        requireContains(supplied, "each treatment has its own recovery profile", "runtime treatment effect");
+        requireContains(supplied, "timed effects and a fatigue crash", "drug-system boundary");
 
         List<String> missing = MedicalTreatmentReadabilityAuthority.summary(List.of("Street Stimm"), 1, 1, 0, 0);
         requireContains(missing, "no usable wound-care item", "missing treatment guidance");

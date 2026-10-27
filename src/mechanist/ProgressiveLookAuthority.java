@@ -112,13 +112,17 @@ final class ProgressiveLookAuthority {
         if (depth >= 2) lines.add(NpcHappinessAuthority.statusLine(game.world, npc, game.worldTurn));
         if (depth >= 2) lines.add(intentLine(game, npc));
         if (depth >= 3) lines.add("Visible condition: " + EntityIdentityReadabilityAuthority.conditionBand(npc.hp) + " / age " + npc.ageLine() + ".");
+        if(depth>=3) for(var limb:npc.combatSupport.limbs.values()) lines.add(CyberneticLimbAuthority.summary(npc.combatSupport,limb.root));
+        if(depth>=3 && !npc.combatSupport.lostParts.isEmpty()) lines.add("Missing regions: "+String.join(", ",npc.combatSupport.lostParts)+". Replacement or regeneration required.");
         if (depth >= 4) {
             ArrayList<String> loadout = new ArrayList<>();
             if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) loadout.add(npc.equippedMeleeWeapon);
             if (npc.equippedRangedWeapon != null && !npc.equippedRangedWeapon.isBlank()) loadout.add(npc.equippedRangedWeapon + (npc.loadedShots > 0 ? " (" + npc.loadedShots + " loaded)" : ""));
             if (npc.equippedArmor != null && !npc.equippedArmor.isBlank()) loadout.add(npc.equippedArmor);
+            loadout.addAll(npc.combatSupport.worn.values());
             if (npc.equippedExplosive != null && !npc.equippedExplosive.isBlank()) loadout.add(npc.equippedExplosive);
             lines.add("Visible kit: " + (loadout.isEmpty() ? "no obvious weapons or armor" : String.join(", ", loadout)) + ".");
+            lines.add(ActorConsumableAuthority.summary(npc.combatSupport,game.worldTurn));
             if (npc.provenance != null) lines.add("Personnel background: " + npc.provenance.populationPool + "; " + npc.provenance.upbringing + ".");
         }
     }

@@ -1,0 +1,149 @@
+{
+  "date": "2026-10-26",
+  "summary": {
+    "runs": 560,
+    "turnsPerRun": 120,
+    "damagingRuns": 480,
+    "resolvedRuns": 480,
+    "movementSteps": 8548,
+    "actorTicks": 298716,
+    "combatSkillsAvailable": true,
+    "status": "ACTOR_COMBAT_EXECUTION"
+  },
+  "aggregate": [
+    {
+      "scenario": "equal-knives-contact",
+      "runs": 80,
+      "winsA": 49,
+      "winsB": 31,
+      "timeouts": 0,
+      "medianTurns": 17.0,
+      "damage": 38906,
+      "shots": 0,
+      "wallRefusals": 0
+    },
+    {
+      "scenario": "equal-rifles-range",
+      "runs": 80,
+      "winsA": 42,
+      "winsB": 38,
+      "timeouts": 0,
+      "medianTurns": 13.0,
+      "damage": 38316,
+      "shots": 10365,
+      "wallRefusals": 0
+    },
+    {
+      "scenario": "rifles-vs-knives",
+      "runs": 80,
+      "winsA": 80,
+      "winsB": 0,
+      "timeouts": 0,
+      "medianTurns": 13.0,
+      "damage": 23721,
+      "shots": 2699,
+      "wallRefusals": 0
+    },
+    {
+      "scenario": "pistols-vs-heavy",
+      "runs": 80,
+      "winsA": 0,
+      "winsB": 80,
+      "timeouts": 0,
+      "medianTurns": 8.0,
+      "damage": 29862,
+      "shots": 5856,
+      "wallRefusals": 0
+    },
+    {
+      "scenario": "intellect-2-vs-12",
+      "runs": 80,
+      "winsA": 43,
+      "winsB": 37,
+      "timeouts": 0,
+      "medianTurns": 21.0,
+      "damage": 38574,
+      "shots": 5489,
+      "wallRefusals": 0
+    },
+    {
+      "scenario": "rifles-wall-separated",
+      "runs": 80,
+      "winsA": 0,
+      "winsB": 0,
+      "timeouts": 80,
+      "medianTurns": 120.0,
+      "damage": 0,
+      "shots": 0,
+      "wallRefusals": 172800
+    },
+    {
+      "scenario": "skill-2-vs-12",
+      "runs": 80,
+      "winsA": 0,
+      "winsB": 80,
+      "timeouts": 0,
+      "medianTurns": 10.0,
+      "damage": 26416,
+      "shots": 2344,
+      "wallRefusals": 0
+    }
+  ],
+  "regressions": {
+    "ActorCombatExecutionSmoke": "PASS",
+    "DeveloperFacilitySmoke": "PASS",
+    "NpcContinuityDeterminismSmoke": "PASS",
+    "Milestone04NpcHappinessFactionRecruitmentSmoke": "PASS",
+    "Milestone02MovementExecutionAuthoritySmoke": "PASS",
+    "Milestone02DoomHudFacingSmoke": "PASS",
+    "Milestone02TradeReadabilitySmoke": "PASS",
+    "Milestone02ContainerReadabilitySmoke": "PASS",
+    "Milestone06StructuralScaleCombatSmoke": "PASS",
+    "Milestone04FactionReinforcementLifecycleSmoke": "PASS",
+    "Milestone02BodyConditionReadabilitySmoke": "PASS",
+    "Milestone02CharacterEquipmentMedicalSmoke": "FAIL",
+    "Milestone02MedicalTreatmentReadabilitySmoke": "PASS"
+  },
+  "packages": [
+    {
+      "file": "target/TheMechanist-all.jar",
+      "sha256": "8a4ab6999ca0fcb5a25522bd47e8040360cf6b6852d85fe29780201522a29cd2",
+      "baseClasses": 6361,
+      "baseMaximumMajor": 61,
+      "versionDirectoryClasses": {
+        "55": 5,
+        "61": 1,
+        "69": 112
+      },
+      "zipIntegrity": "PASS"
+    },
+    {
+      "file": "target/TheMechanistServer-all.jar",
+      "sha256": "eba509b54ddc7ee89a2b0524349c25a68f727c5d50ca2b38b9a476a63525400c",
+      "baseClasses": 6361,
+      "baseMaximumMajor": 61,
+      "versionDirectoryClasses": {
+        "55": 5,
+        "61": 1,
+        "69": 112
+      },
+      "zipIntegrity": "PASS"
+    }
+  ],
+  "repeatability": "560/560 identical outcome, damage, ammo, movement and update counters on repeat; elapsed time excluded",
+  "changes": [
+    "Shared actor attack execution for NPCs and players; explicit NPC Firearms/Melee skills with optional trailing save fields.",
+    "Range, closed-wall/corner and intervening-actor refusals; passive defense cover; deterministic rolls on game RNG; HP damage/death and finite magazines/reserves.",
+    "NPC inspection/save parsing preserves depleted ammo. Case-insensitive catalog identity fixes Heavy stubber zero-capacity reload loop.",
+    "Player command coordinates are honored, inventory ammo is consumed on reload, player body receives NPC injury.",
+    "Developer teams, seeded match presets, watch/pause and step controls, protected merchants, bounded structured diagnostics.",
+    "Reinforcement intake uses its receive turn once, preventing an immediate second routine update."
+  ],
+  "limits": [
+    "Initial actor damage/hit tuning, not finished balance certification. Armor currently uses coarse name bands for NPC equipment.",
+    "Wall-separated opponents do not route around the obstacle in this matrix; 80 blocked cases time out. This remains an NPC navigation limitation.",
+    "Explosives, suppression, morale, full injury/death UI, complete loot integration and darkness modifiers are not certified by this pass.",
+    "The paper-doll body-region UI smoke fails identically with the prior diagnostic build. Full Gate3 was not run.",
+    "Headless packaged tests; installed PACKAGE_client distribution was not replaced."
+  ]
+}

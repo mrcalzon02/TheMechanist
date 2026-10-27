@@ -21,14 +21,15 @@ final class MedicalTreatmentReadabilityAuthority {
             lines.add("Treatment readiness: no usable wound-care item is carried; seek a bandage, splint, antiseptic, medkit, or clinic.");
         } else {
             lines.add("Treatment readiness: carried " + String.join(", ", usable) + ".");
-            lines.add("Use effect: one carried treatment reduces wound burden, bleeding, infection risk, and pain by the current field-treatment amounts.");
+            lines.add("Use effect: each treatment has its own recovery profile for wounds, bleeding, infection, pain and injured body parts; inspect the item before using it.");
         }
-        lines.add("Medicine boundary: named drugs and stimulants are cataloged, but their specialized effects are not active through the ordinary Use action yet.");
+        lines.add("Combat drugs and stims with a field-use profile provide timed effects and a fatigue crash. Doses from the same family do not stack.");
         return lines;
     }
 
     static boolean isRuntimeTreatment(String item) {
-        String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
-        return low.contains("medkit") || low.contains("bandage") || low.contains("splint") || low.contains("antiseptic");
+        var profile=ActorConsumableAuthority.profile(item);
+        ItemDef definition=ItemCatalog.get(item);
+        return profile!=null && definition!=null && definition.category.startsWith("medical") && (profile.heal()>0 || profile.wounds()>0 || profile.bleeding()>0 || profile.infection()>0 || profile.pain()>0);
     }
 }

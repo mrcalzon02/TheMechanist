@@ -171,6 +171,7 @@ final class CharacterEquipmentAndMedicalAuthority {
     static boolean canEquip(String itemName, EquipmentSlot slot) {
         if (itemName == null || itemName.isBlank() || slot == null) return false;
         ItemDef definition = ItemCatalog.get(itemName);
+        if(ActorArmorAuthority.wearable(itemName) && slot==ActorArmorAuthority.slot(itemName)) return true;
         String item = (itemName + " "
       + (definition == null ? "" : definition.category) + " "
       + (definition == null ? "" : definition.description)).toLowerCase(Locale.ROOT);
@@ -246,8 +247,8 @@ final class CharacterEquipmentAndMedicalAuthority {
         String part = resolvedPart == null || resolvedPart.isBlank() ? "No region selected" : resolvedPart;
         lines.add("Selected body region: " + part + ".");
         lines.add("Mutation, modification, and cybernetic layers are reserved independently.");
-        lines.add("No surgery, compatibility, rejection, power, or maintenance mechanics are active yet.");
-        lines.add("Future systems can bind directly through MedicalSlotKey.storageKey().");
+        lines.add("Limb prosthetics and cybernetics use the Cybernetic layer: surgery, compatible mounts, integrity, power and calibration.");
+        lines.add("Named layer records remain descriptive; functional hardware requires a fitted assembly.");
         lines.add("Cybernetic records reserve isolated, direct-interface hardware; no wireless control path is assumed.");
         int installedCount = 0;
         if (installed != null) for (String value : installed.values()) if (!safe(value).equals("Empty")) installedCount++;

@@ -116,6 +116,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     LegacyGamepadInputEngine gamepadInputEngine = new LegacyGamepadInputEngine();
     int optionsTab;
     int stimulantStrain;
+    final ActorConsumableAuthority.State combatSupport = new ActorConsumableAuthority.State();
     int nextItemInstanceSeq = 1;
     int activePortableLightExpiresTurn;
     int authorityFacilityInspectionCooldownUntilTurn;
@@ -678,6 +679,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         water = MAX_FOOD_WATER;
         fatigue = 0;
         wounds = 0;
+        combatSupport.restore("");
         bleeding = 0;
         infectionRisk = 0;
         pain = 0;
@@ -1600,6 +1602,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         drawWorldTiles(g, cols, rows, tile);
         visualLighting.render(this, g, lastWorldViewMinX, lastWorldViewMinY, cols, rows, lastWorldViewOriginX, lastWorldViewOriginY, tile, tile);
         drawWorldEntities(g, cols, rows, tile);
+        ActorCombatFeedbackAuthority.render2D(g,this,map,tile);
         drawWorldHud(g, w, h, map);
         if ((screen != Screen.GAME || panelMode != PanelMode.NONE) && !isWorldInlineInteractionPanel()) drawActivePanelOverlay(g, w, h);
     }
@@ -1785,7 +1788,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (world.npcs != null) {
             for (NpcEntity npc : world.npcs) {
-                if (npc == null || !worldPointInView(npc.x, npc.y, cols, rows)) continue;
+                if (npc == null || npc.hp<=0 || !worldPointInView(npc.x, npc.y, cols, rows)) continue;
                 if (!isVisible(npc.x, npc.y)) continue;
                 java.awt.Color outline = npc.faction == Faction.NONE ? new java.awt.Color(185, 170, 120) : new java.awt.Color(215, 126, 84);
                 drawWorldSprite(g, images.getNpcPortraitFor(npc), npc.x, npc.y, tile, outline, Character.toString(npc.symbol == 0 ? '@' : npc.symbol), npc.facingDx, npc.facingDy);
@@ -2586,6 +2589,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
         statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
         statLines.add("Wounds " + wounds + " / bleeding " + bleeding + " / pain " + pain);
+        statLines.add(ActorConsumableAuthority.summary(combatSupport,worldTurn));
         statLines.add("Carried load " + inventoryWeight() + "/" + carryCapacity() + ".");
         drawDetailBox(g, stats, "Stats", statLines, null);
 
@@ -2780,7 +2784,9 @@ class GamePanel extends LegacyPanelBridgeBase {
   layerLines.add("This interface is live, but installation, surgery, compatibility, rejection, power, maintenance, and mutation mechanics are intentionally not simulated yet.");
   layerLines.add("Future systems can call installCharacterMedicalRecord(...) without changing this screen.");
         }
-        drawDetailBox(g, layerDetail, "Selected Medical Slot", layerLines,
+        if(selectedLayer!=null && selectedLayer.key().layer()==CharacterEquipmentAndMedicalAuthority.MedicalLayer.CYBERNETIC) {
+            CyberneticControlSurface.paint(this,g,layerDetail,selectedLayer.key().bodyPartName());
+        } else drawDetailBox(g, layerDetail, "Selected Medical Slot", layerLines,
       selectedLayer == null || selectedLayer.empty() ? null : images.getItemIcon(selectedLayer.installedName()));
         addOverlayButton("Medical Info", detail.x + 10, detail.y + detail.height - 36,
       Math.max(120, detail.width - 20), 28,
@@ -3910,6 +3916,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void drawObjectInteractionOverlay(java.awt.Graphics2D g, Rectangle body) {
+        if (DeveloperFacilityControlSurface.paint(this,g,body)) return;
         MapObjectState obj = activeInteractionObject;
         BaseObject base = activeInteractionBaseObject;
         int gap = 14;
@@ -4255,6 +4262,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         PopulationMarketPressureAuthority.apply(t, world, f, worldTurn, turn);
         VerticalFloorTradeAuthority.apply(t, world, f, worldTurn, turn);
         SecuritySupplyProvenanceAuthority.apply(t, world, f, worldTurn, turn);
+        CyberneticLimbAuthority.offers(t,npc);
         MedicalSupplyProvenanceAuthority.apply(t, world, f, worldTurn, turn);
         NobleLuxuryProvenanceAuthority.apply(t, world, f, worldTurn, turn);
         AnimalAgricultureSupplyProvenanceAuthority.apply(t, world, f, worldTurn, turn);
@@ -4270,6 +4278,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             if (!sourceCategory.isBlank()) t.marketCategory = sourceCategory;
         }
         ConstructionBlueprintOwnershipAuthority.removeOwnedOffers(t, unlockedConstructionBlueprints);
+        DeveloperFacilityAuthority.configureTrade(this,npc,t);
         return t;
     }
 
@@ -4951,6 +4960,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     void advanceTurnBody(String line) {
         turn++;
         worldTurn++;
+        ActorConsumableAuthority.tick(this);
         if (line != null && !line.isBlank()) logEvent(line);
         int staffedElapsed = lastStaffedProductionBackgroundTurn > turn
                 ? 1 : Math.max(1, turn - lastStaffedProductionBackgroundTurn);
@@ -4972,6 +4982,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             return;
         }
         setFacingToward(lookX, lookY, "interaction facing");
+        if (DeveloperFacilityAuthority.tryInteract(this,lookX,lookY)) return;
         NpcEntity npc = world.npcAt(lookX, lookY);
         if (npc != null) {
             if (npc.isTrader()) openTradeForNpc(npc);
@@ -5011,22 +5022,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         updatePendingInteractionSummary();
     }
     void confirmCombatTargetBody() {
-        if (world == null) {
-            lastTargetingReport = "Combat unavailable: no world loaded.";
-            logEvent(lastTargetingReport);
-            return;
-        }
-        clampCombatCursorToWorld();
-        setFacingToward(combatX, combatY, "combat target");
-        LegacyTargetingSolution solution = targetingSolutionAt(combatX, combatY);
-        lastTargetingReport = solution.summary;
-        NpcEntity npc = world.npcAt(combatX, combatY);
-        if (npc == null) {
-            logEvent("No combat target at " + combatX + "," + combatY + ".");
-            return;
-        }
-        logEvent("Combat target confirmed: " + npc.name + " at " + combatX + "," + combatY + ".");
-        advanceTurn("takes aim at " + npc.name + ".");
+        if (world == null) { lastTargetingReport="Combat unavailable: no world loaded.";return; }
+        if(!world.inBounds(combatX,combatY)) {lastTargetingReport="Combat target outside world bounds.";return;}
+        setFacingToward(combatX,combatY,"combat target");
+        if(world.npcAt(combatX,combatY)!=null) ActorCombatAuthority.confirmPlayer(this);
+        else StructuralScaleCombatAuthority.confirm(this);
     }
     void useSelectedInventoryItemBody() {
         if (inventoryTargetColumnActive) {
@@ -5040,6 +5040,16 @@ class GamePanel extends LegacyPanelBridgeBase {
             return;
         }
         String low = item.toLowerCase(Locale.ROOT);
+        if(CyberneticLimbAuthority.part(item)!=null) {characterTab=CharacterEquipmentAndMedicalAuthority.CharacterTab.MEDICAL.ordinal();selectedCharacterMedicalLayer=CharacterEquipmentAndMedicalAuthority.MedicalLayer.CYBERNETIC.ordinal();logEvent("Open Character > Medical > Cybernetic; select the compatible left or right mount to fit "+item+".");return;}
+        if(ActorConsumableAuthority.supported(item)) {ActorConsumableAuthority.usePlayer(this,item);return;}
+        ItemDef selectedDefinition=ItemCatalog.get(item);
+        if(selectedDefinition!=null && (selectedDefinition.category.startsWith("medical") || selectedDefinition.category.startsWith("chem/"))) {
+            logEvent("No active field-use profile for "+item+"; the item was not consumed.");return;
+        }
+        if(ActorArmorAuthority.wearable(item)) {
+            selectedCharacterEquipmentSlot=ActorArmorAuthority.slot(item).ordinal();
+            equipSelectedInventoryToCharacterSlot();return;
+        }
         if (low.contains("ration") || low.contains("food") || low.contains("loaf") || low.contains("broth") || low.contains("meal")) {
             food = Math.min(MAX_FOOD_WATER, food + 28);
             inventory.remove(selectedInventoryIndex);
@@ -5054,17 +5064,6 @@ class GamePanel extends LegacyPanelBridgeBase {
             moveInventorySelection(0);
             logEvent("Drank " + item + ". Water " + water + "/" + MAX_FOOD_WATER + ".");
             advanceTurn("drinks " + item + ".");
-            return;
-        }
-        if (low.contains("medkit") || low.contains("bandage") || low.contains("splint") || low.contains("antiseptic")) {
-            wounds = Math.max(0, wounds - 1);
-            bleeding = Math.max(0, bleeding - 2);
-            infectionRisk = Math.max(0, infectionRisk - 2);
-            pain = Math.max(0, pain - 1);
-            inventory.remove(selectedInventoryIndex);
-            moveInventorySelection(0);
-            logEvent("Used " + item + ". Wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ".");
-            advanceTurn("uses " + item + ".");
             return;
         }
         PortableLightProfile portableProfile = PortableLightProfile.profile(item);
@@ -5777,10 +5776,15 @@ class GamePanel extends LegacyPanelBridgeBase {
             return;
         }
         int loaded = Math.max(0, loadedWeaponShots.getOrDefault(weapon, 0));
-        int next = Math.max(loaded, 6);
-        loadedWeaponShots.put(weapon, next);
-        logEvent("Reloaded " + weapon + " to " + next + " shot(s) in the compatibility bridge.");
-        advanceTurn("reloads " + weapon + ".");
+        NpcEntity magazineProfile=new NpcEntity();int capacity=magazineProfile.magazineCapacityLocal(weapon);
+        if(loaded>=capacity) {logEvent("Weapon is already fully loaded.");return;}
+        String ammo=LootDropSystemAuthority.ammoItemFor(weapon);
+        String carried=null;for(String item:inventory) if(ItemQuality.namesMatch(item,ammo)) {carried=item;break;}
+        if(carried==null) {logEvent("Reload requires carried ammunition: "+ammo+".");return;}
+        consumeInventoryNamed(carried);
+        loadedWeaponShots.put(weapon,capacity);
+        logEvent("Reloaded "+weapon+" to "+capacity+" shots using "+ammo+".");
+        advanceTurn("reloads "+weapon+".");
     }
     void confirmCombatTarget() { confirmCombatTargetBody(); }
     void moveCombatCursor(int dx, int dy) { combatX += dx; combatY += dy; clampCombatCursorToWorld(); lookX = combatX; lookY = combatY; setFacingToward(combatX, combatY, "combat cursor"); lastTargetingReport = targetingSolutionAt(combatX, combatY).summary; }
@@ -6379,6 +6383,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     void healWorstBodyPart(int amount) { wounds = Math.max(0, wounds - Math.max(0, amount)); }
     void triggerPlayerDeath(String cause, String attacker, String weapon, String location) { lastDefeatCause = cause; lastDefeatAttacker = attacker; lastDefeatWeapon = weapon; lastDefeatLocation = location; runUnconsciousEvents++; }
     void writeSaveFile(int slot, boolean quick) {
+        if (DeveloperFacilityAuthority.session(this)!=null) { logEvent("Developer sessions cannot overwrite campaign saves; use the return portal first.");return; }
         if (world == null) throw new IllegalStateException("No active world is loaded.");
         int safeSlot = slot == AUTOSAVE_HOURLY_SLOT || slot == AUTOSAVE_ZONE_SLOT ? slot : Math.max(1, Math.min(SAVE_SLOT_COUNT, slot));
         java.nio.file.Path path = SaveSlotSurfaceApi.savePathForSlot(safeSlot);
@@ -6399,6 +6404,13 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (timer != null) timer.stop();
         if (multiplayerMenu != null) multiplayerMenu.close();
     }
+
+    void openDeveloperFacilityControl(MapObjectState object) {
+        clearActiveInteractionState();
+        activeInteractionObject=object;activeInteractionTitle=object.label;activeInteractionKind="developer-control";
+        panelMode=PanelMode.OBJECT;screen=Screen.PANEL;selectedButton=0;buttons.clear();repaint();
+    }
+    void openDeveloperSupplyContainer(MapObjectState object) { openContainerForObject(object); }
 
     void toggleTacticalSlate() { openPanel(PanelMode.INFO); }
     void openChatWindow() { openPanel(PanelMode.CONSOLE); }
@@ -7576,12 +7588,17 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     void tickFactionRuntimeSystems(boolean sleeping) {
         if (world == null) return;
+        if (DeveloperFacilityAuthority.isFacility(world)) return;
         FactionStrategySimulationApi.tick(this, sleeping);
         tickNpcFactionSiteProduction();
     }
 
     void tickPopulationEconomyRuntimeSystems(boolean sleeping) {
         if (world == null) return;
+        if (DeveloperFacilityAuthority.isFacility(world)) {
+            lastNpcRuntimeReport=NpcNeedsDutyRuntimeAuthority.tick(this,sleeping).summary();
+            return;
+        }
         FactionCrecheAuthority.tick(world, worldTurn);
         FactionReinforcementAuthority.TickResult reinforcementTick = FactionReinforcementAuthority.tick(world, turn, rng);
         if (reinforcementTick.casualties() > 0 || reinforcementTick.expired() > 0) {

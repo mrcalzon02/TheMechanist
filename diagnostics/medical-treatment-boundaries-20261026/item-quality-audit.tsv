@@ -1,0 +1,1169 @@
+kind	item	quality	player	npc	detail
+dose	Coffee tin	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Coffee tin	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Coffee tin	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Coffee tin	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Coffee tin	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Coffee tin	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Coffee tin	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Coffee tin	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stim vial	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimulant ampoule	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -6; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 6 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bandage roll	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -2; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Field dressings	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -3; infection +0; pain -1; fatigue -2; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Antiseptic vial	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection -6; pain +0; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Splint kit	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding +0; infection +0; pain -3; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Junk	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Shoddy	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Common	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Serviceable	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Fine	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Masterwork	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Noble	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medkit	Archeotech	PASS	PASS	Base effects at Common quality: healing 10; wounds -2; bleeding -4; infection -4; pain -3; fatigue -3; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Junk	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Shoddy	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Common	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Serviceable	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Fine	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Masterwork	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Noble	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Injector case	Archeotech	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection +0; pain -3; fatigue -4; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Recaf	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Burn Recaf	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain +0; fatigue -4; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 8 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stimm	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Street Stimm	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Redline	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Slaught	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Frenzon	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Knuckle Joy	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Iron Grin	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bolt Rush	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Spinefire	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hate Salt	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Chainbite	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Ripper Tabs	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -4; fatigue +0; Melee +3; Firearms +0; damage +2; defense -2; augmentation duration 6 turns; fatigue crash 5. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mud Courage	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Smokeghost	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wirewake	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -2; Melee +0; Firearms +3; damage +0; defense +1; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Bad Saint	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -2; fatigue -4; Melee +2; Firearms +2; damage +1; defense +0; augmentation duration 6 turns; fatigue crash 4. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Shiftwake	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Line-Keeper	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Grey Mercy	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Soot Calm	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Quota Joy	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Hammerwake	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stillhand	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Dustlung Draught	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Cogitator Blue	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clerk’s Mercy	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Boiler Black	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Ticket	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -5; Melee +0; Firearms +1; damage +0; defense +0; augmentation duration 7 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Junk	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Shoddy	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Common	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Serviceable	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Fine	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Masterwork	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Noble	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Medi-Stimm	Archeotech	PASS	PASS	Base effects at Common quality: healing 4; wounds -1; bleeding -1; infection +0; pain -2; fatigue -4; Melee +1; Firearms +1; damage +0; defense +0; augmentation duration 4 turns; fatigue crash 2. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	White Mercy	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Nerve Lace	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Red Waker	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Junk	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Shoddy	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Common	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Serviceable	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Fine	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Masterwork	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Noble	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Stitchdream	Archeotech	PASS	PASS	Base effects at Common quality: healing 6; wounds -2; bleeding -2; infection -2; pain -3; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Clotfoam Ampoule	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds -1; bleeding -6; infection +0; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Junk	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Shoddy	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Common	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Serviceable	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Fine	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Masterwork	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Noble	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Pale Nurse	Archeotech	PASS	PASS	Base effects at Common quality: healing 5; wounds -1; bleeding -1; infection -4; pain -2; fatigue -1; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Saint’s Anesthetic	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -6; fatigue +0; Melee -1; Firearms -1; damage +0; defense -1; augmentation duration 5 turns; fatigue crash 1. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Junk	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Shoddy	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Common	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Serviceable	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Fine	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Masterwork	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Noble	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Wakewire Solution	Archeotech	PASS	PASS	Base effects at Common quality: healing 0; wounds +0; bleeding +0; infection +0; pain -1; fatigue -6; Melee +1; Firearms +2; damage +0; defense +0; augmentation duration 5 turns; fatigue crash 3. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Junk	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Shoddy	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Common	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Serviceable	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Fine	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Masterwork	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Noble	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+dose	Mercy Spoil	Archeotech	PASS	PASS	Base effects at Common quality: healing 3; wounds -1; bleeding +0; infection +2; pain -1; fatigue +0; Melee +0; Firearms +0; damage +0; defense +0; augmentation duration 0 turns; fatigue crash 0. Quality changes recovery amounts and active drug durations where applicable. Same-family doses do not stack.
+armor	Work gloves	Junk	PASS	PASS	rating 0
+armor	Work gloves	Shoddy	PASS	PASS	rating 1
+armor	Work gloves	Common	PASS	PASS	rating 1
+armor	Work gloves	Serviceable	PASS	PASS	rating 1
+armor	Work gloves	Fine	PASS	PASS	rating 2
+armor	Work gloves	Masterwork	PASS	PASS	rating 2
+armor	Work gloves	Noble	PASS	PASS	rating 3
+armor	Work gloves	Archeotech	PASS	PASS	rating 3
+armor	Knee wraps	Junk	PASS	PASS	rating 0
+armor	Knee wraps	Shoddy	PASS	PASS	rating 1
+armor	Knee wraps	Common	PASS	PASS	rating 1
+armor	Knee wraps	Serviceable	PASS	PASS	rating 1
+armor	Knee wraps	Fine	PASS	PASS	rating 2
+armor	Knee wraps	Masterwork	PASS	PASS	rating 2
+armor	Knee wraps	Noble	PASS	PASS	rating 3
+armor	Knee wraps	Archeotech	PASS	PASS	rating 3
+armor	Plain civilian coat	Junk	PASS	PASS	rating 0
+armor	Plain civilian coat	Shoddy	PASS	PASS	rating 1
+armor	Plain civilian coat	Common	PASS	PASS	rating 1
+armor	Plain civilian coat	Serviceable	PASS	PASS	rating 1
+armor	Plain civilian coat	Fine	PASS	PASS	rating 2
+armor	Plain civilian coat	Masterwork	PASS	PASS	rating 2
+armor	Plain civilian coat	Noble	PASS	PASS	rating 3
+armor	Plain civilian coat	Archeotech	PASS	PASS	rating 3
+armor	Damaged ganger coat	Junk	PASS	PASS	rating 0
+armor	Damaged ganger coat	Shoddy	PASS	PASS	rating 0
+armor	Damaged ganger coat	Common	PASS	PASS	rating 0
+armor	Damaged ganger coat	Serviceable	PASS	PASS	rating 0
+armor	Damaged ganger coat	Fine	PASS	PASS	rating 1
+armor	Damaged ganger coat	Masterwork	PASS	PASS	rating 1
+armor	Damaged ganger coat	Noble	PASS	PASS	rating 2
+armor	Damaged ganger coat	Archeotech	PASS	PASS	rating 2
+armor	Scavenger rags	Junk	PASS	PASS	rating 0
+armor	Scavenger rags	Shoddy	PASS	PASS	rating 1
+armor	Scavenger rags	Common	PASS	PASS	rating 1
+armor	Scavenger rags	Serviceable	PASS	PASS	rating 1
+armor	Scavenger rags	Fine	PASS	PASS	rating 2
+armor	Scavenger rags	Masterwork	PASS	PASS	rating 2
+armor	Scavenger rags	Noble	PASS	PASS	rating 3
+armor	Scavenger rags	Archeotech	PASS	PASS	rating 3
+armor	Mechanicus novice robe	Junk	PASS	PASS	rating 0
+armor	Mechanicus novice robe	Shoddy	PASS	PASS	rating 1
+armor	Mechanicus novice robe	Common	PASS	PASS	rating 1
+armor	Mechanicus novice robe	Serviceable	PASS	PASS	rating 1
+armor	Mechanicus novice robe	Fine	PASS	PASS	rating 2
+armor	Mechanicus novice robe	Masterwork	PASS	PASS	rating 2
+armor	Mechanicus novice robe	Noble	PASS	PASS	rating 3
+armor	Mechanicus novice robe	Archeotech	PASS	PASS	rating 3
+armor	Gang colors	Junk	PASS	PASS	rating 0
+armor	Gang colors	Shoddy	PASS	PASS	rating 1
+armor	Gang colors	Common	PASS	PASS	rating 1
+armor	Gang colors	Serviceable	PASS	PASS	rating 1
+armor	Gang colors	Fine	PASS	PASS	rating 2
+armor	Gang colors	Masterwork	PASS	PASS	rating 2
+armor	Gang colors	Noble	PASS	PASS	rating 3
+armor	Gang colors	Archeotech	PASS	PASS	rating 3
+armor	Arbites patrol coat	Junk	PASS	PASS	rating 3
+armor	Arbites patrol coat	Shoddy	PASS	PASS	rating 4
+armor	Arbites patrol coat	Common	PASS	PASS	rating 4
+armor	Arbites patrol coat	Serviceable	PASS	PASS	rating 4
+armor	Arbites patrol coat	Fine	PASS	PASS	rating 5
+armor	Arbites patrol coat	Masterwork	PASS	PASS	rating 5
+armor	Arbites patrol coat	Noble	PASS	PASS	rating 6
+armor	Arbites patrol coat	Archeotech	PASS	PASS	rating 6
+armor	Waterproof scavenger wraps	Junk	PASS	PASS	rating 0
+armor	Waterproof scavenger wraps	Shoddy	PASS	PASS	rating 1
+armor	Waterproof scavenger wraps	Common	PASS	PASS	rating 1
+armor	Waterproof scavenger wraps	Serviceable	PASS	PASS	rating 1
+armor	Waterproof scavenger wraps	Fine	PASS	PASS	rating 2
+armor	Waterproof scavenger wraps	Masterwork	PASS	PASS	rating 2
+armor	Waterproof scavenger wraps	Noble	PASS	PASS	rating 3
+armor	Waterproof scavenger wraps	Archeotech	PASS	PASS	rating 3
+armor	Hiver workwear	Junk	PASS	PASS	rating 0
+armor	Hiver workwear	Shoddy	PASS	PASS	rating 1
+armor	Hiver workwear	Common	PASS	PASS	rating 1
+armor	Hiver workwear	Serviceable	PASS	PASS	rating 1
+armor	Hiver workwear	Fine	PASS	PASS	rating 2
+armor	Hiver workwear	Masterwork	PASS	PASS	rating 2
+armor	Hiver workwear	Noble	PASS	PASS	rating 3
+armor	Hiver workwear	Archeotech	PASS	PASS	rating 3
+armor	Stained civilian coat	Junk	PASS	PASS	rating 0
+armor	Stained civilian coat	Shoddy	PASS	PASS	rating 1
+armor	Stained civilian coat	Common	PASS	PASS	rating 1
+armor	Stained civilian coat	Serviceable	PASS	PASS	rating 1
+armor	Stained civilian coat	Fine	PASS	PASS	rating 2
+armor	Stained civilian coat	Masterwork	PASS	PASS	rating 2
+armor	Stained civilian coat	Noble	PASS	PASS	rating 3
+armor	Stained civilian coat	Archeotech	PASS	PASS	rating 3
+armor	Cargo hauler overalls	Junk	PASS	PASS	rating 0
+armor	Cargo hauler overalls	Shoddy	PASS	PASS	rating 1
+armor	Cargo hauler overalls	Common	PASS	PASS	rating 1
+armor	Cargo hauler overalls	Serviceable	PASS	PASS	rating 1
+armor	Cargo hauler overalls	Fine	PASS	PASS	rating 2
+armor	Cargo hauler overalls	Masterwork	PASS	PASS	rating 2
+armor	Cargo hauler overalls	Noble	PASS	PASS	rating 3
+armor	Cargo hauler overalls	Archeotech	PASS	PASS	rating 3
+armor	Frayed administratum coat	Junk	PASS	PASS	rating 0
+armor	Frayed administratum coat	Shoddy	PASS	PASS	rating 1
+armor	Frayed administratum coat	Common	PASS	PASS	rating 1
+armor	Frayed administratum coat	Serviceable	PASS	PASS	rating 1
+armor	Frayed administratum coat	Fine	PASS	PASS	rating 2
+armor	Frayed administratum coat	Masterwork	PASS	PASS	rating 2
+armor	Frayed administratum coat	Noble	PASS	PASS	rating 3
+armor	Frayed administratum coat	Archeotech	PASS	PASS	rating 3
+armor	Padded tunnel leathers	Junk	PASS	PASS	rating 1
+armor	Padded tunnel leathers	Shoddy	PASS	PASS	rating 2
+armor	Padded tunnel leathers	Common	PASS	PASS	rating 2
+armor	Padded tunnel leathers	Serviceable	PASS	PASS	rating 2
+armor	Padded tunnel leathers	Fine	PASS	PASS	rating 3
+armor	Padded tunnel leathers	Masterwork	PASS	PASS	rating 3
+armor	Padded tunnel leathers	Noble	PASS	PASS	rating 4
+armor	Padded tunnel leathers	Archeotech	PASS	PASS	rating 4
+armor	Runner colors under coat	Junk	PASS	PASS	rating 0
+armor	Runner colors under coat	Shoddy	PASS	PASS	rating 1
+armor	Runner colors under coat	Common	PASS	PASS	rating 1
+armor	Runner colors under coat	Serviceable	PASS	PASS	rating 1
+armor	Runner colors under coat	Fine	PASS	PASS	rating 2
+armor	Runner colors under coat	Masterwork	PASS	PASS	rating 2
+armor	Runner colors under coat	Noble	PASS	PASS	rating 3
+armor	Runner colors under coat	Archeotech	PASS	PASS	rating 3
+armor	Oil-stained workwear	Junk	PASS	PASS	rating 0
+armor	Oil-stained workwear	Shoddy	PASS	PASS	rating 1
+armor	Oil-stained workwear	Common	PASS	PASS	rating 1
+armor	Oil-stained workwear	Serviceable	PASS	PASS	rating 1
+armor	Oil-stained workwear	Fine	PASS	PASS	rating 2
+armor	Oil-stained workwear	Masterwork	PASS	PASS	rating 2
+armor	Oil-stained workwear	Noble	PASS	PASS	rating 3
+armor	Oil-stained workwear	Archeotech	PASS	PASS	rating 3
+armor	Baton-dented vest	Junk	PASS	PASS	rating 1
+armor	Baton-dented vest	Shoddy	PASS	PASS	rating 2
+armor	Baton-dented vest	Common	PASS	PASS	rating 2
+armor	Baton-dented vest	Serviceable	PASS	PASS	rating 2
+armor	Baton-dented vest	Fine	PASS	PASS	rating 3
+armor	Baton-dented vest	Masterwork	PASS	PASS	rating 3
+armor	Baton-dented vest	Noble	PASS	PASS	rating 4
+armor	Baton-dented vest	Archeotech	PASS	PASS	rating 4
+armor	Battered helmet	Junk	PASS	PASS	rating 0
+armor	Battered helmet	Shoddy	PASS	PASS	rating 0
+armor	Battered helmet	Common	PASS	PASS	rating 0
+armor	Battered helmet	Serviceable	PASS	PASS	rating 0
+armor	Battered helmet	Fine	PASS	PASS	rating 1
+armor	Battered helmet	Masterwork	PASS	PASS	rating 1
+armor	Battered helmet	Noble	PASS	PASS	rating 2
+armor	Battered helmet	Archeotech	PASS	PASS	rating 2
+armor	Padded coat	Junk	PASS	PASS	rating 1
+armor	Padded coat	Shoddy	PASS	PASS	rating 2
+armor	Padded coat	Common	PASS	PASS	rating 2
+armor	Padded coat	Serviceable	PASS	PASS	rating 2
+armor	Padded coat	Fine	PASS	PASS	rating 3
+armor	Padded coat	Masterwork	PASS	PASS	rating 3
+armor	Padded coat	Noble	PASS	PASS	rating 4
+armor	Padded coat	Archeotech	PASS	PASS	rating 4
+armor	Worker fatigues	Junk	PASS	PASS	rating 0
+armor	Worker fatigues	Shoddy	PASS	PASS	rating 1
+armor	Worker fatigues	Common	PASS	PASS	rating 1
+armor	Worker fatigues	Serviceable	PASS	PASS	rating 1
+armor	Worker fatigues	Fine	PASS	PASS	rating 2
+armor	Worker fatigues	Masterwork	PASS	PASS	rating 2
+armor	Worker fatigues	Noble	PASS	PASS	rating 3
+armor	Worker fatigues	Archeotech	PASS	PASS	rating 3
+armor	Utility trousers	Junk	PASS	PASS	rating 0
+armor	Utility trousers	Shoddy	PASS	PASS	rating 1
+armor	Utility trousers	Common	PASS	PASS	rating 1
+armor	Utility trousers	Serviceable	PASS	PASS	rating 1
+armor	Utility trousers	Fine	PASS	PASS	rating 2
+armor	Utility trousers	Masterwork	PASS	PASS	rating 2
+armor	Utility trousers	Noble	PASS	PASS	rating 3
+armor	Utility trousers	Archeotech	PASS	PASS	rating 3
+armor	Reclaimed work shirt	Junk	PASS	PASS	rating 0
+armor	Reclaimed work shirt	Shoddy	PASS	PASS	rating 1
+armor	Reclaimed work shirt	Common	PASS	PASS	rating 1
+armor	Reclaimed work shirt	Serviceable	PASS	PASS	rating 1
+armor	Reclaimed work shirt	Fine	PASS	PASS	rating 2
+armor	Reclaimed work shirt	Masterwork	PASS	PASS	rating 2
+armor	Reclaimed work shirt	Noble	PASS	PASS	rating 3
+armor	Reclaimed work shirt	Archeotech	PASS	PASS	rating 3
+armor	Patchwork coat	Junk	PASS	PASS	rating 0
+armor	Patchwork coat	Shoddy	PASS	PASS	rating 1
+armor	Patchwork coat	Common	PASS	PASS	rating 1
+armor	Patchwork coat	Serviceable	PASS	PASS	rating 1
+armor	Patchwork coat	Fine	PASS	PASS	rating 2
+armor	Patchwork coat	Masterwork	PASS	PASS	rating 2
+armor	Patchwork coat	Noble	PASS	PASS	rating 3
+armor	Patchwork coat	Archeotech	PASS	PASS	rating 3
+armor	Industrial apron	Junk	PASS	PASS	rating 0
+armor	Industrial apron	Shoddy	PASS	PASS	rating 1
+armor	Industrial apron	Common	PASS	PASS	rating 1
+armor	Industrial apron	Serviceable	PASS	PASS	rating 1
+armor	Industrial apron	Fine	PASS	PASS	rating 2
+armor	Industrial apron	Masterwork	PASS	PASS	rating 2
+armor	Industrial apron	Noble	PASS	PASS	rating 3
+armor	Industrial apron	Archeotech	PASS	PASS	rating 3
+armor	Hazard gloves	Junk	PASS	PASS	rating 0
+armor	Hazard gloves	Shoddy	PASS	PASS	rating 1
+armor	Hazard gloves	Common	PASS	PASS	rating 1
+armor	Hazard gloves	Serviceable	PASS	PASS	rating 1
+armor	Hazard gloves	Fine	PASS	PASS	rating 2
+armor	Hazard gloves	Masterwork	PASS	PASS	rating 2
+armor	Hazard gloves	Noble	PASS	PASS	rating 3
+armor	Hazard gloves	Archeotech	PASS	PASS	rating 3
+armor	Work boots	Junk	PASS	PASS	rating 0
+armor	Work boots	Shoddy	PASS	PASS	rating 1
+armor	Work boots	Common	PASS	PASS	rating 1
+armor	Work boots	Serviceable	PASS	PASS	rating 1
+armor	Work boots	Fine	PASS	PASS	rating 2
+armor	Work boots	Masterwork	PASS	PASS	rating 2
+armor	Work boots	Noble	PASS	PASS	rating 3
+armor	Work boots	Archeotech	PASS	PASS	rating 3
+armor	Sump waders	Junk	PASS	PASS	rating 0
+armor	Sump waders	Shoddy	PASS	PASS	rating 1
+armor	Sump waders	Common	PASS	PASS	rating 1
+armor	Sump waders	Serviceable	PASS	PASS	rating 1
+armor	Sump waders	Fine	PASS	PASS	rating 2
+armor	Sump waders	Masterwork	PASS	PASS	rating 2
+armor	Sump waders	Noble	PASS	PASS	rating 3
+armor	Sump waders	Archeotech	PASS	PASS	rating 3
+armor	Respirator hood	Junk	PASS	PASS	rating 0
+armor	Respirator hood	Shoddy	PASS	PASS	rating 1
+armor	Respirator hood	Common	PASS	PASS	rating 1
+armor	Respirator hood	Serviceable	PASS	PASS	rating 1
+armor	Respirator hood	Fine	PASS	PASS	rating 2
+armor	Respirator hood	Masterwork	PASS	PASS	rating 2
+armor	Respirator hood	Noble	PASS	PASS	rating 3
+armor	Respirator hood	Archeotech	PASS	PASS	rating 3
+armor	Hard hat	Junk	PASS	PASS	rating 0
+armor	Hard hat	Shoddy	PASS	PASS	rating 1
+armor	Hard hat	Common	PASS	PASS	rating 1
+armor	Hard hat	Serviceable	PASS	PASS	rating 1
+armor	Hard hat	Fine	PASS	PASS	rating 2
+armor	Hard hat	Masterwork	PASS	PASS	rating 2
+armor	Hard hat	Noble	PASS	PASS	rating 3
+armor	Hard hat	Archeotech	PASS	PASS	rating 3
+armor	Maintenance harness	Junk	PASS	PASS	rating 2
+armor	Maintenance harness	Shoddy	PASS	PASS	rating 3
+armor	Maintenance harness	Common	PASS	PASS	rating 3
+armor	Maintenance harness	Serviceable	PASS	PASS	rating 3
+armor	Maintenance harness	Fine	PASS	PASS	rating 4
+armor	Maintenance harness	Masterwork	PASS	PASS	rating 4
+armor	Maintenance harness	Noble	PASS	PASS	rating 5
+armor	Maintenance harness	Archeotech	PASS	PASS	rating 5
+armor	Gang jacket	Junk	PASS	PASS	rating 0
+armor	Gang jacket	Shoddy	PASS	PASS	rating 1
+armor	Gang jacket	Common	PASS	PASS	rating 1
+armor	Gang jacket	Serviceable	PASS	PASS	rating 1
+armor	Gang jacket	Fine	PASS	PASS	rating 2
+armor	Gang jacket	Masterwork	PASS	PASS	rating 2
+armor	Gang jacket	Noble	PASS	PASS	rating 3
+armor	Gang jacket	Archeotech	PASS	PASS	rating 3
+armor	Patch armor	Junk	PASS	PASS	rating 1
+armor	Patch armor	Shoddy	PASS	PASS	rating 2
+armor	Patch armor	Common	PASS	PASS	rating 2
+armor	Patch armor	Serviceable	PASS	PASS	rating 2
+armor	Patch armor	Fine	PASS	PASS	rating 3
+armor	Patch armor	Masterwork	PASS	PASS	rating 3
+armor	Patch armor	Noble	PASS	PASS	rating 4
+armor	Patch armor	Archeotech	PASS	PASS	rating 4
+armor	Scrap plate harness	Junk	PASS	PASS	rating 2
+armor	Scrap plate harness	Shoddy	PASS	PASS	rating 3
+armor	Scrap plate harness	Common	PASS	PASS	rating 3
+armor	Scrap plate harness	Serviceable	PASS	PASS	rating 3
+armor	Scrap plate harness	Fine	PASS	PASS	rating 4
+armor	Scrap plate harness	Masterwork	PASS	PASS	rating 4
+armor	Scrap plate harness	Noble	PASS	PASS	rating 5
+armor	Scrap plate harness	Archeotech	PASS	PASS	rating 5
+armor	Chain-wrapped bracers	Junk	PASS	PASS	rating 0
+armor	Chain-wrapped bracers	Shoddy	PASS	PASS	rating 1
+armor	Chain-wrapped bracers	Common	PASS	PASS	rating 1
+armor	Chain-wrapped bracers	Serviceable	PASS	PASS	rating 1
+armor	Chain-wrapped bracers	Fine	PASS	PASS	rating 2
+armor	Chain-wrapped bracers	Masterwork	PASS	PASS	rating 2
+armor	Chain-wrapped bracers	Noble	PASS	PASS	rating 3
+armor	Chain-wrapped bracers	Archeotech	PASS	PASS	rating 3
+armor	Tire-rubber shoulder guard	Junk	PASS	PASS	rating 0
+armor	Tire-rubber shoulder guard	Shoddy	PASS	PASS	rating 1
+armor	Tire-rubber shoulder guard	Common	PASS	PASS	rating 1
+armor	Tire-rubber shoulder guard	Serviceable	PASS	PASS	rating 1
+armor	Tire-rubber shoulder guard	Fine	PASS	PASS	rating 2
+armor	Tire-rubber shoulder guard	Masterwork	PASS	PASS	rating 2
+armor	Tire-rubber shoulder guard	Noble	PASS	PASS	rating 3
+armor	Tire-rubber shoulder guard	Archeotech	PASS	PASS	rating 3
+armor	Spiked mask	Junk	PASS	PASS	rating 0
+armor	Spiked mask	Shoddy	PASS	PASS	rating 1
+armor	Spiked mask	Common	PASS	PASS	rating 1
+armor	Spiked mask	Serviceable	PASS	PASS	rating 1
+armor	Spiked mask	Fine	PASS	PASS	rating 2
+armor	Spiked mask	Masterwork	PASS	PASS	rating 2
+armor	Spiked mask	Noble	PASS	PASS	rating 3
+armor	Spiked mask	Archeotech	PASS	PASS	rating 3
+armor	Rebreather scarf	Junk	PASS	PASS	rating 0
+armor	Rebreather scarf	Shoddy	PASS	PASS	rating 1
+armor	Rebreather scarf	Common	PASS	PASS	rating 1
+armor	Rebreather scarf	Serviceable	PASS	PASS	rating 1
+armor	Rebreather scarf	Fine	PASS	PASS	rating 2
+armor	Rebreather scarf	Masterwork	PASS	PASS	rating 2
+armor	Rebreather scarf	Noble	PASS	PASS	rating 3
+armor	Rebreather scarf	Archeotech	PASS	PASS	rating 3
+armor	Sump cloak	Junk	PASS	PASS	rating 0
+armor	Sump cloak	Shoddy	PASS	PASS	rating 1
+armor	Sump cloak	Common	PASS	PASS	rating 1
+armor	Sump cloak	Serviceable	PASS	PASS	rating 1
+armor	Sump cloak	Fine	PASS	PASS	rating 2
+armor	Sump cloak	Masterwork	PASS	PASS	rating 2
+armor	Sump cloak	Noble	PASS	PASS	rating 3
+armor	Sump cloak	Archeotech	PASS	PASS	rating 3
+armor	Scavenger hood	Junk	PASS	PASS	rating 0
+armor	Scavenger hood	Shoddy	PASS	PASS	rating 1
+armor	Scavenger hood	Common	PASS	PASS	rating 1
+armor	Scavenger hood	Serviceable	PASS	PASS	rating 1
+armor	Scavenger hood	Fine	PASS	PASS	rating 2
+armor	Scavenger hood	Masterwork	PASS	PASS	rating 2
+armor	Scavenger hood	Noble	PASS	PASS	rating 3
+armor	Scavenger hood	Archeotech	PASS	PASS	rating 3
+armor	Rag-wrapped boots	Junk	PASS	PASS	rating 0
+armor	Rag-wrapped boots	Shoddy	PASS	PASS	rating 1
+armor	Rag-wrapped boots	Common	PASS	PASS	rating 1
+armor	Rag-wrapped boots	Serviceable	PASS	PASS	rating 1
+armor	Rag-wrapped boots	Fine	PASS	PASS	rating 2
+armor	Rag-wrapped boots	Masterwork	PASS	PASS	rating 2
+armor	Rag-wrapped boots	Noble	PASS	PASS	rating 3
+armor	Rag-wrapped boots	Archeotech	PASS	PASS	rating 3
+armor	Hide mantle	Junk	PASS	PASS	rating 0
+armor	Hide mantle	Shoddy	PASS	PASS	rating 1
+armor	Hide mantle	Common	PASS	PASS	rating 1
+armor	Hide mantle	Serviceable	PASS	PASS	rating 1
+armor	Hide mantle	Fine	PASS	PASS	rating 2
+armor	Hide mantle	Masterwork	PASS	PASS	rating 2
+armor	Hide mantle	Noble	PASS	PASS	rating 3
+armor	Hide mantle	Archeotech	PASS	PASS	rating 3
+armor	Bone-studded harness	Junk	PASS	PASS	rating 2
+armor	Bone-studded harness	Shoddy	PASS	PASS	rating 3
+armor	Bone-studded harness	Common	PASS	PASS	rating 3
+armor	Bone-studded harness	Serviceable	PASS	PASS	rating 3
+armor	Bone-studded harness	Fine	PASS	PASS	rating 4
+armor	Bone-studded harness	Masterwork	PASS	PASS	rating 4
+armor	Bone-studded harness	Noble	PASS	PASS	rating 5
+armor	Bone-studded harness	Archeotech	PASS	PASS	rating 5
+armor	Cult robe	Junk	PASS	PASS	rating 0
+armor	Cult robe	Shoddy	PASS	PASS	rating 1
+armor	Cult robe	Common	PASS	PASS	rating 1
+armor	Cult robe	Serviceable	PASS	PASS	rating 1
+armor	Cult robe	Fine	PASS	PASS	rating 2
+armor	Cult robe	Masterwork	PASS	PASS	rating 2
+armor	Cult robe	Noble	PASS	PASS	rating 3
+armor	Cult robe	Archeotech	PASS	PASS	rating 3
+armor	Ritual hood	Junk	PASS	PASS	rating 0
+armor	Ritual hood	Shoddy	PASS	PASS	rating 1
+armor	Ritual hood	Common	PASS	PASS	rating 1
+armor	Ritual hood	Serviceable	PASS	PASS	rating 1
+armor	Ritual hood	Fine	PASS	PASS	rating 2
+armor	Ritual hood	Masterwork	PASS	PASS	rating 2
+armor	Ritual hood	Noble	PASS	PASS	rating 3
+armor	Ritual hood	Archeotech	PASS	PASS	rating 3
+armor	Blasphemous mask	Junk	PASS	PASS	rating 0
+armor	Blasphemous mask	Shoddy	PASS	PASS	rating 1
+armor	Blasphemous mask	Common	PASS	PASS	rating 1
+armor	Blasphemous mask	Serviceable	PASS	PASS	rating 1
+armor	Blasphemous mask	Fine	PASS	PASS	rating 2
+armor	Blasphemous mask	Masterwork	PASS	PASS	rating 2
+armor	Blasphemous mask	Noble	PASS	PASS	rating 3
+armor	Blasphemous mask	Archeotech	PASS	PASS	rating 3
+armor	Sacrificial apron	Junk	PASS	PASS	rating 0
+armor	Sacrificial apron	Shoddy	PASS	PASS	rating 1
+armor	Sacrificial apron	Common	PASS	PASS	rating 1
+armor	Sacrificial apron	Serviceable	PASS	PASS	rating 1
+armor	Sacrificial apron	Fine	PASS	PASS	rating 2
+armor	Sacrificial apron	Masterwork	PASS	PASS	rating 2
+armor	Sacrificial apron	Noble	PASS	PASS	rating 3
+armor	Sacrificial apron	Archeotech	PASS	PASS	rating 3
+armor	Scrap idol armor	Junk	PASS	PASS	rating 0
+armor	Scrap idol armor	Shoddy	PASS	PASS	rating 1
+armor	Scrap idol armor	Common	PASS	PASS	rating 1
+armor	Scrap idol armor	Serviceable	PASS	PASS	rating 1
+armor	Scrap idol armor	Fine	PASS	PASS	rating 2
+armor	Scrap idol armor	Masterwork	PASS	PASS	rating 2
+armor	Scrap idol armor	Noble	PASS	PASS	rating 3
+armor	Scrap idol armor	Archeotech	PASS	PASS	rating 3
+armor	Filth-wrapped cloak	Junk	PASS	PASS	rating 0
+armor	Filth-wrapped cloak	Shoddy	PASS	PASS	rating 1
+armor	Filth-wrapped cloak	Common	PASS	PASS	rating 1
+armor	Filth-wrapped cloak	Serviceable	PASS	PASS	rating 1
+armor	Filth-wrapped cloak	Fine	PASS	PASS	rating 2
+armor	Filth-wrapped cloak	Masterwork	PASS	PASS	rating 2
+armor	Filth-wrapped cloak	Noble	PASS	PASS	rating 3
+armor	Filth-wrapped cloak	Archeotech	PASS	PASS	rating 3
+armor	Guard fatigues	Junk	PASS	PASS	rating 0
+armor	Guard fatigues	Shoddy	PASS	PASS	rating 1
+armor	Guard fatigues	Common	PASS	PASS	rating 1
+armor	Guard fatigues	Serviceable	PASS	PASS	rating 1
+armor	Guard fatigues	Fine	PASS	PASS	rating 2
+armor	Guard fatigues	Masterwork	PASS	PASS	rating 2
+armor	Guard fatigues	Noble	PASS	PASS	rating 3
+armor	Guard fatigues	Archeotech	PASS	PASS	rating 3
+armor	Guard flak helmet	Junk	PASS	PASS	rating 3
+armor	Guard flak helmet	Shoddy	PASS	PASS	rating 4
+armor	Guard flak helmet	Common	PASS	PASS	rating 4
+armor	Guard flak helmet	Serviceable	PASS	PASS	rating 4
+armor	Guard flak helmet	Fine	PASS	PASS	rating 5
+armor	Guard flak helmet	Masterwork	PASS	PASS	rating 5
+armor	Guard flak helmet	Noble	PASS	PASS	rating 6
+armor	Guard flak helmet	Archeotech	PASS	PASS	rating 6
+armor	Guard webbing harness	Junk	PASS	PASS	rating 2
+armor	Guard webbing harness	Shoddy	PASS	PASS	rating 3
+armor	Guard webbing harness	Common	PASS	PASS	rating 3
+armor	Guard webbing harness	Serviceable	PASS	PASS	rating 3
+armor	Guard webbing harness	Fine	PASS	PASS	rating 4
+armor	Guard webbing harness	Masterwork	PASS	PASS	rating 4
+armor	Guard webbing harness	Noble	PASS	PASS	rating 5
+armor	Guard webbing harness	Archeotech	PASS	PASS	rating 5
+armor	Ammo bandolier	Junk	PASS	PASS	rating 2
+armor	Ammo bandolier	Shoddy	PASS	PASS	rating 3
+armor	Ammo bandolier	Common	PASS	PASS	rating 3
+armor	Ammo bandolier	Serviceable	PASS	PASS	rating 3
+armor	Ammo bandolier	Fine	PASS	PASS	rating 4
+armor	Ammo bandolier	Masterwork	PASS	PASS	rating 4
+armor	Ammo bandolier	Noble	PASS	PASS	rating 5
+armor	Ammo bandolier	Archeotech	PASS	PASS	rating 5
+armor	Officer greatcoat	Junk	PASS	PASS	rating 0
+armor	Officer greatcoat	Shoddy	PASS	PASS	rating 1
+armor	Officer greatcoat	Common	PASS	PASS	rating 1
+armor	Officer greatcoat	Serviceable	PASS	PASS	rating 1
+armor	Officer greatcoat	Fine	PASS	PASS	rating 2
+armor	Officer greatcoat	Masterwork	PASS	PASS	rating 2
+armor	Officer greatcoat	Noble	PASS	PASS	rating 3
+armor	Officer greatcoat	Archeotech	PASS	PASS	rating 3
+armor	Field boots	Junk	PASS	PASS	rating 0
+armor	Field boots	Shoddy	PASS	PASS	rating 1
+armor	Field boots	Common	PASS	PASS	rating 1
+armor	Field boots	Serviceable	PASS	PASS	rating 1
+armor	Field boots	Fine	PASS	PASS	rating 2
+armor	Field boots	Masterwork	PASS	PASS	rating 2
+armor	Field boots	Noble	PASS	PASS	rating 3
+armor	Field boots	Archeotech	PASS	PASS	rating 3
+armor	Gas mask	Junk	PASS	PASS	rating 0
+armor	Gas mask	Shoddy	PASS	PASS	rating 1
+armor	Gas mask	Common	PASS	PASS	rating 1
+armor	Gas mask	Serviceable	PASS	PASS	rating 1
+armor	Gas mask	Fine	PASS	PASS	rating 2
+armor	Gas mask	Masterwork	PASS	PASS	rating 2
+armor	Gas mask	Noble	PASS	PASS	rating 3
+armor	Gas mask	Archeotech	PASS	PASS	rating 3
+armor	Combat gloves	Junk	PASS	PASS	rating 0
+armor	Combat gloves	Shoddy	PASS	PASS	rating 1
+armor	Combat gloves	Common	PASS	PASS	rating 1
+armor	Combat gloves	Serviceable	PASS	PASS	rating 1
+armor	Combat gloves	Fine	PASS	PASS	rating 2
+armor	Combat gloves	Masterwork	PASS	PASS	rating 2
+armor	Combat gloves	Noble	PASS	PASS	rating 3
+armor	Combat gloves	Archeotech	PASS	PASS	rating 3
+armor	Regimental coat	Junk	PASS	PASS	rating 0
+armor	Regimental coat	Shoddy	PASS	PASS	rating 1
+armor	Regimental coat	Common	PASS	PASS	rating 1
+armor	Regimental coat	Serviceable	PASS	PASS	rating 1
+armor	Regimental coat	Fine	PASS	PASS	rating 2
+armor	Regimental coat	Masterwork	PASS	PASS	rating 2
+armor	Regimental coat	Noble	PASS	PASS	rating 3
+armor	Regimental coat	Archeotech	PASS	PASS	rating 3
+armor	Arbites suppression armor	Junk	PASS	PASS	rating 3
+armor	Arbites suppression armor	Shoddy	PASS	PASS	rating 4
+armor	Arbites suppression armor	Common	PASS	PASS	rating 4
+armor	Arbites suppression armor	Serviceable	PASS	PASS	rating 4
+armor	Arbites suppression armor	Fine	PASS	PASS	rating 5
+armor	Arbites suppression armor	Masterwork	PASS	PASS	rating 5
+armor	Arbites suppression armor	Noble	PASS	PASS	rating 6
+armor	Arbites suppression armor	Archeotech	PASS	PASS	rating 6
+armor	Riot helmet	Junk	PASS	PASS	rating 3
+armor	Riot helmet	Shoddy	PASS	PASS	rating 4
+armor	Riot helmet	Common	PASS	PASS	rating 4
+armor	Riot helmet	Serviceable	PASS	PASS	rating 4
+armor	Riot helmet	Fine	PASS	PASS	rating 5
+armor	Riot helmet	Masterwork	PASS	PASS	rating 5
+armor	Riot helmet	Noble	PASS	PASS	rating 6
+armor	Riot helmet	Archeotech	PASS	PASS	rating 6
+armor	Shock gauntlets	Junk	PASS	PASS	rating 0
+armor	Shock gauntlets	Shoddy	PASS	PASS	rating 1
+armor	Shock gauntlets	Common	PASS	PASS	rating 1
+armor	Shock gauntlets	Serviceable	PASS	PASS	rating 1
+armor	Shock gauntlets	Fine	PASS	PASS	rating 2
+armor	Shock gauntlets	Masterwork	PASS	PASS	rating 2
+armor	Shock gauntlets	Noble	PASS	PASS	rating 3
+armor	Shock gauntlets	Archeotech	PASS	PASS	rating 3
+armor	Armored boots	Junk	PASS	PASS	rating 1
+armor	Armored boots	Shoddy	PASS	PASS	rating 2
+armor	Armored boots	Common	PASS	PASS	rating 2
+armor	Armored boots	Serviceable	PASS	PASS	rating 2
+armor	Armored boots	Fine	PASS	PASS	rating 3
+armor	Armored boots	Masterwork	PASS	PASS	rating 3
+armor	Armored boots	Noble	PASS	PASS	rating 4
+armor	Armored boots	Archeotech	PASS	PASS	rating 4
+armor	Visor mask	Junk	PASS	PASS	rating 0
+armor	Visor mask	Shoddy	PASS	PASS	rating 1
+armor	Visor mask	Common	PASS	PASS	rating 1
+armor	Visor mask	Serviceable	PASS	PASS	rating 1
+armor	Visor mask	Fine	PASS	PASS	rating 2
+armor	Visor mask	Masterwork	PASS	PASS	rating 2
+armor	Visor mask	Noble	PASS	PASS	rating 3
+armor	Visor mask	Archeotech	PASS	PASS	rating 3
+armor	Evidence pouch harness	Junk	PASS	PASS	rating 2
+armor	Evidence pouch harness	Shoddy	PASS	PASS	rating 3
+armor	Evidence pouch harness	Common	PASS	PASS	rating 3
+armor	Evidence pouch harness	Serviceable	PASS	PASS	rating 3
+armor	Evidence pouch harness	Fine	PASS	PASS	rating 4
+armor	Evidence pouch harness	Masterwork	PASS	PASS	rating 4
+armor	Evidence pouch harness	Noble	PASS	PASS	rating 5
+armor	Evidence pouch harness	Archeotech	PASS	PASS	rating 5
+armor	Patrol greatcoat	Junk	PASS	PASS	rating 0
+armor	Patrol greatcoat	Shoddy	PASS	PASS	rating 1
+armor	Patrol greatcoat	Common	PASS	PASS	rating 1
+armor	Patrol greatcoat	Serviceable	PASS	PASS	rating 1
+armor	Patrol greatcoat	Fine	PASS	PASS	rating 2
+armor	Patrol greatcoat	Masterwork	PASS	PASS	rating 2
+armor	Patrol greatcoat	Noble	PASS	PASS	rating 3
+armor	Patrol greatcoat	Archeotech	PASS	PASS	rating 3
+armor	Mechanicus red work robe	Junk	PASS	PASS	rating 0
+armor	Mechanicus red work robe	Shoddy	PASS	PASS	rating 1
+armor	Mechanicus red work robe	Common	PASS	PASS	rating 1
+armor	Mechanicus red work robe	Serviceable	PASS	PASS	rating 1
+armor	Mechanicus red work robe	Fine	PASS	PASS	rating 2
+armor	Mechanicus red work robe	Masterwork	PASS	PASS	rating 2
+armor	Mechanicus red work robe	Noble	PASS	PASS	rating 3
+armor	Mechanicus red work robe	Archeotech	PASS	PASS	rating 3
+armor	Electro-priest wrappings	Junk	PASS	PASS	rating 0
+armor	Electro-priest wrappings	Shoddy	PASS	PASS	rating 1
+armor	Electro-priest wrappings	Common	PASS	PASS	rating 1
+armor	Electro-priest wrappings	Serviceable	PASS	PASS	rating 1
+armor	Electro-priest wrappings	Fine	PASS	PASS	rating 2
+armor	Electro-priest wrappings	Masterwork	PASS	PASS	rating 2
+armor	Electro-priest wrappings	Noble	PASS	PASS	rating 3
+armor	Electro-priest wrappings	Archeotech	PASS	PASS	rating 3
+armor	Enginseer apron	Junk	PASS	PASS	rating 0
+armor	Enginseer apron	Shoddy	PASS	PASS	rating 1
+armor	Enginseer apron	Common	PASS	PASS	rating 1
+armor	Enginseer apron	Serviceable	PASS	PASS	rating 1
+armor	Enginseer apron	Fine	PASS	PASS	rating 2
+armor	Enginseer apron	Masterwork	PASS	PASS	rating 2
+armor	Enginseer apron	Noble	PASS	PASS	rating 3
+armor	Enginseer apron	Archeotech	PASS	PASS	rating 3
+armor	Augmetic harness	Junk	PASS	PASS	rating 2
+armor	Augmetic harness	Shoddy	PASS	PASS	rating 3
+armor	Augmetic harness	Common	PASS	PASS	rating 3
+armor	Augmetic harness	Serviceable	PASS	PASS	rating 3
+armor	Augmetic harness	Fine	PASS	PASS	rating 4
+armor	Augmetic harness	Masterwork	PASS	PASS	rating 4
+armor	Augmetic harness	Noble	PASS	PASS	rating 5
+armor	Augmetic harness	Archeotech	PASS	PASS	rating 5
+armor	Rubberized insulation robe	Junk	PASS	PASS	rating 0
+armor	Rubberized insulation robe	Shoddy	PASS	PASS	rating 1
+armor	Rubberized insulation robe	Common	PASS	PASS	rating 1
+armor	Rubberized insulation robe	Serviceable	PASS	PASS	rating 1
+armor	Rubberized insulation robe	Fine	PASS	PASS	rating 2
+armor	Rubberized insulation robe	Masterwork	PASS	PASS	rating 2
+armor	Rubberized insulation robe	Noble	PASS	PASS	rating 3
+armor	Rubberized insulation robe	Archeotech	PASS	PASS	rating 3
+armor	Cogitator maintenance gloves	Junk	PASS	PASS	rating 0
+armor	Cogitator maintenance gloves	Shoddy	PASS	PASS	rating 1
+armor	Cogitator maintenance gloves	Common	PASS	PASS	rating 1
+armor	Cogitator maintenance gloves	Serviceable	PASS	PASS	rating 1
+armor	Cogitator maintenance gloves	Fine	PASS	PASS	rating 2
+armor	Cogitator maintenance gloves	Masterwork	PASS	PASS	rating 2
+armor	Cogitator maintenance gloves	Noble	PASS	PASS	rating 3
+armor	Cogitator maintenance gloves	Archeotech	PASS	PASS	rating 3
+armor	Cable mantle	Junk	PASS	PASS	rating 0
+armor	Cable mantle	Shoddy	PASS	PASS	rating 1
+armor	Cable mantle	Common	PASS	PASS	rating 1
+armor	Cable mantle	Serviceable	PASS	PASS	rating 1
+armor	Cable mantle	Fine	PASS	PASS	rating 2
+armor	Cable mantle	Masterwork	PASS	PASS	rating 2
+armor	Cable mantle	Noble	PASS	PASS	rating 3
+armor	Cable mantle	Archeotech	PASS	PASS	rating 3
+armor	Mechadendrite anchor harness	Junk	PASS	PASS	rating 2
+armor	Mechadendrite anchor harness	Shoddy	PASS	PASS	rating 3
+armor	Mechadendrite anchor harness	Common	PASS	PASS	rating 3
+armor	Mechadendrite anchor harness	Serviceable	PASS	PASS	rating 3
+armor	Mechadendrite anchor harness	Fine	PASS	PASS	rating 4
+armor	Mechadendrite anchor harness	Masterwork	PASS	PASS	rating 4
+armor	Mechadendrite anchor harness	Noble	PASS	PASS	rating 5
+armor	Mechadendrite anchor harness	Archeotech	PASS	PASS	rating 5
+armor	Noble tailored coat	Junk	PASS	PASS	rating 0
+armor	Noble tailored coat	Shoddy	PASS	PASS	rating 1
+armor	Noble tailored coat	Common	PASS	PASS	rating 1
+armor	Noble tailored coat	Serviceable	PASS	PASS	rating 1
+armor	Noble tailored coat	Fine	PASS	PASS	rating 2
+armor	Noble tailored coat	Masterwork	PASS	PASS	rating 2
+armor	Noble tailored coat	Noble	PASS	PASS	rating 3
+armor	Noble tailored coat	Archeotech	PASS	PASS	rating 3
+armor	Formal bodyglove	Junk	PASS	PASS	rating 0
+armor	Formal bodyglove	Shoddy	PASS	PASS	rating 1
+armor	Formal bodyglove	Common	PASS	PASS	rating 1
+armor	Formal bodyglove	Serviceable	PASS	PASS	rating 1
+armor	Formal bodyglove	Fine	PASS	PASS	rating 2
+armor	Formal bodyglove	Masterwork	PASS	PASS	rating 2
+armor	Formal bodyglove	Noble	PASS	PASS	rating 3
+armor	Formal bodyglove	Archeotech	PASS	PASS	rating 3
+armor	Noble dueling jacket	Junk	PASS	PASS	rating 0
+armor	Noble dueling jacket	Shoddy	PASS	PASS	rating 1
+armor	Noble dueling jacket	Common	PASS	PASS	rating 1
+armor	Noble dueling jacket	Serviceable	PASS	PASS	rating 1
+armor	Noble dueling jacket	Fine	PASS	PASS	rating 2
+armor	Noble dueling jacket	Masterwork	PASS	PASS	rating 2
+armor	Noble dueling jacket	Noble	PASS	PASS	rating 3
+armor	Noble dueling jacket	Archeotech	PASS	PASS	rating 3
+armor	Silk-lined cloak	Junk	PASS	PASS	rating 0
+armor	Silk-lined cloak	Shoddy	PASS	PASS	rating 1
+armor	Silk-lined cloak	Common	PASS	PASS	rating 1
+armor	Silk-lined cloak	Serviceable	PASS	PASS	rating 1
+armor	Silk-lined cloak	Fine	PASS	PASS	rating 2
+armor	Silk-lined cloak	Masterwork	PASS	PASS	rating 2
+armor	Silk-lined cloak	Noble	PASS	PASS	rating 3
+armor	Silk-lined cloak	Archeotech	PASS	PASS	rating 3
+armor	Decorated breastplate	Junk	PASS	PASS	rating 2
+armor	Decorated breastplate	Shoddy	PASS	PASS	rating 3
+armor	Decorated breastplate	Common	PASS	PASS	rating 3
+armor	Decorated breastplate	Serviceable	PASS	PASS	rating 3
+armor	Decorated breastplate	Fine	PASS	PASS	rating 4
+armor	Decorated breastplate	Masterwork	PASS	PASS	rating 4
+armor	Decorated breastplate	Noble	PASS	PASS	rating 5
+armor	Decorated breastplate	Archeotech	PASS	PASS	rating 5
+armor	Void silk gloves	Junk	PASS	PASS	rating 0
+armor	Void silk gloves	Shoddy	PASS	PASS	rating 1
+armor	Void silk gloves	Common	PASS	PASS	rating 1
+armor	Void silk gloves	Serviceable	PASS	PASS	rating 1
+armor	Void silk gloves	Fine	PASS	PASS	rating 2
+armor	Void silk gloves	Masterwork	PASS	PASS	rating 2
+armor	Void silk gloves	Noble	PASS	PASS	rating 3
+armor	Void silk gloves	Archeotech	PASS	PASS	rating 3
+armor	House livery sash	Junk	PASS	PASS	rating 0
+armor	House livery sash	Shoddy	PASS	PASS	rating 1
+armor	House livery sash	Common	PASS	PASS	rating 1
+armor	House livery sash	Serviceable	PASS	PASS	rating 1
+armor	House livery sash	Fine	PASS	PASS	rating 2
+armor	House livery sash	Masterwork	PASS	PASS	rating 2
+armor	House livery sash	Noble	PASS	PASS	rating 3
+armor	House livery sash	Archeotech	PASS	PASS	rating 3
+armor	Ornamental cuirass	Junk	PASS	PASS	rating 2
+armor	Ornamental cuirass	Shoddy	PASS	PASS	rating 3
+armor	Ornamental cuirass	Common	PASS	PASS	rating 3
+armor	Ornamental cuirass	Serviceable	PASS	PASS	rating 3
+armor	Ornamental cuirass	Fine	PASS	PASS	rating 4
+armor	Ornamental cuirass	Masterwork	PASS	PASS	rating 4
+armor	Ornamental cuirass	Noble	PASS	PASS	rating 5
+armor	Ornamental cuirass	Archeotech	PASS	PASS	rating 5
+armor	Void crew coverall	Junk	PASS	PASS	rating 0
+armor	Void crew coverall	Shoddy	PASS	PASS	rating 1
+armor	Void crew coverall	Common	PASS	PASS	rating 1
+armor	Void crew coverall	Serviceable	PASS	PASS	rating 1
+armor	Void crew coverall	Fine	PASS	PASS	rating 2
+armor	Void crew coverall	Masterwork	PASS	PASS	rating 2
+armor	Void crew coverall	Noble	PASS	PASS	rating 3
+armor	Void crew coverall	Archeotech	PASS	PASS	rating 3
+armor	Pressure underlayer	Junk	PASS	PASS	rating 0
+armor	Pressure underlayer	Shoddy	PASS	PASS	rating 1
+armor	Pressure underlayer	Common	PASS	PASS	rating 1
+armor	Pressure underlayer	Serviceable	PASS	PASS	rating 1
+armor	Pressure underlayer	Fine	PASS	PASS	rating 2
+armor	Pressure underlayer	Masterwork	PASS	PASS	rating 2
+armor	Pressure underlayer	Noble	PASS	PASS	rating 3
+armor	Pressure underlayer	Archeotech	PASS	PASS	rating 3
+armor	Sealed work suit	Junk	PASS	PASS	rating 0
+armor	Sealed work suit	Shoddy	PASS	PASS	rating 1
+armor	Sealed work suit	Common	PASS	PASS	rating 1
+armor	Sealed work suit	Serviceable	PASS	PASS	rating 1
+armor	Sealed work suit	Fine	PASS	PASS	rating 2
+armor	Sealed work suit	Masterwork	PASS	PASS	rating 2
+armor	Sealed work suit	Noble	PASS	PASS	rating 3
+armor	Sealed work suit	Archeotech	PASS	PASS	rating 3
+armor	Emergency void hood	Junk	PASS	PASS	rating 0
+armor	Emergency void hood	Shoddy	PASS	PASS	rating 1
+armor	Emergency void hood	Common	PASS	PASS	rating 1
+armor	Emergency void hood	Serviceable	PASS	PASS	rating 1
+armor	Emergency void hood	Fine	PASS	PASS	rating 2
+armor	Emergency void hood	Masterwork	PASS	PASS	rating 2
+armor	Emergency void hood	Noble	PASS	PASS	rating 3
+armor	Emergency void hood	Archeotech	PASS	PASS	rating 3
+armor	Rebreather mask	Junk	PASS	PASS	rating 0
+armor	Rebreather mask	Shoddy	PASS	PASS	rating 1
+armor	Rebreather mask	Common	PASS	PASS	rating 1
+armor	Rebreather mask	Serviceable	PASS	PASS	rating 1
+armor	Rebreather mask	Fine	PASS	PASS	rating 2
+armor	Rebreather mask	Masterwork	PASS	PASS	rating 2
+armor	Rebreather mask	Noble	PASS	PASS	rating 3
+armor	Rebreather mask	Archeotech	PASS	PASS	rating 3
+armor	Radiation apron	Junk	PASS	PASS	rating 0
+armor	Radiation apron	Shoddy	PASS	PASS	rating 1
+armor	Radiation apron	Common	PASS	PASS	rating 1
+armor	Radiation apron	Serviceable	PASS	PASS	rating 1
+armor	Radiation apron	Fine	PASS	PASS	rating 2
+armor	Radiation apron	Masterwork	PASS	PASS	rating 2
+armor	Radiation apron	Noble	PASS	PASS	rating 3
+armor	Radiation apron	Archeotech	PASS	PASS	rating 3
+armor	Insulated boots	Junk	PASS	PASS	rating 0
+armor	Insulated boots	Shoddy	PASS	PASS	rating 1
+armor	Insulated boots	Common	PASS	PASS	rating 1
+armor	Insulated boots	Serviceable	PASS	PASS	rating 1
+armor	Insulated boots	Fine	PASS	PASS	rating 2
+armor	Insulated boots	Masterwork	PASS	PASS	rating 2
+armor	Insulated boots	Noble	PASS	PASS	rating 3
+armor	Insulated boots	Archeotech	PASS	PASS	rating 3
+armor	Filter pack harness	Junk	PASS	PASS	rating 2
+armor	Filter pack harness	Shoddy	PASS	PASS	rating 3
+armor	Filter pack harness	Common	PASS	PASS	rating 3
+armor	Filter pack harness	Serviceable	PASS	PASS	rating 3
+armor	Filter pack harness	Fine	PASS	PASS	rating 4
+armor	Filter pack harness	Masterwork	PASS	PASS	rating 4
+armor	Filter pack harness	Noble	PASS	PASS	rating 5
+armor	Filter pack harness	Archeotech	PASS	PASS	rating 5
+armor	Guard flak vest	Junk	PASS	PASS	rating 3
+armor	Guard flak vest	Shoddy	PASS	PASS	rating 4
+armor	Guard flak vest	Common	PASS	PASS	rating 4
+armor	Guard flak vest	Serviceable	PASS	PASS	rating 4
+armor	Guard flak vest	Fine	PASS	PASS	rating 5
+armor	Guard flak vest	Masterwork	PASS	PASS	rating 5
+armor	Guard flak vest	Noble	PASS	PASS	rating 6
+armor	Guard flak vest	Archeotech	PASS	PASS	rating 6
+armor	Arbites riot visor	Junk	PASS	PASS	rating 3
+armor	Arbites riot visor	Shoddy	PASS	PASS	rating 4
+armor	Arbites riot visor	Common	PASS	PASS	rating 4
+armor	Arbites riot visor	Serviceable	PASS	PASS	rating 4
+armor	Arbites riot visor	Fine	PASS	PASS	rating 5
+armor	Arbites riot visor	Masterwork	PASS	PASS	rating 5
+armor	Arbites riot visor	Noble	PASS	PASS	rating 6
+armor	Arbites riot visor	Archeotech	PASS	PASS	rating 6
+armor	Mechanicus rubberized apron	Junk	PASS	PASS	rating 0
+armor	Mechanicus rubberized apron	Shoddy	PASS	PASS	rating 1
+armor	Mechanicus rubberized apron	Common	PASS	PASS	rating 1
+armor	Mechanicus rubberized apron	Serviceable	PASS	PASS	rating 1
+armor	Mechanicus rubberized apron	Fine	PASS	PASS	rating 2
+armor	Mechanicus rubberized apron	Masterwork	PASS	PASS	rating 2
+armor	Mechanicus rubberized apron	Noble	PASS	PASS	rating 3
+armor	Mechanicus rubberized apron	Archeotech	PASS	PASS	rating 3
+armor	Noble fur-lined coat	Junk	PASS	PASS	rating 0
+armor	Noble fur-lined coat	Shoddy	PASS	PASS	rating 1
+armor	Noble fur-lined coat	Common	PASS	PASS	rating 1
+armor	Noble fur-lined coat	Serviceable	PASS	PASS	rating 1
+armor	Noble fur-lined coat	Fine	PASS	PASS	rating 2
+armor	Noble fur-lined coat	Masterwork	PASS	PASS	rating 2
+armor	Noble fur-lined coat	Noble	PASS	PASS	rating 3
+armor	Noble fur-lined coat	Archeotech	PASS	PASS	rating 3
+armor	Market vendor sash	Junk	PASS	PASS	rating 0
+armor	Market vendor sash	Shoddy	PASS	PASS	rating 1
+armor	Market vendor sash	Common	PASS	PASS	rating 1
+armor	Market vendor sash	Serviceable	PASS	PASS	rating 1
+armor	Market vendor sash	Fine	PASS	PASS	rating 2
+armor	Market vendor sash	Masterwork	PASS	PASS	rating 2
+armor	Market vendor sash	Noble	PASS	PASS	rating 3
+armor	Market vendor sash	Archeotech	PASS	PASS	rating 3
+armor	Cult hooded wrap	Junk	PASS	PASS	rating 0
+armor	Cult hooded wrap	Shoddy	PASS	PASS	rating 1
+armor	Cult hooded wrap	Common	PASS	PASS	rating 1
+armor	Cult hooded wrap	Serviceable	PASS	PASS	rating 1
+armor	Cult hooded wrap	Fine	PASS	PASS	rating 2
+armor	Cult hooded wrap	Masterwork	PASS	PASS	rating 2
+armor	Cult hooded wrap	Noble	PASS	PASS	rating 3
+armor	Cult hooded wrap	Archeotech	PASS	PASS	rating 3
+armor	Rail worker hazard coat	Junk	PASS	PASS	rating 0
+armor	Rail worker hazard coat	Shoddy	PASS	PASS	rating 1
+armor	Rail worker hazard coat	Common	PASS	PASS	rating 1
+armor	Rail worker hazard coat	Serviceable	PASS	PASS	rating 1
+armor	Rail worker hazard coat	Fine	PASS	PASS	rating 2
+armor	Rail worker hazard coat	Masterwork	PASS	PASS	rating 2
+armor	Rail worker hazard coat	Noble	PASS	PASS	rating 3
+armor	Rail worker hazard coat	Archeotech	PASS	PASS	rating 3
+armor	Child minder apron	Junk	PASS	PASS	rating 0
+armor	Child minder apron	Shoddy	PASS	PASS	rating 1
+armor	Child minder apron	Common	PASS	PASS	rating 1
+armor	Child minder apron	Serviceable	PASS	PASS	rating 1
+armor	Child minder apron	Fine	PASS	PASS	rating 2
+armor	Child minder apron	Masterwork	PASS	PASS	rating 2
+armor	Child minder apron	Noble	PASS	PASS	rating 3
+armor	Child minder apron	Archeotech	PASS	PASS	rating 3
+armor	Forgotten flak bundle	Junk	PASS	PASS	rating 3
+armor	Forgotten flak bundle	Shoddy	PASS	PASS	rating 4
+armor	Forgotten flak bundle	Common	PASS	PASS	rating 4
+armor	Forgotten flak bundle	Serviceable	PASS	PASS	rating 4
+armor	Forgotten flak bundle	Fine	PASS	PASS	rating 5
+armor	Forgotten flak bundle	Masterwork	PASS	PASS	rating 5
+armor	Forgotten flak bundle	Noble	PASS	PASS	rating 6
+armor	Forgotten flak bundle	Archeotech	PASS	PASS	rating 6

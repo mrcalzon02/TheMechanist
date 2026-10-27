@@ -350,6 +350,8 @@ final class PrimitiveParticleEmitter2D {
         g.setComposite(old);
     }
 
+    void clear() {java.util.Arrays.fill(active,false);cursor=0;random.setSeed(0x51A7E11L);}
+
     void spawnWeaponFire(WeaponFireProfile profile, float startX, float startY, float dirX, float dirY) {
         float len = (float)Math.sqrt(dirX * dirX + dirY * dirY);
         float nx = len <= 0.0001f ? 1f : dirX / len;

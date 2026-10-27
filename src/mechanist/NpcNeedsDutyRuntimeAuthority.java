@@ -64,17 +64,22 @@ final class NpcNeedsDutyRuntimeAuthority {
         out.schedulerAudit = selection.auditLine(game.turn, game.playerX, game.playerY, localBudget);
         ArrayList<WorldPositionalSoundAuthority.Footstep> audibleSteps = new ArrayList<>();
 
+        if(selection.selected.stream().anyMatch(n->!n.combatTeam.isBlank()))
+            java.util.Collections.shuffle(selection.selected,new java.util.Random(world.seed ^ game.turn));
         for (NpcEntity npc : selection.selected) {
-            if (npc == null) continue;
+            if (npc == null || npc.developerStationary || npc.hp<=0) continue;
             int beforeX = npc.x;
             int beforeY = npc.y;
             String beforeState = npc.state;
-            npc.tick(world, game.playerX, game.playerY, game.turn);
+            boolean combat=CyberneticLimbAuthority.autoService(game,npc);
+            if(!combat) combat=ActorConsumableAuthority.autoUse(game,npc,false);
+            if(!combat) combat=ActorCombatAuthority.takeNpcTurn(game,npc);
+            if(!combat) npc.tick(world, game.playerX, game.playerY, game.turn);
             if (isNeedState(npc)) out.needs++;
             if (isDutyState(npc)) out.duties++;
             if (npc.x != beforeX || npc.y != beforeY) {
                 out.moved++;
-            } else if (!sleeping && applyPassiveDesire(world, npc, game.turn, game.worldTurn, game.playerX, game.playerY)) {
+            } else if (!combat && !sleeping && applyPassiveDesire(world, npc, game.turn, game.worldTurn, game.playerX, game.playerY)) {
                 out.passiveDesires++;
                 if (npc.x != beforeX || npc.y != beforeY) out.moved++;
             }
