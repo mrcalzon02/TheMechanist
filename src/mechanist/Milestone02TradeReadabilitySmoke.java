@@ -39,10 +39,47 @@ final class Milestone02TradeReadabilitySmoke {
             throw new AssertionError("Ordinary goods should remain sellable.");
         }
 
+        for (String proof : List.of("Ident chip B-73117", "Sealed object F-73118",
+                "Fine Ident chip B-73117", "Common Sealed object F-73118")) {
+            if (TradeReadabilityAuthority.saleAllowed(proof)) {
+                throw new AssertionError("Generated contract proof must not be sellable: " + proof);
+            }
+        }
+        if (!TradeReadabilityAuthority.saleAllowed("Ident chip reader")) {
+            throw new AssertionError("Ordinary identification equipment must remain sellable.");
+        }
+        verifyContractProofSaleRefusal();
+
         for (String line : affordable) rejectLeaks(line);
         for (String line : blocked) rejectLeaks(line);
         for (String line : context) rejectLeaks(line);
         for (String line : evidenceSale) rejectLeaks(line);
+    }
+
+    private static void verifyContractProofSaleRefusal() {
+        GamePanel game = new GamePanel();
+        if (game.timer != null) game.timer.stop();
+        try {
+            game.activeTraderSession = new TraderSession();
+            game.inventory.clear();
+            game.inventory.add("Ident chip B-73117");
+            game.inventory.add("Sealed object F-73118");
+            int money = game.carriedScript;
+            int turn = game.turn;
+            java.lang.reflect.Method sell = GamePanel.class.getDeclaredMethod("sellSelectedInventoryItemToTrader");
+            sell.setAccessible(true);
+            for (int index = 0; index < 2; index++) {
+                game.selectedInventoryIndex = index;
+                sell.invoke(game);
+                if (game.inventory.size() != 2 || game.carriedScript != money || game.turn != turn) {
+                    throw new AssertionError("Refused proof sale must preserve inventory, currency and turn.");
+                }
+            }
+        } catch (ReflectiveOperationException exception) {
+            throw new AssertionError("Could not exercise the ordinary sale action.", exception);
+        } finally {
+            game.shutdownRuntime();
+        }
     }
 
     private static void requireContains(List<String> lines, String expected, String label) {

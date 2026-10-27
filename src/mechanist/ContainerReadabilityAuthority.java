@@ -39,7 +39,8 @@ final class ContainerReadabilityAuthority {
 
     static String riskLabel(String item) {
         String text = item == null ? "" : item.toLowerCase(Locale.ROOT);
-        if (containsAny(text, "quest", "journal", "lockbox", "evidence", "proof")) return "mission, evidence, or intelligence item; transfer with care";
+        if (containsAny(text, "quest", "journal", "lockbox", "evidence", "proof",
+                "ident chip b-", "sealed object f-")) return "mission, evidence, or intelligence item; transfer with care";
         if (containsAny(text, "cult", "heretic", "warp", "witchsalt", "blasphem")) return "forbidden or corruption-linked item";
         if (containsAny(text, "contraband", "stolen", "illegal", "restricted")) return "restricted or illicit item";
         if (containsAny(text, "explosive", "mine", "grenade", "volatile", "fuel")) return "volatile or hazardous item";

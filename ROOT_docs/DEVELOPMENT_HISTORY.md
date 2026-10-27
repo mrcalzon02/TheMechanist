@@ -1,5 +1,12 @@
 # Development History
 
+### Scheduled contract-proof sale protection and systemic regression (2026-10-27)
+
+- Reproduced an ordinary-trade protection gap: generated bounty proof (`Ident chip B-...`) and fetch proof (`Sealed object F-...`) did not contain any of the shared mission/evidence keywords and could pass the Sell guard. Extended ContainerReadabilityAuthority's existing risk classification for these generated proof prefixes, including quality-prefixed variants. Trade and transfer previews consume that same classification; ordinary identification equipment remains eligible for sale.
+- Expanded Milestone02TradeReadabilitySmoke to cover both generated proof families and quality variants, and invoke the real Sell action for each proof. Refusal must preserve inventory, Script and game turn. The new assertion failed against the original authority and passed after the correction.
+- Compiled all 955 Java sources with JDK 17 `javac --release 17`. Nineteen baseline entry points passed across combat, consumables, structural fixtures, developer facilities, market access/contracts, contract turn-in/persistence, interaction guidance, recruitment/reinforcement continuity, faction construction, vehicle doctrine and strategic transit. Five focused entry points passed after the fix: trade readability/actions, container readability, transfer consistency, contract objective readability and developer facilities. This is headless source verification; live desktop input, complete bounty kill/recovery, every mission and general leader planning are not certified.
+- Refreshed the existing Mermaid ownership records with zero unpositioned modules. No package, installer, release or remote-delivery certification is claimed. At verification, local main already contained 41 commits beyond origin/main; this pass does not independently authorize publishing that prior backlog.
+
 ### Combat fixture matrix and weapon presentation variation (2026-10-27)
 
 - Added admin-only developer-room target controls using the existing four passive turret profiles and all five RoadTransitFixture/VehicleRuntime classes. Seeded identity/state, selected subset, match recreation and cleanup use the existing facility lifecycle; campaign state and systems-room exhibits are retained. The harness does not create fake NPC turrets or grant parked vehicles fictitious guns.
