@@ -15,20 +15,21 @@ final class NativeBattleCaptureProbe {
     static final long ORIGIN=1_000_000;
     private record Case(String id,int size,String preset,int cover) { }
     private static final Case[] CASES={new Case("20v20-rifles-open",20,"rifles",0),new Case("20v20-rifles-cover",20,"rifles",16),new Case("20v20-mixed-cover",20,"mixed",16),new Case("10v10-pursuit-cover",10,"pursuit",12)};
-    private static final class Audio {
+    private static final class Audio implements ActorCombatFeedbackAuthority.AudioSink {
         final GamePanel game;final SoundManager manager=new SoundManager();final float[] samples=new float[44100*2*95];
-        final StringBuilder events=new StringBuilder("millis\tcue\tx\ty\toccluded\troom\tasset\n");int count,missing;
+        final StringBuilder events=new StringBuilder("millis\tcue\tx\ty\toccluded\troom\tasset\trate\tgain\tdelayMillis\n");int count,missing;
         Audio(GamePanel game){this.game=game;manager.load();}
-        void cue(String key,int x,int y,boolean occluded,boolean room,double strength) {
+        public void cue(String key,int x,int y,boolean occluded,boolean room,double strength) {cue(key,x,y,occluded,room,strength,WeaponSoundVariationAuthority.Variation.NEUTRAL);}
+        public void cue(String key,int x,int y,boolean occluded,boolean room,double strength,WeaponSoundVariationAuthority.Variation variation) {
             try {
                 int volume=(int)Math.round(Math.min(game.options.sfxVolume,62)*Math.max(0,Math.min(1,strength))*game.options.volume/100.0);
                 var mix=SpatialAudioAuthority.mix(game.playerX,game.playerY,game.facingDx,game.facingDy,x,y,volume,16,occluded);
-                var pcm=manager.renderPositioned(key,mix,room);if(pcm==null)return;
-                int offset=(int)((ActorCombatFeedbackAuthority.now(game)-ORIGIN)*44100/1000)*2,frames=pcm.samples().length/4;
+                var pcm=manager.renderPositioned(key,mix,room,variation);if(pcm==null)return;
+                int offset=(int)((ActorCombatFeedbackAuthority.now(game)-ORIGIN+variation.delayMillis())*44100/1000)*2,frames=pcm.samples().length/4;
                 int resampled=Math.round(frames*44100/pcm.sampleRate());
                 for(int i=0;i<resampled;i++){int source=Math.min(frames-1,(int)(i*pcm.sampleRate()/44100));for(int ch=0;ch<2;ch++){int from=source*4+ch*2,at=offset+i*2+ch;if(at>=0 && at<samples.length)samples[at]+=(short)((pcm.samples()[from]&255)|((pcm.samples()[from+1]&255)<<8));}}
                 File asset=manager.sounds.get(key);if(asset==null)missing++;count++;
-                events.append(ActorCombatFeedbackAuthority.now(game)-ORIGIN).append('\t').append(key).append('\t').append(x).append('\t').append(y).append('\t').append(occluded).append('\t').append(room).append('\t').append(asset==null?"generated fallback":asset.getPath()).append('\n');
+                events.append(ActorCombatFeedbackAuthority.now(game)-ORIGIN).append('\t').append(key).append('\t').append(x).append('\t').append(y).append('\t').append(occluded).append('\t').append(room).append('\t').append(asset==null?"generated fallback":asset.getPath()).append('\t').append(variation.rate()).append('\t').append(variation.gain()).append('\t').append(variation.delayMillis()).append('\n');
             }catch(Exception error){throw new IllegalStateException("Native cue recording failed: "+key,error);}
         }
         void write(Path folder,int milliseconds)throws Exception {
@@ -52,7 +53,7 @@ final class NativeBattleCaptureProbe {
                 List<NpcEntity> actors=g.world.npcs.stream().filter(n->!n.combatTeam.isBlank()).toList();Path folder=out.resolve(c.id);Files.createDirectories(folder.resolve("2d"));Files.createDirectories(folder.resolve("doom"));
                 StringBuilder positions=new StringBuilder("turn\tid\tteam\tx\ty\thp\tammo\n"),events=new StringBuilder("turn\tattacker\ttarget\tweapon\toutcome\tchance\troll\tdamage\tregion\tcoverPenalty\n"),cover=new StringBuilder("seed\tname\tx\ty\tsymbol\tcoverPenalty\tassetId\tassetPath\n");
                 for(BaseObject b:layout.coverObjects){String asset=ObjectSemanticAssetAuthority.runtimeAssetIdForBaseObject(b).orElse("");cover.append(layout.coverSeed).append('\t').append(b.name).append('\t').append(b.x).append('\t').append(b.y).append('\t').append(b.symbol).append('\t').append(PassiveDefenseEffectsAuthority.coverPenalty(b)).append('\t').append(asset).append('\t').append(mechanist.assets.AssetManager.metadata(asset).map(mechanist.assets.AssetMetadata::pathOrUri).orElse("missing")).append('\n');}
-                Audio audio=new Audio(g);ActorCombatFeedbackAuthority.audioSink(g,audio::cue);Set<String> moved=new HashSet<>();int steps=0,covered=0,frames=0;
+                Audio audio=new Audio(g);ActorCombatFeedbackAuthority.audioSink(g,audio);Set<String> moved=new HashSet<>();int steps=0,covered=0,frames=0;
                 for(int turn=0;turn<=maximum;turn++) {
                     g.putClientProperty("mechanist.captureClock",ORIGIN+turn*500L);
                     if(turn>0){Map<String,Point> before=new HashMap<>();for(NpcEntity n:actors)before.put(n.id,new Point(n.x,n.y));g.advanceTurnBody("");for(NpcEntity n:actors)if(!before.get(n.id).equals(new Point(n.x,n.y))){steps++;moved.add(n.id);}}

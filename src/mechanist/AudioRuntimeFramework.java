@@ -17,6 +17,7 @@ class SoundManager {
     final Set<String> generatedCueKeys = new HashSet<>();
     final DynamicMusicManager music = new DynamicMusicManager();
     private final Object managedVoiceLock = new Object();
+    private final WeaponSoundVariationAuthority.VoiceBudget spatialVoiceBudget=new WeaponSoundVariationAuthority.VoiceBudget(12);
     private Clip introCrawlNarrationClip = null;
     private int introCrawlNarrationToken = 0;
     private boolean missingMusicPackAudited = false;
@@ -118,6 +119,7 @@ class SoundManager {
     void play(String key, GameOptions opt) {
         if (startupCueSuppressed(key)) return;
         int cueVolume=effectiveCueVolume(key,opt);if(cueVolume<=0)return;
+        if(WeaponSoundVariationAuthority.weapon(key)){playPositional(key,0,0,0,0,1,0,false,false,1.0,opt,WeaponSoundVariationAuthority.next(key));return;}
         File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, cueVolume); return; }
         new Thread(() -> {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
@@ -230,6 +232,9 @@ class SoundManager {
                         int listenerX, int listenerY,
                         int facingX, int facingY, boolean occluded,
                         boolean enclosed, double strength, GameOptions opt) {
+        playPositional(key,sourceX,sourceY,listenerX,listenerY,facingX,facingY,occluded,enclosed,strength,opt,WeaponSoundVariationAuthority.next(key));
+    }
+    void playPositional(String key,int sourceX,int sourceY,int listenerX,int listenerY,int facingX,int facingY,boolean occluded,boolean enclosed,double strength,GameOptions opt,WeaponSoundVariationAuthority.Variation variation) {
         if (startupCueSuppressed(key) || opt == null || !opt.soundEnabled
                 || opt.volume <= 0 || opt.sfxVolume <= 0
                 || GraphicsEnvironment.isHeadless()) return;
@@ -240,31 +245,37 @@ class SoundManager {
                 listenerX, listenerY, facingX, facingY,
                 sourceX, sourceY, level, 16, occluded);
         if (!mix.audible()) return;
-        File file = sounds.get(key);
-        // Retain procedural fallback when an asset is absent, but pan it too.
+        var voice=spatialVoiceBudget.acquire(mix.distance());if(voice==null)return;
+        // Nearest audible voices win a bounded set of physical mixer lines.
         new Thread(() -> {
-            Clip clip = null;
+            Clip clip = null;boolean started=false;
             try {
-                PositionedPcm rendered=renderPositioned(key,mix,enclosed);
+                if(voice.cancelled)return;
+                PositionedPcm rendered=renderPositioned(key,mix,enclosed,variation);
                 if(rendered==null)return;
                 byte[] samples=rendered.samples();float sampleRate=rendered.sampleRate();
                 AudioFormat stereo = new AudioFormat(
                         sampleRate, 16, 2, true, false);
+                if(voice.cancelled)return;
                 clip = AudioSystem.getClip();
+                Clip playing=clip;
+                voice.onCancel=()->{try{playing.stop();playing.close();}catch(Exception ignored){}};
+                if(voice.cancelled){playing.close();return;}
                 clip.open(stereo, samples, 0, samples.length);
-                Clip playing = clip;
                 clip.addLineListener(ev -> {
-                    if (ev.getType() == LineEvent.Type.STOP) playing.close();
+                    if (ev.getType() == LineEvent.Type.STOP) {spatialVoiceBudget.release(voice);playing.close();}
                 });
-                clip.start();
+                if(variation.delayMillis()>0)Thread.sleep(variation.delayMillis());
+                if(voice.cancelled){playing.close();return;}
+                clip.start();started=true;
             } catch (Throwable error) {
                 if (clip != null) {
                     try { clip.close(); } catch (Throwable ignored) { }
                 }
-                DebugLog.warn("AUDIO_PLAY", "Positional sound unavailable: "
+                if(!voice.cancelled)DebugLog.warn("AUDIO_PLAY", "Positional sound unavailable: "
                         + key + " (" + error.getClass().getSimpleName()
                         + ": " + error.getMessage() + ")");
-            }
+            } finally {if(!started)spatialVoiceBudget.release(voice);}
         }, "spatial-sound-" + key).start();
     }
 
@@ -275,6 +286,9 @@ class SoundManager {
     record PositionedPcm(byte[] samples,float sampleRate) { }
     /** The exact live cue decoder/mixer, also usable by headless recording without a sound device. */
     PositionedPcm renderPositioned(String key,SpatialAudioAuthority.Mix mix,boolean enclosed) throws Exception {
+        return renderPositioned(key,mix,enclosed,WeaponSoundVariationAuthority.Variation.NEUTRAL);
+    }
+    PositionedPcm renderPositioned(String key,SpatialAudioAuthority.Mix mix,boolean enclosed,WeaponSoundVariationAuthority.Variation variation) throws Exception {
         if(!mix.audible())return null;
         File file=sounds.get(key);
                 byte[] samples;
@@ -306,6 +320,7 @@ class SoundManager {
                             generatedCueBytes(key, 100, mono), 1, mix);
                 }
                 if (samples.length == 0) return null;
+                if(!variation.equals(WeaponSoundVariationAuthority.Variation.NEUTRAL)) samples=WeaponSoundVariationAuthority.varyStereo(samples,variation);
                 if (enclosed) samples = SpatialAudioAuthority.roomReflectionsPcm16(
                         samples, Math.round(sampleRate), 1.0);
         return new PositionedPcm(samples,sampleRate);

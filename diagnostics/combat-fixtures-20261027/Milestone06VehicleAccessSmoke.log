@@ -1,0 +1,8 @@
+[01:40:26.018] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+Milestone 06 vehicle access smoke passed.
+Milestone 06 strategic vehicle transit smoke passed.
+Milestone 06 strategic vehicle transit history smoke passed.
+Milestone 06 vehicle strategic transit commit smoke passed.
+Milestone 06 vehicle manifest lifecycle smoke passed.
+Milestone 06 vehicle manifest history smoke passed.
+Milestone 06 vehicle dashboard smoke passed.

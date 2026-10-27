@@ -7760,9 +7760,11 @@ final class LegacySoundSurface {
                         int listenerX, int listenerY,
                         int facingX, int facingY, boolean occluded,
                         boolean enclosed, double strength, GameOptions options) {
+        playPositioned(key,sourceX,sourceY,listenerX,listenerY,facingX,facingY,occluded,enclosed,strength,options,WeaponSoundVariationAuthority.next(key));
+    }
+    void playPositioned(String key,int sourceX,int sourceY,int listenerX,int listenerY,int facingX,int facingY,boolean occluded,boolean enclosed,double strength,GameOptions options,WeaponSoundVariationAuthority.Variation variation) {
         ensureLoaded();
-        manager.playPositional(key, sourceX, sourceY, listenerX, listenerY,
-                facingX, facingY, occluded, enclosed, strength, options);
+        manager.playPositional(key,sourceX,sourceY,listenerX,listenerY,facingX,facingY,occluded,enclosed,strength,options,variation);
     }
 
     void playIntroCrawlNarration(GameOptions options) {

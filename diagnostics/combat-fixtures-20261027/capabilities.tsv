@@ -1,0 +1,11 @@
+capability	status	evidence
+Player attacks against four turret mounts	EXECUTED	attacks.tsv; actual BaseObject integrity
+Player attacks against five vehicle classes	EXECUTED	attacks.tsv; actual vehicle armor component
+Armor exhaustion then chassis damage	EXECUTED	bounded repeated Arc Rifle attacks until wreck
+Vehicle component disable and persisted readback	EXECUTED	components.tsv; direct component-authority fault injection, not aimed gunfire
+Autonomous turret targeting, power, ammunition, crew	GAP	PassiveDefenseEffectsAuthority turret doctrine reserves these systems
+Vehicle-mounted firing against actors or vehicles	GAP	No vehicle weapon execution authority; handheld mounted-name classification is not a mounted gun
+NPC attacks against structural fixtures	GAP	ActorCombatAuthority currently selects actor targets
+Aimed component selection	GAP	Structural combat selects armor, then frame; other components tested by explicit fault injection
+Vehicle road movement, crew, fuel and service	SEPARATE REGRESSIONS	Run included existing vehicle transit/access/manifest/fuel/maintenance entry points
+Destroyed turret cover and raid resistance	EXECUTED	Zero integrity removes both passive bonuses

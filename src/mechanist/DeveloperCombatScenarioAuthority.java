@@ -37,6 +37,7 @@ final class DeveloperCombatScenarioAuthority {
             game.world.npcs.add(n);DeveloperFacilityAuthority.layout(game).arenaActors.add(n.id);
         }
         DeveloperCoverLayoutAuthority.scatter(game);
+        DeveloperCombatFixtureAuthority.scatter(game);
         ActorCombatAuthority.resetDiagnostics(game);game.world.dirtyVisionRevision++;
         game.logEvent("Arena "+size+"v"+size+" / "+preset+" / seed "+seed+". A=Guard, B=Cultist; player observes. Cybernetic candidate chance "+DeveloperFacilityAuthority.layout(game).cyberneticPercent+"%. Use watch or step controls.");
     }

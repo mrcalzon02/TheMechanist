@@ -1,0 +1,1 @@
+CombatFixtureExecutionSmoke PASS checks=5148 attacks=486 replayAttacks=486 turretTypes=4 vehicleClasses=5 seeds=3 realStructuralExecution=true autonomousTurretFire=GAP mountedVehicleFire=GAP

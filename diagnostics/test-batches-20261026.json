@@ -66,6 +66,20 @@
       "distinctCues": 11,
       "actualActorFamilies": 9,
       "report": "native-battles-20261026/weapon-audio/index.html"
+    },
+    {
+      "id": "combat-fixtures-20261027",
+      "status": "packaged-execution-verified-with-explicit-capability-gaps",
+      "attacks": 486,
+      "replayedAttacks": 486,
+      "fixtureChecks": 5148,
+      "turretTypes": 4,
+      "vehicleClasses": 5,
+      "componentCases": 40,
+      "focusedEntryPoints": 17,
+      "soundVariationChecks": 2107,
+      "nativeCaptures": 18,
+      "report": "combat-fixtures-20261027/index.html"
     }
   ],
   "policy": "Retain baseline failures and historical build identity. Record seeds/settings, outcomes/events, known failures, source/package hashes and rerun scripts with supporting code. Runtime user data and compiled artifacts are excluded."

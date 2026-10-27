@@ -3,7 +3,7 @@ from pathlib import Path
 import runpy,subprocess
 
 repo=Path(__file__).resolve().parents[2]
-FOLDERS=['render-billboards-20261025','developer-facility-20261025','combat-scenarios-20261026','combat-execution-20261026','combat-support-20261026','medical-treatment-boundaries-20261026','cybernetics-20261026','native-battles-20261026']
+FOLDERS=['render-billboards-20261025','developer-facility-20261025','combat-scenarios-20261026','combat-execution-20261026','combat-support-20261026','medical-treatment-boundaries-20261026','cybernetics-20261026','native-battles-20261026','combat-fixtures-20261027']
 EXTENSIONS={'.png','.tsv','.json','.csv','.html','.py','.ps1','.js','.cjs','.java','.txt','.log','.mp4'}
 def publication_files():
     paths=[repo/p for p in subprocess.check_output(['git','diff','HEAD','--name-only'],cwd=repo,text=True,stderr=subprocess.DEVNULL).splitlines()]
@@ -16,6 +16,8 @@ def publication_files():
             paths += [p for p in folder.iterdir() if p.is_file() and p.suffix in {'.tsv','.json'}]
     audio=repo/'diagnostics/native-battles-20261026/weapon-audio'
     if audio.exists():paths += [p for p in audio.iterdir() if p.is_file() and p.suffix in {'.wav','.png','.html','.tsv','.json','.txt','.log'}]
+    variation=audio/'variation'
+    if variation.exists():paths += [p for p in variation.iterdir() if p.is_file() and p.suffix in {'.wav','.html','.tsv','.json','.txt'}]
     paths += [repo/'diagnostics/test-batches-20261026.json']
     return sorted(set(p for p in paths if p.is_file()))
 

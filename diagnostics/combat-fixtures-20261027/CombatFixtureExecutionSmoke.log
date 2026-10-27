@@ -1,0 +1,2 @@
+[01:40:06.404] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+CombatFixtureExecutionSmoke PASS checks=5148 attacks=486 replayAttacks=486 turretTypes=4 vehicleClasses=5 seeds=3 realStructuralExecution=true autonomousTurretFire=GAP mountedVehicleFire=GAP

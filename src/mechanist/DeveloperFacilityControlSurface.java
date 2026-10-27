@@ -34,6 +34,10 @@ final class DeveloperFacilityControlSurface {
             actions.add(new Action("Cover: clear","cover 0 81000"));
             actions.add(new Action("Cover: scatter 12","cover 12 81000"));
             actions.add(new Action("Cover: scatter 24","cover 24 81001"));
+            actions.add(new Action("Targets: turrets + vehicles","fixtures all 91000"));
+            actions.add(new Action("Targets: turret mounts","fixtures turrets 91000"));
+            actions.add(new Action("Targets: vehicles","fixtures vehicles 91000"));
+            actions.add(new Action("Targets: clear","fixtures none 91000"));
             actions.add(new Action("Watch / pause match","watch"));actions.add(new Action("Advance one turn","step 1"));
             actions.add(new Action("Advance ten turns","step 10"));actions.add(new Action("Combat diagnostics","combatstats"));
             for(String team:new String[]{"A","B"}) {

@@ -24,6 +24,9 @@ final class DeveloperFacilityAuthority {
         int cyberneticPercent=25;
         int coverCount;long coverSeed=81000;
         final java.util.List<BaseObject> coverObjects=new ArrayList<>();
+        String fixtureSet="none"; long fixtureSeed=91000;
+        final List<BaseObject> combatFixtures=new ArrayList<>();
+        final List<MapObjectState> combatVehicles=new ArrayList<>();
         long spawnSerial;
     }
     record Session(GamePanel campaign, GamePanel facility, World facilityWorld, boolean campaignTimerRunning) { }
@@ -44,7 +47,7 @@ final class DeveloperFacilityAuthority {
     static String help() {
         return "/devroom [enter|exit|hub|combat|systems|trade|supplies|prepare|restock|clear|fund amount|spawn FACTION count tier|animal PROFILE count tier|"
                 + "standing FACTION value|reputation FACTION points|vendor FACTION CATEGORY quality|"
-                + "select faction/category/quality delta|tier delta|count delta|match size preset seed|scenario delta|step turns|watch|combatstats|cybernetics percent|cover count seed|support A/B item|armor A/B item]. Reputation costs 20 Script per point.";
+                + "select faction/category/quality delta|tier delta|count delta|match size preset seed|scenario delta|step turns|watch|combatstats|cybernetics percent|cover count seed|fixtures none/turrets/vehicles/all seed|support A/B item|armor A/B item]. Reputation costs 20 Script per point.";
     }
 
     static String reject(GamePanel game, String action, List<String> args) {
@@ -58,6 +61,7 @@ final class DeveloperFacilityAuthority {
                 case "hub", "combat", "systems", "trade", "supplies", "prepare", "restock", "clear" -> { if (!args.isEmpty()) return help(); }
                 case "watch", "combatstats" -> {if(!args.isEmpty()) return help();}
                 case "cover" -> {if(args.size()!=2 || integer(args,0)<0 || integer(args,0)>80) return "Use cover count(0..80) seed.";Long.parseLong(args.get(1));}
+                case "fixtures" -> {if(args.size()!=2 || !DeveloperCombatFixtureAuthority.valid(args.get(0))) return "Use fixtures none/turrets/vehicles/all seed.";Long.parseLong(args.get(1));}
                 case "cybernetics" -> {if(args.size()!=1 || integer(args,0)<0 || integer(args,0)>100) return "Use cybernetics percent(0..100) for subsequent test candidates.";}
                 case "step" -> {if(args.size()!=1 || integer(args,0)<1 || integer(args,0)>120) return "Use step turns(1..120).";}
                 case "scenario" -> {if(args.size()!=1) return help();integer(args,0);}
@@ -112,6 +116,7 @@ final class DeveloperFacilityAuthority {
             case "restock" -> { restock(game); game.logEvent("Catalog containers refilled to five of every registered item at every quality."); }
             case "clear" -> clearArena(game);
             case "cover" -> {layout.coverCount=integer(args,0);layout.coverSeed=Long.parseLong(args.get(1));DeveloperCoverLayoutAuthority.scatter(game);}
+            case "fixtures" -> {layout.fixtureSet=args.get(0);layout.fixtureSeed=Long.parseLong(args.get(1));DeveloperCombatFixtureAuthority.scatter(game);}
             case "cybernetics" -> {layout.cyberneticPercent=integer(args,0);game.logEvent("Subsequent test candidates: "+layout.cyberneticPercent+"% seeded chance of fitted cybernetic limbs.");}
             case "match" -> DeveloperCombatScenarioAuthority.prepare(game,integer(args,0),args.get(1),Long.parseLong(args.get(2)));
             case "watch" -> DeveloperCombatScenarioAuthority.toggleWatch(game);
@@ -411,6 +416,7 @@ final class DeveloperFacilityAuthority {
     }
     private static void spawn(GamePanel game,Faction faction,int count,int tier,AnimalProfile animal) {
         Layout layout=layout(game);Rectangle arena=layout.rooms.get("combat");
+        DeveloperCombatFixtureAuthority.clear(game);
         long existing=game.world.npcs.stream().filter(n->arena.contains(n.x,n.y)).count();
         if(existing+count>128) { game.logEvent("Arena is limited to 128 actors; clear it before spawning more.");return; }
         for(int i=0;i<count;i++) {
