@@ -29,13 +29,13 @@ class Clothing {
         String safe = itemName == null || itemName.isBlank() ? "Unidentified clothing" : itemName;
         String low = safe.toLowerCase(java.util.Locale.ROOT);
         boolean damaged = low.contains("damaged") || low.contains("torn") || low.contains("ruined");
-        if (low.contains("scavenger") && low.contains("rag")) return scavengerRags();
-        if (low.contains("bandit") && low.contains("color")) return banditColors(damaged);
-        if (low.contains("arbites") && low.contains("coat")) return arbitesCoat(damaged);
-        if (low.contains("hiver") && low.contains("workwear")) return hiverWorkwear(damaged);
-        int defense = low.contains("power armor") || low.contains("power armour") ? 5
-      : low.contains("armor") || low.contains("armour") ? 3
-      : low.contains("coat") || low.contains("uniform") ? 2 : 1;
-        return new Clothing(safe, Faction.NONE, 0, Math.max(0, defense - (damaged ? 1 : 0)), damaged);
+        if (low.contains("scavenger") && low.contains("rag")) return identified(scavengerRags(),safe,damaged);
+        if (low.contains("bandit") && low.contains("color")) return identified(banditColors(damaged),safe,damaged);
+        if (low.contains("arbites") && low.contains("coat")) return identified(arbitesCoat(damaged),safe,damaged);
+        if (low.contains("hiver") && low.contains("workwear")) return identified(hiverWorkwear(damaged),safe,damaged);
+        return new Clothing(safe, Faction.NONE, 0, ActorArmorAuthority.rating(safe), damaged);
+    }
+    private static Clothing identified(Clothing profile,String identity,boolean damaged) {
+        return new Clothing(identity,profile.alignedFaction,profile.disguiseBase,ActorArmorAuthority.rating(identity),damaged || profile.damaged);
     }
 }

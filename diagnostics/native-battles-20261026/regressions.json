@@ -1,0 +1,82 @@
+[
+  {
+    "test": "SpatialAudioSmoke",
+    "exitCode": 0,
+    "log": "SpatialAudioSmoke.log"
+  },
+  {
+    "test": "WeaponAudioSmoke",
+    "exitCode": 0,
+    "log": "WeaponAudioSmoke.log"
+  },
+  {
+    "test": "ActorCombatPresentationSmoke",
+    "exitCode": 0,
+    "log": "ActorCombatPresentationSmoke.log"
+  },
+  {
+    "test": "CyberneticLimbExecutionSmoke",
+    "exitCode": 0,
+    "log": "CyberneticLimbExecutionSmoke.log"
+  },
+  {
+    "test": "MedicalTreatmentBoundarySmoke",
+    "exitCode": 0,
+    "log": "MedicalTreatmentBoundarySmoke.log"
+  },
+  {
+    "test": "CombatSupportExecutionSmoke",
+    "exitCode": 0,
+    "log": "CombatSupportExecutionSmoke.log"
+  },
+  {
+    "test": "ActorCombatExecutionSmoke",
+    "exitCode": 0,
+    "log": "ActorCombatExecutionSmoke.log"
+  },
+  {
+    "test": "DeveloperFacilitySmoke",
+    "exitCode": 0,
+    "log": "DeveloperFacilitySmoke.log"
+  },
+  {
+    "test": "NpcContinuityDeterminismSmoke",
+    "exitCode": 0,
+    "log": "NpcContinuityDeterminismSmoke.log"
+  },
+  {
+    "test": "Milestone02DoomHudFacingSmoke",
+    "exitCode": 0,
+    "log": "Milestone02DoomHudFacingSmoke.log"
+  },
+  {
+    "test": "LightingFalloffStreetLightSmoke",
+    "exitCode": 0,
+    "log": "LightingFalloffStreetLightSmoke.log"
+  },
+  {
+    "test": "Milestone02RenderAssetBindingDoctrineSmoke",
+    "exitCode": 0,
+    "log": "Milestone02RenderAssetBindingDoctrineSmoke.log"
+  },
+  {
+    "test": "Milestone02MedicalTreatmentReadabilitySmoke",
+    "exitCode": 0,
+    "log": "Milestone02MedicalTreatmentReadabilitySmoke.log"
+  },
+  {
+    "test": "Milestone02BodyConditionReadabilitySmoke",
+    "exitCode": 0,
+    "log": "Milestone02BodyConditionReadabilitySmoke.log"
+  },
+  {
+    "test": "Milestone06StructuralScaleCombatSmoke",
+    "exitCode": 0,
+    "log": "Milestone06StructuralScaleCombatSmoke.log"
+  },
+  {
+    "test": "Milestone04MedicalSupplyProvenanceSmoke",
+    "exitCode": 0,
+    "log": "Milestone04MedicalSupplyProvenanceSmoke.log"
+  }
+]

@@ -1,0 +1,276 @@
+{
+  "date": "2026-10-26",
+  "registryChecks": {
+    "checks": 9189,
+    "consumableProfiles": 49,
+    "armorItems": 97,
+    "qualities": 8,
+    "actorTypes": 2,
+    "status": "PASS"
+  },
+  "encounters": {
+    "runs": 1280,
+    "resolved": 1280,
+    "maximumTurns": 180,
+    "healthRestored": 36640,
+    "dosesUsed": 10335
+  },
+  "aggregate": [
+    {
+      "mode": "knives",
+      "variant": "control",
+      "runs": 80,
+      "winsA": 41,
+      "winsB": 39,
+      "timeouts": 0,
+      "medianTurns": 21.0,
+      "medkits": 0,
+      "stimms": 0,
+      "hpRestored": 0
+    },
+    {
+      "mode": "knives",
+      "variant": "A-medkit",
+      "runs": 80,
+      "winsA": 61,
+      "winsB": 19,
+      "timeouts": 0,
+      "medianTurns": 22.0,
+      "medkits": 640,
+      "stimms": 0,
+      "hpRestored": 4791
+    },
+    {
+      "mode": "knives",
+      "variant": "B-medkit",
+      "runs": 80,
+      "winsA": 24,
+      "winsB": 56,
+      "timeouts": 0,
+      "medianTurns": 20.0,
+      "medkits": 658,
+      "stimms": 0,
+      "hpRestored": 4965
+    },
+    {
+      "mode": "knives",
+      "variant": "A-stimm",
+      "runs": 80,
+      "winsA": 58,
+      "winsB": 22,
+      "timeouts": 0,
+      "medianTurns": 17.5,
+      "medkits": 0,
+      "stimms": 720,
+      "hpRestored": 0
+    },
+    {
+      "mode": "knives",
+      "variant": "B-stimm",
+      "runs": 80,
+      "winsA": 39,
+      "winsB": 41,
+      "timeouts": 0,
+      "medianTurns": 17.0,
+      "medkits": 0,
+      "stimms": 720,
+      "hpRestored": 0
+    },
+    {
+      "mode": "knives",
+      "variant": "A-armor",
+      "runs": 80,
+      "winsA": 80,
+      "winsB": 0,
+      "timeouts": 0,
+      "medianTurns": 18.5,
+      "medkits": 0,
+      "stimms": 0,
+      "hpRestored": 0
+    },
+    {
+      "mode": "knives",
+      "variant": "B-armor",
+      "runs": 80,
+      "winsA": 0,
+      "winsB": 80,
+      "timeouts": 0,
+      "medianTurns": 17.5,
+      "medkits": 0,
+      "stimms": 0,
+      "hpRestored": 0
+    },
+    {
+      "mode": "knives",
+      "variant": "both-all",
+      "runs": 80,
+      "winsA": 38,
+      "winsB": 42,
+      "timeouts": 0,
+      "medianTurns": 57.0,
+      "medkits": 1374,
+      "stimms": 1440,
+      "hpRestored": 7774
+    },
+    {
+      "mode": "rifles",
+      "variant": "control",
+      "runs": 80,
+      "winsA": 40,
+      "winsB": 40,
+      "timeouts": 0,
+      "medianTurns": 13.0,
+      "medkits": 0,
+      "stimms": 0,
+      "hpRestored": 0
+    },
+    {
+      "mode": "rifles",
+      "variant": "A-medkit",
+      "runs": 80,
+      "winsA": 35,
+      "winsB": 45,
+      "timeouts": 0,
+      "medianTurns": 15.0,
+      "medkits": 528,
+      "stimms": 0,
+      "hpRestored": 5280
+    },
+    {
+      "mode": "rifles",
+      "variant": "B-medkit",
+      "runs": 80,
+      "winsA": 51,
+      "winsB": 29,
+      "timeouts": 0,
+      "medianTurns": 15.0,
+      "medkits": 535,
+      "stimms": 0,
+      "hpRestored": 5350
+    },
+    {
+      "mode": "rifles",
+      "variant": "A-stimm",
+      "runs": 80,
+      "winsA": 62,
+      "winsB": 18,
+      "timeouts": 0,
+      "medianTurns": 9.5,
+      "medkits": 0,
+      "stimms": 716,
+      "hpRestored": 0
+    },
+    {
+      "mode": "rifles",
+      "variant": "B-stimm",
+      "runs": 80,
+      "winsA": 16,
+      "winsB": 64,
+      "timeouts": 0,
+      "medianTurns": 9.5,
+      "medkits": 0,
+      "stimms": 716,
+      "hpRestored": 0
+    },
+    {
+      "mode": "rifles",
+      "variant": "A-armor",
+      "runs": 80,
+      "winsA": 40,
+      "winsB": 40,
+      "timeouts": 0,
+      "medianTurns": 13.0,
+      "medkits": 0,
+      "stimms": 0,
+      "hpRestored": 0
+    },
+    {
+      "mode": "rifles",
+      "variant": "B-armor",
+      "runs": 80,
+      "winsA": 40,
+      "winsB": 40,
+      "timeouts": 0,
+      "medianTurns": 13.0,
+      "medkits": 0,
+      "stimms": 0,
+      "hpRestored": 0
+    },
+    {
+      "mode": "rifles",
+      "variant": "both-all",
+      "runs": 80,
+      "winsA": 37,
+      "winsB": 43,
+      "timeouts": 0,
+      "medianTurns": 12.5,
+      "medkits": 848,
+      "stimms": 1440,
+      "hpRestored": 8480
+    }
+  ],
+  "regressions": {
+    "CombatSupportExecutionSmoke": "PASS",
+    "ActorCombatExecutionSmoke": "PASS",
+    "DeveloperFacilitySmoke": "PASS",
+    "NpcContinuityDeterminismSmoke": "PASS",
+    "Milestone04NpcHappinessFactionRecruitmentSmoke": "PASS",
+    "Milestone02MovementExecutionAuthoritySmoke": "PASS",
+    "Milestone02DoomHudFacingSmoke": "PASS",
+    "Milestone02TradeReadabilitySmoke": "PASS",
+    "Milestone02ContainerReadabilitySmoke": "PASS",
+    "Milestone06StructuralScaleCombatSmoke": "PASS",
+    "Milestone04FactionReinforcementLifecycleSmoke": "PASS",
+    "Milestone02BodyConditionReadabilitySmoke": "PASS",
+    "Milestone02CharacterEquipmentMedicalSmoke": "FAIL",
+    "Milestone02MedicalTreatmentReadabilitySmoke": "PASS",
+    "Milestone04MedicalSupplyProvenanceSmoke": "PASS",
+    "Milestone02InventoryReadabilitySmoke": "PASS",
+    "Milestone02CharacterEquipmentScreenIntegrationSmoke": "PASS"
+  },
+  "packages": [
+    {
+      "file": "target/TheMechanist-all.jar",
+      "sha256": "7714ff0e9cb541b7ed93db2c2e68ec9f420ffdee1ce8e561cede9021f44fb686",
+      "baseClasses": 6370,
+      "baseMaximumMajor": 61,
+      "versionDirectoryClasses": {
+        "55": 5,
+        "61": 1,
+        "69": 112
+      },
+      "zipIntegrity": "PASS"
+    },
+    {
+      "file": "target/TheMechanistServer-all.jar",
+      "sha256": "4d27fff359b93c3c944524ec0b22758036dffeb81b29c4dded17e4a45b4e28b9",
+      "baseClasses": 6370,
+      "baseMaximumMajor": 61,
+      "versionDirectoryClasses": {
+        "55": 5,
+        "61": 1,
+        "69": 112
+      },
+      "zipIntegrity": "PASS"
+    }
+  ],
+  "repeatability": "All 1,280 encounter result rows match exactly on a second run of the same packaged build.",
+  "limits": [
+    "Effect magnitudes, armor ratings/coverage and NPC use thresholds are initial tuning, not approved final balance.",
+    "Supported field-use medicines, combat drugs, starting stimulants, recaf and labor stimulants are active. Other narcotics, surgical tools, psychic, addiction and withdrawal effects remain outside this pass; unsupported items are not consumed as fake treatment.",
+    "NPCs use abstract HP plus condition state; players use existing body-part health and condition fields. Finite NPC supplies are seeded for new appropriate roles and persisted; old saves do not gain free replacement stock.",
+    "Common flak/riot protection is fully penetrated by the current rifle profile. Knife protection and location-specific worn gear are verified; rifle armor balance still needs review.",
+    "Healing spends a combat action and is not a guaranteed survival increase; rifle medkit groups can lose more often despite measurable healing.",
+    "Armor uses the best covering layer, not additive stacking of all inventory goods. Damage/quality/coverage tests do not certify every weapon type, shield, augmetic, disease or full injury/loot presentation.",
+    "The paper-doll body-region UI failure is the same pre-existing failure recorded in the prior build. Full Gate3 and release certification were not run.",
+    "An additional broad world-size generation/persistence sweep was interrupted during large-world generation; it is not counted as passed.",
+    "Headless packaged execution only. Installed PACKAGE_client distribution was not replaced."
+  ],
+  "sources": {
+    "ActorConsumableAuthority.java": "671a9ce61fd600426ad4e8bf3b379df8879155e8f146989aaa1a344ed95b1ed4",
+    "ActorArmorAuthority.java": "a0756d524e089807c78c3196d487baf5d6a25313b1a6fc48c2b7f7f8801056b9",
+    "ActorCombatAuthority.java": "682c6e68091cbec71b2234708d49034e58a9f8d3ebce08b7e99c063e269579a9",
+    "CombatSupportExecutionSmoke.java": "9b07d38357e62e481c474744f565eb9e53d26791e6ef8443c3e441e0990a544b",
+    "CombatSupportScenarioProbe.java": "1760e2a4cf5a3c92bfbe7b0c535851f0757a0ecfc51ad0d08c8a6a272405d01e"
+  }
+}

@@ -68,6 +68,7 @@ final class MovementExecutionAuthority {
         if (game == null || game.world == null) return failed(false, 0, 0, 0, 0, "No world is loaded.", "missing-world");
         int fromX = game.playerX;
         int fromY = game.playerY;
+        if (!CyberneticLimbAuthority.mobile(game)) return failed(false,fromX,fromY,fromX,fromY,"Both leg replacements are offline or missing.","limb-mobility");
         if (route == null || route.isEmpty()) return failed(false, fromX, fromY, fromX, fromY, "No movement route supplied.", "empty-route");
 
         ZoneTileState[][] snapshot = legacyWorldTileStateSnapshot(game);

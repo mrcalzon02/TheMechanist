@@ -1,0 +1,87 @@
+[
+  {
+    "test": "CombatFixtureExecutionSmoke",
+    "log": "CombatFixtureExecutionSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06StructuralScaleCombatSmoke",
+    "log": "Milestone06StructuralScaleCombatSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleRuntimeFoundationSmoke",
+    "log": "Milestone06VehicleRuntimeFoundationSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleTransitSmoke",
+    "log": "Milestone06VehicleTransitSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleAccessSmoke",
+    "log": "Milestone06VehicleAccessSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleManifestSmoke",
+    "log": "Milestone06VehicleManifestSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleFuelHistorySmoke",
+    "log": "Milestone06VehicleFuelHistorySmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleMaintenanceSmoke",
+    "log": "Milestone06VehicleMaintenanceSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleOperationFeedbackSmoke",
+    "log": "Milestone06VehicleOperationFeedbackSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone06VehicleLossSmoke",
+    "log": "Milestone06VehicleLossSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "ActorCombatPresentationSmoke",
+    "log": "ActorCombatPresentationSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "ActorCombatExecutionSmoke",
+    "log": "ActorCombatExecutionSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "DeveloperFacilitySmoke",
+    "log": "DeveloperFacilitySmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "WeaponAudioSmoke",
+    "log": "WeaponAudioSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "WeaponSoundVariationSmoke",
+    "log": "WeaponSoundVariationSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "SpatialAudioSmoke",
+    "log": "SpatialAudioSmoke.log",
+    "exitCode": 0
+  },
+  {
+    "test": "Milestone02DoomHudFacingSmoke",
+    "log": "Milestone02DoomHudFacingSmoke.log",
+    "exitCode": 0
+  }
+]

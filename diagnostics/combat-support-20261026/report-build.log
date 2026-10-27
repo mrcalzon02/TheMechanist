@@ -1,0 +1,36 @@
+{
+  "checks": {
+    "checks": 9189,
+    "consumableProfiles": 49,
+    "armorItems": 97,
+    "qualities": 8,
+    "actorTypes": 2,
+    "status": "PASS"
+  },
+  "encounters": {
+    "runs": 1280,
+    "resolved": 1280,
+    "maximumTurns": 180,
+    "healthRestored": 36640,
+    "dosesUsed": 10335
+  },
+  "regressions": {
+    "CombatSupportExecutionSmoke": "PASS",
+    "ActorCombatExecutionSmoke": "PASS",
+    "DeveloperFacilitySmoke": "PASS",
+    "NpcContinuityDeterminismSmoke": "PASS",
+    "Milestone04NpcHappinessFactionRecruitmentSmoke": "PASS",
+    "Milestone02MovementExecutionAuthoritySmoke": "PASS",
+    "Milestone02DoomHudFacingSmoke": "PASS",
+    "Milestone02TradeReadabilitySmoke": "PASS",
+    "Milestone02ContainerReadabilitySmoke": "PASS",
+    "Milestone06StructuralScaleCombatSmoke": "PASS",
+    "Milestone04FactionReinforcementLifecycleSmoke": "PASS",
+    "Milestone02BodyConditionReadabilitySmoke": "PASS",
+    "Milestone02CharacterEquipmentMedicalSmoke": "FAIL",
+    "Milestone02MedicalTreatmentReadabilitySmoke": "PASS",
+    "Milestone04MedicalSupplyProvenanceSmoke": "PASS",
+    "Milestone02InventoryReadabilitySmoke": "PASS",
+    "Milestone02CharacterEquipmentScreenIntegrationSmoke": "PASS"
+  }
+}

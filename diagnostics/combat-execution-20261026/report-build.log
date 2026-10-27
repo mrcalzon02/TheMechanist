@@ -1,0 +1,79 @@
+[
+  {
+    "scenario": "equal-knives-contact",
+    "runs": 80,
+    "winsA": 49,
+    "winsB": 31,
+    "timeouts": 0,
+    "medianTurns": 17.0,
+    "damage": 38906,
+    "shots": 0,
+    "wallRefusals": 0
+  },
+  {
+    "scenario": "equal-rifles-range",
+    "runs": 80,
+    "winsA": 42,
+    "winsB": 38,
+    "timeouts": 0,
+    "medianTurns": 13.0,
+    "damage": 38316,
+    "shots": 10365,
+    "wallRefusals": 0
+  },
+  {
+    "scenario": "rifles-vs-knives",
+    "runs": 80,
+    "winsA": 80,
+    "winsB": 0,
+    "timeouts": 0,
+    "medianTurns": 13.0,
+    "damage": 23721,
+    "shots": 2699,
+    "wallRefusals": 0
+  },
+  {
+    "scenario": "pistols-vs-heavy",
+    "runs": 80,
+    "winsA": 0,
+    "winsB": 80,
+    "timeouts": 0,
+    "medianTurns": 8.0,
+    "damage": 29862,
+    "shots": 5856,
+    "wallRefusals": 0
+  },
+  {
+    "scenario": "intellect-2-vs-12",
+    "runs": 80,
+    "winsA": 43,
+    "winsB": 37,
+    "timeouts": 0,
+    "medianTurns": 21.0,
+    "damage": 38574,
+    "shots": 5489,
+    "wallRefusals": 0
+  },
+  {
+    "scenario": "rifles-wall-separated",
+    "runs": 80,
+    "winsA": 0,
+    "winsB": 0,
+    "timeouts": 80,
+    "medianTurns": 120.0,
+    "damage": 0,
+    "shots": 0,
+    "wallRefusals": 172800
+  },
+  {
+    "scenario": "skill-2-vs-12",
+    "runs": 80,
+    "winsA": 0,
+    "winsB": 80,
+    "timeouts": 0,
+    "medianTurns": 10.0,
+    "damage": 26416,
+    "shots": 2344,
+    "wallRefusals": 0
+  }
+]

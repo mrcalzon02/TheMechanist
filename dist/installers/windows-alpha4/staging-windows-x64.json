@@ -1,0 +1,21 @@
+{
+  "authenticatedWaitAuthority": true,
+  "commit": "785a04151036e50498d1a7269a63aa6f2f58b928",
+  "fullRemoteWorldAuthority": false,
+  "mapAuthority": false,
+  "movementAuthority": false,
+  "mutableStorageIncluded": false,
+  "nativeRemoteClientLauncher": "The Mechanist Remote Lobby",
+  "payload": "C:\\GITS\\The Mechanist\\TheMechanist\\build\\native-installer\\windows\\payload",
+  "platform": "windows-x64",
+  "playtestDocumentCount": 8,
+  "playtestOperationsVerified": true,
+  "portableRemoteClientLauncher": "Run-Remote-Client.cmd",
+  "releaseHardened": true,
+  "remoteClientEntryPoint": "mechanist.RemoteClientMain",
+  "remoteGameplayCertified": false,
+  "runtimeImage": "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-alpha4-release\\TheMechanist-0.9.10iz-alpha.4-windows-x64\\runtime",
+  "sourceVerification": "C:\\GITS\\The Mechanist\\TheMechanist\\build\\native-installer\\windows\\payload\\certification\\installer-source-verification.json",
+  "version": "0.9.10iz-alpha.4",
+  "waitCommand": "WAIT"
+}

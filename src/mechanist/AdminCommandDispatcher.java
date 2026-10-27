@@ -42,6 +42,7 @@ final class AdminCommandDispatcher {
             case "/advance_turn" -> handleAdvanceTurn(game, context, args);
             case "/spawn_item" -> handleSpawnItem(game, context, args);
             case "/teleport" -> handleTeleport(game, context, args);
+            case "/devroom", "/developer_room", "devroom" -> handleDeveloperFacility(game,context,args);
             case "/long_action" -> handleLongAction(context, args);
             case "/long_move" -> handleLongMove(context, args);
             case "/clear_action" -> handleClearAction(context);
@@ -146,6 +147,16 @@ final class AdminCommandDispatcher {
         } catch (NumberFormatException nfe) {
             return "Teleport coordinates must be integers.";
         }
+    }
+
+    private String handleDeveloperFacility(GamePanel game, InternalServerSessionAuthority.CommandContext context, String[] args) {
+        if(args.length>0 && args[0].equalsIgnoreCase("help")) return DeveloperFacilityAuthority.help();
+        String action=args.length==0?"enter":args[0].toLowerCase(Locale.ROOT);
+        java.util.List<String> arguments=args.length<2?java.util.List.of():java.util.List.of(Arrays.copyOfRange(args,1,args.length));
+        String refusal=DeveloperFacilityAuthority.reject(game,action,arguments);
+        if(!refusal.isBlank()) return refusal;
+        AuthoritativeWorldSnapshot snapshot=mutationSink.submitCommand(game,new DeveloperFacilityCommand(context.playerId(),action,arguments));
+        return "Developer facility request resolved. "+compact(snapshot)+" Use /devroom help for controls; /devroom exit resumes the campaign.";
     }
 
     private String handleLongAction(InternalServerSessionAuthority.CommandContext context, String[] args) {
@@ -337,6 +348,6 @@ final class AdminCommandDispatcher {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " commands=/server_status,/action_status,/worldmode,/setrate,/add_money,/advance_turn,/spawn_item,/teleport,/long_action,/long_move,/clear_action,/save_catalog,/save_itemized,/save_architecture,/faction_continuity,/faction_autonomy,/faction_tick,/player_assignments,/rank_parity,/personnel_parity,/ui_framework,/management_ui,/qol_defaults,/gameplay_defaults,/project_evaluation,/gap_analysis,/replanned_goals,/order_of_operations,/hidden_dependency,/blueprint_editor,/construction_validation,/construction_progress,/forcekick + " + GameplayConsoleCommandAuthority.auditSummary() + " admin=internal-server-owner console=ConsoleCommandRequest mutations=named-WorldCommandRequest";
+        return "authority=" + VERSION + " commands=/server_status,/action_status,/worldmode,/setrate,/add_money,/advance_turn,/spawn_item,/teleport,/devroom,/long_action,/long_move,/clear_action,/save_catalog,/save_itemized,/save_architecture,/faction_continuity,/faction_autonomy,/faction_tick,/player_assignments,/rank_parity,/personnel_parity,/ui_framework,/management_ui,/qol_defaults,/gameplay_defaults,/project_evaluation,/gap_analysis,/replanned_goals,/order_of_operations,/hidden_dependency,/blueprint_editor,/construction_validation,/construction_progress,/forcekick + " + GameplayConsoleCommandAuthority.auditSummary() + " admin=internal-server-owner console=ConsoleCommandRequest mutations=named-WorldCommandRequest";
     }
 }

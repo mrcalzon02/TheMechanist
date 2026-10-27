@@ -1,0 +1,56 @@
+{
+  "archive": "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64.zip",
+  "artifactCount": 207,
+  "commit": "e59b3e1b036abe5ab59234769d1ac283eeb01545",
+  "distribution": "TheMechanist-0.9.10iz-windows-x64",
+  "jars": {
+    "client": {
+      "classes": 6263,
+      "implementationVersion": "0.9.10iz",
+      "mainClass": "mechanist.TheMechanist",
+      "path": "packages/client/TheMechanist.jar",
+      "projectClasses": 2162,
+      "remoteClientEntryClass": true,
+      "sha256": "c5e6d0c921fa44467665b936c14ed742615d7375ecb1480e285b73620c70bc3c"
+    },
+    "launcher": {
+      "classes": 29,
+      "implementationVersion": "0.9.10iz",
+      "mainClass": "mechanist.launcher.MechanistLauncherApp",
+      "path": "launcher/MechanistLauncher.jar",
+      "projectClasses": 29,
+      "remoteClientEntryClass": null,
+      "sha256": "1959ec4c2bd0ca56cfc684e8f30599d0766a80154d9551145760cd7b8979c6fa"
+    },
+    "server": {
+      "classes": 6263,
+      "implementationVersion": "0.9.10iz",
+      "mainClass": "mechanist.MechanistServerMain",
+      "path": "packages/server/TheMechanistServer.jar",
+      "projectClasses": 2162,
+      "remoteClientEntryClass": null,
+      "sha256": "6a6d82184e14f11fbac9535c91b93be0b042ab6b6ae1af6ac9581f070170bc53"
+    }
+  },
+  "javaRelease": 17,
+  "launcherCompatibility": {
+    "path": "manifests/launcher-runtime-manifest.json",
+    "remoteClientEntryPoint": "mechanist.RemoteClientMain",
+    "status": "verified",
+    "supportLibraryCount": 44
+  },
+  "platform": "windows-x64",
+  "releaseHardened": true,
+  "remoteClientEntryPoint": "mechanist.RemoteClientMain",
+  "remoteClientLauncher": {
+    "mainClass": "mechanist.RemoteClientMain",
+    "path": "Run-Remote-Client.cmd",
+    "portableAfterZipExtraction": true,
+    "status": "verified"
+  },
+  "requiredNativeFragment": "natives-windows",
+  "status": "verified",
+  "supportJarCount": 44,
+  "version": "0.9.10iz",
+  "versionAuthorityVerified": true
+}

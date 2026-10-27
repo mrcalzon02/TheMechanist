@@ -1,0 +1,10 @@
+[13:42:05.308] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+CombatSupportScenarioProbe runs=160 resolved=160 restored=4791 used=640
+CombatSupportScenarioProbe runs=320 resolved=320 restored=9756 used=2018
+CombatSupportScenarioProbe runs=480 resolved=480 restored=9756 used=2738
+CombatSupportScenarioProbe runs=640 resolved=640 restored=17530 used=5552
+CombatSupportScenarioProbe runs=800 resolved=800 restored=22810 used=6080
+CombatSupportScenarioProbe runs=960 resolved=960 restored=28160 used=7331
+CombatSupportScenarioProbe runs=1120 resolved=1120 restored=28160 used=8047
+CombatSupportScenarioProbe runs=1280 resolved=1280 restored=36640 used=10335
+CombatSupportScenarioProbe COMPLETE runs=1280 resolved=1280 healthRestored=36640 dosesUsed=10335

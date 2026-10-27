@@ -17,6 +17,8 @@ final class Milestone06FactionVehicleRouteTransitCommitSmoke {
             World wrongDestination = world(61044L,
                     ZoneType.NEUTRAL_CIVILIAN_FLOOR,
                     7, 1, 3, 1, 0);
+            String destinationKey = Integer.toString(
+                    destination.locationKey());
             game.world = source;
             game.turn = 1_700;
             game.worldTurn = 1_700L;
@@ -67,7 +69,6 @@ final class Milestone06FactionVehicleRouteTransitCommitSmoke {
             int suspicionBefore = game.suspicion;
             List<String> inventoryBefore = List.copyOf(game.inventory);
 
-            String destinationKey = Integer.toString(destination.locationKey());
             FactionStrategicPlan plan = new FactionStrategicPlan();
             plan.id = "STRAT-ROUTE-RESOLVED-COMMIT";
             plan.faction = Faction.MECHANICUS;

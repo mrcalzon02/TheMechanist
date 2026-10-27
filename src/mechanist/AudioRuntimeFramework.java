@@ -17,6 +17,7 @@ class SoundManager {
     final Set<String> generatedCueKeys = new HashSet<>();
     final DynamicMusicManager music = new DynamicMusicManager();
     private final Object managedVoiceLock = new Object();
+    private final WeaponSoundVariationAuthority.VoiceBudget spatialVoiceBudget=new WeaponSoundVariationAuthority.VoiceBudget(12);
     private Clip introCrawlNarrationClip = null;
     private int introCrawlNarrationToken = 0;
     private boolean missingMusicPackAudited = false;
@@ -36,6 +37,8 @@ class SoundManager {
         put("weapon_reload", "assets/sound/effects/reload.wav");
         put("weapon_shot", "assets/sound/effects/shot.wav");
         put("weapon_slice", "assets/sound/effects/slice.wav");
+        put("weapon_chain", "assets/sound/effects/Chainsaw_strikes_met_#3-1779775359727.wav");
+        put("weapon_chain_motor", "assets/sound/effects/Chainsaw_sounds_#2-1779775306406.wav");
         put("weapon_thundering", "assets/sound/effects/thundering.wav");
         put("footstep_metal", "assets/sound/core/footstep_metal_01.wav");
         put("footstep_grate", "assets/sound/core/footstep_grate_01.wav");
@@ -115,19 +118,25 @@ class SoundManager {
     }
     void play(String key, GameOptions opt) {
         if (startupCueSuppressed(key)) return;
-        if (opt == null || !opt.soundEnabled || opt.volume <= 0) return;
-        File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume); return; }
+        int cueVolume=effectiveCueVolume(key,opt);if(cueVolume<=0)return;
+        if(WeaponSoundVariationAuthority.weapon(key)){playPositional(key,0,0,0,0,1,0,false,false,1.0,opt,WeaponSoundVariationAuthority.next(key));return;}
+        File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, cueVolume); return; }
         new Thread(() -> {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
                 Clip clip = AudioSystem.getClip();
                 clip.open(ais);
-                setClipGain(clip, ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume);
+                setClipGain(clip,cueVolume);
                 clip.addLineListener(ev -> { if (ev.getType() == LineEvent.Type.STOP) clip.close(); });
                 clip.start();
             } catch (Throwable t) { DebugLog.error("AUDIO_PLAY", "Failed to play " + key + " from " + f, t); }
         }, "sound-" + key).start();
     }
 
+    static int effectiveCueVolume(String key,GameOptions opt) {
+        if(opt==null || !opt.soundEnabled)return 0;
+        int bus=("type".equals(key)||"portrait".equals(key))?opt.conversationVolume:opt.sfxVolume;
+        return (int)Math.round(Math.max(0,Math.min(100,opt.volume))*Math.max(0,Math.min(100,bus))/100.0);
+    }
     void playIntroCrawlNarration(GameOptions opt) {
         if (opt == null || !opt.soundEnabled || !opt.conversationSound || opt.conversationVolume <= 0) return;
         File f = sounds.get("intro_crawl_narration");
@@ -223,6 +232,9 @@ class SoundManager {
                         int listenerX, int listenerY,
                         int facingX, int facingY, boolean occluded,
                         boolean enclosed, double strength, GameOptions opt) {
+        playPositional(key,sourceX,sourceY,listenerX,listenerY,facingX,facingY,occluded,enclosed,strength,opt,WeaponSoundVariationAuthority.next(key));
+    }
+    void playPositional(String key,int sourceX,int sourceY,int listenerX,int listenerY,int facingX,int facingY,boolean occluded,boolean enclosed,double strength,GameOptions opt,WeaponSoundVariationAuthority.Variation variation) {
         if (startupCueSuppressed(key) || opt == null || !opt.soundEnabled
                 || opt.volume <= 0 || opt.sfxVolume <= 0
                 || GraphicsEnvironment.isHeadless()) return;
@@ -233,11 +245,52 @@ class SoundManager {
                 listenerX, listenerY, facingX, facingY,
                 sourceX, sourceY, level, 16, occluded);
         if (!mix.audible()) return;
-        File file = sounds.get(key);
-        // Retain procedural fallback when an asset is absent, but pan it too.
+        var voice=spatialVoiceBudget.acquire(mix.distance());if(voice==null)return;
+        // Nearest audible voices win a bounded set of physical mixer lines.
         new Thread(() -> {
-            Clip clip = null;
+            Clip clip = null;boolean started=false;
             try {
+                if(voice.cancelled)return;
+                PositionedPcm rendered=renderPositioned(key,mix,enclosed,variation);
+                if(rendered==null)return;
+                byte[] samples=rendered.samples();float sampleRate=rendered.sampleRate();
+                AudioFormat stereo = new AudioFormat(
+                        sampleRate, 16, 2, true, false);
+                if(voice.cancelled)return;
+                clip = AudioSystem.getClip();
+                Clip playing=clip;
+                voice.onCancel=()->{try{playing.stop();playing.close();}catch(Exception ignored){}};
+                if(voice.cancelled){playing.close();return;}
+                clip.open(stereo, samples, 0, samples.length);
+                clip.addLineListener(ev -> {
+                    if (ev.getType() == LineEvent.Type.STOP) {spatialVoiceBudget.release(voice);playing.close();}
+                });
+                if(variation.delayMillis()>0)Thread.sleep(variation.delayMillis());
+                if(voice.cancelled){playing.close();return;}
+                clip.start();started=true;
+            } catch (Throwable error) {
+                if (clip != null) {
+                    try { clip.close(); } catch (Throwable ignored) { }
+                }
+                if(!voice.cancelled)DebugLog.warn("AUDIO_PLAY", "Positional sound unavailable: "
+                        + key + " (" + error.getClass().getSimpleName()
+                        + ": " + error.getMessage() + ")");
+            } finally {if(!started)spatialVoiceBudget.release(voice);}
+        }, "spatial-sound-" + key).start();
+    }
+
+    void playWeaponEffect(String weapon, boolean ranged, GameOptions opt) {
+        play(weaponEffectKey(weapon, ranged), opt);
+    }
+    void playReloadEffect(GameOptions opt) { play("weapon_reload", opt); }
+    record PositionedPcm(byte[] samples,float sampleRate) { }
+    /** The exact live cue decoder/mixer, also usable by headless recording without a sound device. */
+    PositionedPcm renderPositioned(String key,SpatialAudioAuthority.Mix mix,boolean enclosed) throws Exception {
+        return renderPositioned(key,mix,enclosed,WeaponSoundVariationAuthority.Variation.NEUTRAL);
+    }
+    PositionedPcm renderPositioned(String key,SpatialAudioAuthority.Mix mix,boolean enclosed,WeaponSoundVariationAuthority.Variation variation) throws Exception {
+        if(!mix.audible())return null;
+        File file=sounds.get(key);
                 byte[] samples;
                 float sampleRate;
                 if (file != null) {
@@ -266,33 +319,13 @@ class SoundManager {
                     samples = SpatialAudioAuthority.stereoPcm16(
                             generatedCueBytes(key, 100, mono), 1, mix);
                 }
-                if (samples.length == 0) return;
+                if (samples.length == 0) return null;
+                if(!variation.equals(WeaponSoundVariationAuthority.Variation.NEUTRAL)) samples=WeaponSoundVariationAuthority.varyStereo(samples,variation);
                 if (enclosed) samples = SpatialAudioAuthority.roomReflectionsPcm16(
                         samples, Math.round(sampleRate), 1.0);
-                AudioFormat stereo = new AudioFormat(
-                        sampleRate, 16, 2, true, false);
-                clip = AudioSystem.getClip();
-                clip.open(stereo, samples, 0, samples.length);
-                Clip playing = clip;
-                clip.addLineListener(ev -> {
-                    if (ev.getType() == LineEvent.Type.STOP) playing.close();
-                });
-                clip.start();
-            } catch (Throwable error) {
-                if (clip != null) {
-                    try { clip.close(); } catch (Throwable ignored) { }
-                }
-                DebugLog.warn("AUDIO_PLAY", "Positional sound unavailable: "
-                        + key + " (" + error.getClass().getSimpleName()
-                        + ": " + error.getMessage() + ")");
-            }
-        }, "spatial-sound-" + key).start();
+        return new PositionedPcm(samples,sampleRate);
     }
 
-    void playWeaponEffect(String weapon, boolean ranged, GameOptions opt) {
-        play(weaponEffectKey(weapon, ranged), opt);
-    }
-    void playReloadEffect(GameOptions opt) { play("weapon_reload", opt); }
     void playGeneratedCue(String key, GameOptions opt, int volumePercent) {
         if (startupCueSuppressed(key)) return;
         if (opt == null || !opt.soundEnabled || volumePercent <= 0) return;
@@ -367,17 +400,7 @@ class SoundManager {
         return 440.0;
     }
 
-    String weaponEffectKey(String weapon, boolean ranged) {
-        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
-        if (w.contains("flamer") || w.contains("flame") || w.contains("melta") || w.contains("inferno") || w.contains("promethium")) return "weapon_flame";
-        if (w.contains("plasma")) return "weapon_plasma";
-        if (w.contains("las") || w.contains("laser")) return "weapon_las";
-        if (w.contains("arc") || w.contains("shock") || w.contains("lightning") || w.contains("electr") || w.contains("voltaic")) return "weapon_lightning";
-        if (w.contains("thunder") || w.contains("heavy bolter") || w.contains("storm bolter") || w.contains("autocannon")) return "weapon_thundering";
-        if (w.contains("chain") || w.contains("saw") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw") || w.contains("talon") || w.contains("cutter")) return "weapon_slice";
-        if (ranged || w.contains("pistol") || w.contains("gun") || w.contains("rifle") || w.contains("bolter") || w.contains("stub") || w.contains("shot") || w.contains("revolver") || w.contains("stubber") || w.contains("webber") || w.contains("needle")) return "weapon_shot";
-        return "weapon_bash";
-    }
+    String weaponEffectKey(String weapon, boolean ranged) {return WeaponAudioAuthority.cue(weapon,ranged);}
     void requestMusic(String key, GameOptions opt) {
         if (music.playlistSummary().isBlank()) {
             if (!missingMusicPackAudited) {

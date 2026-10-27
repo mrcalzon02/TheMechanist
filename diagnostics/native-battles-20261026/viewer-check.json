@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "videos": 8,
+  "audioAuditions": 11,
+  "decoded": {
+    "time": 1.206467,
+    "videoFrames": 11,
+    "audioDecodedBytes": 21659
+  },
+  "errors": []
+}

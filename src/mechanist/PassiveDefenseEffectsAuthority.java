@@ -60,7 +60,7 @@ final class PassiveDefenseEffectsAuthority {
     static boolean isPassiveDefense(char symbol) { return PROFILES.containsKey(symbol); }
 
     static int raidResistance(BaseObject obj) {
-        if (obj == null) return 0;
+        if (obj == null || obj.integrity <= 0) return 0;
         PassiveDefenseProfile p = profile(obj.symbol);
         if (p == null) return 0;
         int q = ItemQuality.tierIndex((obj.qualityName == null ? "Common" : obj.qualityName) + " defense");
@@ -70,7 +70,7 @@ final class PassiveDefenseEffectsAuthority {
     }
 
     static int coverPenalty(BaseObject obj) {
-        if (obj == null) return 0;
+        if (obj == null || obj.integrity <= 0) return 0;
         PassiveDefenseProfile p = profile(obj.symbol);
         if (p == null) return Math.max(0, obj.cover);
         int integrityBand = obj.integrity >= 40 ? 4 : obj.integrity >= 20 ? 2 : obj.integrity > 0 ? 1 : 0;

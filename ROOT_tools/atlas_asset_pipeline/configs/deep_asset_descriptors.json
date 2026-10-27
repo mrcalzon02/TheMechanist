@@ -5,7 +5,341 @@
     "Atlas rules add broad tags. Row and cell rules add more specific visual descriptors.",
     "Cell keys use rXXcYY coordinates from compiled filenames."
   ],
+  "group_rules": [
+    {
+      "group": "BULKHEAD",
+      "content_type": "wall_tile",
+      "description": "Industrial bulkhead wall or access-panel cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "structural_boundary", "collision_boundary", "ship_interior"]
+    },
+    {
+      "group": "Corridors",
+      "content_type": "corridor_tile",
+      "description": "Walkable industrial corridor surface cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "walkable_surface", "interior_route", "pathfinding_surface"]
+    },
+    {
+      "group": "Defenses",
+      "content_type": "fixture",
+      "description": "Placeable defensive structure or security fixture cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "defensive_fixture", "cover", "room_stamp", "editor_placeable"]
+    },
+    {
+      "group": "Doors",
+      "content_type": "fixture",
+      "description": "Access, stair, hatch, platform, or road-transition fixture cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "access_control", "movement_transition", "room_stamp", "editor_placeable"]
+    },
+    {
+      "group": "Emergency_machines",
+      "content_type": "machine",
+      "description": "Interactive emergency or utility machine {atlas} at cell {cell}.",
+      "tags": ["world_usable", "machine", "interaction_target", "utility_network", "room_stamp", "editor_placeable"]
+    },
+    {
+      "group": "Faction",
+      "content_type": "ui_icon",
+      "description": "Faction identity emblem cell {cell} from {atlas} for UI and affiliation display.",
+      "tags": ["ui_only", "faction_identity", "affiliation", "infopedia", "editor_reference"]
+    },
+    {
+      "group": "floors",
+      "content_type": "floor_tile",
+      "description": "Walkable themed floor surface cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "walkable_surface", "room_stamp", "editor_placeable"]
+    },
+    {
+      "group": "Implants",
+      "content_type": "implant",
+      "description": "Implant or body-modification inventory icon cell {cell} from {atlas}.",
+      "tags": ["inventory", "medical", "body_modification", "equipment", "economy", "infopedia"]
+    },
+    {
+      "group": "ITEMS",
+      "content_type": "item",
+      "description": "Inventory, equipment, consumable, or component icon cell {cell} from {atlas}.",
+      "tags": ["inventory", "economy", "loot", "crafting", "vendor_stock", "infopedia"]
+    },
+    {
+      "group": "Knowledges",
+      "content_type": "ui_icon",
+      "description": "Knowledge or skill interface rondel cell {cell} from {atlas}.",
+      "tags": ["ui_only", "knowledge_system", "skill_system", "infopedia", "character_progression"]
+    },
+    {
+      "group": "Objects",
+      "content_type": "object",
+      "description": "World object, furnishing, machine, container, or set-dressing cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "room_stamp", "editor_placeable", "interaction_candidate"]
+    },
+    {
+      "group": "Protraits",
+      "content_type": "portrait",
+      "description": "Character or creature portrait cell {cell} from {atlas} for identity and population presentation.",
+      "tags": ["portrait", "npc_identity", "population", "dialogue", "infopedia", "ui_only"]
+    },
+    {
+      "group": "Roads",
+      "content_type": "road_tile",
+      "description": "Road, street, pavement, or transport-infrastructure cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "vehicle_navigation", "street_network", "editor_placeable"]
+    },
+    {
+      "group": "SYSTEM",
+      "content_type": "ui_icon",
+      "description": "System interface control, panel, indicator, or sector marker cell {cell} from {atlas}.",
+      "tags": ["ui_only", "system_control", "interface_control", "hud", "menu", "editor_reference"]
+    },
+    {
+      "group": "Vehicles",
+      "content_type": "vehicle",
+      "description": "Vehicle body or transport sprite cell {cell} from {atlas}.",
+      "tags": ["world_usable", "vehicle_entity", "strategic_transit", "traffic", "faction_variant", "editor_placeable"]
+    },
+    {
+      "group": "VOID_tiles",
+      "content_type": "void_tile",
+      "description": "Exterior city, void, or high-level environmental surface cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "exterior", "environment", "strategic_map", "editor_placeable"]
+    },
+    {
+      "group": "Walls",
+      "content_type": "wall_tile",
+      "description": "Themed structural wall cell {cell} from {atlas}.",
+      "tags": ["world_usable", "worldgen", "construction", "structural_boundary", "collision_boundary", "room_stamp", "editor_placeable"]
+    }
+  ],
   "atlas_rules": [
+    {
+      "group": "Doors",
+      "match": "Doors-C",
+      "content_type": "fixture",
+      "description": "Closed personnel, security, barred, curtain, and pressure-door variant at {cell}.",
+      "tags": ["door", "closed", "access_control", "blocks_movement", "openable"]
+    },
+    {
+      "group": "Doors",
+      "match": "Doors-O",
+      "content_type": "fixture",
+      "description": "Open personnel, security, barred, curtain, or pressure-door frame variant at {cell}.",
+      "tags": ["door", "open", "access_control", "allows_movement", "openable"]
+    },
+    {
+      "group": "Doors",
+      "match": "Road_doors",
+      "description": "Mixed road-transition atlas containing vehicle lanes, service pads, gates, shutters, and loading apertures.",
+      "tags": ["road_transition", "vehicle_access", "loading_bay"],
+      "cells": {
+        "r01c01": {"content_type": "road_tile", "description": "Curved marked vehicle lane.", "tags": ["road", "curve", "vehicle_navigation"]},
+        "r01c02": {"content_type": "road_tile", "description": "Straight marked vehicle lane.", "tags": ["road", "straight", "vehicle_navigation"]},
+        "r01c03": {"content_type": "road_tile", "description": "Forked marked vehicle lane.", "tags": ["road", "junction", "vehicle_navigation"]},
+        "r01c04": {"content_type": "road_tile", "description": "Curved marked vehicle lane.", "tags": ["road", "curve", "vehicle_navigation"]},
+        "r02c02": {"content_type": "road_tile", "description": "Controlled vehicle checkpoint lane and inspection island.", "tags": ["road", "checkpoint", "vehicle_navigation"]},
+        "r02c03": {"content_type": "road_tile", "description": "Controlled vehicle checkpoint lane and inspection booth.", "tags": ["road", "checkpoint", "vehicle_navigation"]},
+        "r02c04": {"content_type": "road_tile", "description": "Hazard-marked paved service surface.", "tags": ["road", "service_pad", "vehicle_navigation"]},
+        "r03c05": {"content_type": "road_tile", "description": "Plain paved service surface.", "tags": ["road", "service_pad", "vehicle_navigation"]},
+        "r04c01": {"content_type": "road_tile", "description": "Paved service court with roadside equipment.", "tags": ["road", "service_court", "vehicle_navigation"]},
+        "r04c02": {"content_type": "road_tile", "description": "Curbed corner and marked pavement.", "tags": ["road", "curb", "vehicle_navigation"]},
+        "r04c03": {"content_type": "road_tile", "description": "Hazard-striped narrow vehicle lane.", "tags": ["road", "hazard_marking", "vehicle_navigation"]},
+        "r04c04": {"content_type": "road_tile", "description": "Straight worn vehicle lane.", "tags": ["road", "straight", "vehicle_navigation"]},
+        "r04c05": {"content_type": "road_tile", "description": "Curbed corner and worn pavement.", "tags": ["road", "curb", "vehicle_navigation"]},
+        "r05c02": {"content_type": "road_tile", "description": "Plain paved loading or service pad.", "tags": ["road", "loading_pad", "vehicle_navigation"]}
+      }
+    },
+    {
+      "group": "Doors",
+      "match": "Stairs_stairs_elevator_platforms_hatches_and_ladders",
+      "content_type": "fixture",
+      "description": "Vertical movement fixture {cell}: stair, elevator platform, hatch, or ladder access.",
+      "tags": ["vertical_transition", "stairs", "hatch", "ladder", "elevator", "pathfinding_transition"]
+    },
+    {
+      "group": "Faction",
+      "match": "Faction_2",
+      "description": "Faction emblem atlas with eleven active insignia and fourteen reserved blank slots.",
+      "cells": {
+        "r03c02": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r03c03": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r03c04": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r03c05": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r04c01": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r04c02": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r04c03": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r04c04": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r04c05": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r05c01": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r05c02": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r05c03": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r05c04": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]},
+        "r05c05": {"content_type": "internal", "description": "Reserved blank faction-emblem slot.", "tags": ["placeholder", "reserved", "not_runtime_selectable"]}
+      }
+    },
+    {
+      "group": "ITEMS",
+      "match": "Alcohols_Valuables_Sealed",
+      "content_type": "trade_good",
+      "description": "Sealed alcohol, luxury good, currency, or valuable inventory icon at {cell}.",
+      "tags": ["trade_good", "valuable", "luxury", "sealed_cargo", "economy", "vault_loot"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Chemical_reagents_industrial_components",
+      "content_type": "industrial_component",
+      "description": "Chemical reagent or industrial component inventory icon at {cell}.",
+      "tags": ["chemical_reagent", "industrial_component", "crafting_input", "production", "maintenance"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Faction_rank_journals_6x6",
+      "content_type": "document",
+      "description": "Faction rank journal, credential, order, or record icon at {cell}.",
+      "tags": ["document", "faction_rank", "credential", "record", "quest_item"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Hiver_Clothing",
+      "content_type": "wearable",
+      "description": "Hiver clothing, uniform, protective garment, or wearable equipment at {cell}.",
+      "tags": ["clothing", "wearable", "uniform", "protective_gear", "equipment"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Knowledge_devices",
+      "content_type": "data_device",
+      "description": "Knowledge-bearing data device, memory core, or instructional technology at {cell}.",
+      "tags": ["knowledge_device", "data_device", "memory_core", "skill_item", "technology"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Knowledges",
+      "content_type": "document",
+      "description": "Knowledge record, manual, chart, book, or reference item at {cell}.",
+      "tags": ["knowledge_item", "document", "manual", "reference", "skill_item"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Medical_items_and_drugs",
+      "description": "Medical supply, pharmaceutical, treatment tool, or drug inventory icon at {cell}.",
+      "tags": ["medical_supply", "medicine", "treatment", "consumable", "healthcare"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Narcotics",
+      "description": "Narcotic, controlled drug, or illicit consumable inventory icon at {cell}.",
+      "tags": ["narcotic", "controlled_substance", "contraband", "consumable", "economy"]
+    },
+    {
+      "group": "ITEMS",
+      "match": "Quality_level_armors_r",
+      "content_type": "wearable",
+      "description": "Quality-tier armor or protective wearable at {cell}.",
+      "tags": ["armor", "wearable", "quality_tier", "protective_gear", "equipment"]
+    },
+    {
+      "group": "Objects",
+      "match": "Animal_pens__cloning_vats__Algae_tank",
+      "content_type": "fixture",
+      "description": "Animal pen, cloning vat, algae tank, or biotech production fixture at {cell}.",
+      "tags": ["animal_husbandry", "biotech", "agriculture", "production_fixture", "interaction_target"]
+    },
+    {
+      "group": "Objects",
+      "match": "barstuff",
+      "content_type": "fixture",
+      "description": "Bar, hospitality, seating, serving, or social-space fixture at {cell}.",
+      "tags": ["bar", "hospitality", "furniture", "social_space", "service_fixture"]
+    },
+    {
+      "group": "Objects",
+      "match": "DECOR",
+      "content_type": "prop",
+      "description": "Decorative furnishing, ornament, sign, plant, or set-dressing prop at {cell}.",
+      "tags": ["decor", "set_dressing", "furniture", "environmental_storytelling"]
+    },
+    {
+      "group": "Objects",
+      "match": "FARMstuff",
+      "content_type": "fixture",
+      "description": "Agricultural, hydroponic, food-production, or farm fixture at {cell}.",
+      "tags": ["agriculture", "hydroponics", "food_production", "farm_fixture", "interaction_target"]
+    },
+    {
+      "group": "Objects",
+      "match": "Junk_RGBA",
+      "content_type": "object",
+      "description": "Junk, scrap, debris, salvage, or damaged machinery object at {cell}.",
+      "tags": ["junk", "scrap", "debris", "salvage", "obstacle"]
+    },
+    {
+      "group": "Objects",
+      "match": "LabsChem",
+      "content_type": "machine",
+      "description": "Laboratory, chemistry, analysis, or research machine at {cell}.",
+      "tags": ["laboratory", "chemistry", "research", "analysis_machine", "interaction_target"]
+    },
+    {
+      "group": "Objects",
+      "match": "Loot_bodies",
+      "content_type": "corpse_decay",
+      "description": "Body, remains, corpse, or lootable decay-state object at {cell}.",
+      "tags": ["corpse", "remains", "decay", "loot_container", "hazard"]
+    },
+    {
+      "group": "Objects",
+      "match": "Machinery",
+      "content_type": "machine",
+      "description": "Industrial machine, workstation, production unit, or mechanical installation at {cell}.",
+      "tags": ["industrial_machine", "workstation", "production", "utility_network", "interaction_target"]
+    },
+    {
+      "group": "Objects",
+      "match": "Medicaie",
+      "content_type": "machine",
+      "description": "Medical furniture, treatment station, diagnostic machine, or clinical fixture at {cell}.",
+      "tags": ["medical", "clinical", "treatment_station", "diagnostic_machine", "interaction_target"]
+    },
+    {
+      "group": "Objects",
+      "match": "parks-things",
+      "content_type": "fixture",
+      "description": "Park, civic-space, landscaping, seating, or public amenity fixture at {cell}.",
+      "tags": ["park", "civic_space", "landscaping", "public_amenity", "furniture"]
+    },
+    {
+      "group": "Objects",
+      "match": "Service_items",
+      "content_type": "fixture",
+      "description": "Service counter, utility furnishing, maintenance station, or support fixture at {cell}.",
+      "tags": ["service_fixture", "utility", "maintenance", "support_station", "interaction_target"]
+    },
+    {
+      "group": "Objects",
+      "match": "Shops_Counters",
+      "content_type": "fixture",
+      "description": "Shop counter, retail display, vendor station, or market fixture at {cell}.",
+      "tags": ["shop", "counter", "vendor_station", "market", "trade_interface"]
+    },
+    {
+      "group": "Objects",
+      "match": "Tables",
+      "content_type": "fixture",
+      "description": "Table, desk, workbench, dining surface, or examination surface at {cell}.",
+      "tags": ["table", "workbench", "desk", "furniture", "work_surface"]
+    },
+    {
+      "group": "Objects",
+      "match": "Temple_assets",
+      "content_type": "fixture",
+      "description": "Temple, shrine, altar, devotional, or ceremonial fixture at {cell}.",
+      "tags": ["temple", "shrine", "altar", "religious", "ceremonial"]
+    },
+    {
+      "group": "Objects",
+      "match": "Vending",
+      "content_type": "machine",
+      "description": "Vending, dispensing, retail, or automated trade machine at {cell}.",
+      "tags": ["vending_machine", "vendor", "dispenser", "trade_interface", "interaction_target"]
+    },
     {
       "group": "ITEMS",
       "match": "WEAPONS-1",
@@ -160,6 +494,7 @@
     {
       "group": "BULKHEAD",
       "match": "Bulkhead_walls+doors",
+      "exclude_matches": ["Bulkhead_walls+doors-open"],
       "cells": {
         "r01c02": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
         "r01c05": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},

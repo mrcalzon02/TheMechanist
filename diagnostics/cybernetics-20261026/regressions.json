@@ -1,0 +1,57 @@
+[
+  {
+    "log": "CyberneticLimbExecutionSmoke.log",
+    "exitCode": 0,
+    "test": "CyberneticLimbExecutionSmoke"
+  },
+  {
+    "log": "CyberneticBattleReplayProbe.log",
+    "exitCode": 0,
+    "test": "CyberneticBattleReplayProbe"
+  },
+  {
+    "log": "MedicalTreatmentBoundarySmoke.log",
+    "exitCode": 0,
+    "test": "MedicalTreatmentBoundarySmoke"
+  },
+  {
+    "log": "CombatSupportExecutionSmoke.log",
+    "exitCode": 0,
+    "test": "CombatSupportExecutionSmoke"
+  },
+  {
+    "log": "ActorCombatExecutionSmoke.log",
+    "exitCode": 0,
+    "test": "ActorCombatExecutionSmoke"
+  },
+  {
+    "log": "DeveloperFacilitySmoke.log",
+    "exitCode": 0,
+    "test": "DeveloperFacilitySmoke"
+  },
+  {
+    "log": "NpcContinuityDeterminismSmoke.log",
+    "exitCode": 0,
+    "test": "NpcContinuityDeterminismSmoke"
+  },
+  {
+    "log": "Milestone02MedicalTreatmentReadabilitySmoke.log",
+    "exitCode": 0,
+    "test": "Milestone02MedicalTreatmentReadabilitySmoke"
+  },
+  {
+    "log": "Milestone02BodyConditionReadabilitySmoke.log",
+    "exitCode": 0,
+    "test": "Milestone02BodyConditionReadabilitySmoke"
+  },
+  {
+    "log": "Milestone06StructuralScaleCombatSmoke.log",
+    "exitCode": 0,
+    "test": "Milestone06StructuralScaleCombatSmoke"
+  },
+  {
+    "log": "Milestone04MedicalSupplyProvenanceSmoke.log",
+    "exitCode": 0,
+    "test": "Milestone04MedicalSupplyProvenanceSmoke"
+  }
+]

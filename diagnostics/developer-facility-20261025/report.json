@@ -1,0 +1,985 @@
+{
+  "date": "2026-10-26",
+  "counts": {
+    "rooms": 4,
+    "vendors": 2016,
+    "buildables": 40,
+    "hardwareTypes": 103,
+    "catalogItems": 909,
+    "catalogUnits": 36360
+  },
+  "packages": [
+    {
+      "file": "target/TheMechanist-all.jar",
+      "bytes": 557647851,
+      "sha256": "dff3a9da811d5ec90b2b1c5922119946fb3046826bac0efc9092ff54e2493fb5",
+      "classes": 6349,
+      "maximumClassMajor": 61,
+      "versionedDependencyClasses": [
+        {
+          "file": "META-INF/versions/11/module-info.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/VersionImpl.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/system/CheckIntrinsics.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/system/MultiReleaseTextDecoding.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/system/StackWalkUtil.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/17/org/lwjgl/system/MemoryUtilTunables.class",
+          "major": 61
+        },
+        {
+          "file": "META-INF/versions/25/module-info.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/JNI$JNIBindings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/JNI.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$LazyInit.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$MemoryAllocationReport$Aggregate.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$MemoryAllocationReport.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$MemoryAllocator.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtilTunables.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/SegmentStack$DebugMemoryStack.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/SegmentStack.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType$2.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType$3.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$Upcall.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCall$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCall$FeatureFlag.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCall.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCallDown.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCallUp.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCDescriptors.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup$Kind$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup$Kind$2.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup$Kind.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCReturnTransform.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCUtil.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Binder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$FFMConfigBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$GroupBinderBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$StructBinderBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$UnionBinderBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMBooleanInt.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMByValue.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCanonical.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCaptureCallState.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCharset$Type.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCharset.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMConfig$BinderField.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMConfig.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCritical.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMDefinition.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMFirstVariadicArg.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMFunctionAddress.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMJNI.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMName.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMNoPrefix.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMNullable.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMPointer.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMPrefix.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMReturn$Size.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMReturn$SizeOut.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMReturn.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMSize.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Group.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupArray.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupBinder$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupSpliterator.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/SizeCarrier.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/StackAllocator.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Struct.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/StructArray.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/StructBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/TraceConsumer.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Union.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/UnionArray.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/UnionBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/UpcallBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/DataMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/GroupMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ByteS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ByteU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong32.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong32S.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong32U.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong64.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong64Impl.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$IntS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$IntU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$LongS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$LongU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ShortS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ShortU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$SizeS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$SizeU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Boolean.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Byte.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$CLong.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Char.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Double.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Float.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Int.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Long.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Opaque.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Pointer.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Sequence.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Short.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Size.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Struct.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Union.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mappings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/PrimitiveMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/PrimitiveMappings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/package-info.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/package-info.class",
+          "major": 69
+        }
+      ],
+      "zipIntegrity": "PASS"
+    },
+    {
+      "file": "target/TheMechanistServer-all.jar",
+      "bytes": 557647858,
+      "sha256": "581e33a96fa88938a231afd7c23748e297c4738d79a0d5f3245d23b827c94930",
+      "classes": 6349,
+      "maximumClassMajor": 61,
+      "versionedDependencyClasses": [
+        {
+          "file": "META-INF/versions/11/module-info.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/VersionImpl.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/system/CheckIntrinsics.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/system/MultiReleaseTextDecoding.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/11/org/lwjgl/system/StackWalkUtil.class",
+          "major": 55
+        },
+        {
+          "file": "META-INF/versions/17/org/lwjgl/system/MemoryUtilTunables.class",
+          "major": 61
+        },
+        {
+          "file": "META-INF/versions/25/module-info.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/JNI$JNIBindings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/JNI.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$LazyInit.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$MemoryAllocationReport$Aggregate.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$MemoryAllocationReport.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil$MemoryAllocator.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtil.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/MemoryUtilTunables.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/SegmentStack$DebugMemoryStack.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/SegmentStack.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType$2.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType$3.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$ArenaType.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls$Upcall.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/Upcalls.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCall$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCall$FeatureFlag.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCall.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCallDown.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCCallUp.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCDescriptors.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup$Kind$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup$Kind$2.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup$Kind.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCGroup.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCReturnTransform.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/BCUtil.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Binder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$FFMConfigBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$GroupBinderBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$StructBinderBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM$UnionBinderBuilder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFM.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMBooleanInt.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMByValue.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCanonical.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCaptureCallState.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCharset$Type.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCharset.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMConfig$BinderField.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMConfig.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMCritical.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMDefinition.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMFirstVariadicArg.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMFunctionAddress.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMJNI.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMName.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMNoPrefix.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMNullable.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMPointer.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMPrefix.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMReturn$Size.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMReturn$SizeOut.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMReturn.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/FFMSize.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Group.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupArray.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupBinder$1.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/GroupSpliterator.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/SizeCarrier.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/StackAllocator.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Struct.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/StructArray.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/StructBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/TraceConsumer.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/Union.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/UnionArray.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/UnionBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/UpcallBinder.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/DataMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/GroupMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ByteS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ByteU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong32.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong32S.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong32U.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong64.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$CLong64Impl.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$IntS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$IntU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$LongS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$LongU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ShortS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$ShortU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$SizeS.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings$SizeU.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/IntegerMappings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Boolean.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Byte.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$CLong.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Char.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Double.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Float.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Int.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Long.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Opaque.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Pointer.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Sequence.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Short.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Size.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Struct.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping$Union.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/Mappings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/PrimitiveMapping.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/PrimitiveMappings.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/mapping/package-info.class",
+          "major": 69
+        },
+        {
+          "file": "META-INF/versions/25/org/lwjgl/system/ffm/package-info.class",
+          "major": 69
+        }
+      ],
+      "zipIntegrity": "PASS"
+    }
+  ],
+  "build": "Normal offline Maven package from current repository source: PASS",
+  "validation": "DeveloperFacilitySmoke and eight focused regressions passed from packaged client, headless Java 17.",
+  "limitations": [
+    "No manual desktop gameplay check.",
+    "Existing combat confirmation records aim and advances time; weapon damage is not implemented by that handler.",
+    "Some existing hardware interfaces provide inspection/service previews.",
+    "Installed PACKAGE_client distribution was not replaced. Full Gate3 suite and release certification were not run."
+  ]
+}

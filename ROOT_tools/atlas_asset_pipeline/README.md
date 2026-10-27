@@ -195,3 +195,7 @@ The `index-content` action scans one compiled resolution package, normally `256p
 Each indexed tile records its compiled path, source folder, source atlas, row/column cell, category, content tags, and simple visual traits such as brightness, visible coverage, dominant color family, and edge density. The action also updates `compiled_assets/asset_compile_manifest.json` with a `content_index` block pointing to the JSON/TSV outputs and summarizing the available tags.
 
 Richer content descriptions are loaded from `configs/deep_asset_descriptors.json`. That file supports atlas-level, row-level, and exact cell-level descriptor rules. Use it for terms that require visual understanding, such as `pistol`, `sword`, `chainsword`, `hammer`, `newspaper`, `armor`, or `train`. Re-run `index-content` after editing descriptor rules.
+
+Descriptor `match` values use substring matching. When one atlas name is a prefix of another, add `exclude_matches` with the more specific atlas name so mutually exclusive state rules do not merge.
+
+`group_rules` provide an explicit runtime type, simulation-role tags, and a description template for every cell in a graphical family. Description templates may use `{group}`, `{atlas}`, `{cell}`, `{row}`, and `{col}`. More-specific atlas, row, and cell rules override the group description and type while retaining its broad simulation tags.

@@ -49,6 +49,8 @@ final class VehicleStrategicTransitCommitAuthority {
             return Result.blocked(vehicle,
                     "Strategic transfer requires distinct source and destination worlds.");
         }
+        String sourceKey = Integer.toString(source.locationKey());
+        String destinationKey = Integer.toString(destination.locationKey());
         if (!source.mapObjects.contains(vehicle)) {
             return Result.blocked(vehicle,
                     "The source world does not contain the reserved vehicle fixture.");
@@ -99,8 +101,6 @@ final class VehicleStrategicTransitCommitAuthority {
         String labelBefore = vehicle.label;
         boolean sourceContained = source.mapObjects.contains(vehicle);
         boolean destinationContained = destination.mapObjects.contains(vehicle);
-        String sourceKey = Integer.toString(source.locationKey());
-        String destinationKey = Integer.toString(destination.locationKey());
         try {
             set(vehicle, "strategicTransitState", "committing");
             set(vehicle, "strategicTransitCommitSource", sourceKey);

@@ -1,0 +1,2 @@
+[01:41:38.147] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+WeaponSoundVariationSmoke PASS checks=2107 above=484 below=516 meanRate=0.9993229059043963 maxLiveVoices=12 simulationUnchanged=true

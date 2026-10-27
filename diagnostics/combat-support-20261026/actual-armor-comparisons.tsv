@@ -1,0 +1,9 @@
+actor	weapon	regionRoll	bareDamage	armoredDamage	armor	status
+NPC defender	Knife	5	7	3	Guard flak helmet	PASS
+player defender	Knife	5	7	3	Guard flak helmet	PASS
+NPC defender	Knife	30	7	3	Guard flak vest	PASS
+player defender	Knife	30	7	3	Guard flak vest	PASS
+NPC defender	Knife	75	7	6	Shock gauntlets	PASS
+player defender	Knife	75	7	6	Shock gauntlets	PASS
+NPC defender	Knife	95	7	5	Armored boots	PASS
+player defender	Knife	95	7	5	Armored boots	PASS

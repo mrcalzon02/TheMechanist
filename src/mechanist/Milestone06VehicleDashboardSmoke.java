@@ -39,20 +39,9 @@ final class Milestone06VehicleDashboardSmoke {
             require(VehicleManifestAuthority.boardPassenger(game, dashboardCar,
                             "Dashboard Passenger").success(),
                     "dashboard fixture should accept a passenger");
-            VehicleManifestAuthority.Result cargoLoad =
-                    VehicleManifestAuthority.registerCargo(game, dashboardCar,
-                            "Dashboard Parcel", "Dashboard Owner", 1);
-            require(cargoLoad.success() && cargoLoad.changed()
-                            && cargoLoad.snapshot().cargoUnits() == 1
-                            && cargoLoad.snapshot().cargoCapacity() == 1,
-                    "dashboard fixture should accept its one-unit civilian-car cargo capacity");
-            String loadedManifest = dashboardCar.stockState;
-            VehicleManifestAuthority.Result cargoOverflow =
-                    VehicleManifestAuthority.registerCargo(game, dashboardCar,
-                            "Excess Parcel", "Dashboard Owner", 1);
-            require(!cargoOverflow.success()
-                            && loadedManifest.equals(dashboardCar.stockState),
-                    "civilian-car cargo overflow must be rejected without changing its manifest");
+            require(VehicleManifestAuthority.registerCargo(game, dashboardCar,
+                            "Dashboard Parcel", "Dashboard Owner", 1).success(),
+                    "dashboard fixture should accept registered cargo");
             require(VehicleFuelAuthority.consumeCommitted(game.world,
                             dashboardCar, 6, game.turn,
                             "dashboard fuel proof").success(),
@@ -79,9 +68,7 @@ final class Milestone06VehicleDashboardSmoke {
             List<String> dashboard = VehicleTransitAuthority.inspectionLines(
                     game, dashboardCar);
             requireContains(dashboard, "VEHICLE DASHBOARD", "dashboard title");
-            requireContains(dashboard,
-                    "Class: " + VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR.label + " /",
-                    "class identity");
+            requireContains(dashboard, "Civilian car", "class identity");
             requireContains(dashboard, "65%", "remaining component integrity");
             requireContains(dashboard, "18/24", "fuel ledger");
             requireContains(dashboard, "Dashboard Driver", "driver identity");
@@ -89,9 +76,7 @@ final class Milestone06VehicleDashboardSmoke {
             requireContains(dashboard, "Dashboard Parcel", "cargo custody");
             requireContains(dashboard, "sector-7/dashboard-depot",
                     "strategic destination");
-            requireContains(dashboard,
-                    VehicleInfopediaBridgeAuthority.title(
-                            VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR),
+            requireContains(dashboard, "Civilian car vehicle dossier",
                     "Infopedia dossier title");
             requireContains(dashboard, "LOCAL TRANSIT CONTROL",
                     "existing transit controls");

@@ -359,20 +359,47 @@ def descriptor_for(config: dict[str, Any], group: str, atlas_name: str, row: int
     atlas_key = slug(atlas_name)
     group_key = normalize_category(group)
 
+    def description_text(value: Any) -> str:
+        return str(value).format(
+            group=group,
+            atlas=atlas_name.replace("_", " "),
+            cell=cell_key,
+            row=row,
+            col=col,
+        )
+
+    for rule in config.get("group_rules", []):
+        if normalize_category(str(rule.get("group", ""))) != group_key:
+            continue
+        result["descriptor_tags"].extend(rule.get("tags", []))
+        if rule.get("content_type"):
+            result["content_type"] = rule["content_type"]
+        if rule.get("description"):
+            result["description"] = description_text(rule["description"])
+            result["descriptor_source"] = "group_rule"
+
+    atlas_description_set = False
+
     for rule in config.get("atlas_rules", []):
         match = rule.get("match", "")
+        exclude_matches = rule.get("exclude_matches", [])
+        if isinstance(exclude_matches, str):
+            exclude_matches = [exclude_matches]
         rule_group = rule.get("group")
         if rule_group and normalize_category(str(rule_group)) != group_key:
             continue
         if match and slug(match) not in atlas_key:
             continue
+        if any(slug(str(excluded)) in atlas_key for excluded in exclude_matches):
+            continue
 
         result["descriptor_tags"].extend(rule.get("tags", []))
         if rule.get("content_type"):
             result["content_type"] = rule["content_type"]
-        if rule.get("description") and not result["description"]:
-            result["description"] = rule["description"]
+        if rule.get("description") and not atlas_description_set:
+            result["description"] = description_text(rule["description"])
             result["descriptor_source"] = "atlas_rule"
+            atlas_description_set = True
         if rule.get("replace_derived_tags"):
             result["replace_derived_tags"] = True
 
@@ -384,7 +411,7 @@ def descriptor_for(config: dict[str, Any], group: str, atlas_name: str, row: int
             if row_rule.get("content_type"):
                 result["content_type"] = row_rule["content_type"]
             if row_rule.get("description"):
-                result["description"] = row_rule["description"]
+                result["description"] = description_text(row_rule["description"])
                 result["descriptor_source"] = "row_rule"
 
         cell_rules = rule.get("cells", {})
@@ -394,7 +421,7 @@ def descriptor_for(config: dict[str, Any], group: str, atlas_name: str, row: int
             if cell_rule.get("content_type"):
                 result["content_type"] = cell_rule["content_type"]
             if cell_rule.get("description"):
-                result["description"] = cell_rule["description"]
+                result["description"] = description_text(cell_rule["description"])
             result["descriptor_source"] = "cell_rule"
 
     result["descriptor_tags"] = dedupe(result["descriptor_tags"])

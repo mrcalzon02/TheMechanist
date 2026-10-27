@@ -83,7 +83,7 @@ final class StructuralScaleCombatAuthority {
             return new Preview(true, true, false, 0,
                     ammunitionRequired(weapon, fireMode), weapon, target,
                     "Combat target: " + target.label()
-                            + ". Actor damage remains on the existing combat lane; confirm to take aim.");
+                            + ". Confirm to resolve an actor attack; range, cover, ammo and skill apply.");
         }
         if (!target.durable()) {
             return new Preview(false, false, false, 0, 0, weapon, target,
@@ -135,15 +135,18 @@ final class StructuralScaleCombatAuthority {
                     preview.summary(), preview);
         }
         if (preview.delegatedActor()) {
-            game.confirmCombatTarget();
-            return new Result(true, true, false, 0, 0,
+            ActorCombatAuthority.Event attack=ActorCombatAuthority.confirmPlayer(game);
+            boolean executed=attack!=null && (attack.outcome()==ActorCombatAuthority.Outcome.HIT || attack.outcome()==ActorCombatAuthority.Outcome.KILL || attack.outcome()==ActorCombatAuthority.Outcome.MISS);
+            return new Result(true, executed, attack!=null && attack.damage()>0, attack==null?0:attack.damage(), attack==null?0:attack.ammo(),
                     game.lastTargetingReport, preview);
         }
 
+        String bodyRefusal=MedicalTreatmentAuthority.attackRejection(game,preview.weapon());
+        if(!bodyRefusal.isBlank()) {game.lastTargetingReport=bodyRefusal;game.logEvent(bodyRefusal);return new Result(true,false,false,0,0,bodyRefusal,preview);}
         int ammunition = consumeAmmunition(game, preview.weapon(),
                 preview.ammunitionRequired());
         // This is an actual executed attack, not a targeting preview.
-        WorldPositionalSoundAuthority.playConfirmedAttack(game, preview.weapon());
+        ActorCombatFeedbackAuthority.attack(game,game.playerX,game.playerY,preview.target().x(),preview.target().y(),preview.weapon().name(),preview.weapon().firearm(),true);
         int damage = preview.projectedDamage();
         boolean changed = false;
         String impact;
@@ -153,6 +156,7 @@ final class StructuralScaleCombatAuthority {
             changed = applyDamage(game, preview.target(), damage,
                     preview.weapon().name());
             int remaining = remainingIntegrity(game, preview.target());
+            damage = Math.max(0, preview.target().currentIntegrity() - remaining);
             impact = impactLine(preview.weapon(), preview.target(),
                     remaining, damage, changed);
         }
@@ -578,7 +582,7 @@ final class StructuralScaleCombatAuthority {
                 + ":" + x + "," + y;
     }
 
-    private static boolean clearLine(World world, int x0, int y0,
+    static boolean clearLine(World world, int x0, int y0,
                                      int x1, int y1) {
         int dx = Math.abs(x1 - x0);
         int dy = Math.abs(y1 - y0);
@@ -588,9 +592,13 @@ final class StructuralScaleCombatAuthority {
         int x = x0;
         int y = y0;
         while (!(x == x1 && y == y1)) {
+            int previousX=x,previousY=y;
             int e2 = 2 * err;
             if (e2 > -dy) { err -= dy; x += sx; }
             if (e2 < dx) { err += dx; y += sy; }
+            if(x!=previousX && y!=previousY
+                    && blocksProjectile(world.tiles[previousX][y])
+                    && blocksProjectile(world.tiles[x][previousY])) return false;
             if (x == x1 && y == y1) return true;
             if (!world.inBounds(x, y) || blocksProjectile(world.tiles[x][y])) {
                 return false;

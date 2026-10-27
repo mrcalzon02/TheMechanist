@@ -1,0 +1,1128 @@
+GAME_CLASSES=file:/C:/GITS/The%20Mechanist/TheMechanist/diagnostics/render-baseline-20261025/updated-classes/
+CREATING_GAME_PANEL
+[23:28:17.598] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+GAME_PANEL_CREATED
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP unreachableRoom id=40 rect=11,230,5,8 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=4,245 b=5,245 dist=1 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=4,245 b=6,245 dist=2 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=5,245 b=6,245 dist=1 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=5,245 b=7,245 dist=2 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=6,245 b=7,245 dist=1 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=6,245 b=8,245 dist=2 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=7,245 b=8,245 dist=1 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=7,245 b=9,245 dist=2 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.488] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=8,245 b=9,245 dist=1 rect=3,239,13,7 zone=Neutral Civilian Floor
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=74,469 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=106,30 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=152,277 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=182,367 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=207,152 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=219,87 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=241,34 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=325,140 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=334,405 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=362,262 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=382,416 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=386,246 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=397,257 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=440,352 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=444,34 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=450,246 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=456,181 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.498] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=485,41 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.515] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=44406 bounds=1,1..498,498 axes=498x498 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=121,15..125,19 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=237,109..240,112 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=238,175..243,180 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=5 bounds=285,74..287,76 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=359,477..364,482 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=368,230..373,235 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=390,258..393,261 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.517] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=418,239..424,245 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.538] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP problems=37 rooms=837 unreachableRooms=1 weakDoors=18 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=9 shortCorridors=0 squatCorridors=9 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=326576
+[23:28:20.645] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=7,245 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.645] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=L at=74,469 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.645] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=334,405 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.645] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=362,262 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.645] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=| at=382,416 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.645] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=| at=386,246 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.645] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=440,352 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=52642 bounds=1,1..498,498 axes=498x498 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=13,257..14,258 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=14 bounds=21,413..25,417 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=41,466..42,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=46,30..49,33 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=82,473..83,474 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=113,264..114,265 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=120,264..121,265 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=18 bounds=121,15..125,19 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=121,341..122,342 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=124,301..125,302 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=132,139..133,140 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=135,105..136,106 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=147,62..148,63 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=160,423..161,424 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=170,233..171,234 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=190,32..191,33 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=196,346..197,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=207,360..208,361 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=232,23..233,24 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=233,421..234,422 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=237,109..240,112 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=253,148..254,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=256,446..257,447 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=298,148..299,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=309,416..310,417 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=313,99..314,100 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=331,211..332,212 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=20 bounds=359,477..364,482 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=374,456..375,457 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=383,47..384,48 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=386,466..387,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=393,282..394,283 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=428,49..429,50 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=442,95..443,96 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=445,301..446,302 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=447,83..448,84 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=450,233..451,234 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=465,29..466,30 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=469,403..470,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.648] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR problems=47 rooms=837 unreachableRooms=0 weakDoors=7 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=40 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=326576
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=7,245 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=L at=74,469 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=334,405 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=362,262 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=| at=382,416 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=| at=386,246 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=440,352 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=52642 bounds=1,1..498,498 axes=498x498 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=13,257..14,258 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=14 bounds=21,413..25,417 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=41,466..42,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=46,30..49,33 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=82,473..83,474 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=113,264..114,265 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=120,264..121,265 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=18 bounds=121,15..125,19 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=121,341..122,342 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=124,301..125,302 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=132,139..133,140 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=135,105..136,106 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=147,62..148,63 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=160,423..161,424 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=170,233..171,234 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=190,32..191,33 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=196,346..197,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=207,360..208,361 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=232,23..233,24 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=233,421..234,422 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=237,109..240,112 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=253,148..254,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=256,446..257,447 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=298,148..299,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=309,416..310,417 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=313,99..314,100 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=331,211..332,212 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=20 bounds=359,477..364,482 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=374,456..375,457 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=383,47..384,48 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=386,466..387,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=393,282..394,283 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=428,49..429,50 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=442,95..443,96 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=445,301..446,302 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=447,83..448,84 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=450,233..451,234 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=465,29..466,30 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.660] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=469,403..470,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.668] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE problems=47 rooms=837 unreachableRooms=0 weakDoors=7 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=40 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=326576
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=502 side=1 a=342,7 b=342,8 dist=1 rect=333,3,10,8 zone=Neutral Civilian Floor
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=821 side=3 a=369,7 b=369,8 dist=1 rect=369,4,10,7 zone=Neutral Civilian Floor
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=5,97 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=L at=5,222 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=7,245 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=L at=74,469 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=334,405 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=362,262 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=382,416 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=386,246 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.711] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=440,352 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=13,257..14,258 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=14 bounds=21,413..25,417 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=41,466..42,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=46,30..49,33 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=82,473..83,474 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=113,264..114,265 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=120,264..121,265 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=18 bounds=121,15..125,19 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=121,341..122,342 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=124,301..125,302 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.714] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=132,139..133,140 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=135,105..136,106 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=147,62..148,63 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=160,423..161,424 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=170,233..171,234 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=190,32..191,33 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=196,346..197,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=207,360..208,361 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=232,23..233,24 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=233,421..234,422 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=237,109..240,112 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=253,148..254,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=256,446..257,447 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=298,148..299,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=309,416..310,417 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=313,99..314,100 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=331,8..332,9 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=331,211..332,212 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=20 bounds=359,477..364,482 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=374,456..375,457 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=379,8..380,9 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=383,47..384,48 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=386,466..387,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=393,282..394,283 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=400,8..401,9 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=428,49..429,50 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=442,95..443,96 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=445,301..446,302 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=447,83..448,84 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=450,233..451,234 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=465,29..466,30 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=469,403..470,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.716] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=19 bounds=486,390..491,395 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:20.718] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR problems=54 rooms=838 unreachableRooms=0 weakDoors=9 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=2 shortCorridors=0 squatCorridors=43 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=326576
+[23:28:24.809] INFO Generated road-first world seed=326576 zone=Neutral Civilian Floor layer=Floor 4 rooms=838 attempts=1620 roads=core-first
+GENERATED seed=466713 seconds=5.6800673
+CAPTURE 466713-insertion-spawn-2d x=250 y=250 paintMs=279.1202
+CAPTURE 466713-insertion-spawn-doom x=250 y=250 paintMs=385.8552
+CAPTURE 466713-insertion-spawn-doom-fov60 x=250 y=250 paintMs=224.9182
+CAPTURE 466713-insertion-spawn-doom-fov110 x=250 y=250 paintMs=238.1216
+CAPTURE 466713-insertion-spawn-doom-pitch-60 x=250 y=250 paintMs=207.4333
+CAPTURE 466713-insertion-spawn-doom-pitch60 x=250 y=250 paintMs=196.0502
+CAPTURE 466713-insertion-street-2d x=241 y=250 paintMs=176.4361
+CAPTURE 466713-insertion-street-doom x=241 y=250 paintMs=245.2123
+CAPTURE 466713-insertion-room-2d x=256 y=238 paintMs=183.9998
+CAPTURE 466713-insertion-room-doom x=256 y=238 paintMs=244.0064
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=4,249 b=5,249 dist=1 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=4,249 b=6,249 dist=2 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=5,249 b=6,249 dist=1 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=5,249 b=7,249 dist=2 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=6,249 b=7,249 dist=1 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=6,249 b=8,249 dist=2 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=7,249 b=8,249 dist=1 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=7,249 b=9,249 dist=2 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=828 side=2 a=8,249 b=9,249 dist=1 rect=3,243,13,7 zone=Cultist Sewer Encampment
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=16,352 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=31,432 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=44,417 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=50,470 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=51,369 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=65,257 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=77,87 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.831] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=81,352 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=131,147 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=150,253 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=177,104 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=185,267 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=196,288 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=310,402 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=311,257 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=399,151 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=417,469 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=428,150 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=439,130 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=439,345 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=453,405 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=454,442 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=457,386 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.832] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=472,363 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=43337 bounds=1,1..498,498 axes=498x498 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=4 bounds=11,350..12,351 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=24,329..27,332 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=47,418..52,423 axes=6x6 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=53,470..59,476 axes=7x7 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=57,239..60,242 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=76,148..79,151 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=76,400..80,404 axes=5x5 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=120,75..126,81 axes=7x7 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=134,148..140,154 axes=7x7 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=137,50..140,53 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=154,254..160,260 axes=7x7 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=305,100..310,105 axes=6x6 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=368,282..373,287 axes=6x6 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=378,281..383,286 axes=6x6 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=421,46..424,49 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.834] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=472,422..476,426 axes=5x5 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.838] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP problems=50 rooms=829 unreachableRooms=0 weakDoors=24 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=9 shortCorridors=0 squatCorridors=17 edgeDoorProblems=0 zone=Cultist Sewer Encampment layer=Floor 4B sewer seed=311185
+[23:28:28.974] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=44,417 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=L at=50,470 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=150,253 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=457,386 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=51605 bounds=1,1..498,498 axes=498x498 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=1,416..2,417 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=2,350..3,351 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=11,350..12,351 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=17,98..18,99 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=22,475..23,476 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=24,329..27,332 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=46,244..47,245 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=70,216..71,217 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=71,19..72,20 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=76,148..79,151 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=81,94..82,95 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=98,466..99,467 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=102,235..103,236 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=114,138..115,139 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=121,453..122,454 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=127,3..128,4 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=19 bounds=134,148..140,154 axes=7x7 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=137,50..140,53 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=152,52..153,53 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=156,278..157,279 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=164,80..165,81 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=195,32..196,33 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=209,398..210,399 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=213,220..214,221 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=231,159..232,160 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=232,336..233,337 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=235,75..236,76 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=235,138..236,139 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=239,121..240,122 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=264,338..265,339 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=265,42..266,43 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=282,343..283,344 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=298,456..299,457 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=312,240..313,241 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=340,86..341,87 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=344,123..345,124 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=344,204..345,205 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=347,363..348,364 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=374,85..375,86 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=415,370..416,371 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=416,217..417,218 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=433,364..434,365 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=447,198..448,199 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=448,217..449,218 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=448,403..449,404 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=449,360..450,361 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=468,52..469,53 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=475,95..476,96 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=484,260..485,261 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.978] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR problems=54 rooms=829 unreachableRooms=0 weakDoors=4 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=50 edgeDoorProblems=0 zone=Cultist Sewer Encampment layer=Floor 4B sewer seed=311185
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=44,417 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=L at=50,470 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=150,253 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=457,386 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=51605 bounds=1,1..498,498 axes=498x498 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=1,416..2,417 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=2,350..3,351 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=11,350..12,351 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=17,98..18,99 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=22,475..23,476 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=24,329..27,332 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=46,244..47,245 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=70,216..71,217 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=71,19..72,20 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=76,148..79,151 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=81,94..82,95 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=98,466..99,467 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=102,235..103,236 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=114,138..115,139 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=121,453..122,454 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=127,3..128,4 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=19 bounds=134,148..140,154 axes=7x7 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=137,50..140,53 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=152,52..153,53 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=156,278..157,279 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=164,80..165,81 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=195,32..196,33 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=209,398..210,399 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=213,220..214,221 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=231,159..232,160 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=232,336..233,337 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=235,75..236,76 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=235,138..236,139 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=239,121..240,122 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=264,338..265,339 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=265,42..266,43 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=282,343..283,344 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=298,456..299,457 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=312,240..313,241 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=340,86..341,87 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=344,123..345,124 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=344,204..345,205 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=347,363..348,364 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=374,85..375,86 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=415,370..416,371 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=416,217..417,218 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=433,364..434,365 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=447,198..448,199 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=448,217..449,218 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=448,403..449,404 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=449,360..450,361 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=468,52..469,53 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=475,95..476,96 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.990] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=484,260..485,261 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:28.998] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE problems=54 rooms=829 unreachableRooms=0 weakDoors=4 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=50 edgeDoorProblems=0 zone=Cultist Sewer Encampment layer=Floor 4B sewer seed=311185
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=234 side=3 a=234,7 b=234,8 dist=1 rect=234,4,6,7 zone=Cultist Sewer Encampment
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=489 side=0 a=31,491 b=32,491 dist=1 rect=27,491,8,5 zone=Cultist Sewer Encampment
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=489 side=0 a=31,491 b=33,491 dist=2 rect=27,491,8,5 zone=Cultist Sewer Encampment
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=489 side=0 a=32,491 b=33,491 dist=1 rect=27,491,8,5 zone=Cultist Sewer Encampment
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=5,288 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=7,76 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=44,417 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=L at=50,470 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=150,253 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=219,5 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=L at=261,7 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=457,386 adjacentNonWall=1 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=8,66..9,67 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=11,350..12,351 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=17,98..18,99 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=22,475..23,476 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=24,329..27,332 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=46,244..47,245 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=70,216..71,217 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=71,19..72,20 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=76,148..79,151 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=81,94..82,95 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=98,466..99,467 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=102,235..103,236 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=114,138..115,139 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=121,453..122,454 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=19 bounds=134,148..140,154 axes=7x7 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=137,50..140,53 axes=4x4 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=152,52..153,53 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=156,278..157,279 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=156,490..157,491 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=164,80..165,81 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=195,32..196,33 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=209,398..210,399 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=213,220..214,221 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=231,159..232,160 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=232,336..233,337 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=235,75..236,76 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=235,138..236,139 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=239,121..240,122 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=264,338..265,339 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=265,42..266,43 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=282,343..283,344 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=298,456..299,457 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=312,240..313,241 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=340,86..341,87 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=344,123..345,124 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=344,204..345,205 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=347,363..348,364 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=374,85..375,86 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=415,370..416,371 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=416,217..417,218 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=433,364..434,365 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=447,198..448,199 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=448,217..449,218 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=448,403..449,404 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=449,360..450,361 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=468,52..469,53 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=475,95..476,96 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=34 bounds=483,360..491,368 axes=9x9 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.068] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=484,260..485,261 axes=2x2 zone=Cultist Sewer Encampment layer=Floor 4B sewer
+[23:28:29.078] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR problems=61 rooms=830 unreachableRooms=0 weakDoors=8 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=4 shortCorridors=0 squatCorridors=49 edgeDoorProblems=0 zone=Cultist Sewer Encampment layer=Floor 4B sewer seed=311185
+[23:28:30.101] INFO Generated road-first world seed=311185 zone=Cultist Sewer Encampment layer=Floor 4B sewer rooms=830 attempts=1493 roads=core-first
+CAPTURE 466713-sewer-spawn-2d x=250 y=250 paintMs=182.517
+CAPTURE 466713-sewer-spawn-doom x=250 y=250 paintMs=237.503
+CAPTURE 466713-sewer-street-2d x=241 y=250 paintMs=186.9645
+CAPTURE 466713-sewer-street-doom x=241 y=250 paintMs=248.8302
+CAPTURE 466713-sewer-room-2d x=46 y=296 paintMs=173.9307
+CAPTURE 466713-sewer-room-doom x=46 y=296 paintMs=228.4636
+[23:28:32.422] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP unreachableRoom id=655 rect=12,234,5,4 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=4,245 b=5,245 dist=1 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=4,245 b=6,245 dist=2 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=5,245 b=6,245 dist=1 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=5,245 b=7,245 dist=2 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=6,245 b=7,245 dist=1 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=6,245 b=8,245 dist=2 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=7,245 b=8,245 dist=1 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=7,245 b=9,245 dist=2 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=832 side=2 a=8,245 b=9,245 dist=1 rect=3,239,13,7 zone=Noble Service Spine
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=6,402 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=12,362 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=14,94 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=25,352 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=52,34 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=67,232 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=111,94 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=117,243 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=130,112 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=153,44 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=174,402 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=184,232 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=196,34 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=200,342 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=221,161 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=259,84 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=259,147 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=260,405 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=262,270 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=290,34 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=292,52 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=306,277 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=313,87 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.423] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=316,158 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=381,450 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=384,402 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=417,262 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=421,52 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=434,82 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=442,229 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=442,454 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=442,465 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=469,256 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.424] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=X at=480,239 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.425] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=44124 bounds=1,1..498,498 axes=498x498 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=132,21..136,25 axes=5x5 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=159,328..162,331 axes=4x4 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=163,450..167,454 axes=5x5 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=18 bounds=263,148..270,155 axes=8x8 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=312,450..316,454 axes=5x5 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=4 bounds=317,175..318,176 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=4 bounds=317,200..318,201 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=10 bounds=394,162..397,165 axes=4x4 zone=Noble Service Spine layer=Floor 8
+[23:28:32.428] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP problems=53 rooms=833 unreachableRooms=1 weakDoors=34 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=9 shortCorridors=0 squatCorridors=9 edgeDoorProblems=0 zone=Noble Service Spine layer=Floor 8 seed=293812
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=X at=7,245 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=X at=14,94 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=| at=196,34 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=X at=221,161 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=X at=260,405 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=X at=262,270 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=| at=313,87 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=X at=384,402 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=| at=417,262 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=L at=442,229 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=| at=442,465 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=X at=480,239 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=52475 bounds=1,1..498,498 axes=498x498 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=1,400..2,401 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=3,135..4,136 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=3,413..4,414 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=10,235..11,236 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=18,32..19,33 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=18,241..19,242 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=73,111..74,112 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=41 bounds=77,120..87,130 axes=11x11 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=79,46..80,47 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=82,216..83,217 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=124,367..125,368 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=36 bounds=151,152..158,159 axes=8x8 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=166,470..167,471 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=174,364..175,365 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=177,147..178,148 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=204,446..205,447 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=216,283..217,284 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=19 bounds=218,421..223,426 axes=6x6 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=231,220..232,221 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=236,324..237,325 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=241,217..242,218 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=279,466..280,467 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=18 bounds=283,51..288,56 axes=6x6 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=306,200..307,201 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=308,371..309,372 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=315,138..316,139 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=317,175..318,176 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=317,200..318,201 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.572] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=328,244..329,245 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=340,419..341,420 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=395,333..396,334 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=395,363..396,364 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=400,29..401,30 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=421,369..422,370 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=424,289..425,290 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=428,49..429,50 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=430,209..431,210 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=10 bounds=439,209..442,212 axes=4x4 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=446,343..447,344 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=447,132..448,133 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=448,268..449,269 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=451,262..452,263 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=451,359..452,360 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=453,339..454,340 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=457,268..458,269 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=468,476..469,477 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=475,454..476,455 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=484,151..485,152 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=485,368..486,369 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=488,77..489,78 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.577] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR problems=63 rooms=833 unreachableRooms=0 weakDoors=12 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=51 edgeDoorProblems=0 zone=Noble Service Spine layer=Floor 8 seed=293812
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=X at=7,245 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=X at=14,94 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=| at=196,34 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=X at=221,161 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=X at=260,405 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=X at=262,270 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=| at=313,87 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=X at=384,402 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=| at=417,262 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=L at=442,229 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=| at=442,465 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=X at=480,239 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=52475 bounds=1,1..498,498 axes=498x498 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=1,400..2,401 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=3,135..4,136 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=3,413..4,414 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=10,235..11,236 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=18,32..19,33 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=18,241..19,242 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=73,111..74,112 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=41 bounds=77,120..87,130 axes=11x11 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=79,46..80,47 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=82,216..83,217 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=124,367..125,368 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=36 bounds=151,152..158,159 axes=8x8 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=166,470..167,471 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=174,364..175,365 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=177,147..178,148 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=204,446..205,447 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=216,283..217,284 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=19 bounds=218,421..223,426 axes=6x6 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=231,220..232,221 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=236,324..237,325 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=241,217..242,218 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=279,466..280,467 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=18 bounds=283,51..288,56 axes=6x6 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=306,200..307,201 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=308,371..309,372 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=315,138..316,139 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=317,175..318,176 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=317,200..318,201 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=328,244..329,245 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=340,419..341,420 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=395,333..396,334 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=395,363..396,364 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=400,29..401,30 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=421,369..422,370 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=424,289..425,290 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=428,49..429,50 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=430,209..431,210 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=10 bounds=439,209..442,212 axes=4x4 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=446,343..447,344 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=447,132..448,133 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=448,268..449,269 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=451,262..452,263 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=451,359..452,360 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=453,339..454,340 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=457,268..458,269 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=468,476..469,477 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=475,454..476,455 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=484,151..485,152 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=485,368..486,369 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.588] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=488,77..489,78 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.595] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE problems=63 rooms=833 unreachableRooms=0 weakDoors=12 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=51 edgeDoorProblems=0 zone=Noble Service Spine layer=Floor 8 seed=293812
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=224 side=2 a=403,8 b=404,8 dist=1 rect=401,2,5,7 zone=Noble Service Spine
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=7,245 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=14,94 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=L at=46,492 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=196,34 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=221,161 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=233,494 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=260,405 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=262,270 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.645] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=313,87 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=384,402 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=405,5 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=417,262 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=L at=442,229 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=442,465 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=480,239 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=492,280 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=X at=494,129 adjacentNonWall=1 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=8,132..9,133 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=8,416..9,417 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=10,235..11,236 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=18,32..19,33 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=18,241..19,242 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=58,490..59,491 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=73,111..74,112 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=41 bounds=77,120..87,130 axes=11x11 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=79,46..80,47 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=82,216..83,217 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=124,367..125,368 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=36 bounds=151,152..158,159 axes=8x8 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=166,470..167,471 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=174,364..175,365 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=177,147..178,148 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=204,446..205,447 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=216,283..217,284 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=19 bounds=218,421..223,426 axes=6x6 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=231,220..232,221 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=233,8..234,9 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=236,324..237,325 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=241,217..242,218 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=279,466..280,467 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=18 bounds=283,51..288,56 axes=6x6 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=306,200..307,201 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=308,371..309,372 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=315,138..316,139 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=317,175..318,176 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=317,200..318,201 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=328,244..329,245 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=340,419..341,420 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=395,333..396,334 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=395,363..396,364 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=400,29..401,30 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=421,369..422,370 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=424,289..425,290 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=428,49..429,50 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=430,209..431,210 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=10 bounds=439,209..442,212 axes=4x4 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=446,343..447,344 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=447,132..448,133 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=448,268..449,269 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=451,262..452,263 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=451,359..452,360 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=453,339..454,340 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=457,268..458,269 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=468,476..469,477 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=475,454..476,455 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=484,151..485,152 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=485,368..486,369 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=488,77..489,78 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=490,74..491,75 axes=2x2 zone=Noble Service Spine layer=Floor 8
+[23:28:32.648] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR problems=70 rooms=833 unreachableRooms=0 weakDoors=17 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=1 shortCorridors=0 squatCorridors=52 edgeDoorProblems=0 zone=Noble Service Spine layer=Floor 8 seed=293812
+[23:28:33.388] INFO Generated road-first world seed=293812 zone=Noble Service Spine layer=Floor 8 rooms=833 attempts=1757 roads=core-first
+CAPTURE 466713-upper-spawn-2d x=250 y=250 paintMs=184.1997
+CAPTURE 466713-upper-spawn-doom x=250 y=250 paintMs=210.8424
+CAPTURE 466713-upper-street-2d x=241 y=250 paintMs=173.4442
+CAPTURE 466713-upper-street-doom x=241 y=250 paintMs=256.7555
+CAPTURE 466713-upper-room-2d x=244 y=237 paintMs=187.1842
+CAPTURE 466713-upper-room-doom x=244 y=237 paintMs=253.8776
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP unreachableRoom id=183 rect=4,236,11,8 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP unreachableRoom id=836 rect=3,247,13,7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=7,24 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=13,101 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=28,412 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=61,344 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=70,233 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=84,69 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=107,363 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=201,347 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=216,348 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=264,41 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=295,347 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=364,405 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=374,473 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=416,328 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=443,151 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=485,458 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=9,230..14,235 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=107,106..111,110 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=132,369..135,372 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=155,314..159,318 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=156,446..162,452 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=201,448..207,454 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=213,148..218,153 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=23 bounds=233,151..243,161 axes=11x11 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=262,186..266,190 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=277,52..281,56 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=323,78..328,83 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=23 bounds=364,123..372,131 axes=9x9 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=15 bounds=368,75..375,82 axes=8x8 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=422,161..426,165 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=425,24..431,30 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=439,392..444,397 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.038] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=5 bounds=492,259..494,261 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.044] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP problems=35 rooms=837 unreachableRooms=2 weakDoors=16 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=17 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=20368392
+[23:28:36.119] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=201,347 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.119] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=/ at=216,348 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=7,367..8,368 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=16,159..17,160 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=17,304..18,305 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=29,403..30,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=56,417..57,418 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=67,32..68,33 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=73,23..74,24 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=75,230..76,231 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=78,254..79,255 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=79,399..80,400 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=113,230..114,231 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=113,469..114,470 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=115,346..116,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=127,161..128,162 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=132,20..133,21 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=132,369..135,372 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=134,62..135,63 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=138,18..141,21 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=181,80..182,81 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=19 bounds=201,448..207,454 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=210,403..211,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=211,148..212,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=17 bounds=213,148..218,153 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=235,350..236,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=27 bounds=253,304..258,309 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=256,268..257,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=257,24..258,25 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=16 bounds=277,52..281,56 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=10 bounds=293,393..296,396 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=296,151..300,155 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=16 bounds=306,99..309,102 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=16 bounds=323,78..328,83 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=331,368..332,369 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.121] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=345,4..346,5 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=366,448..367,449 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=389,437..390,438 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=419,340..420,341 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=20 bounds=439,392..444,397 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=448,71..449,72 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=450,213..451,214 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=450,466..451,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=451,437..452,438 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=464,467..467,470 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=469,235..470,236 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=484,234..485,235 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=487,350..488,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.122] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=496,350..497,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.125] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR problems=49 rooms=837 unreachableRooms=0 weakDoors=2 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=47 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=20368392
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=201,347 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=/ at=216,348 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=7,367..8,368 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=16,159..17,160 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=17,304..18,305 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=29,403..30,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=56,417..57,418 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=67,32..68,33 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=73,23..74,24 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=75,230..76,231 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=78,254..79,255 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=79,399..80,400 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=113,230..114,231 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=113,469..114,470 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=115,346..116,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=127,161..128,162 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=132,20..133,21 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=132,369..135,372 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=134,62..135,63 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=138,18..141,21 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=181,80..182,81 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=19 bounds=201,448..207,454 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=210,403..211,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=211,148..212,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=17 bounds=213,148..218,153 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=235,350..236,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=27 bounds=253,304..258,309 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=256,268..257,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=257,24..258,25 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=16 bounds=277,52..281,56 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=10 bounds=293,393..296,396 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=296,151..300,155 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=16 bounds=306,99..309,102 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=16 bounds=323,78..328,83 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=331,368..332,369 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=345,4..346,5 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=366,448..367,449 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=389,437..390,438 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=419,340..420,341 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=20 bounds=439,392..444,397 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=448,71..449,72 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=450,213..451,214 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=450,466..451,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=451,437..452,438 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=464,467..467,470 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=469,235..470,236 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=484,234..485,235 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=487,350..488,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=496,350..497,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.129] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE problems=49 rooms=837 unreachableRooms=0 weakDoors=2 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=47 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=20368392
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=238 side=1 a=246,6 b=246,7 dist=1 rect=238,2,9,10 zone=Neutral Civilian Floor
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=416 side=3 a=94,7 b=94,8 dist=1 rect=94,3,5,8 zone=Neutral Civilian Floor
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=431 side=1 a=405,491 b=405,492 dist=1 rect=393,489,13,7 zone=Neutral Civilian Floor
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=5,468 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=7,229 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=201,347 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=216,348 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=L at=280,5 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=352,5 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR shortCorridor size=1 bounds=6,254..6,254 axes=1x1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=8,14..9,15 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=8,152..9,153 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.188] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=16,159..17,160 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=17,304..18,305 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=27,490..28,491 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=29,403..30,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=56,417..57,418 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=67,32..68,33 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=73,23..74,24 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=75,230..76,231 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=78,254..79,255 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=79,399..80,400 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=113,230..114,231 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=113,469..114,470 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=115,346..116,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=127,161..128,162 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=132,20..133,21 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=132,369..135,372 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=134,62..135,63 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=138,18..141,21 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=181,80..182,81 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=19 bounds=201,448..207,454 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=210,403..211,404 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=211,148..212,149 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=17 bounds=213,148..218,153 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=235,350..236,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=27 bounds=253,304..258,309 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=256,268..257,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=257,24..258,25 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=16 bounds=277,52..281,56 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=10 bounds=293,393..296,396 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=296,151..300,155 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=16 bounds=306,99..309,102 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=16 bounds=323,78..328,83 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=331,368..332,369 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=366,448..367,449 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=389,437..390,438 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=391,490..392,491 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=419,340..420,341 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=20 bounds=439,392..444,397 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=448,8..449,9 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=448,71..449,72 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=450,213..451,214 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=450,466..451,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=451,437..452,438 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=464,467..467,470 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=469,235..470,236 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.191] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=484,234..485,235 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.192] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=16 bounds=486,237..491,242 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.192] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=487,350..488,351 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.192] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=490,50..491,51 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.192] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR shortCorridor size=1 bounds=493,80..493,80 axes=1x1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:36.194] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR problems=62 rooms=837 unreachableRooms=0 weakDoors=6 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=3 shortCorridors=2 squatCorridors=51 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=20368392
+[23:28:36.628] INFO Generated road-first world seed=20368392 zone=Neutral Civilian Floor layer=Floor 4 rooms=837 attempts=1552 roads=core-first
+GENERATED seed=20261025 seconds=1.5333228
+CAPTURE 20261025-insertion-spawn-2d x=250 y=250 paintMs=174.671
+CAPTURE 20261025-insertion-spawn-doom x=250 y=250 paintMs=209.6521
+CAPTURE 20261025-insertion-street-2d x=241 y=250 paintMs=172.9433
+CAPTURE 20261025-insertion-street-doom x=241 y=250 paintMs=243.8623
+CAPTURE 20261025-insertion-room-2d x=238 y=255 paintMs=172.5413
+CAPTURE 20261025-insertion-room-doom x=238 y=255 paintMs=234.8568
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=4,249 b=5,249 dist=1 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=4,249 b=6,249 dist=2 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=5,249 b=6,249 dist=1 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=5,249 b=7,249 dist=2 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=6,249 b=7,249 dist=1 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=6,249 b=8,249 dist=2 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=7,249 b=8,249 dist=1 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=7,249 b=9,249 dist=2 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP largeRoomDoorTooClose room=836 side=2 a=8,249 b=9,249 dist=1 rect=3,243,13,7 zone=Neutral Civilian Floor
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=81,257 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=100,422 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=157,412 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=| at=175,151 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=187,262 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=312,87 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=320,94 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=324,415 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=L at=381,84 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP weakDoorAdjacency door=/ at=421,270 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=43861 bounds=1,1..498,498 axes=498x498 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=15 bounds=18,16..25,23 axes=8x8 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=13 bounds=69,235..75,241 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=5 bounds=107,267..109,269 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=146,175..151,180 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=161,368..164,371 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=277,286..281,290 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=337,119..342,124 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=337,194..341,198 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=5 bounds=359,335..361,337 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=15 bounds=367,151..374,158 axes=8x8 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=401,230..405,234 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=7 bounds=415,261..418,264 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=9 bounds=418,10..422,14 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.380] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP squatCorridor size=11 bounds=445,444..450,449 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.388] WARN/WORLDGEN_VALIDATE phase=POST_ROAD_FIRST_TRANSITION_STAMP problems=34 rooms=837 unreachableRooms=0 weakDoors=10 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=9 shortCorridors=0 squatCorridors=15 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=8895300
+[23:28:39.446] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR weakDoorAdjacency door=| at=157,412 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.447] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=52516 bounds=1,1..498,498 axes=498x498 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.447] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=13,285..14,286 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.447] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=24,149..25,150 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=14 bounds=47,42..51,46 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=16 bounds=52,242..55,245 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=24 bounds=69,235..75,241 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=74,129..75,130 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=74,268..75,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=8 bounds=107,267..109,269 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=108,253..109,254 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=119,346..120,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=37 bounds=127,360..136,369 axes=10x10 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=128,196..129,197 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=129,155..130,156 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=175,130..176,131 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=187,138..188,139 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=200,347..201,348 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=204,53..205,54 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=204,76..205,77 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=208,135..209,136 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=215,372..216,373 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=231,65..232,66 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=238,219..239,220 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=238,328..239,329 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=239,478..240,479 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=265,363..266,364 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=284,258..287,261 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=32 bounds=298,261..306,269 axes=9x9 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=321,27..322,28 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.448] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=329,130..330,131 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=335,235..336,236 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=336,95..337,96 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=20 bounds=337,119..342,124 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=16 bounds=337,194..341,198 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=338,220..339,221 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=338,382..339,383 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=359,42..360,43 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=8 bounds=359,335..361,337 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=395,400..396,401 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=16 bounds=401,230..405,234 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=414,211..415,212 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=414,400..415,401 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=416,268..417,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=423,152..424,153 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=12 bounds=433,29..437,33 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=436,451..437,452 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=442,289..443,290 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=20 bounds=445,444..450,449 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=446,466..447,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=447,304..448,305 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=465,153..466,154 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=465,268..466,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=470,80..471,81 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=471,254..472,255 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=4 bounds=476,391..477,392 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.449] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR squatCorridor size=15 bounds=480,42..484,46 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.452] WARN/WORLDGEN_VALIDATE phase=POST_REPAIR problems=57 rooms=837 unreachableRooms=0 weakDoors=1 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=56 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=8895300
+[23:28:39.459] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE weakDoorAdjacency door=| at=157,412 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=52516 bounds=1,1..498,498 axes=498x498 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=13,285..14,286 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=24,149..25,150 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=14 bounds=47,42..51,46 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=16 bounds=52,242..55,245 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=24 bounds=69,235..75,241 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=74,129..75,130 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=74,268..75,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=8 bounds=107,267..109,269 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=108,253..109,254 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=119,346..120,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=37 bounds=127,360..136,369 axes=10x10 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=128,196..129,197 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=129,155..130,156 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=175,130..176,131 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=187,138..188,139 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=200,347..201,348 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=204,53..205,54 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=204,76..205,77 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=208,135..209,136 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=215,372..216,373 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=231,65..232,66 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=238,219..239,220 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=238,328..239,329 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.461] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=239,478..240,479 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=265,363..266,364 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=284,258..287,261 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=32 bounds=298,261..306,269 axes=9x9 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=321,27..322,28 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=329,130..330,131 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=335,235..336,236 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=336,95..337,96 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=20 bounds=337,119..342,124 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=16 bounds=337,194..341,198 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=338,220..339,221 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=338,382..339,383 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=359,42..360,43 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=8 bounds=359,335..361,337 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=395,400..396,401 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=16 bounds=401,230..405,234 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=414,211..415,212 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=414,400..415,401 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=416,268..417,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=423,152..424,153 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=12 bounds=433,29..437,33 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=436,451..437,452 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=442,289..443,290 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=20 bounds=445,444..450,449 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=446,466..447,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=447,304..448,305 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=465,153..466,154 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=465,268..466,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=470,80..471,81 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=471,254..472,255 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=4 bounds=476,391..477,392 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.462] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE squatCorridor size=15 bounds=480,42..484,46 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.465] WARN/WORLDGEN_VALIDATE phase=FINAL_PRE_POPULATE problems=57 rooms=837 unreachableRooms=0 weakDoors=1 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=0 shortCorridors=0 squatCorridors=56 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=8895300
+[23:28:39.518] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR largeRoomDoorTooClose room=600 side=3 a=417,491 b=417,492 dist=1 rect=417,488,5,9 zone=Neutral Civilian Floor
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=94,5 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=| at=157,412 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR weakDoorAdjacency door=/ at=494,470 adjacentNonWall=1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR shortCorridor size=1 bounds=4,242..4,242 axes=1x1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR shortCorridor size=1 bounds=6,242..6,242 axes=1x1 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=13,285..14,286 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=24,149..25,150 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=14 bounds=47,42..51,46 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=16 bounds=52,242..55,245 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=24 bounds=69,235..75,241 axes=7x7 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=74,129..75,130 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=74,268..75,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=8 bounds=107,267..109,269 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=108,253..109,254 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=119,346..120,347 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=37 bounds=127,360..136,369 axes=10x10 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=128,196..129,197 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=129,155..130,156 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=175,130..176,131 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=187,138..188,139 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=200,347..201,348 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=204,53..205,54 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=204,76..205,77 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=208,135..209,136 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=215,372..216,373 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=231,65..232,66 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=238,219..239,220 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=238,328..239,329 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=239,478..240,479 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=240,493..241,494 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=10 bounds=256,8..259,11 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=265,363..266,364 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=284,258..287,261 axes=4x4 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=32 bounds=298,261..306,269 axes=9x9 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=321,27..322,28 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=329,130..330,131 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=335,235..336,236 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=336,95..337,96 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=20 bounds=337,119..342,124 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=16 bounds=337,194..341,198 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=338,220..339,221 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=338,382..339,383 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=359,42..360,43 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=8 bounds=359,335..361,337 axes=3x3 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=395,400..396,401 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=16 bounds=401,230..405,234 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=414,211..415,212 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=414,400..415,401 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=416,268..417,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=423,152..424,153 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=12 bounds=433,29..437,33 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=436,451..437,452 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=442,289..443,290 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=20 bounds=445,444..450,449 axes=6x6 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=446,466..447,467 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=447,304..448,305 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=465,153..466,154 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=465,268..466,269 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=470,80..471,81 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=471,254..472,255 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=476,391..477,392 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=15 bounds=480,42..484,46 axes=5x5 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=490,156..491,157 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.519] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR squatCorridor size=4 bounds=490,164..491,165 axes=2x2 zone=Neutral Civilian Floor layer=Floor 4
+[23:28:39.524] WARN/WORLDGEN_VALIDATE phase=POST_BOUNDARY_REPAIR problems=65 rooms=838 unreachableRooms=0 weakDoors=3 smallRoomDoorWallViolations=0 largeDoorSpacingViolations=1 shortCorridors=2 squatCorridors=59 edgeDoorProblems=0 zone=Neutral Civilian Floor layer=Floor 4 seed=8895300
+[23:28:39.872] INFO Generated road-first world seed=8895300 zone=Neutral Civilian Floor layer=Floor 4 rooms=838 attempts=1699 roads=core-first
+GENERATED seed=8675309 seconds=1.5870212
+CAPTURE 8675309-insertion-spawn-2d x=250 y=250 paintMs=184.4601
+CAPTURE 8675309-insertion-spawn-doom x=250 y=250 paintMs=208.2703
+CAPTURE 8675309-insertion-street-2d x=241 y=250 paintMs=170.4235
+CAPTURE 8675309-insertion-street-doom x=241 y=250 paintMs=238.9618
+CAPTURE 8675309-insertion-room-2d x=256 y=263 paintMs=177.0366
+CAPTURE 8675309-insertion-room-doom x=256 y=263 paintMs=230.4195
+BASELINE_CAPTURE_COMPLETE

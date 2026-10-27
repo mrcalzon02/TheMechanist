@@ -1,0 +1,2 @@
+[00:42:05.929] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+ActorCombatExecutionSmoke PASS npc-death=true player-damage=true command-coordinates=true walls=true empty-atomic=true finite-ammo=true persisted-skills=true pinned-traders=true

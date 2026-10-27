@@ -79,10 +79,12 @@ final class WorldPositionalSoundAuthority {
     static void playConfirmedAttack(GamePanel game,
                                     StructuralScaleCombatAuthority.WeaponProfile weapon) {
         if (!active(game) || weapon == null) return;
-        String key = weapon.firearm()
-                ? new SoundManager().weaponEffectKey(weapon.name(), true)
-                : new SoundManager().weaponEffectKey(weapon.name(), false);
+        String key=WeaponAudioAuthority.cue(weapon.name(),weapon.firearm());
         play(game, key, game.playerX, game.playerY, 1.0);
+    }
+
+    static WeaponSoundVariationAuthority.Variation playAttackAt(GamePanel game,String weapon,boolean ranged,int x,int y) {
+        if(!active(game))return WeaponSoundVariationAuthority.Variation.NEUTRAL;return play(game,WeaponAudioAuthority.cue(weapon,ranged),x,y,1.0);
     }
 
     static String noiseCue(ZoneNoiseSourceRecord noise) {
@@ -153,16 +155,19 @@ final class WorldPositionalSoundAuthority {
         return a >= 0 && a == b;
     }
 
-    static void play(GamePanel game, String cue, int x, int y, double strength) {
+    static WeaponSoundVariationAuthority.Variation play(GamePanel game, String cue, int x, int y, double strength) {
         if (!active(game) || cue == null || strength <= 0
-                || !game.world.inBounds(x, y)) return;
+                || !game.world.inBounds(x, y)) return WeaponSoundVariationAuthority.Variation.NEUTRAL;
         boolean occluded = !game.hasLineOfSight(
                 game.playerX, game.playerY, x, y);
         boolean echo = sameRoom(game.world,
                 game.playerX, game.playerY, x, y);
+        var variation=WeaponSoundVariationAuthority.next(game,cue,x,y);
+        ActorCombatFeedbackAuthority.recordAudio(game,cue,x,y,occluded,echo,strength,variation);
         game.sounds.playPositioned(cue, x, y,
                 game.playerX, game.playerY, game.facingDx, game.facingDy,
-                occluded, echo, strength, game.options);
+                occluded, echo, strength, game.options,variation);
+        return variation;
     }
 
     private static boolean active(GamePanel game) {

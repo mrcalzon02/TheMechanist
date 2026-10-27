@@ -546,7 +546,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                     continue;
                 }
                 if (line.startsWith("MECH|WORLD_COMMAND_ACCEPTED|")) {
-                    completePendingWorldCommand(parseWorldWaitAck(line));
+                    completePendingWaitCommand(parseWorldWaitAck(line));
                     continue;
                 }
                 if (line.startsWith("MECH|SESSION_SNAPSHOT|")) {
@@ -610,7 +610,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         pending.future().complete(acknowledgement);
     }
 
-    private void completePendingWorldCommand(WorldWaitAck acknowledgement)
+    private void completePendingWaitCommand(WorldWaitAck acknowledgement)
             throws IOException {
         PendingWorldCommand pending = pendingWorldCommand.get();
         if (pending == null) {

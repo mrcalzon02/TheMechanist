@@ -1,0 +1,1 @@
+WeaponSoundVariationSmoke PASS checks=2107 above=484 below=516 meanRate=0.9993229059043963 maxLiveVoices=12 simulationUnchanged=true

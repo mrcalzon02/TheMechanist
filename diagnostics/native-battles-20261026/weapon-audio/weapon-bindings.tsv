@@ -1,0 +1,112 @@
+weapon	category	cue	asset
+Ritual wrench	tool/weapon	weapon_bash	assets\sound\effects\bash.wav
+Cargo hook	tool/weapon	weapon_bash	assets\sound\effects\bash.wav
+Bent scalpel	medical/tool/weapon	weapon_bash	assets\sound\effects\bash.wav
+Scrap knife	weapon	weapon_slice	assets\sound\effects\slice.wav
+Rusty knife	weapon	weapon_slice	assets\sound\effects\slice.wav
+Shiv	weapon	weapon_bash	assets\sound\effects\bash.wav
+Tiny knife	weapon	weapon_slice	assets\sound\effects\slice.wav
+Stub pistol with poor sights	weapon	weapon_shot	assets\sound\effects\shot.wav
+Shock baton	weapon	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Security baton	weapon	weapon_bash	assets\sound\effects\bash.wav
+Heavy spanner	weapon/tool	weapon_bash	assets\sound\effects\bash.wav
+Improvised club	weapon	weapon_bash	assets\sound\effects\bash.wav
+Guard entrenching tool	tool/weapon	weapon_bash	assets\sound\effects\bash.wav
+Guard lascarbine	weapon	weapon_las	assets\sound\effects\las.wav
+Light Rifle	weapon/ranged/las/military	weapon_las	assets\sound\effects\las.wav
+Guard trench knife	weapon	weapon_slice	assets\sound\effects\slice.wav
+Arbites shock maul	weapon/security	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Ganger chain cleaver	weapon/contraband	weapon_bash	assets\sound\effects\bash.wav
+Sawed-off stub shotgun	weapon/contraband	weapon_slice	assets\sound\effects\slice.wav
+Cult ritual blade	weapon/contraband	weapon_slice	assets\sound\effects\slice.wav
+Mutant bone maul	weapon	weapon_bash	assets\sound\effects\bash.wav
+Mechanicus arc prod	weapon/tool	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Monoblade sliver	weapon/rare	weapon_slice	assets\sound\effects\slice.wav
+Rail spike hammer	weapon/tool	weapon_bash	assets\sound\effects\bash.wav
+Trash-hook spear	weapon	weapon_slice	assets\sound\effects\slice.wav
+Noble dueling pistol	weapon/luxury	weapon_shot	assets\sound\effects\shot.wav
+Chainaxe	weapon/melee/chain	weapon_chain	assets\sound\effects\Chainsaw_strikes_met_#3-1779775359727.wav
+Chainsword	weapon/melee/chain	weapon_chain	assets\sound\effects\Chainsaw_strikes_met_#3-1779775359727.wav
+Force Sword	weapon/melee/psyker/rare	weapon_slice	assets\sound\effects\slice.wav
+Power Axe	weapon/melee/power/rare	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Power Maul	weapon/melee/power/security	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Power Pick	weapon/melee/power/industrial	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Power Sword	weapon/melee/power/rare	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Axe	weapon/melee/common	weapon_slice	assets\sound\effects\slice.wav
+Knife	weapon/melee/common	weapon_slice	assets\sound\effects\slice.wav
+Mono-Knife	weapon/melee/rare	weapon_slice	assets\sound\effects\slice.wav
+Toxic Knife	weapon/melee/contraband	weapon_slice	assets\sound\effects\slice.wav
+Bio-Dagger	weapon/melee/biological/rare	weapon_slice	assets\sound\effects\slice.wav
+Munitorum Shovel	weapon/tool/military	weapon_bash	assets\sound\effects\bash.wav
+Sword	weapon/melee/common	weapon_slice	assets\sound\effects\slice.wav
+Duelling Sword	weapon/melee/luxury	weapon_slice	assets\sound\effects\slice.wav
+Industrial Hammer	weapon/tool/industrial	weapon_bash	assets\sound\effects\bash.wav
+Thunder Hammer	weapon/melee/power/relic	weapon_thundering	assets\sound\effects\thundering.wav
+Omnissian Axe	weapon/tool/mechanicus/relic	weapon_slice	assets\sound\effects\slice.wav
+Power Claymore	weapon/melee/power/rare	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Power Blade	weapon/melee/power/rare	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Greatsword	weapon/melee/heavy	weapon_slice	assets\sound\effects\slice.wav
+Heavy Rock Saw	weapon/tool/industrial	weapon_slice	assets\sound\effects\slice.wav
+Emergency Cutter	weapon/tool/industrial	weapon_slice	assets\sound\effects\slice.wav
+Emergency Drill	weapon/tool/industrial	weapon_bash	assets\sound\effects\bash.wav
+Psychic Staff	weapon/melee/psyker/rare	weapon_bash	assets\sound\effects\bash.wav
+Bolt Pistol	weapon/ranged/bolt	weapon_thundering	assets\sound\effects\thundering.wav
+Needle Pistol	weapon/ranged/toxin/rare	weapon_shot	assets\sound\effects\shot.wav
+Hand Flamer	weapon/ranged/flame	weapon_flame	assets\sound\effects\flame.wav
+Laspistol	weapon/ranged/las	weapon_las	assets\sound\effects\las.wav
+Inferno Pistol	weapon/ranged/melta/rare	weapon_flame	assets\sound\effects\flame.wav
+Plasma Pistol	weapon/ranged/plasma/rare	weapon_plasma	assets\sound\effects\plas.wav
+Autopistol	weapon/ranged/auto	weapon_shot	assets\sound\effects\shot.wav
+Stub pistol	weapon/ranged/stub	weapon_shot	assets\sound\effects\shot.wav
+Stub Revolver	weapon/ranged/stub	weapon_shot	assets\sound\effects\shot.wav
+Bolter	weapon/ranged/bolt	weapon_thundering	assets\sound\effects\thundering.wav
+Storm Bolter	weapon/ranged/bolt/heavy	weapon_thundering	assets\sound\effects\thundering.wav
+Arc Rifle	weapon/ranged/mechanicus	weapon_lightning	assets\sound\effects\lightning_crackle.wav
+Needle Rifle	weapon/ranged/toxin/rare	weapon_shot	assets\sound\effects\shot.wav
+Webber	weapon/ranged/security	weapon_shot	assets\sound\effects\shot.wav
+Acid Spitter	weapon/ranged/chemical/contraband	weapon_shot	assets\sound\effects\shot.wav
+Flamer	weapon/ranged/flame	weapon_flame	assets\sound\effects\flame.wav
+Lasgun	weapon/ranged/las	weapon_las	assets\sound\effects\las.wav
+Longlas	weapon/ranged/las/marksman	weapon_las	assets\sound\effects\las.wav
+Meltagun	weapon/ranged/melta	weapon_flame	assets\sound\effects\flame.wav
+Plasma Gun	weapon/ranged/plasma	weapon_plasma	assets\sound\effects\plas.wav
+Heavy Plasma Gun	weapon/ranged/plasma/heavy	weapon_plasma	assets\sound\effects\plas.wav
+Autogun	weapon/ranged/auto	weapon_shot	assets\sound\effects\shot.wav
+Shotgun	weapon/ranged/shotgun	weapon_shot	assets\sound\effects\shot.wav
+Sniper Rifle	weapon/ranged/marksman	weapon_shot	assets\sound\effects\shot.wav
+Marksman Rifle	weapon/ranged/marksman	weapon_shot	assets\sound\effects\shot.wav
+Hunting Rifle	weapon/ranged/marksman	weapon_shot	assets\sound\effects\shot.wav
+Stubcarbine	weapon/ranged/stub	weapon_shot	assets\sound\effects\shot.wav
+Heavy Bolter	weapon/ranged/bolt/heavy	weapon_thundering	assets\sound\effects\thundering.wav
+Heavy Flamer	weapon/ranged/flame/heavy	weapon_flame	assets\sound\effects\flame.wav
+Multi-Melta	weapon/ranged/melta/heavy	weapon_flame	assets\sound\effects\flame.wav
+Heavy Stubber	weapon/ranged/stub/heavy	weapon_thundering	assets\sound\effects\thundering.wav
+Autocannon	weapon/ranged/auto/heavy	weapon_thundering	assets\sound\effects\thundering.wav
+Zip pistol	weapon/ranged/improvised	weapon_shot	assets\sound\effects\shot.wav
+Pipe shotgun	weapon/ranged/improvised	weapon_shot	assets\sound\effects\shot.wav
+Scrap autogun	weapon/ranged/improvised	weapon_shot	assets\sound\effects\shot.wav
+Hiver nail rifle	weapon/ranged/improvised	weapon_shot	assets\sound\effects\shot.wav
+Jury-rigged laslock	weapon/ranged/improvised/las	weapon_las	assets\sound\effects\las.wav
+Chem sprayer	weapon/ranged/chemical/improvised	weapon_shot	assets\sound\effects\shot.wav
+Rebar maul	weapon/melee/improvised	weapon_bash	assets\sound\effects\bash.wav
+Sump hook blade	weapon/melee/improvised	weapon_slice	assets\sound\effects\slice.wav
+Chain-wrapped club	weapon/melee/improvised	weapon_bash	assets\sound\effects\bash.wav
+Pressure cutter spear	weapon/tool/improvised	weapon_slice	assets\sound\effects\slice.wav
+Ganger buzz-cleaver	weapon/melee/chain/improvised	weapon_chain	assets\sound\effects\Chainsaw_strikes_met_#3-1779775359727.wav
+Hiver emergency breacher	weapon/tool/improvised	weapon_bash	assets\sound\effects\bash.wav
+Mutant scrap axe	weapon/melee/mutant/improvised	weapon_slice	assets\sound\effects\slice.wav
+Mutant tusk club	weapon/melee/mutant	weapon_bash	assets\sound\effects\bash.wav
+Heretic nail flail	weapon/melee/contraband/improvised	weapon_bash	assets\sound\effects\bash.wav
+Cult martyr pistol	weapon/ranged/contraband/improvised	weapon_shot	assets\sound\effects\shot.wav
+Broken servo-arm club	weapon/tool/mechanicus/improvised	weapon_bash	assets\sound\effects\bash.wav
+Frag grenade	weapon/explosive/grenade	weapon_thundering	assets\sound\effects\thundering.wav
+Krak grenade	weapon/explosive/grenade/anti-armor	weapon_thundering	assets\sound\effects\thundering.wav
+Smoke grenade	weapon/explosive/grenade/smoke	weapon_thundering	assets\sound\effects\thundering.wav
+Melta grenade	weapon/explosive/grenade/melta	weapon_flame	assets\sound\effects\flame.wav
+Plasma bomb	weapon/explosive/bomb/plasma	weapon_plasma	assets\sound\effects\plas.wav
+Satchel charge	weapon/explosive/charge	weapon_thundering	assets\sound\effects\thundering.wav
+Tripwire mine	weapon/explosive/mine/tripwire	weapon_thundering	assets\sound\effects\thundering.wav
+Motion claymore	weapon/explosive/mine/directional	weapon_thundering	assets\sound\effects\thundering.wav
+Bouncing Betty	weapon/explosive/mine/bounding	weapon_thundering	assets\sound\effects\thundering.wav
+Melta charge cell	ammo/melta	weapon_flame	assets\sound\effects\flame.wav
+Abandoned las-locker contents	weapon/cache	weapon_las	assets\sound\effects\las.wav

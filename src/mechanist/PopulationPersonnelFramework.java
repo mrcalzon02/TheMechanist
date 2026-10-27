@@ -783,6 +783,11 @@ class NpcEntity {
     int idleBias;
     int hp = 12;
     boolean hostileBarked = false;
+    boolean developerStationary = false;
+    int meleeSkill = 5, firearmsSkill = 5;
+    boolean combatLoadoutInitialized = false;
+    String combatTeam = "", combatTargetId = "";
+    final ActorConsumableAuthority.State combatSupport = new ActorConsumableAuthority.State();
     int suspiciousBarkCooldown = 0;
     int crowdShuffleCooldown = 0;
     int selectedMovementModeIndex = GamePanel.MOTION_WALK;
@@ -925,6 +930,9 @@ class NpcEntity {
     }
 
     void ensureCombatLoadout(Random r) {
+        if (combatLoadoutInitialized) return;
+        combatLoadoutInitialized = true;
+        combatSupport.maximumHp = Math.max(1,hp);
         if (isAnimalActor()) { equippedMeleeWeapon=""; equippedRangedWeapon=""; equippedArmor=""; equippedExplosive=""; loadedShots=0; ammoReloadsRemaining=0; return; }
         if (r == null) r = new Random(numericId == 0 ? 1 : numericId);
         ensureRankIdentity(r);
@@ -943,6 +951,7 @@ class NpcEntity {
             if (loadedShots <= 0) loadedShots = cap;
             if (ammoReloadsRemaining <= 0) ammoReloadsRemaining = reserveReloadsForFaction();
         }
+        ActorConsumableAuthority.seedNpcSupplies(this);
     }
 
     int reserveReloadsForFaction() {
@@ -1064,7 +1073,7 @@ class NpcEntity {
         ensureCombatLoadout(new Random(numericId == 0 ? 1 : numericId));
         String ranged = equippedRangedWeapon == null || equippedRangedWeapon.isBlank() ? "none" : equippedRangedWeapon + " " + loadedShots + "/" + magazineCapacityLocal(equippedRangedWeapon) + " loaded, reserve reloads " + ammoReloadsRemaining;
         String explosive = equippedExplosive == null || equippedExplosive.isBlank() ? "none" : equippedExplosive;
-        return "melee=" + equippedMeleeWeapon + "; ranged=" + ranged + "; armor=" + equippedArmor + "; explosive=" + explosive + "; intellect=" + intellect + "; tier=" + equipmentTier;
+        return "melee=" + equippedMeleeWeapon + "; ranged=" + ranged + "; armor=" + equippedArmor + "; explosive=" + explosive + "; intellect=" + intellect + "; melee skill="+meleeSkill+"; firearms skill="+firearmsSkill+"; tier=" + equipmentTier;
     }
 
     static NpcEntity sororitasGuardFor(ZoneType z, int x, int y, Random r) {
@@ -1077,6 +1086,8 @@ class NpcEntity {
     }
 
     void tick(World w, int px, int py, int turn) {
+        if (hp <= 0) return;
+        if (developerStationary) { lastTickTurn=turn;state="Trade";activeMotionStateIndex=GamePanel.MOTION_STATIONARY;return; }
         if (turn == lastTickTurn) return;
         int previousTickTurn = lastTickTurn;
         lastTickTurn = turn;
@@ -1175,6 +1186,7 @@ class NpcEntity {
     }
 
     void moveTo(int nx, int ny) {
+        if (developerStationary) return;
         if (nx != x || ny != y) {
             activeMotionStateIndex = selectedMovementModeIndex;
             facingDx = Integer.compare(nx, x);
@@ -1261,13 +1273,13 @@ class NpcEntity {
     }
 
     boolean canNpcStep(World w, int nx, int ny, int blockX, int blockY) {
-        return w != null && w.walkable(nx,ny) && w.npcAt(nx,ny)==null && !(nx == blockX && ny == blockY);
+        return !developerStationary && CyberneticLimbAuthority.mobile(combatSupport) && w != null && w.walkable(nx,ny) && w.npcAt(nx,ny)==null && !(nx == blockX && ny == blockY);
     }
 
 
     boolean isProtectedCleric() { return faction == Faction.MINISTORUM && role != null && role.toLowerCase(Locale.ROOT).contains("head cleric"); }
     boolean isFactionRepresentative() { return role != null && role.toLowerCase(Locale.ROOT).contains("faction representative"); }
-    boolean isUntargetableAnchor() { return isProtectedCleric() || isFactionRepresentative(); }
+    boolean isUntargetableAnchor() { return developerStationary || isProtectedCleric() || isFactionRepresentative(); }
 
     boolean isTrader() { return role != null && role.contains("Trader"); }
 
@@ -1327,7 +1339,8 @@ class NpcEntity {
                 +"|"+Math.max(1, idleBias)+"|"+routineOffset+"|"+lastTickTurn+"|"+hp
                 +"|"+enc(needTargetKind)+"|"+(needTarget==null?-1:needTarget.x)
                 +"|"+(needTarget==null?-1:needTarget.y)
-                +"|"+facingDx+"|"+facingDy+"|"+crowdShuffleCooldown+"|"+suspiciousBarkCooldown;
+                +"|"+facingDx+"|"+facingDy+"|"+crowdShuffleCooldown+"|"+suspiciousBarkCooldown
+                +"|"+meleeSkill+"|"+firearmsSkill+"|"+enc(combatTargetId)+"|"+enc(combatSupport.save());
     }
 
     static NpcEntity parseLine(String s, World w){
@@ -1388,6 +1401,13 @@ class NpcEntity {
         if (a.length >= 52) try { n.facingDy = Integer.parseInt(a[51]); } catch(Exception ignored) {}
         if (a.length >= 53) try { n.crowdShuffleCooldown = Math.max(0, Integer.parseInt(a[52])); } catch(Exception ignored) {}
         if (a.length >= 54) try { n.suspiciousBarkCooldown = Math.max(0, Integer.parseInt(a[53])); } catch(Exception ignored) {}
+        if (a.length >= 55) try { n.meleeSkill = Math.max(0, Math.min(20,Integer.parseInt(a[54]))); } catch(Exception ignored) {}
+        if (a.length >= 56) try { n.firearmsSkill = Math.max(0, Math.min(20,Integer.parseInt(a[55]))); } catch(Exception ignored) {}
+        if (a.length >= 57) n.combatTargetId = dec(a[56]);
+        if (a.length >= 58) n.combatSupport.restore(dec(a[57]));
+        else n.combatSupport.maximumHp=ActorConsumableAuthority.legacyMaximumHp(n);
+        // Existing saved ammunition is authoritative, including empty magazines/reserves.
+        n.combatLoadoutInitialized = a.length >= 24;
         if (n.creatureKind == null || n.creatureKind.isBlank()) n.creatureKind = "humanoid";
         if (!n.isAnimalActor() && n.ageYears <= 0) AgeAndWorldTimeAuthority.initializeNpcAge(n, w == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : w.zoneType, new Random(n.numericId == 0 ? 1 : n.numericId));
         AgeAndWorldTimeAuthority.synchronizeNpc(n, 0L);

@@ -36,7 +36,7 @@ final class BodyConditionReadabilityAuthority {
             ArrayList<String> affected = new ArrayList<>();
             for (int i = 0; i < shown && healthRatio(parts.get(i)) < 0.995; i++) {
                 BodyPart part = parts.get(i);
-                affected.add(part.name + " " + regionBand(healthRatio(part)));
+                affected.add(part.name + " " + (part.missing?"missing; replacement required":part.cybernetic?"cybernetic; mechanical repair required":part.destroyed()?"destroyed; replacement or regeneration required":regionBand(healthRatio(part))));
             }
             lines.add("Affected regions: " + String.join("; ", affected) + ".");
         }

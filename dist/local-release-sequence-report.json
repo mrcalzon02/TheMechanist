@@ -1,0 +1,57 @@
+{
+  "commit": "e59b3e1b036abe5ab59234769d1ac283eeb01545",
+  "completedAtUtc": "2026-07-22T04:03:46.211653Z",
+  "error": "local release sequence stopped at java",
+  "errorType": "RuntimeError",
+  "failedStage": "java",
+  "failedStageResult": {
+    "command": [
+      "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+      "ROOT_build/ci/run_local_java_release_gate.py",
+      "--release-hardened"
+    ],
+    "completedAtUtc": "2026-07-22T04:03:46.211572Z",
+    "log": "dist\\local-release-sequence\\logs\\java.log",
+    "name": "java",
+    "passed": false,
+    "returnCode": 1,
+    "startedAtUtc": "2026-07-22T03:38:02.866081Z"
+  },
+  "requireClearance": false,
+  "schema": 4,
+  "stages": [
+    {
+      "command": [
+        "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "ROOT_build/ci/verify_alpha_operating_docs.py",
+        "--repo",
+        ".",
+        "--report",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-release-sequence\\playtest-operations-source.json"
+      ],
+      "completedAtUtc": "2026-07-22T03:38:02.841174Z",
+      "log": "dist\\local-release-sequence\\logs\\playtest-operations-source.log",
+      "name": "playtest-operations-source",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:02.734952Z"
+    },
+    {
+      "command": [
+        "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "ROOT_build/ci/run_local_java_release_gate.py",
+        "--release-hardened"
+      ],
+      "completedAtUtc": "2026-07-22T04:03:46.211572Z",
+      "log": "dist\\local-release-sequence\\logs\\java.log",
+      "name": "java",
+      "passed": false,
+      "returnCode": 1,
+      "startedAtUtc": "2026-07-22T03:38:02.866081Z"
+    }
+  ],
+  "startedAtUtc": "2026-07-22T03:38:02.734907Z",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\GITS\\The Mechanist\\TheMechanist\\ROOT_build\\ci\\run_local_release_sequence.py\", line 188, in main\n    raise RuntimeError(f\"local release sequence stopped at {name}\")\nRuntimeError: local release sequence stopped at java\n",
+  "updateCommittedManifest": false
+}

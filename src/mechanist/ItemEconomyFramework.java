@@ -427,6 +427,9 @@ class ItemDef {
         lines.add("Sources: " + source);
         lines.add("Description: " + description);
         lines.add("Use: " + use);
+        if(ActorConsumableAuthority.supported(name)) lines.add(ActorConsumableAuthority.description(name));
+        String treatment=MedicalTreatmentAuthority.description(name);if(!treatment.isBlank()) lines.add(treatment);
+        if(ActorArmorAuthority.wearable(name)) lines.add("Armor: "+ActorArmorAuthority.rating(name)+" at Common quality; coverage follows the item's body region. Best covering layer applies; armor does not stack by carrying it.");
         lines.add(ItemSemanticAssetAuthority.semanticSummaryForItemName(name));
         lines.add("Quality variants: " + String.join(" -> ", ItemQuality.NAMES));
         lines.add("Example value range: Junk " + ItemQuality.priced(basePrice, "Junk " + name) + " / Common " + basePrice + " / Archeotech " + ItemQuality.priced(basePrice, "Archeotech " + name));
@@ -436,6 +439,12 @@ class ItemDef {
 
 class ItemCatalog {
     static final LinkedHashMap<String,ItemDef> ITEMS = makeItems();
+    private static final Map<String,ItemDef> CASE_INSENSITIVE_ITEMS = caseInsensitiveItems();
+    private static Map<String,ItemDef> caseInsensitiveItems() {
+        LinkedHashMap<String,ItemDef> index=new LinkedHashMap<>();
+        for(ItemDef item:ITEMS.values()) index.putIfAbsent(item.name.toLowerCase(Locale.ROOT),item);
+        return Collections.unmodifiableMap(index);
+    }
     static ItemDef add(LinkedHashMap<String,ItemDef> m, String n, String cat, int price, String src, String desc, String use, boolean weapon) {
         ItemDef d = new ItemDef(n, cat, price, src, desc, use, weapon); m.put(n, d); return d;
     }
@@ -445,7 +454,9 @@ class ItemCatalog {
         if (exact != null) return exact;
         ItemDef d = ITEMS.get(ItemQuality.stripQuality(name));
         if (d != null) return d;
-        return ITEMS.get(ItemQuality.stripManufacturingIdentity(name));
+        String canonical=ItemQuality.stripManufacturingIdentity(name);
+        d=ITEMS.get(canonical);
+        return d!=null?d:CASE_INSENSITIVE_ITEMS.get(canonical.toLowerCase(Locale.ROOT));
     }
     static int priceFor(String name) { ItemDef d = get(name); return d == null ? 1 : ItemQuality.priced(d.basePrice, name); }
     static boolean isFirearmLike(String name) {
@@ -560,12 +571,13 @@ class ItemCatalog {
         add(m,"Security baton","weapon",8,"security areas, precincts, patrol rooms","basic baton for making rules portable","weapon; equip/combat wiring pending",true);
         add(m,"Heavy spanner","weapon/tool",6,"Tunnel Bruiser starting kit and machine rooms","large spanner with workplace violence potential","tool and weapon",true);
         add(m,"Improvised club","weapon",3,"trash warrens, riots, desperate rooms","a blunt solution to a complicated century","weapon; equip/combat wiring pending",true);
-        add(m,"Battered helmet","armor",5,"armor vending, security rooms, corpses","helmet that has already participated in bad news","reserved head protection",false);
+        add(m,"Battered helmet","armor",5,"armor vending, security rooms, corpses","helmet that has already participated in bad news","USE equips as head protection",false);
         add(m,"Padded coat","clothing/armor",5,"armor vending and civilian rooms","thick coat for cold metal halls and softer impacts","USE equips as clothing/disguise",false);
         add(m,"Contraband charm","trinket",5,"Hive Ganger starting kit and criminal spaces","small charm with illegal sentimental value","reserved social/faction flavor item",false);
         add(m,"Citation slate","paperwork/tool",8,"Arbites Probationer starting kit and precincts","official slate for making problems formal","reserved law/social interaction support",false);
         add(m,"Vended scrap","junk",1,"failed or generic vending output","low-value scrap from a machine with contempt","workbench salvage",false);
         ItemCatalogExpansionApi.registerFactionIdentityItems(m);
+        CyberneticLimbAuthority.catalog(m);
         for (ItemDef definition : m.values()) {
             if (definition != null && "chem/rare-campaign".equalsIgnoreCase(definition.category)) {
                 definition.basePrice = Math.max(850, definition.basePrice);
@@ -1487,7 +1499,7 @@ class ItemCatalogExpansionApi {
 
     private static void factionArmorAndClothing(LinkedHashMap<String,ItemDef> m){
         add(m,"Guard flak vest","armor/clothing",24,"Imperial Guard billet stores and field racks","military vest designed for fragments, not miracles","USE equips as armor-like clothing",false);
-        add(m,"Arbites riot visor","armor/clothing",18,"Arbites precinct stores and evidence cages","face shield with scratches at citizen height","reserved head/face protection",false);
+        add(m,"Arbites riot visor","armor/clothing",18,"Arbites precinct stores and evidence cages","face shield with scratches at citizen height","USE equips as head and face protection",false);
         add(m,"Mechanicus rubberized apron","clothing/armor",14,"forge cloisters and machine shops","heavy apron against sparks, fluids, and casual humanity","USE equips as protective workwear",false);
         add(m,"Noble fur-lined coat","clothing/luxury",40,"noble dormitories, salons, service closets","lavish coat that converts warmth into social offense","USE equips as clothing/disguise",false);
         add(m,"Market vendor sash","clothing/commerce",9,"sump storefronts and barter rows","bright sash marking someone as economically vulnerable but tolerated","USE equips as market disguise",false);
@@ -1510,7 +1522,7 @@ class ItemCatalogExpansionApi {
         add(m,"Sealed maintenance tool chest","tool/cache",26,"hivewall maintenance rooms and abandoned interwall caches","sealed tool chest left by exterior-wall crews before the corridor was forgotten","open/use as reserved maintenance-tool cache; trade as valuable tools",false);
         add(m,"Interwall ration reserve crate","food/cache",18,"hivewall maintenance rooms, sealed refuge pockets, abandoned interwall danger rooms","old ration crate packed for workers who never came back","consume or break down into food supplies",false);
         add(m,"Voidside water condenser flask","water/tool",14,"hivewall maintenance rooms and exterior service corridors","rugged flask with condenser fittings for miserable maintenance shifts near open abyss","consume/use for water; reserved maintenance support",false);
-        add(m,"Forgotten flak bundle","armor/cache",32,"abandoned interwall armories and sealed gang/military caches","wrapped bundle of armor plates, straps, and old bloodless impact scars","USE equips as crude armor bundle once equipment API deepens",false);
+        add(m,"Forgotten flak bundle","armor/cache",32,"abandoned interwall armories and sealed gang/military caches","wrapped bundle of armor plates, straps, and old bloodless impact scars","USE equips as flak body armor",false);
         add(m,"Abandoned las-locker contents","weapon/cache",48,"sealed Guard or Arbites interwall caches","locked weapons bundle from an abandoned security locker","weapon cache; reserved unpack action",true);
         add(m,"Rogue automata service core","mechanical/rare",60,"abandoned Mechanicus service works and rogue automata remains","heavy service core with enough machine-spirit spite left to matter","rare component for reserved automata/Mechanicus systems",false);
         add(m,"Sealed tech relic case","technology/rare",85,"Mechanicus relic ducts, interwall sealed rooms, forgotten maintenance vaults","sealed case of unknown device fragments and doctrinal warning labels","rare technology cache; reserved research/provenance unlock",false);

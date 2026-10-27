@@ -1,0 +1,1254 @@
+{
+  "artifacts": [
+    {
+      "path": "docs/CLIENT_README.md",
+      "role": "documentation",
+      "sha256": "86dbe60e4a71bcd34b9642a10035751096d99aaadf89a3f8abdea7e769cf11f6",
+      "size": 4037
+    },
+    {
+      "path": "docs/DIAGNOSTIC_COLLECTION.md",
+      "role": "documentation",
+      "sha256": "b15353b20f54ee77d99ada5a573d8b5911087424990fa0ab3b6ee744e5240a86",
+      "size": 7249
+    },
+    {
+      "path": "docs/EULA.md",
+      "role": "documentation",
+      "sha256": "fc429b078ddb2a3d9d996de621d68376a102f81942ccf09fa5405160a3b86413",
+      "size": 5722
+    },
+    {
+      "path": "docs/KNOWN_ALPHA_LIMITATIONS.md",
+      "role": "documentation",
+      "sha256": "dbdd94189b0c1432953721280ba5a6f430dc9ed321f180099b40b7c99fb74927",
+      "size": 10299
+    },
+    {
+      "path": "docs/LIMITED_ALPHA_PLAYTEST_GUIDE.md",
+      "role": "documentation",
+      "sha256": "fa17d303f5254d568c91be0871d9b4bd1de9a88ae96534bfa10eba02977f98a3",
+      "size": 10152
+    },
+    {
+      "path": "docs/RUN_INSTRUCTIONS.md",
+      "role": "documentation",
+      "sha256": "b5d9674df16ba644a50ed45a5865873e7e973fdda5f976e3254dd9a95d302973",
+      "size": 4870
+    },
+    {
+      "path": "docs/SERVER_README.md",
+      "role": "documentation",
+      "sha256": "b36b8c86f09236eafee4911c73d7825887ab7694d9cdfe45648ea294e1698af3",
+      "size": 5204
+    },
+    {
+      "path": "docs/WINDOWS_QUICK_START.md",
+      "role": "documentation",
+      "sha256": "c472de567c71387a4ffd18c9c7c4bcdb022863a1ccbc5b2e8e9c962211e3fbf5",
+      "size": 3398
+    },
+    {
+      "path": "launcher/MechanistLauncher.jar",
+      "role": "launcher",
+      "sha256": "a436a5adfc5d91eb1b70097ecee846f2386015942c3997666f6b7348f1ff2137",
+      "size": 467282
+    },
+    {
+      "path": "manifests/launcher-runtime-manifest.json",
+      "role": "manifest",
+      "sha256": "29aa1292d680693bbccd145f7e5b0c4913b9ba9b32a8af606ebde1720ad3f25b",
+      "size": 9585
+    },
+    {
+      "path": "packages/client/TheMechanist.jar",
+      "role": "client",
+      "sha256": "8d8ace3a6d1408030ee1d6f582ff0a638bb8109f090a45fabd5f751db5f90fb0",
+      "size": 553506267
+    },
+    {
+      "path": "packages/server/TheMechanistServer.jar",
+      "role": "server",
+      "sha256": "0d5d747abd029a83e13370343e01a34d3fc846e3aa5d9c9cce593403d852502a",
+      "size": 553506274
+    },
+    {
+      "path": "packages/support/lib/Jamepad-1.4.0.jar",
+      "role": "support",
+      "sha256": "f23bcfc1d0ec830f9fc4a1447d52b6fed9558ca1ef9f556508bd6b6e2ecc953b",
+      "size": 16078
+    },
+    {
+      "path": "packages/support/lib/lwjgl-3.4.1-natives-windows.jar",
+      "role": "support",
+      "sha256": "21872776b9be0a93c746d6f28797c12ac47a75e0f0188e5a4fad0c20c9a6a07e",
+      "size": 176521
+    },
+    {
+      "path": "packages/support/lib/lwjgl-3.4.1.jar",
+      "role": "support",
+      "sha256": "9b1c3a3a078c2377219ecb8a2662730b3dece07c10592cf1d12f957286037b69",
+      "size": 1157957
+    },
+    {
+      "path": "packages/support/lib/lwjgl-glfw-3.4.1-natives-windows.jar",
+      "role": "support",
+      "sha256": "20adab06c8f5bf1e3515a7e64db261cd83ca8131d674dc5f0af93b514deedac8",
+      "size": 173265
+    },
+    {
+      "path": "packages/support/lib/lwjgl-glfw-3.4.1.jar",
+      "role": "support",
+      "sha256": "c2d93964f0a8b2a846708c7fb1b0a095e7d79dce8ea4c543969ffef508027190",
+      "size": 151893
+    },
+    {
+      "path": "packages/support/lib/lwjgl-opengl-3.4.1-natives-windows.jar",
+      "role": "support",
+      "sha256": "e174a206709a91c89a840b5d935831bdb386f435ed224e570a0f15b063b4d9b4",
+      "size": 97635
+    },
+    {
+      "path": "packages/support/lib/lwjgl-opengl-3.4.1.jar",
+      "role": "support",
+      "sha256": "a76b8fd9ff7428ae5e0f01b8f91a4e44debba87285048e965757742093418702",
+      "size": 937660
+    },
+    {
+      "path": "packages/support/lib/lwjgl-stb-3.4.1-natives-windows.jar",
+      "role": "support",
+      "sha256": "f782d33034d90967e92d45633f4a5c11658802f083507d2323f78aede8752b04",
+      "size": 293099
+    },
+    {
+      "path": "packages/support/lib/lwjgl-stb-3.4.1.jar",
+      "role": "support",
+      "sha256": "3d77b0a242b8a52788934356560191db910ed242ab23c521d55f030b4e867970",
+      "size": 142927
+    },
+    {
+      "path": "packages/support/lib/netty-all-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "fbbbe8a4d965aa67428b5ad8e997d6b66ac83fe2dfc5ecde88b1d95ad8e2d5ac",
+      "size": 4545
+    },
+    {
+      "path": "packages/support/lib/netty-buffer-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "7d94b609fb36afd88304c73922411d08f383f7945aa882b59a15219b5ecbfb76",
+      "size": 336397
+    },
+    {
+      "path": "packages/support/lib/netty-codec-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "a63ac713f60ec0b8e2bb8182665d216662d1f474872ec5c368d25f15f544f4bc",
+      "size": 352122
+    },
+    {
+      "path": "packages/support/lib/netty-codec-dns-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "60ab19f92b413db7e3b3e0c3d72b390aa0fb56d7ae0938f5cb5f0b87b6e095f0",
+      "size": 67106
+    },
+    {
+      "path": "packages/support/lib/netty-codec-haproxy-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "cd3fa5bea2e495df4f717e35ff75b6ac9050b7da8343f62637473315a48cbb6b",
+      "size": 37788
+    },
+    {
+      "path": "packages/support/lib/netty-codec-http-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "bf50c212caec876bb6fba85b74f18482da2d7824dd0766f1829ca9f93aa01a52",
+      "size": 667603
+    },
+    {
+      "path": "packages/support/lib/netty-codec-http2-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "a9eb9b0627041f4891de92aa896499ae334cdf607dba0dcdfafd3516a7d0ecca",
+      "size": 490301
+    },
+    {
+      "path": "packages/support/lib/netty-codec-memcache-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "5529c2b0a1db4a8d8eac317ef0b4109888b619c38377e42cb7ad77bfe9ae0d8f",
+      "size": 44735
+    },
+    {
+      "path": "packages/support/lib/netty-codec-mqtt-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "3a4beade41c5ee0ae940ad460596d31d48786a807b7d09c9a5be60e2c6fee83b",
+      "size": 114075
+    },
+    {
+      "path": "packages/support/lib/netty-codec-redis-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "9e652ba7caf4cf78f8bc9898ddc4d2c33553a77abb1a8a078f221cad189ab61b",
+      "size": 46014
+    },
+    {
+      "path": "packages/support/lib/netty-codec-smtp-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "6a8ac5c68bf5344a44654fee2c372470e2c9fd4c4a39af7d58f7b567c4b58068",
+      "size": 21343
+    },
+    {
+      "path": "packages/support/lib/netty-codec-socks-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "6e4c22dd0a5416ccce630aa37db1df11c22e1e3c68c72e1aa2206626568f522e",
+      "size": 121027
+    },
+    {
+      "path": "packages/support/lib/netty-codec-stomp-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "17c66240cb293342d486a5dc97fa4ad38cc8c4dd6466c5ac770e61804672a251",
+      "size": 34634
+    },
+    {
+      "path": "packages/support/lib/netty-codec-xml-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "85bd5cce60e1ee4f75befcd2f2f53754d07e71a160e238414144c174211770db",
+      "size": 19820
+    },
+    {
+      "path": "packages/support/lib/netty-common-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "9ae12e9a89f59ce24fb233851fdd93e3c2dfaeb9fa02c60627cd67fa7561871d",
+      "size": 694402
+    },
+    {
+      "path": "packages/support/lib/netty-handler-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "1a034672ca26c8be6245c8e8641b29785ed2c018617bb2dd7e07be39f7ea71fc",
+      "size": 570352
+    },
+    {
+      "path": "packages/support/lib/netty-handler-proxy-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "3d00abae89eb2fb5bfb836acbee86fd5249ddeae71d7743a87a39fbc9ea41049",
+      "size": 25648
+    },
+    {
+      "path": "packages/support/lib/netty-handler-ssl-ocsp-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "0cb6dee9797449f2a3b54f623855a462f0024faa5fa52fe108f17cf5267d68bd",
+      "size": 26832
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "78e735746d1f98ca89793176359c97ad5bb6393ec63cd2962f30db43be090e1b",
+      "size": 37840
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "b3f9fdaa473fb5fff307c007cc1840a411dace167bca05e1eb57fe19ebd57725",
+      "size": 181199
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-classes-macos-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "495058891f85bbed3dafb368af1646379e92c25300c6fa1d4deed28b4a989869",
+      "size": 9142
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar",
+      "role": "support",
+      "sha256": "c491076d4b89bb410ce81c22a83e1e5ed1d05307b0f09935bae1c91d32ec6252",
+      "size": 19652
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar",
+      "role": "support",
+      "sha256": "5c852c632a8463956025e85cd939063fc3cca7e247296278636749f71501445a",
+      "size": 19435
+    },
+    {
+      "path": "packages/support/lib/netty-transport-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "49a3cc0b6d342340f0980f047026db74161c19ea2a07753a14b4d22ee0653aa5",
+      "size": 517953
+    },
+    {
+      "path": "packages/support/lib/netty-transport-classes-epoll-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "d230d1680d1517c7d7b2e25ef6a9a87c22ebbcf264a0da8e807734f15b7c7cae",
+      "size": 147378
+    },
+    {
+      "path": "packages/support/lib/netty-transport-classes-kqueue-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "605fda284a65c388e2235c56766b2d9938b3d4d1d724a4b17ba3fff0573c6eda",
+      "size": 108540
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar",
+      "role": "support",
+      "sha256": "7c1a30b628088a2c6abfd6d2f9e7ae3d37eb2b03e9be74795ec5b95170b85426",
+      "size": 41363
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar",
+      "role": "support",
+      "sha256": "60b2ad14dcfcabda47640a481817b8d8b5e9a6c64fcd566de9d11443b674c610",
+      "size": 35797
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar",
+      "role": "support",
+      "sha256": "5e9201ad8617a8f72c99a6325c504620c715dc2e4826e36e4187f93eabc426f7",
+      "size": 39782
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar",
+      "role": "support",
+      "sha256": "4c619f1e24fa72fd8da08ebe93d1fafcfa10678fb0819be777588c7ff5bc3fb7",
+      "size": 25670
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar",
+      "role": "support",
+      "sha256": "d04e7b845b9a895280abf6ef475ff1619cafb496448dd09f83f558d4834b0408",
+      "size": 25080
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-unix-common-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "ec4bd4574ee1ec776a1b14139fb69982ddf7f5039a803082074a81f6604ecad2",
+      "size": 44093
+    },
+    {
+      "path": "packages/support/lib/netty-transport-rxtx-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "2582ab9ef16d33d0b584b8d8f78e6d0da69d1ffa550847aa03a74d17822f3ab9",
+      "size": 18241
+    },
+    {
+      "path": "packages/support/lib/netty-transport-sctp-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "6e74e0e3b820e8ef31e13f9aad12380ee1026be7dcd0391d6fb1e73e1ebbaf2d",
+      "size": 50811
+    },
+    {
+      "path": "packages/support/lib/netty-transport-udt-4.1.111.Final.jar",
+      "role": "support",
+      "sha256": "21dee8d190811dce5bbda1e4c7704ad12265f03215f7ac0026f9bbac3116c45d",
+      "size": 32191
+    },
+    {
+      "path": "Run-Client-Direct.cmd",
+      "role": "launch-script",
+      "sha256": "99cf0d9f60bfbccb3bb62269335eb463a694710536ada635addef7e180df0e0a",
+      "size": 167
+    },
+    {
+      "path": "Run-Remote-Client.cmd",
+      "role": "launch-script",
+      "sha256": "7d89b242a9e9de1a96d519c1f058e9a52642b1a5932bafd62192c2d4d4a1acbb",
+      "size": 171
+    },
+    {
+      "path": "Run-Server.cmd",
+      "role": "launch-script",
+      "sha256": "a5bc5e6cd26d9d852ac021fd67c303af88c513bf6527bf4ab2e3bb8785323c27",
+      "size": 180
+    },
+    {
+      "path": "Run-The-Mechanist.cmd",
+      "role": "launch-script",
+      "sha256": "d34c06ba97daf6ff8d4455a9cb228fcd80702e97210de8118386c5bdca3d47a6",
+      "size": 114
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-console-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "a742b375fc6cb32e17c66f7e677cef59399216ac21c1384de6ec892c2b099a4d",
+      "size": 22008
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-console-l1-2-0.dll",
+      "role": "runtime",
+      "sha256": "fcd72c9e219dbffebd3c3efc5dc5f56ecad0e7f350ff82e3a340a17a6919f524",
+      "size": 21968
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-datetime-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "4e8c54b23d5c0d5b388d7c0182da2e3afc9819073640e83b753f517d5cf77aeb",
+      "size": 22016
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-debug-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "29354cbe6e808ae1b1c187aafe5f2a66d8cb5b4ed7ef3f830884c7c02171305f",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-errorhandling-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "cfce9bfbe11b534e1fc28d59efed233b7490f081380a016b45b2357b4be1f173",
+      "size": 21968
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-fibers-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "7d02b9f60a652ee3496d809fb42a5779d6523aa9e574a853d9d71ca13aa0344d",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-file-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "2ff6914e5887b3fa53cb418b5602c84b79f189e441e1e66bf42c759688d8c885",
+      "size": 26120
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-file-l1-2-0.dll",
+      "role": "runtime",
+      "sha256": "98b4b6a29374e68a383bd6e4b58cd76223335d38d2586c5a494466444811b75c",
+      "size": 22016
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-file-l2-1-0.dll",
+      "role": "runtime",
+      "sha256": "637e9a34044c366b9b004e62ee15aa4875e344a5a6b7634c803a40d95883d7cc",
+      "size": 22016
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-handle-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "049a1b6b3fd664e5ab2bb27fc3614d8f8091a0dabd4aebc92a0804bf62a55c38",
+      "size": 21968
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-heap-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "0d5db713081a8c823506739716ff483f6b68e203128b54ea3b807f9aa6fa7f49",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-interlocked-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "73170ecc212462678605e0025d87dfad646e53edbf7c015857cfdd47dfa1138f",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-libraryloader-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "f6445229c496e05b84092b4ae5ad765233471acdcd12460b492d499001d623bf",
+      "size": 21984
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-localization-l1-2-0.dll",
+      "role": "runtime",
+      "sha256": "6ce59c2de64b6195695e8754636cbe283a7af3ddb78acf32c3879d7d09aba4b1",
+      "size": 21984
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-memory-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "0b1793130550ea2e80c52cd5c28442f29364cddb063833d67b3c6d5995fd89dd",
+      "size": 22008
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-namedpipe-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "218d0b5a06fb1c07249bb7388b8ff9c5d7622206c562ffc9fee21a372d1371af",
+      "size": 21984
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-processenvironment-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "11dc3f718b8cd959c30d7c69af2880f728ab5640c678af7290acd554911bc9b0",
+      "size": 22016
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-processthreads-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "49172aa2c8734ef8159bc6dd58a9ddf9d391f3a109254a96f48fc0d9f9eec89a",
+      "size": 21968
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-processthreads-l1-1-1.dll",
+      "role": "runtime",
+      "sha256": "f5c82a141bdc7929bb3d6d4196c0e8501f4a894fd65a435f8134c073134461ac",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-profile-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "d71ca70fcf6871ef83f8b45218edc50a2a1ee9d568b77bb69bd56fcf3ebda97b",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-rtlsupport-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "e400bf8019dc0caf98865aea07429f8581ac5b004b9759a1c62f2d7bccbcb3a4",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-string-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "3e35afeb848c4777e3db2b3b38b2cd8fe768feac82b18c69308fe07d65b1a602",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-synch-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "f09a3b2d04c4ae6c1217ed073421c912eb7e0fb006441291948470e6329a4fd2",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-synch-l1-2-0.dll",
+      "role": "runtime",
+      "sha256": "5cf8cf2b29a0fb4f3df647ccb1efcae0390e0d57bedfc37200c1577810c3716c",
+      "size": 22008
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-sysinfo-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "b3b356cdca34cb5023cd8f49025e23128f1e86dd0d4865d62bc42f775f1acca8",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-timezone-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "a202f21169cc103c019019d3cbc05c3549a8dbac6eed0ecb4e5281e36f028a26",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-core-util-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "01cbe35a9513dd5c499179a31dbae86a4f37a510bba7a7cc484f23559b252067",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-conio-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "ea8ad551e8944389ce502cb8d5f979d243af7784ce7382fa18a04a9de2f7b2d1",
+      "size": 22008
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-convert-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "eb41bf23e10405efcad8bb3eb8972f431394113324717386362ac6406a5c6d75",
+      "size": 26120
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-environment-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "294bca6dcb6455e9027b527aae42ed5aa04d5ae769cb897cb36a150b40a6fa26",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-filesystem-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "a60dbd92bc1e1e06035d6aeef821d71dd06de7e15b5536110048233dd523a9a2",
+      "size": 21984
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-heap-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "20ce58e1990ac2f726466e234e6a6ef4dfae97f8cb1571a0a4b1bd74df87dfdd",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-locale-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "fe617cc8748560a1e12e58559fdf192c5888babff4ae62e386617293d5fc20b0",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-math-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "655965eca578ae6b0afedd0ce2a424a3f6e9b3e624dd0d55ce67bc7df75b3b6b",
+      "size": 30160
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-multibyte-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "ba576980f8a3a8fd4c81c5f845fff71d61c1d1ef23f6a2a30e049b76e15a710e",
+      "size": 30216
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-private-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "d9acda540d678213d5d1756a8717a78b2ac905f61127a815796f44dde0908f92",
+      "size": 75264
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-process-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "2292e2b873f90645e2d6e94e83c748f301773a2c12c3824e80581aefd869cc9c",
+      "size": 21968
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-runtime-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "84ce7e29868776de9939938d5c3091736669ebad4f063f5e83df0299b474e5ed",
+      "size": 26120
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-stdio-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "acd08d06dfc981071142a851913e55aa253926c12b5b9d73649b832a4bfd0dd9",
+      "size": 26120
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-string-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "db897e58b7d327a059db263af2f1be1eff58176e3bcdb82aa801e2d69fd2293c",
+      "size": 26080
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-time-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "44705d9b3271d9db307f92c7c2764a98db5819e670897dbfc95beb386a1840bb",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/api-ms-win-crt-utility-l1-1-0.dll",
+      "role": "runtime",
+      "sha256": "fe4c586d1fc06d9012b2fc9c34aa72b219a939dbb2d9f034763465a7de24fff2",
+      "size": 22024
+    },
+    {
+      "path": "runtime/bin/awt.dll",
+      "role": "runtime",
+      "sha256": "a49c7fe3063e9a09eff562e3b7cd811f6bd31e6a9773ec7767ac42dbdbd3f27f",
+      "size": 1492080
+    },
+    {
+      "path": "runtime/bin/fontmanager.dll",
+      "role": "runtime",
+      "sha256": "3c0548f1fc523f4e76c816534355bb482c5b33f5c38652c833792847c1e3ebca",
+      "size": 906352
+    },
+    {
+      "path": "runtime/bin/freetype.dll",
+      "role": "runtime",
+      "sha256": "399cfd49fe57f6c78093e026d9ab0091988cf35c31c31b1118ab234e38356f23",
+      "size": 547440
+    },
+    {
+      "path": "runtime/bin/java.dll",
+      "role": "runtime",
+      "sha256": "5b26c6c962b42a8405665f957cd16b0acff94b84ec71c612018e75b798987d5e",
+      "size": 147056
+    },
+    {
+      "path": "runtime/bin/java.exe",
+      "role": "runtime",
+      "sha256": "9da06bd6c880c0c8d1a63e3716f8ef7996f146c41e6d339e4eafc93df28392f9",
+      "size": 54384
+    },
+    {
+      "path": "runtime/bin/javajpeg.dll",
+      "role": "runtime",
+      "sha256": "868b496b43ee957d90029107a673d7704c658ca5879c58423da289d4e3cd748b",
+      "size": 181872
+    },
+    {
+      "path": "runtime/bin/javaw.exe",
+      "role": "runtime",
+      "sha256": "440734b2adb3589fc190c671cf7640b0186f1ada1c3bf9007d99b0b8468e05f3",
+      "size": 54384
+    },
+    {
+      "path": "runtime/bin/jawt.dll",
+      "role": "runtime",
+      "sha256": "3c53adee0df809a508aef5ada3b90e7bb9837a92a911426a41c1644ac8132c48",
+      "size": 21104
+    },
+    {
+      "path": "runtime/bin/jimage.dll",
+      "role": "runtime",
+      "sha256": "3ef5e6937ff8127dc933a7694e5e57e0adfc3884cddcea1baa74a4d5d7f64a06",
+      "size": 33392
+    },
+    {
+      "path": "runtime/bin/jli.dll",
+      "role": "runtime",
+      "sha256": "aaae87028a4938ab7a0c2407b30ecc2585f714b465bca83af7aba173b05350ff",
+      "size": 92272
+    },
+    {
+      "path": "runtime/bin/jsound.dll",
+      "role": "runtime",
+      "sha256": "d6c4a4560e11e1cbafffacfd89386f4823fbde8ca91df94f123aaac1bb0fdf75",
+      "size": 61040
+    },
+    {
+      "path": "runtime/bin/keytool.exe",
+      "role": "runtime",
+      "sha256": "5caa8a6a7aa9f1372a089af21ef94b0fcb27462200ef58203211455241c16406",
+      "size": 23664
+    },
+    {
+      "path": "runtime/bin/lcms.dll",
+      "role": "runtime",
+      "sha256": "46e56611745c8ca3e73e48792879e939cc94e5e39387d1e581aedda7229bbe93",
+      "size": 273008
+    },
+    {
+      "path": "runtime/bin/management.dll",
+      "role": "runtime",
+      "sha256": "08ad725a8d9901badb3ce20d8c8247092e2c1920e4dd4f958a7b8caf951c6572",
+      "size": 29296
+    },
+    {
+      "path": "runtime/bin/mlib_image.dll",
+      "role": "runtime",
+      "sha256": "8943a9972aaa9494f556c50f43086fb0159c27cfa8d63b01ad17697dceaef71e",
+      "size": 525424
+    },
+    {
+      "path": "runtime/bin/msvcp140.dll",
+      "role": "runtime",
+      "sha256": "74892d9b4028c05debaf0b9b5d9dc6d22f7956fa7d7eee00c681318c26792823",
+      "size": 578384
+    },
+    {
+      "path": "runtime/bin/net.dll",
+      "role": "runtime",
+      "sha256": "b33884eefc7bc71b63ab5945f85a9f0f1622c7252bc8ab28551182e267377cd4",
+      "size": 96880
+    },
+    {
+      "path": "runtime/bin/nio.dll",
+      "role": "runtime",
+      "sha256": "9fde3d0eeeb8ecd4790a9938cc554f342da747e5a5e82a01730612e934d2a63e",
+      "size": 79984
+    },
+    {
+      "path": "runtime/bin/prefs.dll",
+      "role": "runtime",
+      "sha256": "04bf2a7575fe2648c207e972e23daa382c805f828f59cfe3aeead59997484494",
+      "size": 25712
+    },
+    {
+      "path": "runtime/bin/server/jvm.dll",
+      "role": "runtime",
+      "sha256": "0d0dffd2f99760ff850b03afa179e60b4730f982377fdf475d6428084889ae25",
+      "size": 12117104
+    },
+    {
+      "path": "runtime/bin/splashscreen.dll",
+      "role": "runtime",
+      "sha256": "88a2dd928e4c576d372a9ac397d5c0273b001105d2ccb898564b89cf5ab1921f",
+      "size": 221296
+    },
+    {
+      "path": "runtime/bin/ucrtbase.dll",
+      "role": "runtime",
+      "sha256": "048d4c5a51e45777ba15facdaddbf7702594a2268e8de1768ab0f5f4e4d7e733",
+      "size": 1123808
+    },
+    {
+      "path": "runtime/bin/vcruntime140.dll",
+      "role": "runtime",
+      "sha256": "69320f278d90efaaeb67e2a1b55e5b0543883125834c812c8d9c39676e0494fc",
+      "size": 109440
+    },
+    {
+      "path": "runtime/bin/vcruntime140_1.dll",
+      "role": "runtime",
+      "sha256": "6fd366a691ed68430bcd0a3de3d8d19a0cb2102952bfc140bbef4354ed082c47",
+      "size": 49560
+    },
+    {
+      "path": "runtime/bin/verify.dll",
+      "role": "runtime",
+      "sha256": "1b733323b6ebe4f4bfa40f70ef4c3f89d94c778750a2f046c9b4ca209cbe3593",
+      "size": 54896
+    },
+    {
+      "path": "runtime/bin/zip.dll",
+      "role": "runtime",
+      "sha256": "8854e90c32c657c131d9dabebf78f80f295cd14e6b9b92767a09085c9d644dca",
+      "size": 89200
+    },
+    {
+      "path": "runtime/conf/logging.properties",
+      "role": "runtime",
+      "sha256": "b62d2733ab99556b108a1951d894c5a8d76b1ac7a00c02c388f9eb9be046c56f",
+      "size": 2732
+    },
+    {
+      "path": "runtime/conf/net.properties",
+      "role": "runtime",
+      "sha256": "5bc726671936e0af4fdf6bed67d9e3a20a92c30b0ba23673d0314baa5e3ffb08",
+      "size": 6671
+    },
+    {
+      "path": "runtime/conf/security/java.policy",
+      "role": "runtime",
+      "sha256": "f2a00a1dec3b7a097f0815f338a84717ba1017d5d7aae96d842d2188d67c3250",
+      "size": 2180
+    },
+    {
+      "path": "runtime/conf/security/java.security",
+      "role": "runtime",
+      "sha256": "def331e59bca4eda427febd98f44a2785a21654dc0a1251649c8d11175bc0513",
+      "size": 59643
+    },
+    {
+      "path": "runtime/conf/security/policy/limited/default_local.policy",
+      "role": "runtime",
+      "sha256": "2b2627548e61316150d47ffc3e6cad465ca05b3cccd4785eb7d21aa7baa0f441",
+      "size": 647
+    },
+    {
+      "path": "runtime/conf/security/policy/limited/default_US_export.policy",
+      "role": "runtime",
+      "sha256": "758b930a526fc670ab7537f8c26321527050a31f5f42149a2dda623c56a0a1a9",
+      "size": 146
+    },
+    {
+      "path": "runtime/conf/security/policy/limited/exempt_local.policy",
+      "role": "runtime",
+      "sha256": "8c3d7648abcd95a272ce12db870082937f4d7f6878d730d83cb7fbb31eb8b2c9",
+      "size": 566
+    },
+    {
+      "path": "runtime/conf/security/policy/README.txt",
+      "role": "runtime",
+      "sha256": "6da0747334b0fea7592fd92614b2bbc8b126535e129b1fee483774d914e98eb5",
+      "size": 2390
+    },
+    {
+      "path": "runtime/conf/security/policy/unlimited/default_local.policy",
+      "role": "runtime",
+      "sha256": "8d8a318e6d90dfd7e26612d2b6385aa704f686ca6134c551f8928418d92b851a",
+      "size": 193
+    },
+    {
+      "path": "runtime/conf/security/policy/unlimited/default_US_export.policy",
+      "role": "runtime",
+      "sha256": "758b930a526fc670ab7537f8c26321527050a31f5f42149a2dda623c56a0a1a9",
+      "size": 146
+    },
+    {
+      "path": "runtime/conf/sound.properties",
+      "role": "runtime",
+      "sha256": "299c2360b6155eb28990ec49cd21753f97e43442fe8fab03e04f3e213df43a66",
+      "size": 1210
+    },
+    {
+      "path": "runtime/legal/java.base/aes.md",
+      "role": "runtime",
+      "sha256": "45c6d4da48325edfbff3dcf71c704e504c057904435ed23c6d57046d551eb69d",
+      "size": 1444
+    },
+    {
+      "path": "runtime/legal/java.base/asm.md",
+      "role": "runtime",
+      "sha256": "1ff912740e84e024711def5fa482ffbb46eff64559760c467352dfa7c39a3307",
+      "size": 1584
+    },
+    {
+      "path": "runtime/legal/java.base/c-libutl.md",
+      "role": "runtime",
+      "sha256": "bef40679922d6fdfb7e4ddb223ad6722300f6054ba737bbf6188d60fcec517f9",
+      "size": 1556
+    },
+    {
+      "path": "runtime/legal/java.base/cldr.md",
+      "role": "runtime",
+      "sha256": "f2bd33ded550a05d59e8f659416ef382490504548d846e6388b1dffd273aa077",
+      "size": 9130
+    },
+    {
+      "path": "runtime/legal/java.base/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "79ccb53e0dbdb8ec16747a516eb77c3737c797e544aaa0a552b8a886a70eef69",
+      "size": 3244
+    },
+    {
+      "path": "runtime/legal/java.base/icu.md",
+      "role": "runtime",
+      "sha256": "af0057e8553906083f69c2fb9fe9ed4ae8bc2340a0b1e376a424702f00300b29",
+      "size": 11086
+    },
+    {
+      "path": "runtime/legal/java.base/LICENSE",
+      "role": "runtime",
+      "sha256": "4d156eecbf6ca462d8cf772552fff874b167f87def9566837fb8e4fb347f29a5",
+      "size": 6186
+    },
+    {
+      "path": "runtime/legal/java.base/public_suffix.md",
+      "role": "runtime",
+      "sha256": "bc9cd63f7f84684ffd265b3b30ab337c4df39e6550256a604f6b75a51ce1a828",
+      "size": 17785
+    },
+    {
+      "path": "runtime/legal/java.base/siphash.md",
+      "role": "runtime",
+      "sha256": "5a792b5a74ad2a5f3d6a7ad8b7a841116e58a772c18bc6e392320a365b222c76",
+      "size": 8256
+    },
+    {
+      "path": "runtime/legal/java.base/unicode.md",
+      "role": "runtime",
+      "sha256": "5e4e6623a21a63f9bc16ea54af4133b8038e490c0d499a74676f9e5a61b9c5b2",
+      "size": 2384
+    },
+    {
+      "path": "runtime/legal/java.base/wepoll.md",
+      "role": "runtime",
+      "sha256": "3ac2992770080453b98c42afa807ba4b2c1738ef756b92a55c645f55e7df48f0",
+      "size": 1454
+    },
+    {
+      "path": "runtime/legal/java.base/zlib.md",
+      "role": "runtime",
+      "sha256": "809b62ba648e02302f7d9ea6b6886c10d5253ac86ad528038a50c73eada5fce2",
+      "size": 1010
+    },
+    {
+      "path": "runtime/legal/java.datatransfer/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.datatransfer/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.desktop/colorimaging.md",
+      "role": "runtime",
+      "sha256": "04d61e3e8e71dd452ebe52008af5378d9f6640d14578aeb515dc5375973b0189",
+      "size": 167
+    },
+    {
+      "path": "runtime/legal/java.desktop/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.desktop/freetype.md",
+      "role": "runtime",
+      "sha256": "9e0ef51ac80ff76ff3aea7b0b976649d12feef90c673cc40738888329a5f28b3",
+      "size": 11899
+    },
+    {
+      "path": "runtime/legal/java.desktop/giflib.md",
+      "role": "runtime",
+      "sha256": "c8b99f33890887d27ad56fba9edd8ebbc668cfe0689168505a95613d1d4b32f8",
+      "size": 1288
+    },
+    {
+      "path": "runtime/legal/java.desktop/harfbuzz.md",
+      "role": "runtime",
+      "sha256": "721d7c5a24bd0c0a59fe5ee1fde1c17541a745c038e3883d4b184a21779f4e48",
+      "size": 3627
+    },
+    {
+      "path": "runtime/legal/java.desktop/jpeg.md",
+      "role": "runtime",
+      "sha256": "580be596216ee11e2554b24ce944973acaede2ebf5ffba34a6bd8cc441c05043",
+      "size": 3475
+    },
+    {
+      "path": "runtime/legal/java.desktop/lcms.md",
+      "role": "runtime",
+      "sha256": "e9f5f374cb4116acbd82ec39b0a1f93ab1f5adfd8c208488ba8f97de65e86446",
+      "size": 2544
+    },
+    {
+      "path": "runtime/legal/java.desktop/libpng.md",
+      "role": "runtime",
+      "sha256": "01a09f969c420e0756680aa55beafc13d3c772b0794aec6d1348c8e035439934",
+      "size": 6980
+    },
+    {
+      "path": "runtime/legal/java.desktop/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.desktop/mesa3d.md",
+      "role": "runtime",
+      "sha256": "63f4e6f75caebbccb95d903fb43e46ac7111b3624d0a34f146b276d7d9e7b152",
+      "size": 5732
+    },
+    {
+      "path": "runtime/legal/java.logging/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.logging/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.management/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.management/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.naming/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.naming/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.net.http/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.net.http/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.prefs/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.prefs/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.security.sasl/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.security.sasl/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.sql/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.sql/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.transaction.xa/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.transaction.xa/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.xml/bcel.md",
+      "role": "runtime",
+      "sha256": "853a1e7ce397bb10de0e2b3bde0844bcc651f17d983decd07d2d003c0304c311",
+      "size": 11195
+    },
+    {
+      "path": "runtime/legal/java.xml/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/java.xml/dom.md",
+      "role": "runtime",
+      "sha256": "6686e8877667584a3a7c07344baadca1a03e29f677162d87c3c0811e990d1148",
+      "size": 3761
+    },
+    {
+      "path": "runtime/legal/java.xml/jcup.md",
+      "role": "runtime",
+      "sha256": "8d5dcfdf50455a3c34c753a98f21e953248af200415a9084e3f102cb6c43b8bf",
+      "size": 1448
+    },
+    {
+      "path": "runtime/legal/java.xml/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/java.xml/xalan.md",
+      "role": "runtime",
+      "sha256": "fa811fdd2035c6b6e495e4cd812f09464dc9302fe1ea073c7dceeb483099a03f",
+      "size": 13494
+    },
+    {
+      "path": "runtime/legal/java.xml/xerces.md",
+      "role": "runtime",
+      "sha256": "472224f99de833f4f4c19f2f8a0317f22114e1c641f5d77ffa3a4280a1b80176",
+      "size": 11852
+    },
+    {
+      "path": "runtime/legal/jdk.crypto.ec/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/jdk.crypto.ec/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/legal/jdk.unsupported/COPYRIGHT",
+      "role": "runtime",
+      "sha256": "7afb3a2dc57cb16223dddc970e0b464311e5311484c793abf9327a19ef629018",
+      "size": 35
+    },
+    {
+      "path": "runtime/legal/jdk.unsupported/LICENSE",
+      "role": "runtime",
+      "sha256": "86e0516b888276a492b19f9a84f5a866ed36925fae1510b3a94a0b6213e69192",
+      "size": 33
+    },
+    {
+      "path": "runtime/lib/classlist",
+      "role": "runtime",
+      "sha256": "71723d03d930de1dcc960afeefdcfe609351619ede8bafeb61cea6c65bb346e7",
+      "size": 73220
+    },
+    {
+      "path": "runtime/lib/fontconfig.bfc",
+      "role": "runtime",
+      "sha256": "968ac99bbaaf8a49a474c934e73ad58f88c6c7f2a363cb44771e0378444e36ba",
+      "size": 4630
+    },
+    {
+      "path": "runtime/lib/fontconfig.properties.src",
+      "role": "runtime",
+      "sha256": "0e09536058276fbd7dbe92b7e359f6fdde04b55ea7f9e4995b70c9bed34cd11a",
+      "size": 11348
+    },
+    {
+      "path": "runtime/lib/jawt.lib",
+      "role": "runtime",
+      "sha256": "e62df5e38c7a603289a3a480c054c002d39c423fc83f259f3cb33d8f7934dd88",
+      "size": 1682
+    },
+    {
+      "path": "runtime/lib/jrt-fs.jar",
+      "role": "runtime",
+      "sha256": "5e89904c193ba115ac4cb73d33dbaa98516cc8beb03d40796e3eeca265036604",
+      "size": 110501
+    },
+    {
+      "path": "runtime/lib/jvm.cfg",
+      "role": "runtime",
+      "sha256": "aa9efb969444c1484e29adecab55a122458090616e766b2f1230ef05bc3867e0",
+      "size": 29
+    },
+    {
+      "path": "runtime/lib/jvm.lib",
+      "role": "runtime",
+      "sha256": "fce8b0e94a32b34a00ec58fafeadd7c932bf836c687dda256ef78b8e0cc170ae",
+      "size": 979784
+    },
+    {
+      "path": "runtime/lib/modules",
+      "role": "runtime",
+      "sha256": "daf33cfc82f08208565eebf95127d7a88b52f834bec60cd03c3974b77c0b3439",
+      "size": 21764295
+    },
+    {
+      "path": "runtime/lib/psfont.properties.ja",
+      "role": "runtime",
+      "sha256": "0c790de696536165913685785ea8cbe1ac64acf09e2c8d92d802083a6da09393",
+      "size": 2796
+    },
+    {
+      "path": "runtime/lib/psfontj2d.properties",
+      "role": "runtime",
+      "sha256": "7d51936fa3fd5812ae51f9f5657e0e70487dca810b985607b6c5d6603f5e6c98",
+      "size": 10393
+    },
+    {
+      "path": "runtime/lib/security/blocked.certs",
+      "role": "runtime",
+      "sha256": "583500b76965eb54b03493372989ab4d3426f85462d1db232c5ae6706a4d6c58",
+      "size": 2527
+    },
+    {
+      "path": "runtime/lib/security/cacerts",
+      "role": "runtime",
+      "sha256": "c168b4ac51bfb5c6fd206917e1afe45b019baa3fc39a80a85153742ca204b0ff",
+      "size": 124583
+    },
+    {
+      "path": "runtime/lib/security/default.policy",
+      "role": "runtime",
+      "sha256": "0edd2cf5bff4b3e069b4f3920880cac9898b212f003c25a0358f9470da2a9bea",
+      "size": 11016
+    },
+    {
+      "path": "runtime/lib/security/public_suffix_list.dat",
+      "role": "runtime",
+      "sha256": "d5a0e25d7d46039beab0cdb7e6d114a94972b09a75f0e1fbd795d94ad7244a1f",
+      "size": 230480
+    },
+    {
+      "path": "runtime/lib/tzdb.dat",
+      "role": "runtime",
+      "sha256": "108a63fb316b1eaa8949f3ff7265c2af0402c9ff13f360578e658caaafc40faf",
+      "size": 104163
+    },
+    {
+      "path": "runtime/lib/tzmappings",
+      "role": "runtime",
+      "sha256": "b41575b332809b37ad423bdca30c7c48cdef3d82f82fa9d534781a6f15d6a2ab",
+      "size": 22190
+    },
+    {
+      "path": "runtime/release",
+      "role": "runtime",
+      "sha256": "220e847180da95d25a88f6d026e39663686fa9c972495694a5bf34781cd9876b",
+      "size": 229
+    }
+  ],
+  "commit": "785a04151036e50498d1a7269a63aa6f2f58b928",
+  "distributionModel": "installer-thin-launcher-client-server",
+  "javaRelease": 17,
+  "platform": "windows-x64",
+  "releaseHardened": true,
+  "remoteClientEntryPoint": "mechanist.RemoteClientMain",
+  "schema": 2,
+  "version": "0.9.10iz-alpha.4"
+}

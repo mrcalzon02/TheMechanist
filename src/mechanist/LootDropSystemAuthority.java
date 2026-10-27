@@ -315,8 +315,11 @@ final class LootDropSystemAuthority {
             add(npc.equippedMeleeWeapon, LootCarryKind.EQUIPMENT);
             add(npc.equippedRangedWeapon, LootCarryKind.EQUIPMENT);
             add(npc.equippedExplosive, LootCarryKind.EQUIPMENT);
+            for(String item:npc.combatSupport.items) add(item,ActorConsumableAuthority.supported(item)?LootCarryKind.HEALTH:LootCarryKind.EQUIPMENT);
+            for(String item:npc.combatSupport.worn.values()) add(item,LootCarryKind.ARMOR);
+            for(var limb:npc.combatSupport.limbs.values()) add("Removed augmetic scrap",LootCarryKind.EQUIPMENT);
             if (npc.loadedShots > 0 || npc.ammoReloadsRemaining > 0) add(ammoItemFor(npc.equippedRangedWeapon), LootCarryKind.AMMO);
-            if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("medicae")) add("Bandage roll", LootCarryKind.HEALTH);
+            if (!npc.combatLoadoutInitialized && npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("medicae")) add("Bandage roll", LootCarryKind.HEALTH);
             if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("trader")) add("Trade chit", LootCarryKind.CURRENCY);
         }
         private void add(String item, LootCarryKind kind) {
@@ -331,14 +334,19 @@ final class LootDropSystemAuthority {
         @Override public int equipmentTier() { return npc == null ? 0 : npc.equipmentTier; }
     }
 
-    private static String ammoItemFor(String weapon) {
+    static String ammoItemFor(String weapon) {
         String low = safe(weapon).toLowerCase(Locale.ROOT);
-        if (low.contains("las")) return "Las charge pack";
+        ItemDef definition=ItemCatalog.get(weapon);
+        if (low.contains("plasma")) return "Plasma flask";
+        if (low.contains("flamer")) return "Promethium canister";
+        if (low.contains("melta")) return "Melta charge cell";
+        if (low.contains("las") || definition!=null && definition.category.contains("/las")) return "Las charge pack";
         if (low.contains("shotgun")) return "Shotgun shells";
-        if (low.contains("bolt") || low.contains("mass-Reactive Carbine")) return "Bolt shells";
-        if (low.contains("plasma")) return "Plasma fuel flask";
-        if (low.contains("flamer")) return "Industrial Fuelgel canister";
-        if (low.contains("melta")) return "Melta fuel canister";
+        if (low.contains("bolt") || low.contains("mass-reactive carbine")) return "Bolt round magazine";
+        if (low.contains("heavy stubber")) return "Heavy stubber belt";
+        if (low.contains("autocannon")) return "Autocannon shell belt";
+        if (low.contains("arc")) return "Arc capacitor pack";
+        if (low.contains("webber")) return "Web cartridge";
         return "Stub rounds";
     }
 }

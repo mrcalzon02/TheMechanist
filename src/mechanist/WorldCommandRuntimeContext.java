@@ -8,6 +8,8 @@ package mechanist;
  * depend on this context surface rather than the panel monolith.
  */
 interface WorldCommandRuntimeContext {
+    default String cyberneticRejection(String action,String root,String item,String patientId) {return "Cybernetic procedures are unavailable in this runtime.";}
+    default void cyberneticAction(String action,String root,String item,String patientId) {throw new UnsupportedOperationException("Cybernetic runtime unavailable");}
     boolean mounted();
     World world();
     boolean inBounds(int x, int y);
@@ -18,6 +20,7 @@ interface WorldCommandRuntimeContext {
     void clearPendingMovement(String reason);
     void confirmInteraction();
     void confirmCombatTarget();
+    default void confirmCombatTarget(int x,int y) { confirmCombatTarget(); }
     void useSelectedInventoryItem();
     void unequipSelectedEquipmentSlot();
     void addImperialScript(int amount);
@@ -25,6 +28,8 @@ interface WorldCommandRuntimeContext {
     void advanceTurn(String line);
     void teleportPlayer(int x, int y, String reason);
     void spawnInventoryItem(String item, int count);
+    default String developerFacilityRejection(String action, java.util.List<String> args) { return "Developer facility is unavailable in this runtime."; }
+    default void developerFacilityAction(String action, java.util.List<String> args) { throw new UnsupportedOperationException("Developer facility runtime is unavailable"); }
 }
 
 final class WorldCommandRuntimeContexts {
@@ -42,7 +47,16 @@ final class GamePanelWorldCommandRuntimeContext implements WorldCommandRuntimeCo
         this.game = game;
     }
 
+    public String cyberneticRejection(String action,String root,String item,String patientId) {NpcEntity patient=cyberneticPatient(patientId);if(patientId!=null && !patientId.isEmpty() && patient==null) return "The selected patient must be alive and within two tiles.";return CyberneticLimbAuthority.rejection(game,patient,action,root,item);}
+    public void cyberneticAction(String action,String root,String item,String patientId) {if(cyberneticRejection(action,root,item,patientId).isEmpty()) {NpcEntity patient=cyberneticPatient(patientId);if(CyberneticLimbAuthority.execute(game,patient,action,root,item) && patient!=null) game.advanceTurn("Treats adjacent patient.");}}
+    private NpcEntity cyberneticPatient(String id) {
+        if(game==null || game.world==null || id==null || id.isEmpty()) return null;
+        for(NpcEntity n:game.world.npcs) if(id.equals(n.id) && n.hp>0 && Math.abs(n.x-game.playerX)+Math.abs(n.y-game.playerY)<=2) return n;
+        return null;
+    }
     public boolean mounted() { return game != null; }
+    public String developerFacilityRejection(String action, java.util.List<String> args) { return DeveloperFacilityAuthority.reject(game,action,args); }
+    public void developerFacilityAction(String action, java.util.List<String> args) { DeveloperFacilityAuthority.execute(game,action,args); }
     public World world() { return game == null ? null : game.world; }
     public boolean inBounds(int x, int y) { return game != null && game.world != null && game.world.inBounds(x, y); }
     public boolean walkable(int x, int y) { return game != null && game.world != null && game.world.walkable(x, y); }
@@ -57,6 +71,7 @@ final class GamePanelWorldCommandRuntimeContext implements WorldCommandRuntimeCo
     public void clearPendingMovement(String reason) { if (game != null) game.clearPendingMovementInput(reason); }
     public void confirmInteraction() { if (game != null) game.confirmInteractionBody(); }
     public void confirmCombatTarget() { if (game != null) game.confirmCombatTargetBody(); }
+    public void confirmCombatTarget(int x,int y) { if(game!=null) {game.combatX=x;game.combatY=y;game.confirmCombatTargetBody();} }
     public void useSelectedInventoryItem() { if (game != null) game.useSelectedInventoryItemBody(); }
     public void unequipSelectedEquipmentSlot() { if (game != null) game.unequipSelectedEquipmentSlotBody(); }
     public void addImperialScript(int amount) { if (game != null) game.addImperialScript(amount); }

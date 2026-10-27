@@ -1,0 +1,27 @@
+turn	attacker	target	weapon	outcome	chance	roll	damage	ammo
+1	PROBE-0-0	PROBE-1-0	Stub pistol	HIT	44	32	9	1
+1	PROBE-1-0	PROBE-0-0	Heavy stubber	RELOAD	0	0	0	0
+2	PROBE-0-0	PROBE-1-0	Stub pistol	MISS	44	72	0	1
+2	PROBE-1-0	PROBE-0-0	Heavy stubber	RELOAD	0	0	0	0
+3	PROBE-0-0	PROBE-1-0	Stub pistol	MISS	44	81	0	1
+3	PROBE-1-0	PROBE-0-0	Heavy stubber	RELOAD	0	0	0	0
+4	PROBE-0-0	PROBE-1-0	Stub pistol	MISS	44	68	0	1
+4	PROBE-1-0	PROBE-0-0	Heavy stubber	RELOAD	0	0	0	0
+5	PROBE-0-0	PROBE-1-0	Stub pistol	HIT	44	19	9	1
+5	PROBE-1-0	PROBE-0-0	Heavy stubber	EMPTY	0	0	0	0
+6	PROBE-0-0	PROBE-1-0	Stub pistol	MISS	46	60	0	1
+6	PROBE-1-0	PROBE-0-0	Heavy stubber	EMPTY	0	0	0	0
+7	PROBE-0-0	PROBE-1-0	Stub pistol	MISS	48	92	0	1
+7	PROBE-1-0	PROBE-0-0	Heavy stubber	EMPTY	0	0	0	0
+8	PROBE-0-0	PROBE-1-0	Stub pistol	MISS	50	64	0	1
+8	PROBE-1-0	PROBE-0-0	Heavy stubber	EMPTY	0	0	0	0
+9	PROBE-0-0	PROBE-1-0	Stub pistol	RELOAD	0	0	0	0
+9	PROBE-1-0	PROBE-0-0	Heavy stubber	EMPTY	0	0	0	0
+10	PROBE-0-0	PROBE-1-0	Knife	MISS	54	93	0	0
+10	PROBE-1-0	PROBE-0-0	Chainsword	HIT	54	7	10	0
+11	PROBE-0-0	PROBE-1-0	Knife	MISS	54	60	0	0
+11	PROBE-1-0	PROBE-0-0	Chainsword	HIT	54	5	10	0
+12	PROBE-0-0	PROBE-1-0	Knife	HIT	54	20	3	0
+12	PROBE-1-0	PROBE-0-0	Chainsword	MISS	54	59	0	0
+13	PROBE-0-0	PROBE-1-0	Knife	HIT	54	46	3	0
+13	PROBE-1-0	PROBE-0-0	Chainsword	KILL	54	32	10	0

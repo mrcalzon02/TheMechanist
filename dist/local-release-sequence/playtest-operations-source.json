@@ -1,0 +1,75 @@
+{
+  "distributionRequired": false,
+  "repo": "C:\\GITS\\The Mechanist\\TheMechanist",
+  "requireReleaseHardened": false,
+  "schema": 3,
+  "source": {
+    "documentCount": 8,
+    "documents": [
+      {
+        "destination": "docs/EULA.md",
+        "requiredPhraseCount": 1,
+        "sha256": "fc429b078ddb2a3d9d996de621d68376a102f81942ccf09fa5405160a3b86413",
+        "size": 5722,
+        "source": "PACKAGE_client/EULA.md"
+      },
+      {
+        "destination": "docs/CLIENT_README.md",
+        "requiredPhraseCount": 1,
+        "sha256": "86dbe60e4a71bcd34b9642a10035751096d99aaadf89a3f8abdea7e769cf11f6",
+        "size": 4037,
+        "source": "PACKAGE_client/README.md"
+      },
+      {
+        "destination": "docs/RUN_INSTRUCTIONS.md",
+        "requiredPhraseCount": 5,
+        "sha256": "b5d9674df16ba644a50ed45a5865873e7e973fdda5f976e3254dd9a95d302973",
+        "size": 4870,
+        "source": "PACKAGE_client/RUN_INSTRUCTIONS.md"
+      },
+      {
+        "destination": "docs/WINDOWS_QUICK_START.md",
+        "requiredPhraseCount": 2,
+        "sha256": "c472de567c71387a4ffd18c9c7c4bcdb022863a1ccbc5b2e8e9c962211e3fbf5",
+        "size": 3398,
+        "source": "PACKAGE_client/WINDOWS_QUICK_START.md"
+      },
+      {
+        "destination": "docs/LIMITED_ALPHA_PLAYTEST_GUIDE.md",
+        "requiredPhraseCount": 14,
+        "sha256": "fa17d303f5254d568c91be0871d9b4bd1de9a88ae96534bfa10eba02977f98a3",
+        "size": 10152,
+        "source": "PACKAGE_client/LIMITED_ALPHA_PLAYTEST_GUIDE.md"
+      },
+      {
+        "destination": "docs/KNOWN_ALPHA_LIMITATIONS.md",
+        "requiredPhraseCount": 16,
+        "sha256": "853ae15670030775f573c5b21dc8603f588b528c5d58a05e0d95090297775bf5",
+        "size": 9131,
+        "source": "PACKAGE_client/KNOWN_ALPHA_LIMITATIONS.md"
+      },
+      {
+        "destination": "docs/DIAGNOSTIC_COLLECTION.md",
+        "requiredPhraseCount": 11,
+        "sha256": "b15353b20f54ee77d99ada5a573d8b5911087424990fa0ab3b6ee744e5240a86",
+        "size": 7249,
+        "source": "PACKAGE_client/DIAGNOSTIC_COLLECTION.md"
+      },
+      {
+        "destination": "docs/SERVER_README.md",
+        "requiredPhraseCount": 5,
+        "sha256": "9755559326275cecb50e56ff352af75edb149a3a0af9425e108aee39c2a15bec",
+        "size": 5205,
+        "source": "PACKAGE_client/server/README.md"
+      }
+    ],
+    "issueForm": {
+      "path": ".github/ISSUE_TEMPLATE/limited-alpha-defect.yml",
+      "sha256": "e72f30aa9cff6f5d427c923fe765f38181725a86e928e7c8c5b783d949e6b29f",
+      "size": 6213
+    },
+    "repo": "C:\\GITS\\The Mechanist\\TheMechanist",
+    "status": "verified"
+  },
+  "status": "verified"
+}

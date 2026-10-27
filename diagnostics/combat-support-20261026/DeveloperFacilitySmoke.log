@@ -1,0 +1,3 @@
+[13:39:54.158] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+[13:39:55.800] WARN/ADMIN_COMMAND_REJECTED reason=no-admin-rights command=/devroom request=ConsoleCommandRequest player=remote raw=/devroom
+DeveloperFacilitySmoke PASS rooms=4 vendors=2016 buildables=40 hardwareTypes=103 catalogItems=909 stockedUnits=36361 admin=true portals=player-only merchants=pinned purchases=real reputation=atomic return=isolated saves=blocked

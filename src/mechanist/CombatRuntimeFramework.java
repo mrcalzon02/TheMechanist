@@ -174,6 +174,8 @@ class BodyPart {
     int endurance;
     int agility;
     double health;
+    boolean missing;
+    boolean cybernetic;
     BodyPart(String name, String slot, int endurance, int agility) {
         this.name = name;
         this.slot = slot;
@@ -183,11 +185,11 @@ class BodyPart {
     }
     double maxHealth() { return Math.max(1.0, endurance * 100.0); }
     double currentHealth() { return Math.max(0.0, Math.min(health, maxHealth())); }
-    boolean destroyed() { return currentHealth() <= 0.0; }
+    boolean destroyed() { return missing || currentHealth() <= 0.0; }
     String displayLine() {
-        return String.format(Locale.US, "%-12s END %d  HP %.0f/%.0f  AGI %d  [%s]", name, endurance, currentHealth(), maxHealth(), agility, slot == null || slot.isEmpty() ? "empty" : slot);
+        return String.format(Locale.US, "%-12s END %d  HP %.0f/%.0f  AGI %d  [%s]%s", name, endurance, currentHealth(), maxHealth(), agility, slot == null || slot.isEmpty() ? "empty" : slot, missing?" MISSING":cybernetic?" CYBERNETIC":destroyed()?" DESTROYED":"");
     }
-    BodyPart copy() { BodyPart b = new BodyPart(name, slot, endurance, agility); b.health = health; return b; }
+    BodyPart copy() { BodyPart b = new BodyPart(name, slot, endurance, agility); b.health = health;b.missing=missing;b.cybernetic=cybernetic;return b; }
 }
 
 

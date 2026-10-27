@@ -16,7 +16,9 @@ class Persistence {
     static final String VERSION = "0.9.10gs";
 
     static void writeCore(GamePanel g, Properties p) {
+        if (DeveloperFacilityAuthority.session(g)!=null) throw new IllegalStateException("Developer sessions cannot overwrite campaign saves; use the return portal first.");
         CharacterEquipmentAndMedicalAuthority.writeState(p, g.equippedWearableSlots, g.installedBodyModifications);
+        put(p,"run.combatSupport",g.combatSupport.save());
         put(p, "save.version", VERSION);
         put(p, "save.created", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         SaveEfficiencyAuthority.writeWorldReference(g, p);
@@ -157,6 +159,7 @@ class Persistence {
 
     static void readCore(GamePanel g, Properties p) {
         CharacterEquipmentAndMedicalAuthority.readState(p, g.equippedWearableSlots, g.installedBodyModifications);
+        g.combatSupport.restore(p.getProperty("run.combatSupport",""));
         String version = p.getProperty("save.version", "unknown");
         if (!VERSION.equals(version)) DebugLog.warn("SAVE_VERSION", "Loading save version " + version + " with runtime " + VERSION + ". Migration uses compatibility defaults.");
         g.seed = getLong(p,"run.seed",System.currentTimeMillis());
@@ -323,12 +326,24 @@ class Persistence {
         put(p,"char.name",c.name); put(p,"char.job",c.job); put(p,"char.ageYears",Integer.toString(c.ageYears)); put(p,"char.birthWorldTurn",Long.toString(c.birthWorldTurn)); put(p,"char.ageBand",c.ageBand); put(p,"char.portraitSheet",Integer.toString(c.portraitSheet)); put(p,"char.portraitIndex",Integer.toString(c.portraitIndex)); put(p,"char.nameLockedProfileKey",c.nameLockedProfileKey==null?"":c.nameLockedProfileKey);
         ArrayList<String> stats=new ArrayList<>(); for(Map.Entry<String,Integer> e:c.stats.entrySet()) stats.add(e.getKey()+":"+e.getValue()); put(p,"char.stats",encList(stats));
         put(p,"char.visitedTypes",encList(new ArrayList<String>(c.visitedZoneTypes)));
+        ArrayList<String> body=new ArrayList<>();
+        for(BodyPart part:c.body.values()) body.add(NpcEntity.enc(part.name)+","+NpcEntity.enc(part.slot)+","+part.endurance+","+part.agility+","+part.health+","+part.missing+","+part.cybernetic);
+        put(p,"char.body",encList(body));
     }
     static Candidate readCandidate(Properties p, long seed) {
         Candidate c = Candidate.random(new Random(seed ^ 0xC0FFEE));
         c.name=p.getProperty("char.name",c.name); c.job=p.getProperty("char.job",c.job); c.ageYears=getInt(p,"char.ageYears",c.ageYears); c.birthWorldTurn=getLong(p,"char.birthWorldTurn",c.birthWorldTurn); c.ageBand=p.getProperty("char.ageBand",c.ageBand); c.portraitSheet=getInt(p,"char.portraitSheet",c.portraitSheet); c.portraitIndex=getInt(p,"char.portraitIndex",c.portraitIndex); c.nameLockedProfileKey=p.getProperty("char.nameLockedProfileKey","");
         for(String s: decList(p.getProperty("char.stats",""))) { String[] a=s.split(":",2); if(a.length==2) try{ c.stats.put(a[0],Integer.parseInt(a[1])); }catch(Exception ignored){} }
         c.visitedZoneTypes.clear(); c.visitedZoneTypes.addAll(decList(p.getProperty("char.visitedTypes","")));
+        if(p.containsKey("char.body")) {
+            LinkedHashMap<String,BodyPart> restored=new LinkedHashMap<>();
+            for(String row:decList(p.getProperty("char.body",""))) try {
+                String[] b=row.split(",",-1);BodyPart part=new BodyPart(NpcEntity.dec(b[0]),NpcEntity.dec(b[1]),Math.max(1,Integer.parseInt(b[2])),Math.max(1,Integer.parseInt(b[3])));
+                part.health=Math.max(0,Math.min(part.maxHealth(),Double.parseDouble(b[4])));part.missing=Boolean.parseBoolean(b[5]);part.cybernetic=Boolean.parseBoolean(b[6]);
+                if(part.missing) part.health=0;restored.put(part.name,part);
+            } catch(RuntimeException invalidPart) {DebugLog.warn("BODY_SAVE_READ","Skipped malformed body-part record.");}
+            if(!restored.isEmpty()) {c.body.clear();c.body.putAll(restored);}
+        }
         return c;
     }
     static void writeWorldState(World w, Properties p) {

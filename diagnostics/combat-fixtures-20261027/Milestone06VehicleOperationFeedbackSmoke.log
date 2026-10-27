@@ -1,0 +1,21 @@
+[01:40:42.046] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+Milestone 06 vehicle operation feedback smoke passed.
+Milestone 06 vehicle maintenance smoke passed.
+Milestone 06 vehicle loss smoke passed.
+Milestone 06 vehicle fuel history and reservation smoke passed.
+Milestone 06 vehicle contract priority smoke passed.
+Milestone 06 vehicle access smoke passed.
+Milestone 06 strategic vehicle transit smoke passed.
+Milestone 06 strategic vehicle transit history smoke passed.
+Milestone 06 vehicle strategic transit commit smoke passed.
+Milestone 06 vehicle manifest lifecycle smoke passed.
+Milestone 06 vehicle manifest history smoke passed.
+Milestone 06 vehicle dashboard smoke passed.
+Milestone 06 vehicle motor-pool history smoke passed.
+Milestone 06 vehicle motor-pool smoke passed.
+Milestone 06 faction vehicle doctrine smoke passed.
+Milestone 06 faction vehicle balance and contract smoke passed.
+Milestone 06 faction vehicle route-control smoke passed.
+Milestone 06 faction strategic route-control smoke passed.
+Milestone 06 faction vehicle route transit commit smoke passed.
+Milestone 06 structural-scale combat smoke passed.

@@ -2,6 +2,8 @@ package mechanist.assets;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,6 +32,10 @@ import java.util.Optional;
 public final class AssetRegistry {
     public static final String DEFAULT_REGISTRY = "assets/indexes/semantic_asset_registry.tsv";
     public static final String EXTENSION_REGISTRY = "semantic_asset_registry.tsv";
+    private static final List<String> BUNDLED_COMPILED_INDEXES = List.of(
+            "/assets/indexes/asset_content_index_32px.tsv",
+            "/assets/indexes/asset_content_index_256px.tsv"
+    );
 
     private final Path projectRoot;
     private final Path registryFile;
@@ -58,7 +64,13 @@ public final class AssetRegistry {
             if (compiledIndex.isPresent()) {
                 base = loadFromCompiledContentIndex(compiledIndex.orElseThrow(), root);
             } else {
-                base = loadFromTsv(registry, root);
+                Optional<String> bundledIndex = firstExistingBundledCompiledIndex();
+                if (bundledIndex.isPresent()) {
+                    base = loadFromBundledCompiledContentIndex(
+                            bundledIndex.orElseThrow(), root);
+                } else {
+                    base = loadFromTsv(registry, root);
+                }
             }
         }
         Map<String, AssetMetadata> merged = new LinkedHashMap<>(base.byId);
@@ -123,48 +135,87 @@ public final class AssetRegistry {
         Path root = projectRoot == null ? indexFile.toAbsolutePath().normalize().getParent() : projectRoot.toAbsolutePath().normalize();
         Path index = indexFile.toAbsolutePath().normalize();
         Path assetRoot = compiledAssetRootFor(index);
+
+        try (BufferedReader reader = Files.newBufferedReader(index, StandardCharsets.UTF_8)) {
+            return readCompiledContentIndex(
+                    reader,
+                    root,
+                    index,
+                    relativePath -> metadataPath(
+                            root,
+                            assetRoot.resolve(relativePath.replace('\\', '/')).normalize()));
+        }
+    }
+
+    private static AssetRegistry loadFromBundledCompiledContentIndex(
+            String resourcePath,
+            Path projectRoot
+    ) throws IOException {
+        Path root = projectRoot == null
+                ? Paths.get("").toAbsolutePath().normalize()
+                : projectRoot.toAbsolutePath().normalize();
+        InputStream stream = AssetRegistry.class.getResourceAsStream(resourcePath);
+        if (stream == null) {
+            throw new IOException("Bundled semantic asset index is missing: " + resourcePath);
+        }
+        Path indexIdentity = root.resolve(resourcePath.substring(1)).normalize();
+        try (stream;
+             BufferedReader reader = new BufferedReader(
+                     new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            return readCompiledContentIndex(
+                    reader,
+                    root,
+                    indexIdentity,
+                    AssetRegistry::bundledCompiledAssetPath);
+        }
+    }
+
+    private static AssetRegistry readCompiledContentIndex(
+            BufferedReader reader,
+            Path root,
+            Path indexIdentity,
+            CompiledMetadataPath metadataPathFor
+    ) throws IOException {
         Map<String, AssetMetadata> entries = new LinkedHashMap<>();
         EnumMap<AssetType, Integer> counters = new EnumMap<>(AssetType.class);
 
-        try (BufferedReader reader = Files.newBufferedReader(index, StandardCharsets.UTF_8)) {
-            String header = reader.readLine();
-            if (header == null) {
-                return new AssetRegistry(root, index, entries);
+        String header = reader.readLine();
+        if (header == null) {
+            return new AssetRegistry(root, indexIdentity, entries);
+        }
+        Map<String, Integer> columns = columns(header);
+        String line;
+        int lineNo = 1;
+        while ((line = reader.readLine()) != null) {
+            lineNo++;
+            if (line.isBlank() || line.stripLeading().startsWith("#")) {
+                continue;
             }
-            Map<String, Integer> columns = columns(header);
-            String line;
-            int lineNo = 1;
-            while ((line = reader.readLine()) != null) {
-                lineNo++;
-                if (line.isBlank() || line.stripLeading().startsWith("#")) {
-                    continue;
-                }
-                String[] parts = line.split("\t", -1);
-                String sourceId = value(parts, columns, "asset_id");
-                String relativePath = value(parts, columns, "path");
-                if (sourceId.isBlank() || relativePath.isBlank()) {
-                    continue;
-                }
-                String category = value(parts, columns, "category");
-                String sourceGroup = value(parts, columns, "source_group");
-                String sourceAtlas = value(parts, columns, "source_atlas");
-                String contentType = value(parts, columns, "content_type");
-                String tags = value(parts, columns, "content_tags");
-                String description = value(parts, columns, "description");
-                AssetType type = compiledAssetType(category, sourceGroup, sourceAtlas, contentType, tags);
-                String id = syntheticId(type, counters);
-                String path = metadataPath(root, assetRoot.resolve(relativePath.replace('\\', '/')).normalize());
-                String name = compiledAssetName(sourceAtlas, sourceId, value(parts, columns, "row"), value(parts, columns, "col"));
-                String semantic = compiledAssetDescription(description, category, sourceGroup, sourceAtlas, tags);
-                try {
-                    entries.put(id, new AssetMetadata(id, path, name, type, semantic));
-                } catch (RuntimeException ex) {
-                    throw new IOException("Invalid compiled asset index row at line " + lineNo + ": " + ex.getMessage(), ex);
-                }
+            String[] parts = line.split("\t", -1);
+            String sourceId = value(parts, columns, "asset_id");
+            String relativePath = value(parts, columns, "path");
+            if (sourceId.isBlank() || relativePath.isBlank()) {
+                continue;
+            }
+            String category = value(parts, columns, "category");
+            String sourceGroup = value(parts, columns, "source_group");
+            String sourceAtlas = value(parts, columns, "source_atlas");
+            String contentType = value(parts, columns, "content_type");
+            String tags = value(parts, columns, "content_tags");
+            String description = value(parts, columns, "description");
+            AssetType type = compiledAssetType(category, sourceGroup, sourceAtlas, contentType, tags);
+            String id = syntheticId(type, counters);
+            String path = metadataPathFor.resolve(relativePath);
+            String name = compiledAssetName(sourceAtlas, sourceId, value(parts, columns, "row"), value(parts, columns, "col"));
+            String semantic = compiledAssetDescription(description, category, sourceGroup, sourceAtlas, tags);
+            try {
+                entries.put(id, new AssetMetadata(id, path, name, type, semantic));
+            } catch (RuntimeException ex) {
+                throw new IOException("Invalid compiled asset index row at line " + lineNo + ": " + ex.getMessage(), ex);
             }
         }
 
-        return new AssetRegistry(root, index, entries);
+        return new AssetRegistry(root, indexIdentity, entries);
     }
 
     public Path projectRoot() {
@@ -292,6 +343,46 @@ public final class AssetRegistry {
         return Optional.empty();
     }
 
+    private static Optional<String> firstExistingBundledCompiledIndex() {
+        for (String candidate : BUNDLED_COMPILED_INDEXES) {
+            try (InputStream stream = AssetRegistry.class.getResourceAsStream(candidate)) {
+                if (stream != null) {
+                    return Optional.of(candidate);
+                }
+            } catch (IOException ignored) {
+                // Resource probing performs no reads; continue to the next bundled tier.
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static String bundledCompiledAssetPath(String relativePath) throws IOException {
+        String normalizedText = relativePath == null
+                ? ""
+                : relativePath.replace('\\', '/').trim();
+        if (normalizedText.isEmpty()) {
+            throw new IOException("Bundled semantic asset index contains a blank path");
+        }
+        Path normalized;
+        try {
+            normalized = Path.of(normalizedText).normalize();
+        } catch (InvalidPathException ex) {
+            throw new IOException(
+                    "Bundled semantic asset index contains an invalid path: "
+                            + normalizedText,
+                    ex);
+        }
+        if (normalized.isAbsolute()
+                || normalized.getNameCount() == 0
+                || normalized.startsWith("..")) {
+            throw new IOException(
+                    "Bundled semantic asset index path escapes its payload: "
+                            + normalizedText);
+        }
+        return "classpath:/assets/compiled_assets/"
+                + normalized.toString().replace('\\', '/');
+    }
+
     private static void mergeExtensionRegistries(Path root, Map<String, AssetMetadata> entries) throws IOException {
         for (Path extension : extensionRegistryFiles(root)) {
             readTsvInto(extension, root, entries, extension.getParent());
@@ -372,12 +463,32 @@ public final class AssetRegistry {
         }
     }
 
+    @FunctionalInterface
+    private interface CompiledMetadataPath {
+        String resolve(String relativePath) throws IOException;
+    }
+
     private static AssetType compiledAssetType(String category, String sourceGroup, String sourceAtlas, String contentType, String tags) {
         String explicitType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
         if (containsAny(explicitType, "infrastructure_fixture", "fixture")) return AssetType.FIXTURE;
         if ("weapon".equals(explicitType)) return AssetType.WEAPON_ICON;
         if ("wearable".equals(explicitType) || "armor".equals(explicitType)) return AssetType.ARMOR_ICON;
         if ("document".equals(explicitType) && !"objects".equalsIgnoreCase(category)) return AssetType.ITEM_ICON;
+        if ("wall_tile".equals(explicitType)) return AssetType.WALL_TILE;
+        if ("floor_tile".equals(explicitType) || "void_tile".equals(explicitType)) return AssetType.FLOOR_TILE;
+        if ("road_tile".equals(explicitType)) return AssetType.ROAD_TILE;
+        if ("corridor_tile".equals(explicitType)) return AssetType.CORRIDOR_TILE;
+        if ("portrait".equals(explicitType)) return AssetType.PORTRAIT;
+        if ("ui_icon".equals(explicitType)) return AssetType.UI_ICON;
+        if ("machine".equals(explicitType) || "vehicle".equals(explicitType)) return AssetType.MACHINE;
+        if ("item".equals(explicitType) || "implant".equals(explicitType)
+                || "trade_good".equals(explicitType) || "industrial_component".equals(explicitType)
+                || "data_device".equals(explicitType)) return AssetType.ITEM_ICON;
+        if ("corpse_decay".equals(explicitType)) return AssetType.CORPSE_DECAY;
+        if ("internal".equals(explicitType) || "placeholder".equals(explicitType)) return AssetType.INTERNAL;
+        if ("object".equals(explicitType) || "prop".equals(explicitType)
+                || "civilian_prop".equals(explicitType) || "military_prop".equals(explicitType)
+                || "relic".equals(explicitType) || "rail_prop".equals(explicitType)) return AssetType.OBJECT;
         if ("doors".equalsIgnoreCase(category)) return AssetType.FIXTURE;
         if ("objects".equalsIgnoreCase(category)) return AssetType.OBJECT;
         if ("defenses".equalsIgnoreCase(category)) return AssetType.FIXTURE;
@@ -457,8 +568,8 @@ public final class AssetRegistry {
             out.append("Compiled ").append(category == null || category.isBlank() ? "asset" : category.trim()).append(" asset");
             if (sourceGroup != null && !sourceGroup.isBlank()) out.append(" from ").append(sourceGroup.trim());
             if (sourceAtlas != null && !sourceAtlas.isBlank()) out.append(" / ").append(sourceAtlas.trim());
-            if (tags != null && !tags.isBlank()) out.append(". Tags: ").append(tags.trim());
         }
+        if (tags != null && !tags.isBlank()) out.append(". Tags: ").append(tags.trim());
         if ("doors-c".equalsIgnoreCase(sourceAtlas)) out.append(". Semantic state: closed door.");
         if ("doors-o".equalsIgnoreCase(sourceAtlas)) out.append(". Semantic state: open door.");
         return out.toString();

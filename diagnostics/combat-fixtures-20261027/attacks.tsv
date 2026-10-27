@@ -1,0 +1,487 @@
+seed	target	weapon	mode	component	before	after	reportedDamage	ammoSpent	turnsSpent
+91000	suppression	Scrap knife	SNAP	null	100	100	0	0	1
+91000	suppression	Scrap knife	AIMED	null	100	100	0	0	1
+91000	suppression	Scrap knife	BURST	null	100	100	0	0	1
+91000	suppression	Chainsword	SNAP	null	100	100	0	0	1
+91000	suppression	Chainsword	AIMED	null	100	100	0	0	1
+91000	suppression	Chainsword	BURST	null	100	100	0	0	1
+91000	suppression	Needle Pistol	SNAP	null	100	100	0	1	1
+91000	suppression	Needle Pistol	AIMED	null	100	100	0	1	1
+91000	suppression	Needle Pistol	BURST	null	100	100	0	3	1
+91000	suppression	Light Rifle	SNAP	null	100	100	0	1	1
+91000	suppression	Light Rifle	AIMED	null	100	100	0	1	1
+91000	suppression	Light Rifle	BURST	null	100	100	0	3	1
+91000	suppression	Heavy stubber	SNAP	null	100	100	0	1	1
+91000	suppression	Heavy stubber	AIMED	null	100	89	11	1	1
+91000	suppression	Heavy stubber	BURST	null	100	100	0	3	1
+91000	suppression	Arc Rifle	SNAP	null	100	85	15	1	1
+91000	suppression	Arc Rifle	AIMED	null	100	81	19	1	1
+91000	suppression	Arc Rifle	BURST	null	100	82	18	3	1
+91000	stub	Scrap knife	SNAP	null	100	100	0	0	1
+91000	stub	Scrap knife	AIMED	null	100	100	0	0	1
+91000	stub	Scrap knife	BURST	null	100	100	0	0	1
+91000	stub	Chainsword	SNAP	null	100	100	0	0	1
+91000	stub	Chainsword	AIMED	null	100	100	0	0	1
+91000	stub	Chainsword	BURST	null	100	100	0	0	1
+91000	stub	Needle Pistol	SNAP	null	100	100	0	1	1
+91000	stub	Needle Pistol	AIMED	null	100	100	0	1	1
+91000	stub	Needle Pistol	BURST	null	100	100	0	3	1
+91000	stub	Light Rifle	SNAP	null	100	100	0	1	1
+91000	stub	Light Rifle	AIMED	null	100	100	0	1	1
+91000	stub	Light Rifle	BURST	null	100	100	0	3	1
+91000	stub	Heavy stubber	SNAP	null	100	100	0	1	1
+91000	stub	Heavy stubber	AIMED	null	100	89	11	1	1
+91000	stub	Heavy stubber	BURST	null	100	100	0	3	1
+91000	stub	Arc Rifle	SNAP	null	100	85	15	1	1
+91000	stub	Arc Rifle	AIMED	null	100	81	19	1	1
+91000	stub	Arc Rifle	BURST	null	100	82	18	3	1
+91000	sentry	Scrap knife	SNAP	null	100	100	0	0	1
+91000	sentry	Scrap knife	AIMED	null	100	100	0	0	1
+91000	sentry	Scrap knife	BURST	null	100	100	0	0	1
+91000	sentry	Chainsword	SNAP	null	100	100	0	0	1
+91000	sentry	Chainsword	AIMED	null	100	100	0	0	1
+91000	sentry	Chainsword	BURST	null	100	100	0	0	1
+91000	sentry	Needle Pistol	SNAP	null	100	100	0	1	1
+91000	sentry	Needle Pistol	AIMED	null	100	95	5	1	1
+91000	sentry	Needle Pistol	BURST	null	100	100	0	3	1
+91000	sentry	Light Rifle	SNAP	null	100	93	7	1	1
+91000	sentry	Light Rifle	AIMED	null	100	89	11	1	1
+91000	sentry	Light Rifle	BURST	null	100	90	10	3	1
+91000	sentry	Heavy stubber	SNAP	null	100	87	13	1	1
+91000	sentry	Heavy stubber	AIMED	null	100	83	17	1	1
+91000	sentry	Heavy stubber	BURST	null	100	84	16	3	1
+91000	sentry	Arc Rifle	SNAP	null	100	79	21	1	1
+91000	sentry	Arc Rifle	AIMED	null	100	75	25	1	1
+91000	sentry	Arc Rifle	BURST	null	100	76	24	3	1
+91000	powered	Scrap knife	SNAP	null	100	100	0	0	1
+91000	powered	Scrap knife	AIMED	null	100	100	0	0	1
+91000	powered	Scrap knife	BURST	null	100	100	0	0	1
+91000	powered	Chainsword	SNAP	null	100	100	0	0	1
+91000	powered	Chainsword	AIMED	null	100	100	0	0	1
+91000	powered	Chainsword	BURST	null	100	100	0	0	1
+91000	powered	Needle Pistol	SNAP	null	100	100	0	1	1
+91000	powered	Needle Pistol	AIMED	null	100	100	0	1	1
+91000	powered	Needle Pistol	BURST	null	100	100	0	3	1
+91000	powered	Light Rifle	SNAP	null	100	100	0	1	1
+91000	powered	Light Rifle	AIMED	null	100	92	8	1	1
+91000	powered	Light Rifle	BURST	null	100	100	0	3	1
+91000	powered	Heavy stubber	SNAP	null	100	90	10	1	1
+91000	powered	Heavy stubber	AIMED	null	100	86	14	1	1
+91000	powered	Heavy stubber	BURST	null	100	87	13	3	1
+91000	powered	Arc Rifle	SNAP	null	100	82	18	1	1
+91000	powered	Arc Rifle	AIMED	null	100	78	22	1	1
+91000	powered	Arc Rifle	BURST	null	100	79	21	3	1
+91000	bike	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91000	bike	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91000	bike	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91000	bike	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91000	bike	Chainsword	AIMED	ARMOR	100	94	6	0	1
+91000	bike	Chainsword	BURST	ARMOR	100	100	0	0	1
+91000	bike	Needle Pistol	SNAP	ARMOR	100	94	6	1	1
+91000	bike	Needle Pistol	AIMED	ARMOR	100	90	10	1	1
+91000	bike	Needle Pistol	BURST	ARMOR	100	91	9	3	1
+91000	bike	Light Rifle	SNAP	ARMOR	100	88	12	1	1
+91000	bike	Light Rifle	AIMED	ARMOR	100	84	16	1	1
+91000	bike	Light Rifle	BURST	ARMOR	100	85	15	3	1
+91000	bike	Heavy stubber	SNAP	ARMOR	100	82	18	1	1
+91000	bike	Heavy stubber	AIMED	ARMOR	100	78	22	1	1
+91000	bike	Heavy stubber	BURST	ARMOR	100	79	21	3	1
+91000	bike	Arc Rifle	SNAP	ARMOR	100	74	26	1	1
+91000	bike	Arc Rifle	AIMED	ARMOR	100	70	30	1	1
+91000	bike	Arc Rifle	BURST	ARMOR	100	71	29	3	1
+91000	car	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91000	car	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91000	car	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91000	car	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91000	car	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91000	car	Chainsword	BURST	ARMOR	100	100	0	0	1
+91000	car	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91000	car	Needle Pistol	AIMED	ARMOR	100	95	5	1	1
+91000	car	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91000	car	Light Rifle	SNAP	ARMOR	100	93	7	1	1
+91000	car	Light Rifle	AIMED	ARMOR	100	89	11	1	1
+91000	car	Light Rifle	BURST	ARMOR	100	90	10	3	1
+91000	car	Heavy stubber	SNAP	ARMOR	100	87	13	1	1
+91000	car	Heavy stubber	AIMED	ARMOR	100	83	17	1	1
+91000	car	Heavy stubber	BURST	ARMOR	100	84	16	3	1
+91000	car	Arc Rifle	SNAP	ARMOR	100	79	21	1	1
+91000	car	Arc Rifle	AIMED	ARMOR	100	75	25	1	1
+91000	car	Arc Rifle	BURST	ARMOR	100	76	24	3	1
+91000	truck	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91000	truck	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91000	truck	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91000	truck	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91000	truck	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91000	truck	Chainsword	BURST	ARMOR	100	100	0	0	1
+91000	truck	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91000	truck	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91000	truck	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91000	truck	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91000	truck	Light Rifle	AIMED	ARMOR	100	92	8	1	1
+91000	truck	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91000	truck	Heavy stubber	SNAP	ARMOR	100	90	10	1	1
+91000	truck	Heavy stubber	AIMED	ARMOR	100	86	14	1	1
+91000	truck	Heavy stubber	BURST	ARMOR	100	87	13	3	1
+91000	truck	Arc Rifle	SNAP	ARMOR	100	82	18	1	1
+91000	truck	Arc Rifle	AIMED	ARMOR	100	78	22	1	1
+91000	truck	Arc Rifle	BURST	ARMOR	100	79	21	3	1
+91000	armored-car	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91000	armored-car	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91000	armored-car	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91000	armored-car	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91000	armored-car	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91000	armored-car	Chainsword	BURST	ARMOR	100	100	0	0	1
+91000	armored-car	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91000	armored-car	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91000	armored-car	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91000	armored-car	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91000	armored-car	Light Rifle	AIMED	ARMOR	100	100	0	1	1
+91000	armored-car	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91000	armored-car	Heavy stubber	SNAP	ARMOR	100	100	0	1	1
+91000	armored-car	Heavy stubber	AIMED	ARMOR	100	92	8	1	1
+91000	armored-car	Heavy stubber	BURST	ARMOR	100	100	0	3	1
+91000	armored-car	Arc Rifle	SNAP	ARMOR	100	88	12	1	1
+91000	armored-car	Arc Rifle	AIMED	ARMOR	100	84	16	1	1
+91000	armored-car	Arc Rifle	BURST	ARMOR	100	85	15	3	1
+91000	tank	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91000	tank	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91000	tank	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91000	tank	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91000	tank	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91000	tank	Chainsword	BURST	ARMOR	100	100	0	0	1
+91000	tank	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91000	tank	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91000	tank	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91000	tank	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91000	tank	Light Rifle	AIMED	ARMOR	100	100	0	1	1
+91000	tank	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91000	tank	Heavy stubber	SNAP	ARMOR	100	100	0	1	1
+91000	tank	Heavy stubber	AIMED	ARMOR	100	100	0	1	1
+91000	tank	Heavy stubber	BURST	ARMOR	100	100	0	3	1
+91000	tank	Arc Rifle	SNAP	ARMOR	100	100	0	1	1
+91000	tank	Arc Rifle	AIMED	ARMOR	100	90	10	1	1
+91000	tank	Arc Rifle	BURST	ARMOR	100	100	0	3	1
+91001	suppression	Scrap knife	SNAP	null	100	100	0	0	1
+91001	suppression	Scrap knife	AIMED	null	100	100	0	0	1
+91001	suppression	Scrap knife	BURST	null	100	100	0	0	1
+91001	suppression	Chainsword	SNAP	null	100	100	0	0	1
+91001	suppression	Chainsword	AIMED	null	100	100	0	0	1
+91001	suppression	Chainsword	BURST	null	100	100	0	0	1
+91001	suppression	Needle Pistol	SNAP	null	100	100	0	1	1
+91001	suppression	Needle Pistol	AIMED	null	100	100	0	1	1
+91001	suppression	Needle Pistol	BURST	null	100	100	0	3	1
+91001	suppression	Light Rifle	SNAP	null	100	100	0	1	1
+91001	suppression	Light Rifle	AIMED	null	100	100	0	1	1
+91001	suppression	Light Rifle	BURST	null	100	100	0	3	1
+91001	suppression	Heavy stubber	SNAP	null	100	100	0	1	1
+91001	suppression	Heavy stubber	AIMED	null	100	89	11	1	1
+91001	suppression	Heavy stubber	BURST	null	100	100	0	3	1
+91001	suppression	Arc Rifle	SNAP	null	100	85	15	1	1
+91001	suppression	Arc Rifle	AIMED	null	100	81	19	1	1
+91001	suppression	Arc Rifle	BURST	null	100	82	18	3	1
+91001	stub	Scrap knife	SNAP	null	100	100	0	0	1
+91001	stub	Scrap knife	AIMED	null	100	100	0	0	1
+91001	stub	Scrap knife	BURST	null	100	100	0	0	1
+91001	stub	Chainsword	SNAP	null	100	100	0	0	1
+91001	stub	Chainsword	AIMED	null	100	100	0	0	1
+91001	stub	Chainsword	BURST	null	100	100	0	0	1
+91001	stub	Needle Pistol	SNAP	null	100	100	0	1	1
+91001	stub	Needle Pistol	AIMED	null	100	100	0	1	1
+91001	stub	Needle Pistol	BURST	null	100	100	0	3	1
+91001	stub	Light Rifle	SNAP	null	100	100	0	1	1
+91001	stub	Light Rifle	AIMED	null	100	100	0	1	1
+91001	stub	Light Rifle	BURST	null	100	100	0	3	1
+91001	stub	Heavy stubber	SNAP	null	100	100	0	1	1
+91001	stub	Heavy stubber	AIMED	null	100	89	11	1	1
+91001	stub	Heavy stubber	BURST	null	100	100	0	3	1
+91001	stub	Arc Rifle	SNAP	null	100	85	15	1	1
+91001	stub	Arc Rifle	AIMED	null	100	81	19	1	1
+91001	stub	Arc Rifle	BURST	null	100	82	18	3	1
+91001	sentry	Scrap knife	SNAP	null	100	100	0	0	1
+91001	sentry	Scrap knife	AIMED	null	100	100	0	0	1
+91001	sentry	Scrap knife	BURST	null	100	100	0	0	1
+91001	sentry	Chainsword	SNAP	null	100	100	0	0	1
+91001	sentry	Chainsword	AIMED	null	100	100	0	0	1
+91001	sentry	Chainsword	BURST	null	100	100	0	0	1
+91001	sentry	Needle Pistol	SNAP	null	100	100	0	1	1
+91001	sentry	Needle Pistol	AIMED	null	100	95	5	1	1
+91001	sentry	Needle Pistol	BURST	null	100	100	0	3	1
+91001	sentry	Light Rifle	SNAP	null	100	93	7	1	1
+91001	sentry	Light Rifle	AIMED	null	100	89	11	1	1
+91001	sentry	Light Rifle	BURST	null	100	90	10	3	1
+91001	sentry	Heavy stubber	SNAP	null	100	87	13	1	1
+91001	sentry	Heavy stubber	AIMED	null	100	83	17	1	1
+91001	sentry	Heavy stubber	BURST	null	100	84	16	3	1
+91001	sentry	Arc Rifle	SNAP	null	100	79	21	1	1
+91001	sentry	Arc Rifle	AIMED	null	100	75	25	1	1
+91001	sentry	Arc Rifle	BURST	null	100	76	24	3	1
+91001	powered	Scrap knife	SNAP	null	100	100	0	0	1
+91001	powered	Scrap knife	AIMED	null	100	100	0	0	1
+91001	powered	Scrap knife	BURST	null	100	100	0	0	1
+91001	powered	Chainsword	SNAP	null	100	100	0	0	1
+91001	powered	Chainsword	AIMED	null	100	100	0	0	1
+91001	powered	Chainsword	BURST	null	100	100	0	0	1
+91001	powered	Needle Pistol	SNAP	null	100	100	0	1	1
+91001	powered	Needle Pistol	AIMED	null	100	100	0	1	1
+91001	powered	Needle Pistol	BURST	null	100	100	0	3	1
+91001	powered	Light Rifle	SNAP	null	100	100	0	1	1
+91001	powered	Light Rifle	AIMED	null	100	92	8	1	1
+91001	powered	Light Rifle	BURST	null	100	100	0	3	1
+91001	powered	Heavy stubber	SNAP	null	100	90	10	1	1
+91001	powered	Heavy stubber	AIMED	null	100	86	14	1	1
+91001	powered	Heavy stubber	BURST	null	100	87	13	3	1
+91001	powered	Arc Rifle	SNAP	null	100	82	18	1	1
+91001	powered	Arc Rifle	AIMED	null	100	78	22	1	1
+91001	powered	Arc Rifle	BURST	null	100	79	21	3	1
+91001	bike	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91001	bike	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91001	bike	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91001	bike	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91001	bike	Chainsword	AIMED	ARMOR	100	94	6	0	1
+91001	bike	Chainsword	BURST	ARMOR	100	100	0	0	1
+91001	bike	Needle Pistol	SNAP	ARMOR	100	94	6	1	1
+91001	bike	Needle Pistol	AIMED	ARMOR	100	90	10	1	1
+91001	bike	Needle Pistol	BURST	ARMOR	100	91	9	3	1
+91001	bike	Light Rifle	SNAP	ARMOR	100	88	12	1	1
+91001	bike	Light Rifle	AIMED	ARMOR	100	84	16	1	1
+91001	bike	Light Rifle	BURST	ARMOR	100	85	15	3	1
+91001	bike	Heavy stubber	SNAP	ARMOR	100	82	18	1	1
+91001	bike	Heavy stubber	AIMED	ARMOR	100	78	22	1	1
+91001	bike	Heavy stubber	BURST	ARMOR	100	79	21	3	1
+91001	bike	Arc Rifle	SNAP	ARMOR	100	74	26	1	1
+91001	bike	Arc Rifle	AIMED	ARMOR	100	70	30	1	1
+91001	bike	Arc Rifle	BURST	ARMOR	100	71	29	3	1
+91001	car	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91001	car	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91001	car	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91001	car	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91001	car	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91001	car	Chainsword	BURST	ARMOR	100	100	0	0	1
+91001	car	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91001	car	Needle Pistol	AIMED	ARMOR	100	95	5	1	1
+91001	car	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91001	car	Light Rifle	SNAP	ARMOR	100	93	7	1	1
+91001	car	Light Rifle	AIMED	ARMOR	100	89	11	1	1
+91001	car	Light Rifle	BURST	ARMOR	100	90	10	3	1
+91001	car	Heavy stubber	SNAP	ARMOR	100	87	13	1	1
+91001	car	Heavy stubber	AIMED	ARMOR	100	83	17	1	1
+91001	car	Heavy stubber	BURST	ARMOR	100	84	16	3	1
+91001	car	Arc Rifle	SNAP	ARMOR	100	79	21	1	1
+91001	car	Arc Rifle	AIMED	ARMOR	100	75	25	1	1
+91001	car	Arc Rifle	BURST	ARMOR	100	76	24	3	1
+91001	truck	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91001	truck	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91001	truck	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91001	truck	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91001	truck	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91001	truck	Chainsword	BURST	ARMOR	100	100	0	0	1
+91001	truck	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91001	truck	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91001	truck	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91001	truck	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91001	truck	Light Rifle	AIMED	ARMOR	100	92	8	1	1
+91001	truck	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91001	truck	Heavy stubber	SNAP	ARMOR	100	90	10	1	1
+91001	truck	Heavy stubber	AIMED	ARMOR	100	86	14	1	1
+91001	truck	Heavy stubber	BURST	ARMOR	100	87	13	3	1
+91001	truck	Arc Rifle	SNAP	ARMOR	100	82	18	1	1
+91001	truck	Arc Rifle	AIMED	ARMOR	100	78	22	1	1
+91001	truck	Arc Rifle	BURST	ARMOR	100	79	21	3	1
+91001	armored-car	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91001	armored-car	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91001	armored-car	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91001	armored-car	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91001	armored-car	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91001	armored-car	Chainsword	BURST	ARMOR	100	100	0	0	1
+91001	armored-car	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91001	armored-car	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91001	armored-car	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91001	armored-car	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91001	armored-car	Light Rifle	AIMED	ARMOR	100	100	0	1	1
+91001	armored-car	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91001	armored-car	Heavy stubber	SNAP	ARMOR	100	100	0	1	1
+91001	armored-car	Heavy stubber	AIMED	ARMOR	100	92	8	1	1
+91001	armored-car	Heavy stubber	BURST	ARMOR	100	100	0	3	1
+91001	armored-car	Arc Rifle	SNAP	ARMOR	100	88	12	1	1
+91001	armored-car	Arc Rifle	AIMED	ARMOR	100	84	16	1	1
+91001	armored-car	Arc Rifle	BURST	ARMOR	100	85	15	3	1
+91001	tank	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91001	tank	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91001	tank	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91001	tank	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91001	tank	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91001	tank	Chainsword	BURST	ARMOR	100	100	0	0	1
+91001	tank	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91001	tank	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91001	tank	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91001	tank	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91001	tank	Light Rifle	AIMED	ARMOR	100	100	0	1	1
+91001	tank	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91001	tank	Heavy stubber	SNAP	ARMOR	100	100	0	1	1
+91001	tank	Heavy stubber	AIMED	ARMOR	100	100	0	1	1
+91001	tank	Heavy stubber	BURST	ARMOR	100	100	0	3	1
+91001	tank	Arc Rifle	SNAP	ARMOR	100	100	0	1	1
+91001	tank	Arc Rifle	AIMED	ARMOR	100	90	10	1	1
+91001	tank	Arc Rifle	BURST	ARMOR	100	100	0	3	1
+91002	suppression	Scrap knife	SNAP	null	100	100	0	0	1
+91002	suppression	Scrap knife	AIMED	null	100	100	0	0	1
+91002	suppression	Scrap knife	BURST	null	100	100	0	0	1
+91002	suppression	Chainsword	SNAP	null	100	100	0	0	1
+91002	suppression	Chainsword	AIMED	null	100	100	0	0	1
+91002	suppression	Chainsword	BURST	null	100	100	0	0	1
+91002	suppression	Needle Pistol	SNAP	null	100	100	0	1	1
+91002	suppression	Needle Pistol	AIMED	null	100	100	0	1	1
+91002	suppression	Needle Pistol	BURST	null	100	100	0	3	1
+91002	suppression	Light Rifle	SNAP	null	100	100	0	1	1
+91002	suppression	Light Rifle	AIMED	null	100	100	0	1	1
+91002	suppression	Light Rifle	BURST	null	100	100	0	3	1
+91002	suppression	Heavy stubber	SNAP	null	100	100	0	1	1
+91002	suppression	Heavy stubber	AIMED	null	100	89	11	1	1
+91002	suppression	Heavy stubber	BURST	null	100	100	0	3	1
+91002	suppression	Arc Rifle	SNAP	null	100	85	15	1	1
+91002	suppression	Arc Rifle	AIMED	null	100	81	19	1	1
+91002	suppression	Arc Rifle	BURST	null	100	82	18	3	1
+91002	stub	Scrap knife	SNAP	null	100	100	0	0	1
+91002	stub	Scrap knife	AIMED	null	100	100	0	0	1
+91002	stub	Scrap knife	BURST	null	100	100	0	0	1
+91002	stub	Chainsword	SNAP	null	100	100	0	0	1
+91002	stub	Chainsword	AIMED	null	100	100	0	0	1
+91002	stub	Chainsword	BURST	null	100	100	0	0	1
+91002	stub	Needle Pistol	SNAP	null	100	100	0	1	1
+91002	stub	Needle Pistol	AIMED	null	100	100	0	1	1
+91002	stub	Needle Pistol	BURST	null	100	100	0	3	1
+91002	stub	Light Rifle	SNAP	null	100	100	0	1	1
+91002	stub	Light Rifle	AIMED	null	100	100	0	1	1
+91002	stub	Light Rifle	BURST	null	100	100	0	3	1
+91002	stub	Heavy stubber	SNAP	null	100	100	0	1	1
+91002	stub	Heavy stubber	AIMED	null	100	89	11	1	1
+91002	stub	Heavy stubber	BURST	null	100	100	0	3	1
+91002	stub	Arc Rifle	SNAP	null	100	85	15	1	1
+91002	stub	Arc Rifle	AIMED	null	100	81	19	1	1
+91002	stub	Arc Rifle	BURST	null	100	82	18	3	1
+91002	sentry	Scrap knife	SNAP	null	100	100	0	0	1
+91002	sentry	Scrap knife	AIMED	null	100	100	0	0	1
+91002	sentry	Scrap knife	BURST	null	100	100	0	0	1
+91002	sentry	Chainsword	SNAP	null	100	100	0	0	1
+91002	sentry	Chainsword	AIMED	null	100	100	0	0	1
+91002	sentry	Chainsword	BURST	null	100	100	0	0	1
+91002	sentry	Needle Pistol	SNAP	null	100	100	0	1	1
+91002	sentry	Needle Pistol	AIMED	null	100	95	5	1	1
+91002	sentry	Needle Pistol	BURST	null	100	100	0	3	1
+91002	sentry	Light Rifle	SNAP	null	100	93	7	1	1
+91002	sentry	Light Rifle	AIMED	null	100	89	11	1	1
+91002	sentry	Light Rifle	BURST	null	100	90	10	3	1
+91002	sentry	Heavy stubber	SNAP	null	100	87	13	1	1
+91002	sentry	Heavy stubber	AIMED	null	100	83	17	1	1
+91002	sentry	Heavy stubber	BURST	null	100	84	16	3	1
+91002	sentry	Arc Rifle	SNAP	null	100	79	21	1	1
+91002	sentry	Arc Rifle	AIMED	null	100	75	25	1	1
+91002	sentry	Arc Rifle	BURST	null	100	76	24	3	1
+91002	powered	Scrap knife	SNAP	null	100	100	0	0	1
+91002	powered	Scrap knife	AIMED	null	100	100	0	0	1
+91002	powered	Scrap knife	BURST	null	100	100	0	0	1
+91002	powered	Chainsword	SNAP	null	100	100	0	0	1
+91002	powered	Chainsword	AIMED	null	100	100	0	0	1
+91002	powered	Chainsword	BURST	null	100	100	0	0	1
+91002	powered	Needle Pistol	SNAP	null	100	100	0	1	1
+91002	powered	Needle Pistol	AIMED	null	100	100	0	1	1
+91002	powered	Needle Pistol	BURST	null	100	100	0	3	1
+91002	powered	Light Rifle	SNAP	null	100	100	0	1	1
+91002	powered	Light Rifle	AIMED	null	100	92	8	1	1
+91002	powered	Light Rifle	BURST	null	100	100	0	3	1
+91002	powered	Heavy stubber	SNAP	null	100	90	10	1	1
+91002	powered	Heavy stubber	AIMED	null	100	86	14	1	1
+91002	powered	Heavy stubber	BURST	null	100	87	13	3	1
+91002	powered	Arc Rifle	SNAP	null	100	82	18	1	1
+91002	powered	Arc Rifle	AIMED	null	100	78	22	1	1
+91002	powered	Arc Rifle	BURST	null	100	79	21	3	1
+91002	bike	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91002	bike	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91002	bike	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91002	bike	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91002	bike	Chainsword	AIMED	ARMOR	100	94	6	0	1
+91002	bike	Chainsword	BURST	ARMOR	100	100	0	0	1
+91002	bike	Needle Pistol	SNAP	ARMOR	100	94	6	1	1
+91002	bike	Needle Pistol	AIMED	ARMOR	100	90	10	1	1
+91002	bike	Needle Pistol	BURST	ARMOR	100	91	9	3	1
+91002	bike	Light Rifle	SNAP	ARMOR	100	88	12	1	1
+91002	bike	Light Rifle	AIMED	ARMOR	100	84	16	1	1
+91002	bike	Light Rifle	BURST	ARMOR	100	85	15	3	1
+91002	bike	Heavy stubber	SNAP	ARMOR	100	82	18	1	1
+91002	bike	Heavy stubber	AIMED	ARMOR	100	78	22	1	1
+91002	bike	Heavy stubber	BURST	ARMOR	100	79	21	3	1
+91002	bike	Arc Rifle	SNAP	ARMOR	100	74	26	1	1
+91002	bike	Arc Rifle	AIMED	ARMOR	100	70	30	1	1
+91002	bike	Arc Rifle	BURST	ARMOR	100	71	29	3	1
+91002	car	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91002	car	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91002	car	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91002	car	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91002	car	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91002	car	Chainsword	BURST	ARMOR	100	100	0	0	1
+91002	car	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91002	car	Needle Pistol	AIMED	ARMOR	100	95	5	1	1
+91002	car	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91002	car	Light Rifle	SNAP	ARMOR	100	93	7	1	1
+91002	car	Light Rifle	AIMED	ARMOR	100	89	11	1	1
+91002	car	Light Rifle	BURST	ARMOR	100	90	10	3	1
+91002	car	Heavy stubber	SNAP	ARMOR	100	87	13	1	1
+91002	car	Heavy stubber	AIMED	ARMOR	100	83	17	1	1
+91002	car	Heavy stubber	BURST	ARMOR	100	84	16	3	1
+91002	car	Arc Rifle	SNAP	ARMOR	100	79	21	1	1
+91002	car	Arc Rifle	AIMED	ARMOR	100	75	25	1	1
+91002	car	Arc Rifle	BURST	ARMOR	100	76	24	3	1
+91002	truck	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91002	truck	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91002	truck	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91002	truck	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91002	truck	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91002	truck	Chainsword	BURST	ARMOR	100	100	0	0	1
+91002	truck	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91002	truck	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91002	truck	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91002	truck	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91002	truck	Light Rifle	AIMED	ARMOR	100	92	8	1	1
+91002	truck	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91002	truck	Heavy stubber	SNAP	ARMOR	100	90	10	1	1
+91002	truck	Heavy stubber	AIMED	ARMOR	100	86	14	1	1
+91002	truck	Heavy stubber	BURST	ARMOR	100	87	13	3	1
+91002	truck	Arc Rifle	SNAP	ARMOR	100	82	18	1	1
+91002	truck	Arc Rifle	AIMED	ARMOR	100	78	22	1	1
+91002	truck	Arc Rifle	BURST	ARMOR	100	79	21	3	1
+91002	armored-car	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91002	armored-car	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91002	armored-car	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91002	armored-car	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91002	armored-car	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91002	armored-car	Chainsword	BURST	ARMOR	100	100	0	0	1
+91002	armored-car	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91002	armored-car	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91002	armored-car	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91002	armored-car	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91002	armored-car	Light Rifle	AIMED	ARMOR	100	100	0	1	1
+91002	armored-car	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91002	armored-car	Heavy stubber	SNAP	ARMOR	100	100	0	1	1
+91002	armored-car	Heavy stubber	AIMED	ARMOR	100	92	8	1	1
+91002	armored-car	Heavy stubber	BURST	ARMOR	100	100	0	3	1
+91002	armored-car	Arc Rifle	SNAP	ARMOR	100	88	12	1	1
+91002	armored-car	Arc Rifle	AIMED	ARMOR	100	84	16	1	1
+91002	armored-car	Arc Rifle	BURST	ARMOR	100	85	15	3	1
+91002	tank	Scrap knife	SNAP	ARMOR	100	100	0	0	1
+91002	tank	Scrap knife	AIMED	ARMOR	100	100	0	0	1
+91002	tank	Scrap knife	BURST	ARMOR	100	100	0	0	1
+91002	tank	Chainsword	SNAP	ARMOR	100	100	0	0	1
+91002	tank	Chainsword	AIMED	ARMOR	100	100	0	0	1
+91002	tank	Chainsword	BURST	ARMOR	100	100	0	0	1
+91002	tank	Needle Pistol	SNAP	ARMOR	100	100	0	1	1
+91002	tank	Needle Pistol	AIMED	ARMOR	100	100	0	1	1
+91002	tank	Needle Pistol	BURST	ARMOR	100	100	0	3	1
+91002	tank	Light Rifle	SNAP	ARMOR	100	100	0	1	1
+91002	tank	Light Rifle	AIMED	ARMOR	100	100	0	1	1
+91002	tank	Light Rifle	BURST	ARMOR	100	100	0	3	1
+91002	tank	Heavy stubber	SNAP	ARMOR	100	100	0	1	1
+91002	tank	Heavy stubber	AIMED	ARMOR	100	100	0	1	1
+91002	tank	Heavy stubber	BURST	ARMOR	100	100	0	3	1
+91002	tank	Arc Rifle	SNAP	ARMOR	100	100	0	1	1
+91002	tank	Arc Rifle	AIMED	ARMOR	100	90	10	1	1
+91002	tank	Arc Rifle	BURST	ARMOR	100	100	0	3	1

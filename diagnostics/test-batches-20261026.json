@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-26",
+  "batches": [
+    {
+      "id": "render-billboards-20261025",
+      "status": "historical-render-validation",
+      "report": "render-billboards-20261025/index.html"
+    },
+    {
+      "id": "developer-facility-20261025",
+      "status": "historical-facility-validation",
+      "report": "developer-facility-20261025/index.html"
+    },
+    {
+      "id": "combat-scenarios-20261026",
+      "runs": 480,
+      "status": "baseline-capability-failure-zero-damage",
+      "report": "combat-scenarios-20261026/index.html"
+    },
+    {
+      "id": "combat-execution-20261026",
+      "runs": 560,
+      "resolved": 480,
+      "wallControls": 80,
+      "status": "historical-actor-execution",
+      "report": "combat-execution-20261026/index.html"
+    },
+    {
+      "id": "combat-support-20261026",
+      "runs": 1280,
+      "resolved": 1280,
+      "status": "historical-support-execution-before-tissue-boundary-fix",
+      "report": "combat-support-20261026/index.html"
+    },
+    {
+      "id": "medical-treatment-boundaries-20261026",
+      "status": "medical-boundary-regressions",
+      "report": "medical-treatment-boundaries-20261026/medical-boundaries.txt"
+    },
+    {
+      "id": "cybernetics-20261026",
+      "runs": 24,
+      "resolved": 24,
+      "seed": 71000,
+      "focusedEntryPoints": 11,
+      "lifecycleAssertions": 7429,
+      "status": "historical-cybernetic-validation-before-native-feedback-routing",
+      "report": "cybernetics-20261026/index.html"
+    },
+    {
+      "id": "native-battles-20261026",
+      "status": "current-native-render-audio-and-cover-validation",
+      "runs": 4,
+      "views": 2,
+      "seed": 71000,
+      "coverSeed": 81000,
+      "focusedEntryPoints": 16,
+      "lifecycleAssertions": 7429,
+      "report": "native-battles-20261026/index.html"
+    },
+    {
+      "id": "weapon-audio-20261027",
+      "status": "catalog-family-and-file-backed-pcm-validation",
+      "catalogWeapons": 111,
+      "checks": 318,
+      "distinctCues": 11,
+      "actualActorFamilies": 9,
+      "report": "native-battles-20261026/weapon-audio/index.html"
+    },
+    {
+      "id": "combat-fixtures-20261027",
+      "status": "packaged-execution-verified-with-explicit-capability-gaps",
+      "attacks": 486,
+      "replayedAttacks": 486,
+      "fixtureChecks": 5148,
+      "turretTypes": 4,
+      "vehicleClasses": 5,
+      "componentCases": 40,
+      "focusedEntryPoints": 17,
+      "soundVariationChecks": 2107,
+      "nativeCaptures": 18,
+      "report": "combat-fixtures-20261027/index.html"
+    }
+  ],
+  "policy": "Retain baseline failures and historical build identity. Record seeds/settings, outcomes/events, known failures, source/package hashes and rerun scripts with supporting code. Runtime user data and compiled artifacts are excluded."
+}
