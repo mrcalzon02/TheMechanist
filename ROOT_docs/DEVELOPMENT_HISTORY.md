@@ -1,5 +1,14 @@
 # Development History
 
+### Catalog-based weapon sound routing and existing WAV verification (2026-10-27)
+
+- User asked why the existing weapon-specific sound library was not playing correctly. Found name-only classification selecting generic shot.wav for Light Rifle despite its authored weapon/ranged/las/military category, and selecting ordinary slice.wav for chain weapons while the existing chainsaw recordings were unused.
+- Added WeaponAudioAuthority as the shared catalog-family-first selector, with conservative token fallbacks for legacy unnamed equipment. Las, plasma, flame/melta, electrical/power, solid-projectile, heavy/bolt/explosive, chain, slicing and blunt families use the existing packaged WAV assets. Both player and NPC attack emitters and the SoundManager compatibility entry point use this same selector. Ordinary chain attacks use the existing chainsaw strike recording; the motor sample is registered and auditionable, but no automatic motor-loop state is claimed. Laser/plasma visual feedback also follows the same family classification rather than loose display-name substrings.
+- Fixed ordinary cue gain to combine master and bus volume, and refuse zero-volume playback instead of passing through the hardware gain floor. Positional playback retains its existing software stereo, attenuation, occlusion and room reflections.
+- Added WeaponAudioSmoke: 318 checks across 111 catalog weapons, eight quality prefixes for representative families, eleven distinct non-silent file-backed PCM samples, actual player/NPC attacks for nine families, and master/SFX mute behavior. The audit retains exact asset paths, PCM hashes and energy measurements, and provides an HTML listening page using the real decoded WAVs. No protected source sounds or artwork were modified.
+- Rebuilt both Java 17 packages, added the existing SpatialAudioSmoke and new WeaponAudioSmoke to the focused native-battle runner (sixteen entry points), and refreshed the four native battle captures so Light Rifle demonstrations use las.wav rather than shot.wav. Preserve exact outcome/position replay checks and source/package hashes. Evidence is under diagnostics/native-battles-20261026/weapon-audio and the main native report. Physical speaker/device output is not certified by headless PCM and browser decoding tests; a running older client must be restarted on the rebuilt version to receive code changes.
+
+
 ### Native battle rendering, audio, movement and seeded cover (2026-10-26 to 2026-10-27)
 
 - Corrected the watchability deliverable after the user clarified that battle footage must use the real game view, tiles, effects and sound. Added NativeBattleCaptureProbe: offscreen GamePanel painting through the existing normal tile renderer and Doom renderer, encoded as videos with captured world cue PCM. The earlier diagram remains explicitly labeled diagnostic state playback.

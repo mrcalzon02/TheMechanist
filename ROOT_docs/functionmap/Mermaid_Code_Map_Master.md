@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-10-27 00:01:53`
+Generated/evaluated: `2026-10-27 00:42:59`
 
 ## Top-Line Rule
 
@@ -10,7 +10,7 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 
 ## Counts
 
-- Java modules mapped: `949`
+- Java modules mapped: `951`
 - Unpositioned modules: `0`
 - Oversized mapped modules: `23`
 
@@ -18,10 +18,10 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 
 - `ASSET_REGISTRY`: `50` modules
 - `COMBAT_SIM`: `72` modules
-- `DIAGNOSTIC_DOC`: `239` modules
+- `DIAGNOSTIC_DOC`: `240` modules
 - `FIXTURE_MACHINE`: `30` modules
 - `INVENTORY_PERSIST`: `34` modules
-- `LOCALIZATION_TEXT`: `119` modules
+- `LOCALIZATION_TEXT`: `120` modules
 - `RUNTIME_OPTIONS`: `37` modules
 - `SERVER_AUTH`: `49` modules
 - `UI_INPUT`: `66` modules
@@ -30,7 +30,7 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 
 ## Status Counts
 
-- `positioned`: `949` modules
+- `positioned`: `951` modules
 
 ## Explicit Override Rule
 
@@ -43,9 +43,9 @@ flowchart TD
     ROOT["The Mechanist Codebase<br/>Mermaid position master"]
     ERRORS["Code errors / unmapped modules<br/>must submit map position"]
     ROOT --> ERRORS
-    ROOT --> Z_LOCALIZATION_TEXT["Localization Text<br/>119 modules"]
+    ROOT --> Z_LOCALIZATION_TEXT["Localization Text<br/>120 modules"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_MediaRuntimeFramework_java["src/mechanist/MediaRuntimeFramework.java<br/>58 funcs / 882 lines"]
-    Z_LOCALIZATION_TEXT --> M_src_mechanist_AudioRuntimeFramework_java["src/mechanist/AudioRuntimeFramework.java<br/>50 funcs / 593 lines"]
+    Z_LOCALIZATION_TEXT --> M_src_mechanist_AudioRuntimeFramework_java["src/mechanist/AudioRuntimeFramework.java<br/>51 funcs / 590 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_ModDeploymentManager_java["src/mechanist/ModDeploymentManager.java<br/>42 funcs / 551 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_FactionReinforcementAuthority_java["src/mechanist/FactionReinforcementAuthority.java<br/>30 funcs / 499 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_SaveEfficiencyAuthority_java["src/mechanist/SaveEfficiencyAuthority.java<br/>38 funcs / 482 lines"]
@@ -56,7 +56,7 @@ flowchart TD
     Z_LOCALIZATION_TEXT --> M_src_mechanist_DeveloperFacilityAuthority_java["src/mechanist/DeveloperFacilityAuthority.java<br/>29 funcs / 451 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_HousingVariantRules_java["src/mechanist/HousingVariantRules.java<br/>21 funcs / 448 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_SecuritySupplyProvenanceAuthority_java["src/mechanist/SecuritySupplyProvenanceAuthority.java<br/>32 funcs / 436 lines"]
-    Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 107 smaller modules"]
+    Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 108 smaller modules"]
     ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>150 modules"]
     Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>608 funcs / 8071 lines"]
     Z_UI_RENDER --> M_src_mechanist_SimulationEditorSuite_java["src/mechanist/SimulationEditorSuite.java<br/>117 funcs / 1699 lines"]
@@ -183,7 +183,7 @@ flowchart TD
     Z_SERVER_AUTH --> M_src_mechanist_ClientLauncherContext_java["src/mechanist/ClientLauncherContext.java<br/>17 funcs / 203 lines"]
     Z_SERVER_AUTH --> M_src_mechanist_ServerDisasterRecoveryEngine_java["src/mechanist/ServerDisasterRecoveryEngine.java<br/>11 funcs / 178 lines"]
     Z_SERVER_AUTH --> Z_SERVER_AUTH_OTHER["+ 37 smaller modules"]
-    ROOT --> Z_DIAGNOSTIC_DOC["Diagnostics Smoke Audit<br/>239 modules"]
+    ROOT --> Z_DIAGNOSTIC_DOC["Diagnostics Smoke Audit<br/>240 modules"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone06FactionVehicleBalanceSmoke_java["src/mechanist/Milestone06FactionVehicleBalanceSmoke.java<br/>8 funcs / 868 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_IndependentHostTransportSessionSmoke_java["src/mechanist/IndependentHostTransportSessionSmoke.java<br/>19 funcs / 769 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone05FactionPhysicalConstructionSmoke_java["src/mechanist/Milestone05FactionPhysicalConstructionSmoke.java<br/>20 funcs / 725 lines"]
@@ -196,7 +196,7 @@ flowchart TD
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone06VehicleStrategicTransitCommitSmoke_java["src/mechanist/Milestone06VehicleStrategicTransitCommitSmoke.java<br/>4 funcs / 472 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_IndependentHostClientSupervisorSmoke_java["src/mechanist/IndependentHostClientSupervisorSmoke.java<br/>7 funcs / 467 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone06VehicleRuntimeFoundationSmoke_java["src/mechanist/Milestone06VehicleRuntimeFoundationSmoke.java<br/>12 funcs / 461 lines"]
-    Z_DIAGNOSTIC_DOC --> Z_DIAGNOSTIC_DOC_OTHER["+ 227 smaller modules"]
+    Z_DIAGNOSTIC_DOC --> Z_DIAGNOSTIC_DOC_OTHER["+ 228 smaller modules"]
 ```
 
 ## Generated Ledgers

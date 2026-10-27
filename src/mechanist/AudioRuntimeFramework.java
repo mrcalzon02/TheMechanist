@@ -36,6 +36,8 @@ class SoundManager {
         put("weapon_reload", "assets/sound/effects/reload.wav");
         put("weapon_shot", "assets/sound/effects/shot.wav");
         put("weapon_slice", "assets/sound/effects/slice.wav");
+        put("weapon_chain", "assets/sound/effects/Chainsaw_strikes_met_#3-1779775359727.wav");
+        put("weapon_chain_motor", "assets/sound/effects/Chainsaw_sounds_#2-1779775306406.wav");
         put("weapon_thundering", "assets/sound/effects/thundering.wav");
         put("footstep_metal", "assets/sound/core/footstep_metal_01.wav");
         put("footstep_grate", "assets/sound/core/footstep_grate_01.wav");
@@ -115,19 +117,24 @@ class SoundManager {
     }
     void play(String key, GameOptions opt) {
         if (startupCueSuppressed(key)) return;
-        if (opt == null || !opt.soundEnabled || opt.volume <= 0) return;
-        File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume); return; }
+        int cueVolume=effectiveCueVolume(key,opt);if(cueVolume<=0)return;
+        File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, cueVolume); return; }
         new Thread(() -> {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
                 Clip clip = AudioSystem.getClip();
                 clip.open(ais);
-                setClipGain(clip, ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume);
+                setClipGain(clip,cueVolume);
                 clip.addLineListener(ev -> { if (ev.getType() == LineEvent.Type.STOP) clip.close(); });
                 clip.start();
             } catch (Throwable t) { DebugLog.error("AUDIO_PLAY", "Failed to play " + key + " from " + f, t); }
         }, "sound-" + key).start();
     }
 
+    static int effectiveCueVolume(String key,GameOptions opt) {
+        if(opt==null || !opt.soundEnabled)return 0;
+        int bus=("type".equals(key)||"portrait".equals(key))?opt.conversationVolume:opt.sfxVolume;
+        return (int)Math.round(Math.max(0,Math.min(100,opt.volume))*Math.max(0,Math.min(100,bus))/100.0);
+    }
     void playIntroCrawlNarration(GameOptions opt) {
         if (opt == null || !opt.soundEnabled || !opt.conversationSound || opt.conversationVolume <= 0) return;
         File f = sounds.get("intro_crawl_narration");
@@ -378,17 +385,7 @@ class SoundManager {
         return 440.0;
     }
 
-    String weaponEffectKey(String weapon, boolean ranged) {
-        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
-        if (w.contains("flamer") || w.contains("flame") || w.contains("melta") || w.contains("inferno") || w.contains("promethium")) return "weapon_flame";
-        if (w.contains("plasma")) return "weapon_plasma";
-        if (w.contains("las") || w.contains("laser")) return "weapon_las";
-        if (w.contains("arc") || w.contains("shock") || w.contains("lightning") || w.contains("electr") || w.contains("voltaic")) return "weapon_lightning";
-        if (w.contains("thunder") || w.contains("heavy bolter") || w.contains("storm bolter") || w.contains("autocannon")) return "weapon_thundering";
-        if (w.contains("chain") || w.contains("saw") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw") || w.contains("talon") || w.contains("cutter")) return "weapon_slice";
-        if (ranged || w.contains("pistol") || w.contains("gun") || w.contains("rifle") || w.contains("bolter") || w.contains("stub") || w.contains("shot") || w.contains("revolver") || w.contains("stubber") || w.contains("webber") || w.contains("needle")) return "weapon_shot";
-        return "weapon_bash";
-    }
+    String weaponEffectKey(String weapon, boolean ranged) {return WeaponAudioAuthority.cue(weapon,ranged);}
     void requestMusic(String key, GameOptions opt) {
         if (music.playlistSummary().isBlank()) {
             if (!missingMusicPackAudited) {

@@ -4,6 +4,7 @@ package mechanist;
 final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) throws Exception {
         SpatialAudioSmoke.main(args);
+        WeaponAudioSmoke.main(args);
         EarlyGameInputUsabilitySmoke.main(args);
         MainMenuLayoutAuthoritySmoke.main(args);
         RoadFrontageDepthSmoke.main(args);

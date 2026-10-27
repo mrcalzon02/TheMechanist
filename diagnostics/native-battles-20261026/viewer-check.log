@@ -1,1 +1,1 @@
-PASS: all eight native videos load; H264 video and AAC audio decode; tile/Doom switching works; no page errors.
+PASS: all eight native videos load; H264 video and AAC audio decode; tile/Doom switching works; eleven WAV auditions load and play; no page errors.

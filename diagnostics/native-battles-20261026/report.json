@@ -131,87 +131,97 @@
   ],
   "checks": [
     {
-      "log": "ActorCombatPresentationSmoke.log",
+      "test": "SpatialAudioSmoke",
       "exitCode": 0,
-      "test": "ActorCombatPresentationSmoke"
+      "log": "SpatialAudioSmoke.log"
     },
     {
-      "log": "CyberneticLimbExecutionSmoke.log",
+      "test": "WeaponAudioSmoke",
       "exitCode": 0,
-      "test": "CyberneticLimbExecutionSmoke"
+      "log": "WeaponAudioSmoke.log"
     },
     {
-      "log": "MedicalTreatmentBoundarySmoke.log",
+      "test": "ActorCombatPresentationSmoke",
       "exitCode": 0,
-      "test": "MedicalTreatmentBoundarySmoke"
+      "log": "ActorCombatPresentationSmoke.log"
     },
     {
-      "log": "CombatSupportExecutionSmoke.log",
+      "test": "CyberneticLimbExecutionSmoke",
       "exitCode": 0,
-      "test": "CombatSupportExecutionSmoke"
+      "log": "CyberneticLimbExecutionSmoke.log"
     },
     {
-      "log": "ActorCombatExecutionSmoke.log",
+      "test": "MedicalTreatmentBoundarySmoke",
       "exitCode": 0,
-      "test": "ActorCombatExecutionSmoke"
+      "log": "MedicalTreatmentBoundarySmoke.log"
     },
     {
-      "log": "DeveloperFacilitySmoke.log",
+      "test": "CombatSupportExecutionSmoke",
       "exitCode": 0,
-      "test": "DeveloperFacilitySmoke"
+      "log": "CombatSupportExecutionSmoke.log"
     },
     {
-      "log": "NpcContinuityDeterminismSmoke.log",
+      "test": "ActorCombatExecutionSmoke",
       "exitCode": 0,
-      "test": "NpcContinuityDeterminismSmoke"
+      "log": "ActorCombatExecutionSmoke.log"
     },
     {
-      "log": "Milestone02DoomHudFacingSmoke.log",
+      "test": "DeveloperFacilitySmoke",
       "exitCode": 0,
-      "test": "Milestone02DoomHudFacingSmoke"
+      "log": "DeveloperFacilitySmoke.log"
     },
     {
-      "log": "LightingFalloffStreetLightSmoke.log",
+      "test": "NpcContinuityDeterminismSmoke",
       "exitCode": 0,
-      "test": "LightingFalloffStreetLightSmoke"
+      "log": "NpcContinuityDeterminismSmoke.log"
     },
     {
-      "log": "Milestone02RenderAssetBindingDoctrineSmoke.log",
+      "test": "Milestone02DoomHudFacingSmoke",
       "exitCode": 0,
-      "test": "Milestone02RenderAssetBindingDoctrineSmoke"
+      "log": "Milestone02DoomHudFacingSmoke.log"
     },
     {
-      "log": "Milestone02MedicalTreatmentReadabilitySmoke.log",
+      "test": "LightingFalloffStreetLightSmoke",
       "exitCode": 0,
-      "test": "Milestone02MedicalTreatmentReadabilitySmoke"
+      "log": "LightingFalloffStreetLightSmoke.log"
     },
     {
-      "log": "Milestone02BodyConditionReadabilitySmoke.log",
+      "test": "Milestone02RenderAssetBindingDoctrineSmoke",
       "exitCode": 0,
-      "test": "Milestone02BodyConditionReadabilitySmoke"
+      "log": "Milestone02RenderAssetBindingDoctrineSmoke.log"
     },
     {
-      "log": "Milestone06StructuralScaleCombatSmoke.log",
+      "test": "Milestone02MedicalTreatmentReadabilitySmoke",
       "exitCode": 0,
-      "test": "Milestone06StructuralScaleCombatSmoke"
+      "log": "Milestone02MedicalTreatmentReadabilitySmoke.log"
     },
     {
-      "log": "Milestone04MedicalSupplyProvenanceSmoke.log",
+      "test": "Milestone02BodyConditionReadabilitySmoke",
       "exitCode": 0,
-      "test": "Milestone04MedicalSupplyProvenanceSmoke"
+      "log": "Milestone02BodyConditionReadabilitySmoke.log"
+    },
+    {
+      "test": "Milestone06StructuralScaleCombatSmoke",
+      "exitCode": 0,
+      "log": "Milestone06StructuralScaleCombatSmoke.log"
+    },
+    {
+      "test": "Milestone04MedicalSupplyProvenanceSmoke",
+      "exitCode": 0,
+      "log": "Milestone04MedicalSupplyProvenanceSmoke.log"
     }
   ],
   "packages": [
     {
       "name": "TheMechanist-all.jar",
-      "sha256": "e00f571b22f72b666c453d664aed78c953447943a017e92ff9ad4cd263cf8a24",
-      "bytes": 557827439,
+      "sha256": "bada7002a17df1acc3df92c33f95173d5339c56e8caa10015fee458fe81d55d1",
+      "bytes": 557837192,
       "maximumBaseClassVersion": 61
     },
     {
       "name": "TheMechanistServer-all.jar",
-      "sha256": "c19820a7994604ece0349529d81dcd067c949276e13fd6d17b76651266072e52",
-      "bytes": 557827446,
+      "sha256": "9fbbc20f644abd04798a4916a38bdf3b4bccdac5bcfc1b0e861bde3f40b15766",
+      "bytes": 557837199,
       "maximumBaseClassVersion": 61
     }
   ],
@@ -224,15 +234,24 @@
     "No complete Gate 3, installer/native deployment certification or installed-client replacement claimed.",
     "The known pre-existing paper-doll selection failure remains in the historical combat-execution logs."
   ],
+  "lastValidatedDate": "2026-10-27",
+  "weaponAudioAudit": {
+    "result": "WeaponAudioSmoke PASS checks=318 catalogWeapons=111 fileBackedCues=11 realPlayerNpcFamilies=9 masterAndSfxMute=true",
+    "bindings": "weapon-audio/weapon-bindings.tsv",
+    "pcm": "weapon-audio/pcm-audit.tsv",
+    "listeningPage": "weapon-audio/index.html"
+  },
   "sourceSha256": {
+    "WeaponAudioAuthority.java": "585c046b85bc2a209bd9917f33ba82acd833eb97278e4b08506c80b1bb02763c",
+    "WeaponAudioSmoke.java": "9bf61ab2a65855912c412f1e79ca6e4fa5bd6420417a0832ce788d6118f89c1d",
     "ActorCombatAuthority.java": "2152d5208d28dca253056f0ceed284aa319678a5342f31ae63f52e22f89416c6",
-    "ActorCombatFeedbackAuthority.java": "0a4595d762fc476ddb5c302ba640a9d6698f4389d27fab92bd1200dc5df1a2bc",
+    "ActorCombatFeedbackAuthority.java": "f2e3b6b7257997d364abd2d63becd103fb69bfd370774cbc65ef590883543e6b",
     "ActorCombatPresentationSmoke.java": "192be47234b954a23c9f55e8d5615cd68e9a778c6599a06bb3411138f646b9db",
     "NativeBattleCaptureProbe.java": "c09e5fd9d87149315dfdd5612c35858bdcf2840bd9e45425e8ac2568d631d937",
     "DeveloperCoverLayoutAuthority.java": "d0a0bb52c595a1f06f7017001fb93eb3b20602be72d8c3280e2a503cd03c132c",
     "ObjectSemanticAssetAuthority.java": "a8a8eec3f4e189163d52d677426bdfedcd5a20b8d81d328527b1b8934306dfae",
-    "WorldPositionalSoundAuthority.java": "2dc4262a1f6a3cfaaec46e391300c1f463091fa8e904e065a729139a3f5c4be2",
-    "AudioRuntimeFramework.java": "4bc88c5dcb8d45476d568fcba1d8fb5dd79270f820631c53b7d770f91fd18cd4",
+    "WorldPositionalSoundAuthority.java": "1fe5a45a104ba35a6aa20b66461b096b2227b1895558a9c0408b5b3daadfa2b9",
+    "AudioRuntimeFramework.java": "495b904084bd78713e76a3e27dd1b01b9c11ba849bdc9fa1f9bd299ecb4a27bc",
     "FirstPerson3DFramework.java": "7f3d302ff210bb813b143fac2e049d363e3d0d00917f6878a36cacc3f037b4e7"
   }
 }

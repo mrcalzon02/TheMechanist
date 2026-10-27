@@ -79,14 +79,12 @@ final class WorldPositionalSoundAuthority {
     static void playConfirmedAttack(GamePanel game,
                                     StructuralScaleCombatAuthority.WeaponProfile weapon) {
         if (!active(game) || weapon == null) return;
-        String key = weapon.firearm()
-                ? new SoundManager().weaponEffectKey(weapon.name(), true)
-                : new SoundManager().weaponEffectKey(weapon.name(), false);
+        String key=WeaponAudioAuthority.cue(weapon.name(),weapon.firearm());
         play(game, key, game.playerX, game.playerY, 1.0);
     }
 
     static void playAttackAt(GamePanel game,String weapon,boolean ranged,int x,int y) {
-        if(!active(game))return;play(game,new SoundManager().weaponEffectKey(weapon,ranged),x,y,1.0);
+        if(!active(game))return;play(game,WeaponAudioAuthority.cue(weapon,ranged),x,y,1.0);
     }
 
     static String noiseCue(ZoneNoiseSourceRecord noise) {

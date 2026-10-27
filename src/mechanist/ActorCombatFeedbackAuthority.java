@@ -33,7 +33,7 @@ final class ActorCombatFeedbackAuthority {
     }
     private static void render(Graphics2D g,GamePanel game,Project project,double[] walls) {
         for(Shot s:shots(game)) {
-            long age=Math.max(0,now(game)-s.born);int color=s.weapon.toLowerCase(Locale.ROOT).contains("las")?0xFFFF6860:s.weapon.toLowerCase(Locale.ROOT).contains("plasma")?0xFF62EBD5:0xFFFFC46B;
+            long age=Math.max(0,now(game)-s.born);int color=switch(WeaponAudioAuthority.cue(s.weapon,s.ranged)){case "weapon_las"->0xFFFF6860;case "weapon_plasma"->0xFF62EBD5;default->0xFFFFC46B;};
             Point previous=null;
             if(s.ranged && age<230)for(int i=0;i<=40;i++) {
                 double t=i/40.0,x=s.x+.5+(s.tx-s.x)*t,y=s.y+.5+(s.ty-s.y)*t;

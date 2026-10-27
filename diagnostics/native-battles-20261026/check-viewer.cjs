@@ -12,5 +12,10 @@ const path=require('path'),fs=require('fs');
  if(decoded.videoFrames<2||decoded.audioDecodedBytes<=0)throw Error('Media decoding failed '+JSON.stringify(decoded));
  await page.locator('video').evaluate(v=>v.pause());await page.screenshot({path:path.join(__dirname,'native-video-viewer.png'),fullPage:false});
  await page.locator('#tiles').click();if(await page.locator('#recording').inputValue()!=='20v20-rifles-cover-2d')throw Error('View switching failed');
- if(errors.length)throw Error(errors.join('\n'));fs.writeFileSync(path.join(__dirname,'viewer-check.json'),JSON.stringify({status:'PASS',videos:ids.length,decoded,errors},null,2));console.log('PASS: all eight native videos load; H264 video and AAC audio decode; tile/Doom switching works; no page errors.');await browser.close();
+ await page.goto('file:///'+path.join(__dirname,'weapon-audio/index.html').replaceAll('\\','/'));
+ const audioCount=await page.locator('audio').count();if(audioCount!==11)throw Error('Missing weapon auditions');
+ for(let i=0;i<audioCount;i++){await page.waitForFunction(i=>document.querySelectorAll('audio')[i].readyState>=1,i);let metadata=await page.locator('audio').nth(i).evaluate(a=>({duration:a.duration,error:a.error?.message}));if(metadata.duration<=.1||metadata.error)throw Error('Invalid WAV audition '+i);}
+ await page.locator('audio').first().evaluate(a=>{a.muted=true;return a.play()});await page.waitForFunction(()=>document.querySelector('audio').currentTime>.15);await page.locator('audio').first().evaluate(a=>a.pause());
+ await page.screenshot({path:path.join(__dirname,'weapon-audio/audition-viewer.png'),fullPage:true});
+ if(errors.length)throw Error(errors.join('\n'));fs.writeFileSync(path.join(__dirname,'viewer-check.json'),JSON.stringify({status:'PASS',videos:ids.length,audioAuditions:audioCount,decoded,errors},null,2));console.log('PASS: all eight native videos load; H264 video and AAC audio decode; tile/Doom switching works; eleven WAV auditions load and play; no page errors.');await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

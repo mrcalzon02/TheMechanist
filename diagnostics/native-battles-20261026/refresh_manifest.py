@@ -14,6 +14,8 @@ def publication_files():
     for folder in (repo/'diagnostics/native-battles-20261026').iterdir():
         if folder.is_dir() and (folder/'positions.tsv').exists():
             paths += [p for p in folder.iterdir() if p.is_file() and p.suffix in {'.tsv','.json'}]
+    audio=repo/'diagnostics/native-battles-20261026/weapon-audio'
+    if audio.exists():paths += [p for p in audio.iterdir() if p.is_file() and p.suffix in {'.wav','.png','.html','.tsv','.json','.txt','.log'}]
     paths += [repo/'diagnostics/test-batches-20261026.json']
     return sorted(set(p for p in paths if p.is_file()))
 

@@ -54,9 +54,18 @@
       "views": 2,
       "seed": 71000,
       "coverSeed": 81000,
-      "focusedEntryPoints": 14,
+      "focusedEntryPoints": 16,
       "lifecycleAssertions": 7429,
       "report": "native-battles-20261026/index.html"
+    },
+    {
+      "id": "weapon-audio-20261027",
+      "status": "catalog-family-and-file-backed-pcm-validation",
+      "catalogWeapons": 111,
+      "checks": 318,
+      "distinctCues": 11,
+      "actualActorFamilies": 9,
+      "report": "native-battles-20261026/weapon-audio/index.html"
     }
   ],
   "policy": "Retain baseline failures and historical build identity. Record seeds/settings, outcomes/events, known failures, source/package hashes and rerun scripts with supporting code. Runtime user data and compiled artifacts are excluded."

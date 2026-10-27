@@ -66,6 +66,8 @@ Use `/devroom cover 16 81000` for seeded Sandbag Line and Scrap Barricade layout
 
 The [test batch ledger](diagnostics/test-batches-20261026.json) links historical baseline failures, fixes, scenario results, seeds, source/build hashes, raw root-level logs and rerun scripts. Commit reports and raw outcome/event data with the supporting code; keep generated classes, runtime user data and large distribution JARs out of evidence commits. Each report describes its tested build; earlier results are retained as historical evidence rather than relabeled as current validation.
 
+Weapon audio follows catalog families, so Light Rifle uses the existing las sound, chain weapons use the existing chainsaw strike, and plasma/flame/electrical/heavy/slicing/blunt weapons retain their dedicated effects. [Audition the existing weapon sounds](diagnostics/native-battles-20261026/weapon-audio/index.html) and inspect the complete binding/PCM audit. The rebuilt client and refreshed native videos use these mappings; an already running older client does not hot-reload Java changes.
+
 ## Distribution Notes
 
 A user should not need the whole development repository to run the launcher. The installer should install the thin launcher; the launcher should acquire and verify client, server, and support-library packages. Package manifests are allowed for acquisition and integrity checks, but they must not replace the physical runtime asset layout. The game client may verify package completeness, but it must not download dependencies during game launch.
