@@ -45,6 +45,17 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Verify committed Linux installer executable contract
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          script=scripts/package/build-linux-installers.sh
+          test "$(git ls-files -s -- "$script" | awk '{print $1}')" = 100755
+          test -x "$script"
+          bash -n "$script"
+          "$script" --help >/dev/null
+
       - name: Install Linux deployment tools
         if: runner.os == 'Linux'
         shell: bash
