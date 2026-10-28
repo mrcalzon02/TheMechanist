@@ -89,6 +89,31 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
             throw new AssertionError("market floor resolver rejected explicit commercial floor metadata");
         }
 
+        // Commercial and retail are exact market synonyms for both surface types,
+        // not substrings of marketplace/retailer or excuses for sewer assets.
+        require(SemanticRenderAssetResolver.canUse(
+                        asset("POS-0017", AssetType.WALL_TILE, "Retail Wall",
+                                "assets/tiles/retail/wall.png", "retail shop wall"),
+                        SemanticRenderAssetResolver.RenderIntent.MARKET_WALL),
+                "market wall resolver rejected explicit retail wall metadata");
+        require(SemanticRenderAssetResolver.canUse(
+                        asset("POS-0018", AssetType.FLOOR_TILE, "Retail Floor",
+                                "assets/tiles/retail/floor.png", "retail shop floor"),
+                        SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR),
+                "market floor resolver rejected explicit retail floor metadata");
+        reject(asset("NEG-0017", AssetType.WALL_TILE, "Marketplace Wall",
+                        "assets/tiles/marketplace/wall.png", "marketplace wall tile"),
+                SemanticRenderAssetResolver.RenderIntent.MARKET_WALL,
+                "market wall resolver accepted marketplace as the standalone market semantic");
+        reject(asset("NEG-0018", AssetType.FLOOR_TILE, "Retailer Floor",
+                        "assets/tiles/retailer/floor.png", "retailer floor tile"),
+                SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR,
+                "market floor resolver accepted retailer as the standalone retail semantic");
+        reject(asset("NEG-0019", AssetType.FLOOR_TILE, "Sewer Retail Floor",
+                        "assets/tiles/sewer/retail.png", "sewer retail floor tile"),
+                SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR,
+                "market floor resolver accepted sewer retail floor");
+
         AssetMetadata atlasTool = asset("CEL-0001", AssetType.WEAPON_ICON,
                 "Entrenching Shovel", "assets/items/weapons_1_r03c05.png",
                 "cell rule weapon tool weapon shovel spade maintenance tool");
