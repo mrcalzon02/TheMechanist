@@ -1,0 +1,29 @@
+#!/bin/sh
+# The Mechanist desktop integration: register launchers without requiring a
+# desktop session or /etc/xdg/menus (absent on headless Debian/Ubuntu hosts).
+set -e
+
+case "$1" in
+    configure)
+        source_dir=/opt/the-mechanist/the-mechanist/lib
+        desktop_dir=/usr/share/applications
+        found=0
+        for desktop in "$source_dir"/*.desktop; do
+            [ -f "$desktop" ] || continue
+            found=1
+            install -d -m 0755 "$desktop_dir"
+            install -m 0644 "$desktop" "$desktop_dir/$(basename "$desktop")"
+        done
+        if [ "$found" -ne 1 ]; then
+            echo "The Mechanist: packaged desktop entry is missing: $source_dir" >&2
+            exit 1
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "The Mechanist postinstall: unsupported action: $1" >&2
+        exit 1
+        ;;
+esac
+exit 0

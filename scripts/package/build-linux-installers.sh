@@ -147,6 +147,24 @@ for candidate in \
     fi
 done
 
+# DEB-specific maintainer scripts install shortcuts directly into the standard
+# applications directory; xdg-desktop-menu fails on headless /etc/xdg/menus.
+# Merge existing overrides instead of dropping custom launcher/icon resources.
+DEB_RESOURCE_DIR="$PROJECT_ROOT/build/native-installer/linux/deb-resources"
+rm -rf "$DEB_RESOURCE_DIR"
+mkdir -p "$DEB_RESOURCE_DIR"
+if [[ ${#RESOURCE_ARGS[@]} -gt 0 ]]; then
+    cp -a "${RESOURCE_ARGS[1]}/." "$DEB_RESOURCE_DIR/"
+fi
+for name in postinstall prerm; do
+    source_file="$PROJECT_ROOT/scripts/package/linux-deb-resources/$name"
+    [[ -s "$source_file" ]] || {
+        echo "Required Linux DEB maintainer script missing: $source_file" >&2
+        exit 5
+    }
+    cp "$source_file" "$DEB_RESOURCE_DIR/$name"
+done
+
 LAUNCHER_CONFIG_DIR="$PROJECT_ROOT/build/native-installer/linux/launchers"
 REMOTE_LAUNCHER_CONFIG="$LAUNCHER_CONFIG_DIR/remote-client.properties"
 rm -rf "$LAUNCHER_CONFIG_DIR"
@@ -227,8 +245,8 @@ for type in "${NORMALIZED_TYPES[@]}"; do
                 --install-dir "/opt/the-mechanist" \
                 --linux-shortcut \
                 --linux-menu-group "Game" \
-                "${ICON_ARGS[@]}" \
-                "${RESOURCE_ARGS[@]}"
+                --resource-dir "$DEB_RESOURCE_DIR" \
+                "${ICON_ARGS[@]}"
             ;;
         rpm)
             if command -v rpmbuild >/dev/null 2>&1; then

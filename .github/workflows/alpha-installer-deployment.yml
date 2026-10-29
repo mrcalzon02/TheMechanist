@@ -171,14 +171,25 @@ jobs:
           DEB=$(find dist/alpha-installer/linux -maxdepth 1 -type f -name '*.deb' | head -n 1)
           test -n "$DEB"
           PACKAGE=$(dpkg-deb -f "$DEB" Package)
+          # Assert jpackage used the headless-safe maintainer script overrides.
+          dpkg-deb --ctrl-tarfile "$DEB" | tar -xOf - ./postinst |
+            grep -Fq 'The Mechanist desktop integration'
+          dpkg-deb --ctrl-tarfile "$DEB" | tar -xOf - ./prerm |
+            grep -Fq 'The Mechanist desktop integration'
           sudo dpkg -i "$DEB"
-          dpkg -s "$PACKAGE" >/dev/null
+          test "$(dpkg-query -W -f='${Status}' "$PACKAGE")" = 'install ok installed'
+          DESKTOP=$(find /usr/share/applications -maxdepth 1 -type f -name 'the-mechanist-*.desktop' -print -quit)
+          test -n "$DESKTOP"
+          grep -q '^Type=Application$' "$DESKTOP"
+          grep -q '^Categories=.*Game' "$DESKTOP"
+          grep -q '^Exec=' "$DESKTOP"
           EXECUTABLE=$(find /opt/the-mechanist -type f -path '*/bin/The Mechanist' -print -quit)
           test -n "$EXECUTABLE"
           IMAGE=$(dirname "$(dirname "$EXECUTABLE")")
           test -d "$IMAGE"
           echo "installer=$DEB" >> "$GITHUB_OUTPUT"
           echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
+          echo "desktop=$DESKTOP" >> "$GITHUB_OUTPUT"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
 
       - name: Install Windows MSI
@@ -262,6 +273,7 @@ jobs:
             echo 'Linux package remains registered after dpkg purge.' >&2
             exit 1
           fi
+          test ! -e '${{ steps.install_linux.outputs.desktop }}'
           python ROOT_build/ci/verify_installer_uninstall.py \
             --deployment-report dist/alpha-installer/deployment/installer-deployment-linux-x64.json \
             --installed-image '${{ steps.install_linux.outputs.image }}' \

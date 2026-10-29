@@ -1,0 +1,21 @@
+#!/bin/sh
+# The Mechanist desktop integration: remove only shortcuts from this package.
+set -e
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        source_dir=/opt/the-mechanist/the-mechanist/lib
+        desktop_dir=/usr/share/applications
+        for desktop in "$source_dir"/*.desktop; do
+            [ -f "$desktop" ] || continue
+            rm -f "$desktop_dir/$(basename "$desktop")"
+        done
+        ;;
+    failed-upgrade)
+        ;;
+    *)
+        echo "The Mechanist prerm: unsupported action: $1" >&2
+        exit 1
+        ;;
+esac
+exit 0
