@@ -164,6 +164,9 @@ for name in postinstall prerm; do
     }
     cp "$source_file" "$DEB_RESOURCE_DIR/$name"
 done
+# JDK 17's actual Debian maintainer-script resource key is 'postinst'
+# (the public jpackage guide also calls it 'postinstall'). Supply both.
+cp "$DEB_RESOURCE_DIR/postinstall" "$DEB_RESOURCE_DIR/postinst"
 
 LAUNCHER_CONFIG_DIR="$PROJECT_ROOT/build/native-installer/linux/launchers"
 REMOTE_LAUNCHER_CONFIG="$LAUNCHER_CONFIG_DIR/remote-client.properties"
