@@ -104,6 +104,12 @@ jobs:
           set -euo pipefail
           python -m compileall -q ROOT_build/ci
 
+      - name: Test mutable-profile preservation verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s ROOT_build/ci -p 'test_installer_profile_preservation.py' -v
+
       - name: Build hardened canonical distribution
         shell: bash
         run: |
@@ -263,6 +269,69 @@ jobs:
             *>&1 | Tee-Object -FilePath 'dist\alpha-installer\deployment\installer-deployment-windows-x64.log'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Capture save and profile preservation baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            IMAGE='${{ steps.install_linux.outputs.image }}'
+          else
+            IMAGE='${{ steps.install_windows.outputs.image }}'
+          fi
+          python ROOT_build/ci/verify_installer_profile_preservation.py capture \
+            --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
+            --installed-image "$IMAGE" \
+            --expected-commit "$GITHUB_SHA" \
+            --baseline "dist/alpha-installer/deployment/profile-baseline-${{ matrix.platform }}.json" \
+            --report "dist/alpha-installer/deployment/profile-capture-${{ matrix.platform }}.json"
+
+      - name: Reinstall same Linux DEB and prove saved data survives
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo dpkg -i '${{ steps.install_linux.outputs.installer }}'
+          test "$(dpkg-query -W -f='${Status}' '${{ steps.install_linux.outputs.package }}')" = 'install ok installed'
+          xvfb-run -a python ROOT_build/ci/run_installed_alpha_smoke.py \
+            '${{ steps.install_linux.outputs.image }}' \
+            --expected-platform linux-x64 \
+            --expected-commit "$GITHUB_SHA" \
+            --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
+            --report dist/alpha-installer/deployment/reinstalled-deployment-linux-x64.json
+          python ROOT_build/ci/verify_installer_profile_preservation.py check \
+            --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
+            --installed-image '${{ steps.install_linux.outputs.image }}' \
+            --expected-commit "$GITHUB_SHA" \
+            --baseline dist/alpha-installer/deployment/profile-baseline-linux-x64.json \
+            --report dist/alpha-installer/deployment/profile-reinstall-linux-x64.json
+
+      - name: Repair same Windows MSI and prove saved data survives
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = '${{ steps.install_windows.outputs.installer }}'
+          $arguments = @('/i', "`"$msi`"", 'REINSTALL=ALL', 'REINSTALLMODE=vomus', '/qn', '/norestart')
+          $repair = Start-Process msiexec.exe -ArgumentList $arguments -Wait -PassThru
+          if ($repair.ExitCode -ne 0) {
+            throw "MSI maintenance reinstall failed with exit $($repair.ExitCode)."
+          }
+          $profile = Join-Path $env:RUNNER_TEMP 'Mechanist Installed Profile'
+          & python ROOT_build\ci\run_installed_alpha_smoke.py `
+            '${{ steps.install_windows.outputs.image }}' `
+            --expected-platform windows-x64 `
+            --expected-commit $env:GITHUB_SHA `
+            --profile-root $profile `
+            --report 'dist\alpha-installer\deployment\reinstalled-deployment-windows-x64.json'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & python ROOT_build\ci\verify_installer_profile_preservation.py check `
+            --profile-root $profile `
+            --installed-image '${{ steps.install_windows.outputs.image }}' `
+            --expected-commit $env:GITHUB_SHA `
+            --baseline 'dist\alpha-installer\deployment\profile-baseline-windows-x64.json' `
+            --report 'dist\alpha-installer\deployment\profile-reinstall-windows-x64.json'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Uninstall Linux DEB and verify data survival
         if: runner.os == 'Linux'
         shell: bash
@@ -298,6 +367,22 @@ jobs:
             --survival-marker (Join-Path $profile 'installer-uninstall-survival.marker') `
             --report 'dist\alpha-installer\deployment\installer-lifecycle-windows-x64.json'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify mutable save and profile after package removal
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            IMAGE='${{ steps.install_linux.outputs.image }}'
+          else
+            IMAGE='${{ steps.install_windows.outputs.image }}'
+          fi
+          python ROOT_build/ci/verify_installer_profile_preservation.py check \
+            --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
+            --installed-image "$IMAGE" \
+            --expected-commit "$GITHUB_SHA" \
+            --baseline "dist/alpha-installer/deployment/profile-baseline-${{ matrix.platform }}.json" \
+            --report "dist/alpha-installer/deployment/profile-uninstall-${{ matrix.platform }}.json"
 
       - name: Upload installer deployment evidence
         if: always()
