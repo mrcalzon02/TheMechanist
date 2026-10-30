@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R Linux DEB version-to-version evidence prerequisite (2026-10-30)
+
+- Extended the existing installer mutable-profile verifier with separate `upgrade-capture` and `upgrade-check` modes. Capture requires a genuinely installed older DEB, its package/version and artifact SHA-256, exact old-commit successful installed-game smoke, and newly created out-of-install-tree save/profile sentinels. Check requires a different, newer real DEB of the same package identity, a different source commit, `dpkg-query` proof of the new installed version, exact new-commit successful installed-game launch/single-player smoke, and byte-identical original sentinels. The old artifact hash is rechecked; same-version repair, downgrades, mismatched package identity, missing baseline and mutated saves fail closed.
+- Added focused cross-platform-safe negative/positive tests to the existing installer verifier suite, while preserving the original same-version repair checks. Local isolated logic tests with small real synthetic DEBs passed 9/9; they mocked installed package state and do **not** prove a real package upgrade. GitHub exact-commit full installer CI remains pending at the time of this note.
+- Existing published Linux DEBs `the-mechanist_0.9.22-1_amd64.deb` and `the-mechanist_0.9.25-1_amd64.deb` are candidate historical/new artifacts, but no live `dpkg -i` upgrade, profile-preservation acceptance, Windows MSI upgrade, rollback, or alpha release readiness is claimed. The actual two-package install/upgrade/removal sequence remains a P0 acceptance task.
+
 ### 06.R hosted-map checked canonical position prerequisite (2026-10-27)
 
 - Added `CharacterSaveManager.commitHostedCardinalStep` as a **server-side prerequisite**, not a remotely exposed MOVE command. It accepts the existing canonical `World` map and persisted `CharacterStateRecord` through the existing character owner; refuses missing maps, cross-profile/zone requests, non-cardinal or fractional-origin steps, and impassable tiles before any save. The movement source must already hold the hosted world's authoritative single-writer lock. No new map, character, session or position ledger was created.
