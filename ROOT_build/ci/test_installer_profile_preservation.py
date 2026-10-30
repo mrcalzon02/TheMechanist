@@ -96,6 +96,16 @@ class DebUpgradeEvidenceTests(unittest.TestCase):
             return check_deb_upgrade(self.profile, self.image, "old-commit", commit,
                                      self.baseline, self.old_deb, self.new_deb, self.new_report)
 
+    def test_old_game_version_must_match_old_deb(self):
+        with (patch("verify_installer_profile_preservation.deb_identity", return_value=self.old),
+              patch("verify_installer_profile_preservation.installed_deb_version", return_value="1.0.0-1"),
+              patch("verify_installer_profile_preservation.verified_deployment",
+                    return_value={"version": "9.9.9"})):
+            with self.assertRaisesRegex(RuntimeError, "old installed game version"):
+                capture_deb_upgrade(self.profile, self.image, "old-commit", self.baseline,
+                                    self.old_deb, self.old_report)
+        self.assertFalse(self.baseline.exists())
+
     def test_distinct_version_commit_and_profile_pass(self):
         self.capture_old()
         result = self.verify_new()
