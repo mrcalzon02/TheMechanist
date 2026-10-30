@@ -1,5 +1,12 @@
 # Development History
 
+### Gate 3 character paper-doll selected-region visibility repair (2026-10-30)
+
+- The exact-main Java 17 Gate 3 player-facing smoke failed at `Milestone02CharacterPaperDollSmoke:103` because rendering the selected left lower arm produced zero changed pixels. The test was retained as a functional player-selection regression, not downgraded to a cosmetic diagnostic.
+- CharacterPaperDollAuthority now paints the selected-region translucent in-bounds highlight, bright contour and corner brackets in a final pass after all base body-region geometry and labels. This makes the selected body region visibly identifiable even where later regions overlap; health/status and selection-to-medical identity remain sourced from the existing character authorities.
+- Expanded the same deterministic smoke to require an in-region pixel change and no change at the opposite lower arm. Actual Java 17 Gate 3 CI and installed-client confirmation must be read separately before claiming success; no installer, campaign save, or alpha-readiness state is changed.
+
+
 ### 06.R Linux DEB version-to-version evidence prerequisite (2026-10-30)
 
 - Extended the existing installer mutable-profile verifier with separate `upgrade-capture` and `upgrade-check` modes. Capture requires a genuinely installed older DEB, its package/version and artifact SHA-256, exact old-commit successful installed-game smoke, and newly created out-of-install-tree save/profile sentinels. Check requires a different, newer real DEB of the same package identity, a different source commit, `dpkg-query` proof of the new installed version, exact new-commit successful installed-game launch/single-player smoke, and byte-identical original sentinels. The old artifact hash is rechecked; same-version repair, downgrades, mismatched package identity, missing baseline and mutated saves fail closed.

@@ -183,10 +183,22 @@ final class CharacterPaperDollAuthority {
             g.setColor(new Color(235, 225, 188, 190));
             g.setStroke(new BasicStroke(region.destroyed() ? 2.2f : 1.0f));
             g.drawRoundRect(r.x, r.y, r.width, r.height, 5, 5);
-            if (selectedBodyPartMatchesAny(region, selectedBodyParts)) {
-                drawSelectionBrackets(g, r);
-            }
             drawRegionIdentity(g, r, region);
+        }
+
+        // Paint the selection last: later body regions must not erase the focus
+        // indicator, and the selected region must change inside its hit target.
+        for (RegionView region : regions) {
+            if (!selectedBodyPartMatchesAny(region, selectedBodyParts)) continue;
+            Rectangle r = region.bounds();
+            g.setColor(new Color(255, 225, 128, 78));
+            g.fillRoundRect(r.x + 1, r.y + 1,
+                    Math.max(1, r.width - 2), Math.max(1, r.height - 2), 5, 5);
+            g.setColor(new Color(255, 225, 128));
+            g.setStroke(new BasicStroke(2.4f));
+            g.drawRoundRect(r.x + 1, r.y + 1,
+                    Math.max(0, r.width - 2), Math.max(0, r.height - 2), 5, 5);
+            drawSelectionBrackets(g, r);
         }
         g.setStroke(new BasicStroke(1.0f));
     }

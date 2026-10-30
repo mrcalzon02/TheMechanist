@@ -102,6 +102,19 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (changedPixels < 20) {
             throw new AssertionError("selected body region produced no meaningful paper-doll visual delineation: " + changedPixels);
         }
+        // The highlight must be visible within the clicked region, not only
+        // outside its bounds where adjacent body parts can paint over it.
+        if (unselected.getRGB(centerX, centerY) == selected.getRGB(centerX, centerY)) {
+            throw new AssertionError("selected body region has no in-region focus indication");
+        }
+        CharacterPaperDollAuthority.RegionView otherArm = CharacterPaperDollAuthority.regions(candidate, interactive)
+                .stream().filter(region -> region.bodyPartName().equals("R Lower Arm"))
+                .findFirst().orElseThrow(() -> new AssertionError("opposite lower arm missing"));
+        int otherX = otherArm.bounds().x + otherArm.bounds().width / 2;
+        int otherY = otherArm.bounds().y + otherArm.bounds().height / 2;
+        if (unselected.getRGB(otherX, otherY) != selected.getRGB(otherX, otherY)) {
+            throw new AssertionError("selected body region changed an unrelated limb");
+        }
 
         List<String> clothesRegions = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
