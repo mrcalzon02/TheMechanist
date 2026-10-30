@@ -160,7 +160,9 @@ def capture_deb_upgrade(profile: pathlib.Path, image: pathlib.Path, old_commit: 
     old = deb_identity(old_deb)
     if installed_deb_version(old["package"]) != old["version"]:
         raise RuntimeError("installed old DEB version differs from the old artifact")
-    verified_deployment(deployment_report, image, old_commit)
+    deployed = verified_deployment(deployment_report, image, old_commit)
+    if str(deployed.get("version")) != old["version"].split("-")[0]:
+        raise RuntimeError("old installed game version differs from old DEB app version")
     record = capture(profile, image, old_commit, baseline)
     record["upgrade"] = {"oldDeb": old, "oldCommit": old_commit,
                          "oldDeploymentReportSha256": _sha256_file(deployment_report)}
