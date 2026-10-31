@@ -1,0 +1,52 @@
+name: Paper Doll Java 17 Interaction Smoke
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/mechanist/Milestone02CharacterEquipmentScreenIntegrationSmoke.java'
+      - 'src/mechanist/Milestone02CharacterPaperDollSmoke.java'
+      - 'src/mechanist/MouseLateUiController.java'
+      - 'src/mechanist/CharacterPaperDollAuthority.java'
+      - 'src/mechanist/CharacterEquipmentAndMedicalAuthority.java'
+      - '.github/workflows/paper-doll-java17.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paper-doll-interaction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact commit
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Compile complete original game source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ROOT_build/paper-doll-java17/classes
+          find src -name '*.java' -print | sort > ROOT_build/paper-doll-java17/sources.txt
+          test -s ROOT_build/paper-doll-java17/sources.txt
+          javac -encoding UTF-8 --release 17 \
+            -d ROOT_build/paper-doll-java17/classes \
+            @ROOT_build/paper-doll-java17/sources.txt
+
+      - name: Verify hit regions, actual click routing, selected state and rendered pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/paper-doll-java17/classes \
+            mechanist.Milestone02CharacterPaperDollSmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/paper-doll-java17/classes \
+            mechanist.Milestone02CharacterEquipmentScreenIntegrationSmoke
