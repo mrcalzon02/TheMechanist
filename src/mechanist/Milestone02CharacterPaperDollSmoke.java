@@ -120,7 +120,7 @@ public final class Milestone02CharacterPaperDollSmoke {
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
         for (String expectedRegion : clothesRegions) {
             CharacterPaperDollAuthority.RegionView region = CharacterPaperDollAuthority.regions(candidate, interactive).stream()
-                    .filter(view -> view.bodyPartName().equals(expectedRegion))
+                    .filter(view -> CharacterPaperDollAuthority.selectedBodyPartMatches(view, expectedRegion))
                     .findFirst().orElseThrow(() -> new AssertionError("equipment-associated body region missing: " + expectedRegion));
             if (!CharacterPaperDollAuthority.selectedBodyPartMatchesAny(region, clothesRegions)) {
                 throw new AssertionError("multi-region selection did not include equipment-associated body region: " + expectedRegion);
