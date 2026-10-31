@@ -56,10 +56,32 @@ public final class Milestone02CharacterEquipmentMedicalSmoke {
                 && view.installedName().equals("Test interface socket"))) {
             throw new AssertionError("cybernetic placeholder binding was not retained");
         }
-        String clicked = CharacterEquipmentAndMedicalAuthority.bodyPartAt(candidate,
-                new Rectangle(0, 0, 280, 440), 140, 30);
-        if (clicked == null || clicked.isBlank()) {
-            throw new AssertionError("paper-doll body region selection contract returned no region");
+        // Click the center of the actual rendered hit target. The old fixed
+        // (140, 30) point falls in the panel heading, above the head region.
+        Rectangle panelBounds = new Rectangle(0, 0, 280, 440);
+        Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(panelBounds);
+        CharacterPaperDollAuthority.RegionView head = CharacterPaperDollAuthority.regions(candidate, interactive)
+                .stream().filter(region -> "Head".equals(region.bodyPartName()))
+                .findFirst().orElseThrow(() -> new AssertionError("live character has no rendered head region"));
+        int clickX = head.bounds().x + head.bounds().width / 2;
+        int clickY = head.bounds().y + head.bounds().height / 2;
+        String clicked = CharacterEquipmentAndMedicalAuthority.bodyPartAt(
+                candidate, panelBounds, clickX, clickY);
+        if (!head.bodyPartName().equals(clicked)) {
+            throw new AssertionError("rendered head click did not select its live body region: " + clicked);
+        }
+        if (CharacterEquipmentAndMedicalAuthority.bodyPartAt(candidate, panelBounds, 140, 30) != null
+                || CharacterEquipmentAndMedicalAuthority.bodyPartAt(candidate, panelBounds, -1, -1) != null) {
+            throw new AssertionError("paper-doll header/outside click selected a body region");
+        }
+        if (CharacterEquipmentAndMedicalAuthority.medicalViews(candidate, clicked, installed).stream()
+                .anyMatch(view -> !clicked.equals(view.key().bodyPartName()))) {
+            throw new AssertionError("medical tab did not preserve the clicked body-region identity");
+        }
+        if (!CharacterPaperDollAuthority.selectedBodyPartMatchesAny(head,
+                CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(
+                        CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR))) {
+            throw new AssertionError("equipment headgear focus does not match the clicked head region");
         }
 
         System.out.println("Milestone02CharacterEquipmentMedicalSmoke PASS "

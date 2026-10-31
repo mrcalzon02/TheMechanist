@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/mechanist/Milestone02CharacterEquipmentScreenIntegrationSmoke.java'
       - 'src/mechanist/Milestone02CharacterPaperDollSmoke.java'
+      - 'src/mechanist/Milestone02CharacterEquipmentMedicalSmoke.java'
       - 'src/mechanist/MouseLateUiController.java'
       - 'src/mechanist/CharacterPaperDollAuthority.java'
       - 'src/mechanist/CharacterEquipmentAndMedicalAuthority.java'
@@ -50,3 +51,6 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/paper-doll-java17/classes \
             mechanist.Milestone02CharacterEquipmentScreenIntegrationSmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/paper-doll-java17/classes \
+            mechanist.Milestone02CharacterEquipmentMedicalSmoke

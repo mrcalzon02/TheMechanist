@@ -1,5 +1,11 @@
 # Development History
 
+### Gate 3 paper-doll click geometry contract correction (2026-10-31)
+
+- The exact-main Java 17 Main Milestone Gate failed in `Milestone02CharacterEquipmentMedicalSmoke` because the test clicked fixed point (140, 30), which is in the paper-doll panel header, outside the rendered head hit target. The independent paper-doll geometry and live Medical/Equipment click-routing smokes already passed; no production hitbox or anatomy change was justified.
+- Replaced the stale fixed-point expectation with a click at the center of the actual live Head region returned by `CharacterPaperDollAuthority.regions` under the same interactive bounds as `bodyPartAt`. The smoke now also rejects header/outside clicks, verifies the Medical view retains the selected body identity, and verifies the Headgear equipment selection maps to the rendered head. The existing real `GamePanel` Medical/Equipment mouse-routing and selected-pixel regression remains intact.
+- Added this previously omitted medical/equipment contract smoke to the dedicated Java 17 paper-doll workflow and its source-change trigger. This is a test-contract repair, not a production behavior change or a weakened functional gate. Exact-commit Main Milestone Gate, dedicated paper-doll CI and multiplayer results must be read back before claiming success.
+
 ### Gate 3 character paper-doll selected-region visibility repair (2026-10-30)
 
 - The exact-main Java 17 Gate 3 player-facing smoke failed at `Milestone02CharacterPaperDollSmoke:103` because rendering the selected left lower arm produced zero changed pixels. The test was retained as a functional player-selection regression, not downgraded to a cosmetic diagnostic.
