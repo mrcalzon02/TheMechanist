@@ -118,16 +118,27 @@ public final class Milestone02CharacterPaperDollSmoke {
 
         List<String> clothesRegions = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
-        for (String expectedRegion : clothesRegions) {
-            CharacterPaperDollAuthority.RegionView region = CharacterPaperDollAuthority.regions(candidate, interactive).stream()
-                    .filter(view -> CharacterPaperDollAuthority.selectedBodyPartMatches(view, expectedRegion))
-                    .findFirst().orElseThrow(() -> new AssertionError("equipment-associated body region missing: " + expectedRegion));
-            if (!CharacterPaperDollAuthority.selectedBodyPartMatchesAny(region, clothesRegions)) {
-                throw new AssertionError("multi-region selection did not include equipment-associated body region: " + expectedRegion);
-            }
+        // Equipment slots may cover several canonical anatomical regions while
+        // a particular live character tracks only a torso. Test the rendered
+        // chest alias instead of inventing absent Abdomen/Pelvis body parts.
+        CharacterPaperDollAuthority.RegionView visibleChest =
+                CharacterPaperDollAuthority.regions(candidate, interactive).stream()
+                        .filter(view -> CharacterPaperDollAuthority.selectedBodyPartMatches(view, "Chest"))
+                        .findFirst().orElseThrow(() -> new AssertionError(
+                                "clothing slot has no visible chest/torso body region"));
+        if (!CharacterPaperDollAuthority.selectedBodyPartMatchesAny(visibleChest, clothesRegions)) {
+            throw new AssertionError("clothing slot failed to highlight the real chest/torso region");
         }
         BufferedImage clothesSelected = renderRegions(candidate, clothesRegions);
         int clothesChangedPixels = changedPixels(unselected, clothesSelected);
+        int chestX = visibleChest.bounds().x + visibleChest.bounds().width / 2;
+        int chestY = visibleChest.bounds().y + visibleChest.bounds().height / 2;
+        if (unselected.getRGB(chestX, chestY) == clothesSelected.getRGB(chestX, chestY)) {
+            throw new AssertionError("clothing selection is not visible inside the rendered torso");
+        }
+        if (unselected.getRGB(otherX, otherY) != clothesSelected.getRGB(otherX, otherY)) {
+            throw new AssertionError("clothing selection modified an unrelated arm");
+        }
         if (clothesChangedPixels <= changedPixels) {
             throw new AssertionError("multi-region equipment selection did not delineate more than one body region: "
                     + clothesChangedPixels + " versus single-region " + changedPixels);
