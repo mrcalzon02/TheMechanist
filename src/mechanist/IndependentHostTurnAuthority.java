@@ -319,6 +319,10 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         }
     }
 
+    String worldId() {
+        return worldId;
+    }
+
     Path persistenceFile() {
         return persistenceFile;
     }
