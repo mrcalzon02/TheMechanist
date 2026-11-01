@@ -1,5 +1,12 @@
 # Development History
 
+### 06.R independent-host cross-world identity guard (2026-11-01)
+
+- The authenticated remote session ledger and WAIT-only turn authority were previously accepted as separate constructor arguments without checking that they belonged to the same world. A caller could therefore wire a valid authenticated session to another world's turn ledger, before canonical map ownership exists. This is a real world-ownership prerequisite, not proof that a hosted map is mounted.
+- `IndependentHostWireProtocol` now refuses cross-world session/turn wiring at construction, using the immutable `IndependentHostTurnAuthority.worldId()` accessor. The existing same-world constructors and WAIT command path are unchanged. `IndependentHostHostedSessionWireSmoke` now checks that a mismatched pair is refused before any attachment, player creation, turn advancement or command mutation; its existing authenticated same-world WAIT/reconnect assertions remain in place.
+- Remote source/blob readback verified the three Java changes. Java 17 multiplayer and milestone CI were started by the main push; their results must be observed separately before calling the regression passed. This change does **not** load a canonical `.mechworld`, authorize MOVE, add map snapshots, certify a complete multiplayer world, or make the limited alpha distributable. The next step is to locate and mount the actual canonical server-world save/map owner under the existing single-writer authority and test world/map identity, corruption and restart behavior.
+
+
 ### Gate 3 paper-doll click geometry contract correction (2026-10-31)
 
 - The exact-main Java 17 Main Milestone Gate failed in `Milestone02CharacterEquipmentMedicalSmoke` because the test clicked fixed point (140, 30), which is in the paper-doll panel header, outside the rendered head hit target. The independent paper-doll geometry and live Medical/Equipment click-routing smokes already passed; no production hitbox or anatomy change was justified.
