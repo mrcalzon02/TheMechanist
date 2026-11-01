@@ -71,6 +71,12 @@ final class IndependentHostWireProtocol {
         this.handshake = new SecureHandshakeStateMachine(sessionId);
         this.sessionLedger = Objects.requireNonNull(sessionLedger, "sessionLedger");
         this.turnAuthority = Objects.requireNonNull(turnAuthority, "turnAuthority");
+        // Never attach an authenticated session to a different world's turn owner.
+        // A future canonical map mount must share this same world identity.
+        if (!this.sessionLedger.worldId().equals(this.turnAuthority.worldId())) {
+            throw new IllegalArgumentException(
+                    "independent-host session/turn world identity mismatch");
+        }
         this.characterSaveManager = characterSaveManager;
         this.manifest = new SecureHandshakeStateMachine.ModManifestRecord(
                 "mechanist-base-" + BuildIdentityAuthority.version(),
