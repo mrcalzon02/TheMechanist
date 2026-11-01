@@ -291,7 +291,7 @@ final class IndependentHostHostedSessionWireSmoke {
     }
 
     /** Reject cross-world wiring before authentication, session attachment or WAIT. */
-    private static void verifyMismatchedWorldAuthorityRejected() {
+    private static void verifyMismatchedWorldAuthorityRejected() throws Exception {
         RemoteSessionLedgerAuthority sessions =
                 new RemoteSessionLedgerAuthority("host-world-alpha");
         IndependentHostTurnAuthority turns =
