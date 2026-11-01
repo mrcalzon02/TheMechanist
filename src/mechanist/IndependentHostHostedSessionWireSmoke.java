@@ -181,6 +181,17 @@ final class IndependentHostHostedSessionWireSmoke {
             require(turns.acceptedCommands() == 0L && turns.worldTurn() == 0L,
                     "unsupported gameplay refusal mutated authoritative turn state");
 
+            // The canonical character owner may have saved progress after
+            // authentication. WAIT must read that owner, not the login snapshot.
+            CharacterStateRecord latestCharacter = new CharacterStateRecord(
+                    resumedCharacter.identityKey(),
+                    resumedCharacter.characterName(),
+                    18.0, 24.0, resumedCharacter.z(),
+                    resumedCharacter.zoneId(), resumedCharacter.health(),
+                    resumedCharacter.selectedSkills(), resumedCharacter.startingItems(),
+                    resumedCharacter.factionReputation(), resumedCharacter.updatedAt());
+            characters.atomicSaveSync(latestCharacter);
+
             IndependentHostWireProtocol.Result waitAccepted = resumed.accept(
                     "MECH|WORLD_COMMAND|0|WAIT");
             require(!waitAccepted.disconnect(),
@@ -202,12 +213,16 @@ final class IndependentHostHostedSessionWireSmoke {
                     canonicalTurn.worldSnapshot().player();
             UiStateSnapshot canonicalUi =
                     canonicalTurn.worldSnapshot().uiState();
-            require(canonicalPlayer.x() == 17
-                            && canonicalPlayer.y() == 23
+            require(canonicalPlayer.x() == 18
+                            && canonicalPlayer.y() == 24
                             && "Alpha Remote".equals(canonicalPlayer.name())
                             && "alpha-hab".equals(canonicalUi.zone())
                             && canonicalUi.inventoryCount() == 3,
                     "remote authoritative snapshot did not reflect canonical character state");
+
+            require(resumed.characterSnapshot().x() == 18.0
+                            && resumed.characterSnapshot().y() == 24.0,
+                    "wire retained a stale canonical character after accepted WAIT");
 
             IndependentHostWireProtocol.Result wrongLaneDenied = resumed.accept(
                     "MECH|SESSION_COMMAND|1|MOVE|north");
@@ -221,6 +236,22 @@ final class IndependentHostHostedSessionWireSmoke {
                     "hosted-session roster overclaimed full world authority");
             require(turns.acceptedCommands() == 1L && turns.worldTurn() == 1L,
                     "wrong-lane MOVE mutated the separate wait authority");
+
+            // Deletion between authentication and WAIT must not manufacture
+            // a replacement profile or consume the world's command sequence.
+            Path betaFile = characters.profilePath(
+                    PlayerIdentity.fallbackFromCredential("profile.beta.1002"));
+            Files.delete(betaFile);
+            IndependentHostWireProtocol.Result missingCharacter = beta.accept(
+                    "MECH|WORLD_COMMAND|0|WAIT");
+            require(missingCharacter.disconnect()
+                            && missingCharacter.reason().contains(
+                            "canonical hosted character record is unavailable"),
+                    "missing canonical character did not fail closed");
+            require(!Files.exists(betaFile)
+                            && turns.acceptedCommands() == 1L
+                            && turns.worldTurn() == 1L,
+                    "missing canonical character was recreated or advanced world time");
 
             verifyDisconnectCleanupAfterWorldFailure();
             beta.disconnect("wire smoke complete");
@@ -238,6 +269,8 @@ final class IndependentHostHostedSessionWireSmoke {
                     + " reconnectReusesCharacter=true"
                     + " canonicalCharacterSnapshot=true"
                     + " canonicalPositionSnapshot=true"
+                    + " canonicalCharacterRefreshOnWait=true"
+                    + " missingCharacterFailsClosed=true"
                     + " hostedAndWorldCommandLanesSeparated=true"
                     + " gameplayRefusalKeepsSession=true"
                     + " refusedWorldCommandSequenceReusable=true"

@@ -68,24 +68,7 @@ final class CharacterSaveManager implements AutoCloseable {
         Path file = profilePath(identity);
         CharacterStateRecord record;
         if (Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
-            if (Files.isSymbolicLink(file)) {
-                throw new IOException("symbolic-link character record denied for "
-                        + identity.storageKey());
-            }
-            try (FileChannel channel = FileChannel.open(
-                    file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
-                record = CharacterStateRecord.fromJson(
-                        new String(Channels.newInputStream(channel).readAllBytes(),
-                                StandardCharsets.UTF_8));
-            } catch (RuntimeException invalid) {
-                throw new IOException(
-                        "invalid persisted character record for " + identity.storageKey(),
-                        invalid);
-            }
-            if (!identity.storageKey().equals(record.identityKey())) {
-                throw new IOException(
-                        "character identity mismatch for " + identity.storageKey());
-            }
+            record = loadExistingStrict(identity);
         } else {
             record = CharacterStateRecord.fresh(identity, requestedName);
             atomicSaveSync(record);
@@ -96,6 +79,37 @@ final class CharacterSaveManager implements AutoCloseable {
                             + identity.storageKey());
         }
         return record;
+    }
+
+    /**
+     * Read an already-created canonical profile without ever creating a replacement.
+     * Authenticated world commands must fail closed if the profile disappears or
+     * becomes corrupt after login, rather than silently moving a fresh character.
+     */
+    synchronized CharacterStateRecord loadExistingStrict(
+            PlayerIdentity identity
+    ) throws IOException {
+        Objects.requireNonNull(identity, "identity");
+        Path file = profilePath(identity);
+        if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)
+                || Files.isSymbolicLink(file)) {
+            throw new IOException("canonical character record is unavailable for "
+                    + identity.storageKey());
+        }
+        try (FileChannel channel = FileChannel.open(
+                file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
+            CharacterStateRecord record = CharacterStateRecord.fromJson(
+                    new String(Channels.newInputStream(channel).readAllBytes(),
+                            StandardCharsets.UTF_8));
+            if (!identity.storageKey().equals(record.identityKey())) {
+                throw new IOException("character identity mismatch for "
+                        + identity.storageKey());
+            }
+            return record;
+        } catch (RuntimeException invalid) {
+            throw new IOException("invalid persisted character record for "
+                    + identity.storageKey(), invalid);
+        }
     }
 
     synchronized void atomicSaveSync(CharacterStateRecord record) throws IOException {

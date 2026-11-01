@@ -382,6 +382,10 @@ final class IndependentHostWireProtocol {
                     "UNAVAILABLE",
                     "Only authoritative wait is open; the session remains connected."));
         }
+        // A hosted character can change through its canonical owner after
+        // authentication. Never publish a WAIT snapshot from a stale login copy.
+        // This is a read-only prerequisite, not remote movement or map ownership.
+        refreshCanonicalCharacterForWorldCommand();
         IndependentHostTurnAuthority.TurnCommandResult result =
                 turnAuthority.applyCommand(
                         sessionAttachment.playerId(),
@@ -401,6 +405,27 @@ final class IndependentHostWireProtocol {
                 Long.toString(snapshot.acceptedPlayerCommands()),
                 Long.toString(snapshot.acceptedWorldCommands()),
                 snapshot.lastEvent()));
+    }
+
+    private void refreshCanonicalCharacterForWorldCommand() {
+        if (characterSaveManager == null) return;
+        if (sessionAttachment == null
+                || boundPlayerIdentity == null
+                || boundCharacter == null) {
+            throw new SecurityException(
+                    "authenticated canonical character is not bound");
+        }
+        try {
+            CharacterStateRecord current =
+                    characterSaveManager.loadExistingStrict(boundPlayerIdentity);
+            turnAuthority.bindCanonicalCharacter(
+                    sessionAttachment.playerId(), current);
+            boundCharacter = current;
+        } catch (java.io.IOException failure) {
+            throw new IllegalStateException(
+                    "canonical hosted character record is unavailable for world command",
+                    failure);
+        }
     }
 
     private void bindCanonicalCharacter() {
