@@ -9,6 +9,7 @@ import java.util.List;
 /** Verifies authenticated hosted-session commands, connected-only roster responses, and peer-broadcast classification. */
 final class IndependentHostHostedSessionWireSmoke {
     public static void main(String[] args) throws Exception {
+        verifyMismatchedWorldAuthorityRejected();
         RemoteSessionLedgerAuthority ledger =
                 new RemoteSessionLedgerAuthority("hosted-session-wire-smoke");
         IndependentHostTurnAuthority turns =
@@ -265,6 +266,7 @@ final class IndependentHostHostedSessionWireSmoke {
                     + " departureRosterClassified=true"
                     + " duplicateAttachmentReachedLedger=true"
                     + " reconnectContinuity=true"
+                    + " worldIdentityMismatchRejected=true"
                     + " canonicalCharacterPersistence=true"
                     + " reconnectReusesCharacter=true"
                     + " canonicalCharacterSnapshot=true"
@@ -285,6 +287,33 @@ final class IndependentHostHostedSessionWireSmoke {
             ledger.close();
             characters.close();
             deleteRecursively(characterRoot);
+        }
+    }
+
+    /** Reject cross-world wiring before authentication, session attachment or WAIT. */
+    private static void verifyMismatchedWorldAuthorityRejected() {
+        RemoteSessionLedgerAuthority sessions =
+                new RemoteSessionLedgerAuthority("host-world-alpha");
+        IndependentHostTurnAuthority turns =
+                new IndependentHostTurnAuthority("host-world-beta");
+        try {
+            try {
+                new IndependentHostWireProtocol(
+                        "cross-world-binding-regression", sessions, turns);
+                throw new AssertionError(
+                        "cross-world session/turn authority binding was accepted");
+            } catch (IllegalArgumentException expected) {
+                require(expected.getMessage().contains("world identity mismatch"),
+                        "cross-world binding failed for the wrong reason: " + expected);
+            }
+            require(sessions.totalSessionCount() == 0
+                            && turns.worldTurn() == 0L
+                            && turns.acceptedCommands() == 0L
+                            && turns.playerCount() == 0,
+                    "rejected cross-world binding mutated a host authority");
+        } finally {
+            turns.close();
+            sessions.close();
         }
     }
 
