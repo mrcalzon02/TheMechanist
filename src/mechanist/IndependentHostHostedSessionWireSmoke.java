@@ -288,6 +288,7 @@ final class IndependentHostHostedSessionWireSmoke {
             characters.close();
             deleteRecursively(characterRoot);
         }
+        verifyServerWorldDefinitionPreflight();
     }
 
     /** Reject cross-world wiring before authentication, session attachment or WAIT. */
@@ -487,6 +488,141 @@ final class IndependentHostHostedSessionWireSmoke {
                         && command.equals(fields[1]),
                 "expected MECH|" + command + " but received " + line);
         return fields;
+    }
+
+
+    /** Actual server-domain definition round-trip and adversarial rejection, without a map mount. */
+    private static void verifyServerWorldDefinitionPreflight() throws Exception {
+        Path root = Files.createTempDirectory("Mechanist Server World Preflight ");
+        Path directory = root.resolve("saves").resolve("server").resolve("worlds");
+        Files.createDirectories(directory);
+        long seed = 867530912345L;
+        WorldSetupSettings settings = WorldSetupSettings.standard();
+        settings.zoneDensity = 2;
+        HiveWorldDefinition original = CampaignWorldApi.createDefinition(seed, settings);
+        String reference = ServerRuntimePaths.serverWorldReference(original.worldId);
+        ServerConfig config = new ServerConfig(
+                seed, original.hiveName, original.worldId, "Standard", 8,
+                NetworkPortAuthority.CUSTOM_GAME_PORT_MIN, "127.0.0.1",
+                MultiplayerProtocolState.CLOSED, settings.encode(), false,
+                "2026-11-01T00:00:00Z");
+        Path file = directory.resolve(original.worldId + ".mechworld");
+        java.util.Properties valid = SaveEfficiencyAuthority.worldDefinitionProperties(original);
+        try {
+            writeWorldFixture(file, valid);
+            HiveWorldDefinition first =
+                    ServerRuntimePaths.loadServerWorldDefinition(directory, reference, config);
+            HiveWorldDefinition restarted =
+                    ServerRuntimePaths.loadServerWorldDefinition(directory, reference, config);
+            require(first.seed == seed && restarted.seed == seed
+                            && first.worldId.equals(restarted.worldId)
+                            && settings.encode().equals(restarted.settings().encode()),
+                    "valid server definition lost identity/settings across restart read");
+
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.seed", Long.toString(seed + 1));
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.worldId", "another-world");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.hiveName", "Another Arcology");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.setup", WorldSetupSettings.standard().encode());
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.setup", "9:9:9:9:9:9:maybe");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.schema", "unknown-world-schema");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.version", "unknown-version");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.setupExplicit", "false");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.progressTotal", "-1");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.zoneNames", "not-base64%%%");
+            expectWorldFieldRejection(file, directory, reference, config, valid,
+                    "worlddef.sectorNames", null);
+            java.util.Properties truncated = new java.util.Properties();
+            truncated.setProperty("worlddef.schema", SaveEfficiencyAuthority.WORLD_SCHEMA);
+            writeWorldFixture(file, truncated);
+            expectServerWorldRejection(directory, reference, config,
+                    "truncated server definition");
+            writeWorldFixture(file, valid);
+
+            Path singlePlayer = root.resolve("saves").resolve("singleplayer").resolve("worlds");
+            Files.createDirectories(singlePlayer);
+            Files.copy(file, singlePlayer.resolve(file.getFileName()));
+            expectServerWorldRejection(singlePlayer, reference, config,
+                    "single-player domain must never satisfy a server world read");
+            expectServerWorldRejection(directory, "singleplayer/worlds/" + file.getFileName(),
+                    config, "single-player reference must be rejected");
+            ServerConfig wrongSeed = new ServerConfig(
+                    seed + 1, original.hiveName, original.worldId, "Standard", 8,
+                    NetworkPortAuthority.CUSTOM_GAME_PORT_MIN, "127.0.0.1",
+                    MultiplayerProtocolState.CLOSED, settings.encode(), false,
+                    "2026-11-01T00:00:00Z");
+            expectServerWorldRejection(directory, reference, wrongSeed,
+                    "configured seed mismatch must be rejected");
+            ServerConfig traversal = new ServerConfig(
+                    seed, original.hiveName, "../escape", "Standard", 8,
+                    NetworkPortAuthority.CUSTOM_GAME_PORT_MIN, "127.0.0.1",
+                    MultiplayerProtocolState.CLOSED, settings.encode(), false,
+                    "2026-11-01T00:00:00Z");
+            expectServerWorldRejection(directory, "../escape.mechworld", traversal,
+                    "unsafe world ID must be rejected");
+            Path linkedTarget = directory.resolve("real-definition.fixture");
+            Files.move(file, linkedTarget);
+            try {
+                try {
+                    Files.createSymbolicLink(file, linkedTarget.getFileName());
+                    expectServerWorldRejection(directory, reference, config,
+                            "symbolic-link server world must be rejected");
+                } catch (java.nio.file.FileSystemException | UnsupportedOperationException
+                        | SecurityException unsupported) {
+                    // Some Windows runners cannot create symlinks without privileges.
+                    System.out.println("SKIP: symlink creation unsupported on this runner");
+                }
+            } finally {
+                Files.deleteIfExists(file);
+                Files.move(linkedTarget, file);
+            }
+            Files.delete(file);
+            expectServerWorldRejection(directory, reference, config,
+                    "missing server definition must not regenerate");
+            System.out.println("PASS: canonical server-domain definition restart, identity, "
+                    + "settings, malformed-map, truncated, traversal and cross-domain refusal");
+        } finally {
+            deleteRecursively(root);
+        }
+    }
+
+    private static void writeWorldFixture(Path file, java.util.Properties properties)
+            throws Exception {
+        try (java.io.OutputStream output = Files.newOutputStream(file)) {
+            properties.store(output, "server world preflight smoke");
+        }
+    }
+
+    private static void expectWorldFieldRejection(
+            Path file, Path directory, String reference, ServerConfig config,
+            java.util.Properties valid, String key, String replacement) throws Exception {
+        java.util.Properties mutated = new java.util.Properties();
+        mutated.putAll(valid);
+        if (replacement == null) mutated.remove(key);
+        else mutated.setProperty(key, replacement);
+        writeWorldFixture(file, mutated);
+        expectServerWorldRejection(directory, reference, config, "corrupt " + key);
+    }
+
+    private static void expectServerWorldRejection(
+            Path directory, String reference, ServerConfig config, String label)
+            throws Exception {
+        boolean rejected = false;
+        try {
+            ServerRuntimePaths.loadServerWorldDefinition(directory, reference, config);
+        } catch (java.io.IOException expected) {
+            rejected = true;
+        }
+        require(rejected, label + " was silently accepted");
     }
 
     private static void require(boolean condition, String message) {

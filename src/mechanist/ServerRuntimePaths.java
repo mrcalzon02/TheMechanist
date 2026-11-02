@@ -70,6 +70,160 @@ final class ServerRuntimePaths {
         return "server/worlds/" + cleanWorldId(worldId) + ".mechworld";
     }
 
+
+    /**
+     * Preflight only: validate a pre-existing canonical server-world definition.
+     * This deliberately does not generate a missing world or mount a remote map.
+     */
+    static HiveWorldDefinition loadServerWorldDefinitionIfPresent(ServerConfig config)
+            throws IOException {
+        String reference = serverWorldReference(config.worldId());
+        Path file = checkedServerWorldFile(serverWorldDir(), reference, config);
+        if (!Files.exists(file, java.nio.file.LinkOption.NOFOLLOW_LINKS)) return null;
+        return loadServerWorldDefinition(serverWorldDir(), reference, config);
+    }
+
+    /** Required read for a server-domain reference; never falls back to single-player or a seed rebuild. */
+    static HiveWorldDefinition loadServerWorldDefinition(
+            Path serverWorldDirectory, String reference, ServerConfig config) throws IOException {
+        Path file = checkedServerWorldFile(serverWorldDirectory, reference, config);
+        if (!Files.isRegularFile(file, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+            throw new IOException("Server world definition is missing or not a regular file: " + file);
+        }
+        long size = Files.size(file);
+        if (size == 0L || size > 64L * 1024L * 1024L) {
+            throw new IOException("Server world definition has invalid size: " + size);
+        }
+        java.util.Properties properties = new java.util.Properties();
+        try (java.io.InputStream input = Files.newInputStream(file)) {
+            properties.load(input);
+        } catch (IllegalArgumentException malformed) {
+            throw new IOException("Malformed server world properties", malformed);
+        }
+
+        requireWorldField(properties, "worlddef.schema", SaveEfficiencyAuthority.WORLD_SCHEMA);
+        requireWorldField(properties, "worlddef.version", Persistence.VERSION);
+        long seed = strictWorldLong(properties, "worlddef.seed");
+        if (seed != config.seed()) throw new IOException("Server world seed does not match host configuration");
+        String canonicalName = WorldNamingApi.hiveName(seed);
+        requireWorldField(properties, "worlddef.hiveName", canonicalName);
+        String canonicalId = WorldNamingApi.worldId(canonicalName, seed);
+        if (!canonicalId.equals(config.worldId())) {
+            throw new IOException("Host world ID is not the canonical identity for its seed");
+        }
+        requireWorldField(properties, "worlddef.worldId", canonicalId);
+        String encodedSettings = properties.getProperty("worlddef.setup");
+        if (encodedSettings == null || !encodedSettings.matches(
+                "[0-3]:[0-5]:[0-3]:[0-3]:[0-3]:[0-3]:(true|false)")) {
+            throw new IOException("Server world setup is missing or malformed");
+        }
+        requireWorldField(properties, "worlddef.setup", config.worldSetupEncoded());
+        requireWorldField(properties, "worlddef.setupExplicit", "true");
+        String stage = properties.getProperty("worlddef.progressStage");
+        if (stage == null || stage.isBlank()) throw new IOException("Missing server world progress stage");
+        long completed = strictWorldLong(properties, "worlddef.progressCompleted");
+        long total = strictWorldLong(properties, "worlddef.progressTotal");
+        if (completed < 0L || total < 0L || completed > total
+                || completed > Integer.MAX_VALUE || total > Integer.MAX_VALUE) {
+            throw new IOException("Invalid server world progress counters");
+        }
+        for (String key : new String[] {
+                "sectorNames", "zoneNames", "zoneHistory", "zoneEpochs",
+                "zoneFacilities", "zoneProduction", "zoneStockMovements",
+                "zoneConflictLosses", "zoneMaterializedItems",
+                "zoneLaborAssignments", "progressLedger"
+        }) {
+            validateWorldMap(properties, "worlddef." + key);
+        }
+        HiveWorldDefinition definition;
+        try {
+            definition = HiveWorldDefinition.readFrom(properties, seed);
+        } catch (RuntimeException malformed) {
+            throw new IOException("Canonical server world definition could not be decoded", malformed);
+        }
+        if (definition.seed != seed || !canonicalId.equals(definition.worldId)
+                || !encodedSettings.equals(definition.settings().encode())
+                || !definition.hasExplicitSettings()) {
+            throw new IOException("Decoded server world identity or setup differs from the stored definition");
+        }
+        return definition;
+    }
+
+    private static Path checkedServerWorldFile(
+            Path directory, String reference, ServerConfig config) throws IOException {
+        if (directory == null || config == null) throw new IOException("Server world reference is incomplete");
+        String id = config.worldId();
+        if (id == null || !id.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,119}")
+                || !id.equals(id.trim())) {
+            throw new IOException("Unsafe server world ID");
+        }
+        if (!serverWorldReference(id).equals(reference)) {
+            throw new IOException("Server world reference does not match its server-domain identity");
+        }
+        Path dir = directory.toAbsolutePath().normalize();
+        Path parent = dir.getParent();
+        if (parent == null || dir.getFileName() == null
+                || !"worlds".equals(dir.getFileName().toString())
+                || parent.getFileName() == null
+                || !"server".equals(parent.getFileName().toString())
+                || Files.isSymbolicLink(parent) || Files.isSymbolicLink(dir)) {
+            throw new IOException("Server world path is outside a regular server/worlds domain");
+        }
+        Path file = dir.resolve(id + ".mechworld");
+        if (Files.isSymbolicLink(file)) throw new IOException("Symbolic-link server world is not allowed");
+        return file;
+    }
+
+    private static void requireWorldField(
+            java.util.Properties properties, String key, String expected) throws IOException {
+        if (!expected.equals(properties.getProperty(key))) {
+            throw new IOException("Server world field mismatch: " + key);
+        }
+    }
+
+    private static long strictWorldLong(java.util.Properties properties, String key)
+            throws IOException {
+        String value = properties.getProperty(key);
+        if (value == null || !value.matches("-?[0-9]+")) {
+            throw new IOException("Missing or malformed server world integer: " + key);
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException invalid) {
+            throw new IOException("Server world integer overflow: " + key, invalid);
+        }
+    }
+
+    /** Persistence.decList is forgiving for single-player; the server boundary must not be. */
+    private static void validateWorldMap(java.util.Properties properties, String key)
+            throws IOException {
+        String encoded = properties.getProperty(key);
+        if (encoded == null) throw new IOException("Missing server world map: " + key);
+        if (encoded.isEmpty()) return;
+        String[] entries = encoded.split(",", -1);
+        if (entries.length > 100_000) throw new IOException("Oversized server world map: " + key);
+        java.util.HashSet<String> keys = new java.util.HashSet<>();
+        for (String entry : entries) {
+            try {
+                byte[] bytes = java.util.Base64.getUrlDecoder().decode(entry);
+                if (!java.util.Base64.getUrlEncoder().withoutPadding()
+                        .encodeToString(bytes).equals(entry)) {
+                    throw new IllegalArgumentException("noncanonical base64");
+                }
+                String row = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+                        .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                        .decode(java.nio.ByteBuffer.wrap(bytes)).toString();
+                int equals = row.indexOf('=');
+                if (equals <= 0 || !keys.add(row.substring(0, equals))) {
+                    throw new IllegalArgumentException("missing or repeated map key");
+                }
+            } catch (IllegalArgumentException | java.nio.charset.CharacterCodingException malformed) {
+                throw new IOException("Malformed server world map: " + key, malformed);
+            }
+        }
+    }
+
     static String auditSummary() {
         return "authority=" + VERSION
                 + " " + GameStorageManager.get().auditSummary()

@@ -115,11 +115,20 @@ final class ServerRuntime {
                     ServerRuntimePaths.serverSlotPath(slot).toString());
         }
 
+        ServerConfig hostConfig = host ? configFromArgs(args, state, preferSteam) : null;
+        if (hostConfig != null) {
+            HiveWorldDefinition existing =
+                    ServerRuntimePaths.loadServerWorldDefinitionIfPresent(hostConfig);
+            DebugLog.audit("SERVER_WORLD_PREFLIGHT", existing == null
+                    ? "No server-domain definition present; WAIT-only host remains unmounted"
+                    : "Validated existing server-domain definition " + existing.worldId
+                            + " seed=" + existing.seed + "; map remains unmounted");
+        }
         SecureServerNetworkingCore securityCore =
                 SecureServerNetworkingCore.initialize(ServerRuntimePaths.serverRoot());
         HostBindingResult binding = null;
         if (host) {
-            ServerConfig config = configFromArgs(args, state, preferSteam);
+            ServerConfig config = hostConfig;
             state.setProperty("server.worldName", config.worldName());
             state.setProperty("server.worldId", config.worldId());
             state.setProperty(

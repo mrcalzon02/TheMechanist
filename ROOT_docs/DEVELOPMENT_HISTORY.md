@@ -1,5 +1,10 @@
 # Development History
 
+### 06.R server-domain canonical world-definition preflight (2026-11-01)
+
+- A server-host preflight now reads an **existing** server/worlds .mechworld only through the canonical world-definition schema, never from the single-player domain. It rejects unsafe IDs/references, symbolic-link files, missing/truncated definitions, wrong schema/version, world-ID/seed/name/setup mismatches, invalid progress and malformed encoded maps before calling the existing canonical decoder. A missing definition remains unmounted: the existing WAIT-only host does not generate a world, claim map authority or open MOVE.
+- The preflight is placed before host networking initialization, so a present corrupt definition cannot be silently ignored while opening the authenticated relay. Existing host startup with no definition remains WAIT-only and unchanged. The hosted-session wire smoke now exercises real generated world properties across repeated reads and adversarial rejection cases. Java 17 multiplayer and milestone CI must be observed on the exact pushed commit before declaring acceptance; this is not an alpha release or complete hosted map integration.
+
 ### 06.R independent-host cross-world identity guard (2026-11-01)
 
 - The authenticated remote session ledger and WAIT-only turn authority were previously accepted as separate constructor arguments without checking that they belonged to the same world. A caller could therefore wire a valid authenticated session to another world's turn ledger, before canonical map ownership exists. This is a real world-ownership prerequisite, not proof that a hosted map is mounted.
