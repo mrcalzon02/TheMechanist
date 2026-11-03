@@ -94,7 +94,18 @@ final class ServerRuntimePaths {
         if (size == 0L || size > 64L * 1024L * 1024L) {
             throw new IOException("Server world definition has invalid size: " + size);
         }
-        java.util.Properties properties = new java.util.Properties();
+        // Properties.load normally accepts duplicate keys with last-value-wins.
+        // A hosted-world identity must not depend on the order of conflicting fields.
+        java.util.Properties properties = new java.util.Properties() {
+            @Override
+            public synchronized Object put(Object key, Object value) {
+                if (containsKey(key)) {
+                    throw new IllegalArgumentException(
+                            "Duplicate server world field: " + key);
+                }
+                return super.put(key, value);
+            }
+        };
         try (java.io.InputStream input = Files.newInputStream(file)) {
             properties.load(input);
         } catch (IllegalArgumentException malformed) {

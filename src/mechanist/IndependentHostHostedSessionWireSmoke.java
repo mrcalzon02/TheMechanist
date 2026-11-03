@@ -519,6 +519,22 @@ final class IndependentHostHostedSessionWireSmoke {
                             && settings.encode().equals(restarted.settings().encode()),
                     "valid server definition lost identity/settings across restart read");
 
+            // Even a repeated identical identity or map field is ambiguous on disk.
+            // Java Properties silently keeps the last occurrence without this guard.
+            for (String duplicate : new String[] {
+                    "worlddef.seed", "worlddef.setup", "worlddef.zoneNames"
+            }) {
+                writeWorldFixture(file, valid);
+                Files.writeString(file,
+                        "\\n".replace("\\\\n", "\\n") + duplicate + "="
+                                + valid.getProperty(duplicate) + "\\n".replace("\\\\n", "\\n"),
+                        java.nio.charset.StandardCharsets.UTF_8,
+                        java.nio.file.StandardOpenOption.APPEND);
+                expectServerWorldRejection(directory, reference, config,
+                        "duplicate server world field " + duplicate);
+            }
+            writeWorldFixture(file, valid);
+
             expectWorldFieldRejection(file, directory, reference, config, valid,
                     "worlddef.seed", Long.toString(seed + 1));
             expectWorldFieldRejection(file, directory, reference, config, valid,
