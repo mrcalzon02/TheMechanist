@@ -526,8 +526,8 @@ final class IndependentHostHostedSessionWireSmoke {
             }) {
                 writeWorldFixture(file, valid);
                 Files.writeString(file,
-                        "\\n".replace("\\\\n", "\\n") + duplicate + "="
-                                + valid.getProperty(duplicate) + "\\n".replace("\\\\n", "\\n"),
+                        "\n" + duplicate + "="
+                                + valid.getProperty(duplicate) + "\n",
                         java.nio.charset.StandardCharsets.UTF_8,
                         java.nio.file.StandardOpenOption.APPEND);
                 expectServerWorldRejection(directory, reference, config,
