@@ -601,11 +601,32 @@ final class IndependentHostHostedSessionWireSmoke {
                 Files.deleteIfExists(file);
                 Files.move(linkedTarget, file);
             }
+            // A symlink at the saves ancestor used to evade the existing checks
+            // for just the server/worlds children. The file behind this alias
+            // genuinely exists; refusal must come from domain containment.
+            Path saveRootAlias = root.resolve("save-root-alias");
+            try {
+                try {
+                    Files.createSymbolicLink(saveRootAlias, Path.of("saves"));
+                    Path aliasedWorldDirectory =
+                            saveRootAlias.resolve("server").resolve("worlds");
+                    require(Files.isRegularFile(
+                                    aliasedWorldDirectory.resolve(file.getFileName())),
+                            "save-root symlink fixture did not resolve the real world file");
+                    expectServerWorldRejection(aliasedWorldDirectory, reference, config,
+                            "symlinked saves ancestor must not satisfy server-domain read");
+                } catch (java.nio.file.FileSystemException | UnsupportedOperationException
+                        | SecurityException unsupported) {
+                    System.out.println("SKIP: save-root symlink unsupported on this runner");
+                }
+            } finally {
+                Files.deleteIfExists(saveRootAlias);
+            }
             Files.delete(file);
             expectServerWorldRejection(directory, reference, config,
                     "missing server definition must not regenerate");
             System.out.println("PASS: canonical server-domain definition restart, identity, "
-                    + "settings, malformed-map, truncated, traversal and cross-domain refusal");
+                    + "settings, malformed-map, truncated, traversal, ancestor-symlink and cross-domain refusal");
         } finally {
             deleteRecursively(root);
         }
