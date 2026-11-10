@@ -180,6 +180,14 @@ final class ServerRuntimePaths {
                 || Files.isSymbolicLink(parent) || Files.isSymbolicLink(dir)) {
             throw new IOException("Server world path is outside a regular server/worlds domain");
         }
+        // A linked saves root can alias an unrelated player/world namespace even
+        // when the server and worlds children are ordinary directories. Reject
+        // that ancestor before reading any hosted-world definition.
+        Path saveRoot = parent.getParent();
+        if (saveRoot == null || !Files.isDirectory(saveRoot, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                || Files.isSymbolicLink(saveRoot)) {
+            throw new IOException("Server world save root must be a regular, non-symbolic directory");
+        }
         Path file = dir.resolve(id + ".mechworld");
         if (Files.isSymbolicLink(file)) throw new IOException("Symbolic-link server world is not allowed");
         return file;
