@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R server-world save-root symlink containment (2026-11-10)
+
+- The hosted definition preflight checked the `server` and `worlds` directory entries and the definition file itself, but a symbolic link at their parent save root could still redirect the read into an aliased namespace. The same canonical seed/world ID could therefore be accepted from an untrusted ancestor even though direct single-player references were refused.
+- `ServerRuntimePaths.checkedServerWorldFile` now requires the save-root ancestor to be an actual non-symbolic directory before reading. The existing world/schema/seed/setup checks, normal server-domain reads and missing-world WAIT-only behavior are unchanged.
+- Extended `IndependentHostHostedSessionWireSmoke` with a real existing definition accessed through a symbolic-link save-root alias; the test rejects that alias without rewriting the genuine definition, and skips only if the platform cannot create symbolic links. A standalone JDK 21 probe compiled with `javac --release 17` reproduced the old alias acceptance and confirmed the new path rule rejects it while accepting the real domain. Full Maven, Java 17 runtime, hosted protocol smoke, packaged and release evidence still require independent execution on this commit.
+
 ### 06.R server-domain canonical world-definition preflight (2026-11-01)
 
 - A server-host preflight now reads an **existing** server/worlds .mechworld only through the canonical world-definition schema, never from the single-player domain. It rejects unsafe IDs/references, symbolic-link files, missing/truncated definitions, wrong schema/version, world-ID/seed/name/setup mismatches, invalid progress and malformed encoded maps before calling the existing canonical decoder. A missing definition remains unmounted: the existing WAIT-only host does not generate a world, claim map authority or open MOVE.
