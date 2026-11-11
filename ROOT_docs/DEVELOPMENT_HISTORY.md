@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R portable ZIP byte-identity verification (2026-11-11)
+
+- The canonical portable verifier checked the staged file hashes and ZIP entry CRCs, but ZIP acceptance only required three named files to exist. A ZIP with changed payload bytes, extra members or missing nonessential staged files could therefore be reported as verified even when it differed from the distribution being certified.
+- `ROOT_build/ci/verify_runnable_distribution.py` now requires the archive to contain exactly one member for each staged file beneath the distribution root, with matching uncompressed size and streamed SHA-256. No extra, missing, duplicate or altered members are accepted; the existing canonical stage/launcher manifest checks remain in force.
+- Extended the existing synthetic distribution suite with a small real ZIP fixture proving exact-match acceptance and equal-length tamper, undeclared member, missing member and duplicate-member refusal. A standalone Python 3.13 probe passed these five cases before the repository change. Full bundled-Java, both-platform portable/release gates, installer lifecycle and exact-candidate runtime certification remain unrun on this commit; this repair is not a limited-alpha release.
+
 ### 06.R server-world save-root symlink containment (2026-11-10)
 
 - The hosted definition preflight checked the `server` and `worlds` directory entries and the definition file itself, but a symbolic link at their parent save root could still redirect the read into an aliased namespace. The same canonical seed/world ID could therefore be accepted from an untrusted ancestor even though direct single-player references were refused.

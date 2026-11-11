@@ -10,6 +10,8 @@ import stat
 import subprocess
 import sys
 import tempfile
+import importlib.util
+import zipfile
 
 
 def run(cmd, cwd=None, env=None, expect=0, timeout=180):
@@ -207,6 +209,53 @@ def run_client_smoke(
     )
 
 
+def verify_portable_archive_integrity_contract(verifier: pathlib.Path, root: pathlib.Path) -> None:
+    """Small non-packaged adversarial ZIP cases for the existing verifier."""
+    spec = importlib.util.spec_from_file_location("mechanist_archive_verifier", verifier)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import distribution verifier: {verifier}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    fixture = root / "Portable Archive Contract Fixture"
+    (fixture / "manifests").mkdir(parents=True)
+    (fixture / "manifests" / "runtime-manifest.json").write_text(
+        '{"fixture":"archive-integrity"}', encoding="utf-8")
+    (fixture / "payload.jar").write_bytes(b"synthetic-jar-data")
+    entries = {
+        f"{fixture.name}/{path.relative_to(fixture).as_posix()}": path.read_bytes()
+        for path in fixture.rglob("*") if path.is_file()
+    }
+    archive = root / "portable-archive-contract.zip"
+    target = f"{fixture.name}/payload.jar"
+
+    def make_archive(changes: dict[str, bytes], *, duplicate: bool = False) -> None:
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
+            for name, payload in changes.items():
+                output.writestr(name, payload)
+                if duplicate and name == target:
+                    output.writestr(name, payload)
+
+    def expect_rejection(label: str) -> None:
+        try:
+            module.verify_archive_matches_distribution(fixture, archive)
+        except (RuntimeError, zipfile.BadZipFile):
+            return
+        raise RuntimeError(f"portable ZIP verifier accepted {label}")
+
+    make_archive(entries)
+    module.verify_archive_matches_distribution(fixture, archive)
+    make_archive({**entries, target: b"synthetic-jar-datA"})
+    expect_rejection("equal-length changed payload")
+    make_archive({**entries, f"{fixture.name}/undeclared.txt": b"undeclared"})
+    expect_rejection("undeclared extra entry")
+    make_archive({name: value for name, value in entries.items() if name != target})
+    expect_rejection("missing staged payload")
+    # A duplicate ZIP member has a valid CRC for each copy but is not a unique payload.
+    make_archive(entries, duplicate=True)
+    expect_rejection("duplicate archive member")
+    print("PASS: portable ZIP/stage identity, tamper, extra, missing and duplicate rejection")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("distribution", type=pathlib.Path)
@@ -228,6 +277,8 @@ def main() -> int:
 
     root = pathlib.Path(tempfile.mkdtemp(prefix="Mechanist Synthetic Path With Spaces "))
     try:
+        verifier = args.verifier.resolve()
+        verify_portable_archive_integrity_contract(verifier, root)
         install = root / "Read Only Program Files" / source.name
         shutil.copytree(source, install)
         profile = root / "Synthetic User Profile With Spaces"
@@ -500,6 +551,7 @@ def main() -> int:
             "nativeInstallerPayloadStage": native_stage_verified,
             "nativeInstallerPayloadStageRequired": release_hardened,
             "tamperedManifestRejected": True,
+            "tamperedArchiveRejected": True,
             "missingSupportRejected": True,
         }
         rendered = json.dumps(summary, indent=2, sort_keys=True)

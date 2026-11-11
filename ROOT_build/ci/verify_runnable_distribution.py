@@ -328,6 +328,37 @@ def verify_remote_launcher(
     }
 
 
+def verify_archive_matches_distribution(root: pathlib.Path, archive: pathlib.Path) -> None:
+    """The portable ZIP must contain exactly the verified staged files, byte for byte."""
+    if not archive.is_file():
+        fail(f"distribution archive does not exist: {archive}")
+    staged = {
+        (pathlib.PurePosixPath(root.name) / pathlib.PurePosixPath(
+            path.relative_to(root).as_posix())).as_posix(): path
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    with zipfile.ZipFile(archive) as distribution_zip:
+        seen: set[str] = set()
+        for info in distribution_zip.infolist():
+            name = info.filename
+            if info.is_dir() or name in seen or name not in staged:
+                fail(f"distribution ZIP contains unexpected or duplicate entry: {name}")
+            seen.add(name)
+            source = staged[name]
+            if info.file_size != source.stat().st_size:
+                fail(f"distribution ZIP entry size differs from stage: {name}")
+            archive_digest = hashlib.sha256()
+            with distribution_zip.open(info) as zipped:
+                for block in iter(lambda: zipped.read(1024 * 1024), b""):
+                    archive_digest.update(block)
+            if archive_digest.hexdigest() != sha256(source):
+                fail(f"distribution ZIP entry hash differs from stage: {name}")
+        missing = set(staged) - seen
+        if missing:
+            fail(f"distribution ZIP omits staged files: {sorted(missing)[:12]}")
+
+
 def verify_distribution(
     root: pathlib.Path,
     archive: pathlib.Path | None,
@@ -428,24 +459,7 @@ def verify_distribution(
                 fail(f"{support}: corrupt support JAR entry {bad}")
 
     if archive is not None:
-        if not archive.is_file():
-            fail(f"distribution archive does not exist: {archive}")
-        with zipfile.ZipFile(archive) as distribution_zip:
-            bad = distribution_zip.testzip()
-            if bad:
-                fail(f"distribution ZIP contains corrupt entry {bad}")
-            names = set(distribution_zip.namelist())
-            required_archive_paths = {
-                f"{root.name}/manifests/runtime-manifest.json",
-                f"{root.name}/{LAUNCHER_COMPATIBILITY_MANIFEST}",
-                f"{root.name}/{remote_launcher['path']}",
-            }
-            missing_archive_paths = required_archive_paths - names
-            if missing_archive_paths:
-                fail(
-                    "distribution ZIP omits required files: "
-                    f"{sorted(missing_archive_paths)}"
-                )
+        verify_archive_matches_distribution(root, archive)
 
     return {
         "distribution": root.name,
