@@ -228,10 +228,19 @@ def verify_portable_archive_integrity_contract(verifier: pathlib.Path, root: pat
     archive = root / "portable-archive-contract.zip"
     target = f"{fixture.name}/payload.jar"
 
-    def make_archive(changes: dict[str, bytes], *, duplicate: bool = False) -> None:
+    def make_archive(
+        changes: dict[str, bytes], *, duplicate: bool = False, unix_symlink: bool = False
+    ) -> None:
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
             for name, payload in changes.items():
-                output.writestr(name, payload)
+                if unix_symlink and name == target:
+                    # Some extractors materialize this as a link despite identical bytes.
+                    info = zipfile.ZipInfo(name)
+                    info.create_system = 3
+                    info.external_attr = (stat.S_IFLNK | 0o777) << 16
+                    output.writestr(info, payload)
+                else:
+                    output.writestr(name, payload)
                 if duplicate and name == target:
                     output.writestr(name, payload)
 
@@ -253,7 +262,21 @@ def verify_portable_archive_integrity_contract(verifier: pathlib.Path, root: pat
     # A duplicate ZIP member has a valid CRC for each copy but is not a unique payload.
     make_archive(entries, duplicate=True)
     expect_rejection("duplicate archive member")
-    print("PASS: portable ZIP/stage identity, tamper, extra, missing and duplicate rejection")
+    make_archive(entries, unix_symlink=True)
+    expect_rejection("Unix symbolic-link ZIP entry metadata")
+
+    outside = root / "Outside Verified Stage Payload"
+    outside.write_bytes(b"external payload that must not be packaged via a link")
+    alias = fixture / "linked-payload.jar"
+    try:
+        alias.symlink_to(outside)
+    except (OSError, NotImplementedError):
+        print("SKIP: staged symbolic-link fixture unsupported on this host")
+    else:
+        make_archive({**entries, f"{fixture.name}/{alias.name}": outside.read_bytes()})
+        expect_rejection("staged symbolic link resolving outside the distribution")
+        alias.unlink()
+    print("PASS: portable ZIP identity, tamper, membership and link-type rejection")
 
 
 def main() -> int:

@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import pathlib
+import stat
 import sys
 import zipfile
 
@@ -49,6 +50,19 @@ def sha256(path: pathlib.Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def staged_regular_files(root: pathlib.Path) -> list[pathlib.Path]:
+    """Reject links in the stage before hashing, archiving or certifying files."""
+    if not root.is_dir() or root.is_symlink():
+        fail(f"distribution stage must be a real directory: {root}")
+    files: list[pathlib.Path] = []
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            fail(f"distribution stage contains symbolic link: {path}")
+        if path.is_file():
+            files.append(path)
+    return files
 
 
 def github_publish_prerelease_requested() -> bool:
@@ -335,8 +349,7 @@ def verify_archive_matches_distribution(root: pathlib.Path, archive: pathlib.Pat
     staged = {
         (pathlib.PurePosixPath(root.name) / pathlib.PurePosixPath(
             path.relative_to(root).as_posix())).as_posix(): path
-        for path in root.rglob("*")
-        if path.is_file()
+        for path in staged_regular_files(root)
     }
     with zipfile.ZipFile(archive) as distribution_zip:
         seen: set[str] = set()
@@ -344,6 +357,9 @@ def verify_archive_matches_distribution(root: pathlib.Path, archive: pathlib.Pat
             name = info.filename
             if info.is_dir() or name in seen or name not in staged:
                 fail(f"distribution ZIP contains unexpected or duplicate entry: {name}")
+            entry_type = stat.S_IFMT(info.external_attr >> 16)
+            if entry_type not in (0, stat.S_IFREG) or info.external_attr & 0x10:
+                fail(f"distribution ZIP contains non-file entry: {name}")
             seen.add(name)
             source = staged[name]
             if info.file_size != source.stat().st_size:
@@ -364,6 +380,7 @@ def verify_distribution(
     archive: pathlib.Path | None,
     require_release_hardened: bool = False,
 ) -> dict[str, object]:
+    staged_paths = staged_regular_files(root)
     manifest_path = root / "manifests" / "runtime-manifest.json"
     if not manifest_path.is_file():
         fail(f"missing runtime manifest: {manifest_path}")
@@ -417,8 +434,8 @@ def verify_distribution(
 
     actual_paths = {
         pathlib.PurePosixPath(path.relative_to(root).as_posix()).as_posix()
-        for path in root.rglob("*")
-        if path.is_file() and path != manifest_path
+        for path in staged_paths
+        if path != manifest_path
     }
     undeclared = actual_paths - declared_paths
     missing_files = declared_paths - actual_paths

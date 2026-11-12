@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R portable stage and ZIP link-type containment (2026-11-12)
+
+- The portable verifier proved ZIP membership and byte identity, but a staged symbolic-link file could be hashed and archived as its target, and a ZIP member marked as a Unix symbolic link could carry matching bytes while extracting as a link with other tools. Neither belongs in a canonical installer-controlled payload.
+- The existing distribution verifier now rejects symlinks in the staged distribution (including its root), both with and without a ZIP, and refuses ZIP entries whose metadata declares a symbolic link or another non-regular file type. The canonical builder continues to emit ordinary file entries; no package schema or runtime authority was added.
+- Expanded the existing synthetic archive contract with Unix link-metadata rejection and a real out-of-stage symlink fixture (skipped only on hosts that cannot create a link). A focused Python 3.13 standalone behavioral probe accepted a genuine file archive and rejected the link, directory-metadata, and altered-payload cases. Full canonical distribution, Java 17, native installer, and exact-candidate release gates were not run; this remains a release-hardening change, not release certification.
+
 ### 06.R portable ZIP byte-identity verification (2026-11-11)
 
 - The canonical portable verifier checked the staged file hashes and ZIP entry CRCs, but ZIP acceptance only required three named files to exist. A ZIP with changed payload bytes, extra members or missing nonessential staged files could therefore be reported as verified even when it differed from the distribution being certified.
