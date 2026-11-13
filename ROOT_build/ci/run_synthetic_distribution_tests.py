@@ -209,6 +209,98 @@ def run_client_smoke(
     )
 
 
+def verify_launcher_manifest_identity_contract(verifier: pathlib.Path, root: pathlib.Path) -> None:
+    """Compatibility identity must agree with the canonical release, without type coercion."""
+    spec = importlib.util.spec_from_file_location("mechanist_launcher_identity_verifier", verifier)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import distribution verifier: {verifier}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    fixture = root / "Launcher Compatibility Identity Fixture"
+    (fixture / "manifests").mkdir(parents=True)
+    manifest = fixture / "manifests" / "launcher-runtime-manifest.json"
+    client_path = "packages/client/TheMechanist.jar"
+    server_path = "packages/server/TheMechanistServer.jar"
+    support_path = "packages/support/lib/netty-fixture.jar"
+    canonical = {
+        "version": "0.0.0-fixture",
+        "platform": "linux-x64",
+        "javaRelease": 17,
+        "releaseHardened": True,
+        "remoteClientEntryPoint": "mechanist.RemoteClientMain",
+    }
+    canonical_entries = {
+        "manifests/launcher-runtime-manifest.json": {"role": "manifest"},
+        client_path: {"role": "client", "size": 12, "sha256": "abc123"},
+        server_path: {"role": "server", "size": 13, "sha256": "def456"},
+        support_path: {"role": "support", "size": 14, "sha256": "789abc"},
+    }
+    baseline = {
+        "schema": 2,
+        "distribution_model": "installer-thin-launcher-client-server",
+        "version": canonical["version"],
+        "platform": canonical["platform"],
+        "java_release": 17,
+        "release_hardened": True,
+        "client": {
+            "path": client_path,
+            "size": 12,
+            "sha256": "abc123",
+            "main_class": "mechanist.TheMechanist",
+            "launcher_main_class": "mechanist.launcher.ThinLauncherMain",
+            "remote_main_class": "mechanist.RemoteClientMain",
+        },
+        "server": {"path": server_path, "size": 13, "sha256": "def456"},
+        "support_libraries": [
+            {"path": support_path, "size": 14, "sha256": "789abc"},
+        ],
+    }
+
+    def check(payload: dict[str, object], *, valid: bool, label: str) -> None:
+        manifest.write_text(json.dumps(payload), encoding="utf-8")
+        try:
+            result = module.verify_launcher_compatibility_manifest(
+                fixture, canonical, canonical_entries)
+        except RuntimeError:
+            if valid:
+                raise RuntimeError(f"valid launcher identity rejected: {label}")
+        else:
+            if not valid:
+                raise RuntimeError(f"invalid launcher identity accepted: {label}")
+            if result["status"] != "verified":
+                raise RuntimeError(f"launcher verifier did not report success: {label}")
+
+    check(baseline, valid=True, label="canonical identity")
+    for field in ("java_release", "release_hardened"):
+        broken = json.loads(json.dumps(baseline))
+        broken.pop(field)
+        check(broken, valid=False, label=f"missing {field}")
+    for field, wrong in (
+        ("java_release", 21),
+        ("java_release", "17"),
+        ("release_hardened", False),
+        ("release_hardened", "true"),
+    ):
+        broken = json.loads(json.dumps(baseline))
+        broken[field] = wrong
+        check(broken, valid=False, label=f"{field}={wrong!r}")
+    for replacement in (None, "mechanist.launcher.ImpostorMain"):
+        broken = json.loads(json.dumps(baseline))
+        if replacement is None:
+            broken["client"].pop("launcher_main_class")
+        else:
+            broken["client"]["launcher_main_class"] = replacement
+        check(broken, valid=False, label=f"launcher_main_class={replacement!r}")
+
+    canonical["releaseHardened"] = False
+    baseline["release_hardened"] = False
+    check(baseline, valid=True, label="development build identity")
+    broken = json.loads(json.dumps(baseline))
+    broken["release_hardened"] = "false"
+    check(broken, valid=False, label="string false hardening claim")
+    print("PASS: thin-launcher Java, hardening and entrypoint identity contract")
+
+
 def verify_portable_archive_integrity_contract(verifier: pathlib.Path, root: pathlib.Path) -> None:
     """Small non-packaged adversarial ZIP cases for the existing verifier."""
     spec = importlib.util.spec_from_file_location("mechanist_archive_verifier", verifier)
@@ -301,6 +393,7 @@ def main() -> int:
     root = pathlib.Path(tempfile.mkdtemp(prefix="Mechanist Synthetic Path With Spaces "))
     try:
         verifier = args.verifier.resolve()
+        verify_launcher_manifest_identity_contract(verifier, root)
         verify_portable_archive_integrity_contract(verifier, root)
         install = root / "Read Only Program Files" / source.name
         shutil.copytree(source, install)

@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R thin-launcher release identity must match canonical manifest (2026-11-13)
+
+- The canonical distribution builder already writes `java_release`, `release_hardened` and `launcher_main_class` into the secondary thin-launcher compatibility manifest, but the distribution verifier ignored the Java target and launcher entrypoint and allowed missing or truthy-string hardening claims. A doctored manifest could therefore be reported as verified while disagreeing with the canonical Java/release identity.
+- The existing verifier now requires exact Java 17, boolean hardening parity and the existing thin-launcher entrypoint. No new manifest format, packaging tree or launcher authority is introduced. The existing packaged synthetic runner now exercises legitimate hardened/development variants and rejects missing, mistyped, contradictory or spoofed identity fields.
+- An isolated Python 3.13 contract probe passed 11 valid and adversarial cases. The full repository-integrated synthetic suite, Java 17 build, native installers and exact-candidate release gates remain unexecuted; this repair does not certify a limited alpha.
+
 ### 06.R portable stage and ZIP link-type containment (2026-11-12)
 
 - The portable verifier proved ZIP membership and byte identity, but a staged symbolic-link file could be hashed and archived as its target, and a ZIP member marked as a Unix symbolic link could carry matching bytes while extracting as a link with other tools. Neither belongs in a canonical installer-controlled payload.

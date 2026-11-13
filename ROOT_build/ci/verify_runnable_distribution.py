@@ -230,6 +230,8 @@ def verify_launcher_compatibility_manifest(
         "distribution_model",
         "version",
         "platform",
+        "java_release",
+        "release_hardened",
         "client",
         "server",
         "support_libraries",
@@ -241,7 +243,10 @@ def verify_launcher_compatibility_manifest(
         fail("thin-launcher compatibility identity is invalid")
     if data["version"] != canonical["version"] or data["platform"] != canonical["platform"]:
         fail("thin-launcher compatibility version/platform differs from canonical manifest")
-    if "release_hardened" in data and bool(data["release_hardened"]) != bool(canonical["releaseHardened"]):
+    if type(data["java_release"]) is not int or data["java_release"] != canonical["javaRelease"]:
+        fail("thin-launcher Java release differs from canonical manifest")
+    if (type(data["release_hardened"]) is not bool
+            or data["release_hardened"] is not canonical["releaseHardened"]):
         fail("thin-launcher hardening identity differs from canonical manifest")
 
     checked_paths: set[str] = set()
@@ -267,6 +272,8 @@ def verify_launcher_compatibility_manifest(
     client = data["client"]
     if client.get("main_class") != EXPECTED_MAIN_CLASSES["client"]:
         fail("thin-launcher client main_class is invalid")
+    if client.get("launcher_main_class") != "mechanist.launcher.ThinLauncherMain":
+        fail("thin-launcher launcher_main_class is invalid")
     if client.get("remote_main_class") != REMOTE_CLIENT_MAIN:
         fail("thin-launcher remote_main_class is invalid")
     if canonical.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
