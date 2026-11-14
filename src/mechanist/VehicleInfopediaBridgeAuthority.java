@@ -55,6 +55,8 @@ final class VehicleInfopediaBridgeAuthority {
     static ArrayList<String> dossierLines(
             VehicleRuntimeAuthority.VehicleClass definition) {
         VehicleRuntimeAuthority.VehicleClass safe = safe(definition);
+        VehicleOperationFeedbackAuthority.FeedbackProfile feedback =
+                VehicleOperationFeedbackAuthority.profileForClass(safe);
         ArrayList<String> lines = new ArrayList<>();
         lines.add(title(safe));
         lines.add("Role and scale: " + safe.role + "; durability "
@@ -71,8 +73,8 @@ final class VehicleInfopediaBridgeAuthority {
                 + " script purchase baseline; " + safe.salvageBase
                 + " machine-part salvage baseline before condition and custody rules.");
         lines.add("Sensory profile: headlight range up to "
-                + referenceHeadlightRange(safe) + " tile(s); ambient operating sound carries up to "
-                + referenceAudibleRange(safe) + " tile(s) when enabled and unobstructed by mute settings.");
+                + feedback.headlightRange() + " tile(s); ambient operating sound carries up to "
+                + feedback.audibleRange() + " tile(s) when enabled and unobstructed by mute settings.");
         lines.add("Authority boundary: a dossier grants no title, permit, driver assignment, cargo custody, deployment order, seizure warrant, or route reservation.");
         return lines;
     }
@@ -194,27 +196,6 @@ final class VehicleInfopediaBridgeAuthority {
         return consequences.isEmpty()
                 ? "Loss and hazard state: no active persistent consequence recorded."
                 : "Loss and hazard state: " + String.join(", ", consequences) + ".";
-    }
-
-    private static int referenceHeadlightRange(
-            VehicleRuntimeAuthority.VehicleClass definition) {
-        return switch (safe(definition)) {
-            case UTILITY_BIKE -> 2;
-            case CIVILIAN_CAR -> 3;
-            case CARGO_TRUCK, ARMORED_CAR -> 4;
-            case TANK -> 5;
-        };
-    }
-
-    private static int referenceAudibleRange(
-            VehicleRuntimeAuthority.VehicleClass definition) {
-        return switch (safe(definition)) {
-            case UTILITY_BIKE -> 12;
-            case CIVILIAN_CAR -> 16;
-            case CARGO_TRUCK -> 20;
-            case ARMORED_CAR -> 22;
-            case TANK -> 24;
-        };
     }
 
     private static VehicleRuntimeAuthority.VehicleClass safe(

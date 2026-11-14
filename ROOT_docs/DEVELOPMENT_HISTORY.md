@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 vehicle Infopedia sensory profile ownership (2026-11-14)
+
+- The static class dossier maintained separate headlight and audible-range tables although `VehicleOperationFeedbackAuthority.FeedbackProfile` already owns runtime presentation tuning. Those tables could silently diverge and mislead players.
+- Added read-only class-level feedback lookup to that existing authority, removed the duplicate dossier switches, and kept live dashboards dependent on actual vehicle component damage. The existing `Milestone06VehicleDashboardSmoke` now tests each class against undamaged runtime ranges and a physically degraded vehicle against its live dashboard.
+- Source structural contract checks passed before commit; full Java 17 compilation, the integrated Milestone 06/Gate 3 smoke, packaging and game runtime were not executed. This is not alpha release certification.
+
 ### 06.R thin-launcher release identity must match canonical manifest (2026-11-13)
 
 - The canonical distribution builder already writes `java_release`, `release_hardened` and `launcher_main_class` into the secondary thin-launcher compatibility manifest, but the distribution verifier ignored the Java target and launcher entrypoint and allowed missing or truthy-string hardening claims. A doctored manifest could therefore be reported as verified while disagreeing with the canonical Java/release identity.

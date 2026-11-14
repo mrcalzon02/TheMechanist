@@ -387,18 +387,24 @@ final class VehicleOperationFeedbackAuthority {
                 x, y, 1, Math.max(4, intensity), new Color(228, 208, 154), degraded));
     }
 
-    static FeedbackProfile profileFor(MapObjectState vehicle) {
-        VehicleRuntimeAuthority.VehicleClass vehicleClass =
-                vehicle == null
-                        ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR
-                        : VehicleRuntimeAuthority.vehicleClass(vehicle.type);
-        FeedbackProfile profile = FEEDBACK_PROFILES.get(vehicleClass);
+    /** Read the existing presentation tuning without constructing a vehicle. */
+    static FeedbackProfile profileForClass(
+            VehicleRuntimeAuthority.VehicleClass vehicleClass) {
+        VehicleRuntimeAuthority.VehicleClass resolved = vehicleClass == null
+                ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR
+                : vehicleClass;
+        FeedbackProfile profile = FEEDBACK_PROFILES.get(resolved);
         if (profile == null) {
             throw new IllegalStateException(
                     "Vehicle operation feedback profile is missing for "
-                            + vehicleClass.name());
+                            + resolved.name());
         }
         return profile;
+    }
+
+    static FeedbackProfile profileFor(MapObjectState vehicle) {
+        return profileForClass(vehicle == null
+                ? null : VehicleRuntimeAuthority.vehicleClass(vehicle.type));
     }
 
     static String profileAuditSummary(MapObjectState vehicle) {

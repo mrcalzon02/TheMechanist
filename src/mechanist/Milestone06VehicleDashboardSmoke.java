@@ -98,6 +98,31 @@ final class Milestone06VehicleDashboardSmoke {
                     "restored cargo custody");
             requireContains(restoredDashboard, "sector-7/dashboard-depot",
                     "restored strategic reservation");
+            // The live dossier must report degraded physical capability, not
+            // the undamaged class maxima shown by its static Infopedia entry.
+            VehicleRuntimeAuthority.applyDamage(restored,
+                    VehicleRuntimeAuthority.Component.LIGHTS, 40,
+                    game.turn, "dashboard damaged light proof");
+            VehicleRuntimeAuthority.applyDamage(restored,
+                    VehicleRuntimeAuthority.Component.POWERPLANT, 75,
+                    game.turn, "dashboard damaged engine proof");
+            VehicleOperationFeedbackAuthority.FeedbackProfile carProfile =
+                    VehicleOperationFeedbackAuthority.profileForClass(
+                            VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR);
+            require(VehicleOperationFeedbackAuthority.headlightRange(restored)
+                            < carProfile.headlightRange()
+                            && VehicleOperationFeedbackAuthority.ambientAudibleRange(restored)
+                            < carProfile.audibleRange(),
+                    "damage should reduce physical light and audio ranges");
+            requireContains(VehicleInfopediaBridgeAuthority.liveDossier(game, restored),
+                    "Sensory feedback: "
+                            + VehicleOperationFeedbackAuthority.soundCue(restored)
+                            + " operating cue; audible range "
+                            + VehicleOperationFeedbackAuthority.ambientAudibleRange(restored)
+                            + " tile(s); working headlight range "
+                            + VehicleOperationFeedbackAuthority.headlightRange(restored)
+                            + " tile(s).",
+                    "damaged dashboard must use physical rather than class sensory values");
             require(VehicleInfopediaBridgeAuthority.liveDossier(game, null)
                             .equals(List.of("No live vehicle dashboard is available.")),
                     "missing fixture should produce one safe dashboard refusal line");
@@ -181,6 +206,27 @@ final class Milestone06VehicleDashboardSmoke {
                             && VehicleInfopediaBridgeAuthority.useLine(definition)
                             .contains("grants no ownership"),
                     "vehicle class description/use boundary is incomplete for "
+                            + definition.label);
+            VehicleOperationFeedbackAuthority.FeedbackProfile feedback =
+                    VehicleOperationFeedbackAuthority.profileForClass(definition);
+            List<String> classLines =
+                    VehicleInfopediaBridgeAuthority.dossierLines(definition);
+            requireContains(classLines,
+                    "headlight range up to " + feedback.headlightRange() + " tile(s)",
+                    "class dossier must use runtime-owned headlight range for "
+                            + definition.label);
+            requireContains(classLines,
+                    "ambient operating sound carries up to "
+                            + feedback.audibleRange() + " tile(s)",
+                    "class dossier must use runtime-owned audible range for "
+                            + definition.label);
+            MapObjectState undamaged = new MapObjectState();
+            undamaged.type = definition.type;
+            require(VehicleOperationFeedbackAuthority.headlightRange(undamaged)
+                            == feedback.headlightRange()
+                            && VehicleOperationFeedbackAuthority.ambientAudibleRange(undamaged)
+                            == feedback.audibleRange(),
+                    "undamaged runtime and class dossier must share sensory tuning for "
                             + definition.label);
         }
     }
