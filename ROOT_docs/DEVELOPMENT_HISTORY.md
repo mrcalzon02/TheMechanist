@@ -1,5 +1,11 @@
 # Development History
 
+### Gate 3 live closed/open door semantic agreement (2026-11-15)
+
+- Exact-commit Java 17 Main Milestone Gate on `81a222d553b68e0b955aeb8bf5c28f96773b7f9f` compiled the source successfully but failed at `TileSemanticRuntimeRegistrySmoke`: the canonical closed-door tile alias resolved to `FIX-0008`, while generic semantic door ranking selected `WAL-0019`. That mismatch left live door presentation dependent on which bridge a renderer called.
+- `SemanticRenderAssetResolver.resolve` now uses the existing `TileSemanticAssetAuthority` live closed/open alias when passed the actual `AssetManager` registry, requiring semantic compatibility before selection. Caller-provided/synthetic registries, unrecognized aliases, and the explicit stable-variant overload retain the existing generic resolution behavior; no second door registry or map authority is added.
+- The existing Gate 3 `TileSemanticRuntimeRegistrySmoke` already asserts exact agreement for both door states, while the synthetic semantic resolver smoke covers independent registries. The source change was structurally inspected before submission. Full Java 17 Gate 3, packaging, installed gameplay, and limited-alpha evidence must be observed on the new exact commit; this entry does not claim those checks passed.
+
 ### Milestone 06 vehicle Infopedia sensory profile ownership (2026-11-14)
 
 - The static class dossier maintained separate headlight and audible-range tables although `VehicleOperationFeedbackAuthority.FeedbackProfile` already owns runtime presentation tuning. Those tables could silently diverge and mislead players.

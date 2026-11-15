@@ -1,5 +1,6 @@
 package mechanist;
 
+import mechanist.assets.AssetManager;
 import mechanist.assets.AssetMetadata;
 import mechanist.assets.AssetRegistry;
 import mechanist.assets.AssetType;
@@ -105,6 +106,14 @@ final class SemanticRenderAssetResolver {
 
     static Resolution resolve(AssetRegistry registry, RenderIntent intent) {
         AssetRegistry safe = registry == null ? AssetRegistry.empty() : registry;
+        // Live map doors already have a canonical, registry-checked tile alias.
+        // Do not let generic semantic ranking choose a different wall/fixture
+        // for the same closed/open state. Synthetic registries remain independent.
+        Optional<AssetMetadata> mappedDoor = liveTileDoor(safe, intent);
+        if (mappedDoor.isPresent()) {
+            return Resolution.found(intent, mappedDoor.orElseThrow(),
+                    "Matched canonical live tile door alias for " + intent + ".");
+        }
         List<AssetMetadata> candidates = candidatesFor(safe, intent);
         if (candidates.isEmpty()) {
             return Resolution.missing(intent, "No semantic asset matched " + intent + ". Renderer must use explicit missing-art fallback, not unrelated art.");
@@ -129,6 +138,19 @@ final class SemanticRenderAssetResolver {
                 intent,
                 candidates.get(variantIndex),
                 "Matched stable variant " + (variantIndex + 1) + "/" + topCount + " from top-priority semantic assets for " + intent + ".");
+    }
+
+    private static Optional<AssetMetadata> liveTileDoor(AssetRegistry registry, RenderIntent intent) {
+        if (intent != RenderIntent.DOOR_CLOSED && intent != RenderIntent.DOOR_OPEN) {
+            return Optional.empty();
+        }
+        // The alias owner is tied to AssetManager's current runtime registry;
+        // never leak its IDs into a caller-supplied test/mod registry.
+        if (registry != AssetManager.registry()) return Optional.empty();
+        String alias = intent == RenderIntent.DOOR_CLOSED ? "door_standard" : "door_archway";
+        return TileSemanticAssetAuthority.assetIdForAlias(alias)
+                .flatMap(registry::find)
+                .filter(asset -> canUse(asset, intent));
     }
 
     static Optional<AssetMetadata> optional(AssetRegistry registry, RenderIntent intent) {
