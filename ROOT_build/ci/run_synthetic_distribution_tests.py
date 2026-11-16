@@ -371,6 +371,67 @@ def verify_portable_archive_integrity_contract(verifier: pathlib.Path, root: pat
     print("PASS: portable ZIP identity, tamper, membership and link-type rejection")
 
 
+def verify_jlink_runtime_link_contract(builder: pathlib.Path, root: pathlib.Path) -> None:
+    """The builder may flatten safe jlink aliases, never arbitrary or escaping links."""
+    spec = importlib.util.spec_from_file_location("mechanist_runtime_link_builder", builder)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import distribution builder: {builder}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    image = root / "Bundled Jlink Runtime Contract Fixture"
+    base = image / "legal" / "java.base"
+    naming = image / "legal" / "java.naming"
+    xml = image / "legal" / "java.xml"
+    for folder in (base, naming, xml):
+        folder.mkdir(parents=True)
+    official = base / "ADDITIONAL_LICENSE_INFO"
+    official.write_bytes(b"canonical JDK legal file")
+    alias = naming / official.name
+    try:
+        alias.symlink_to("../java.base/ADDITIONAL_LICENSE_INFO")
+    except (OSError, NotImplementedError):
+        print("SKIP: jlink symbolic-link fixture unsupported on this host")
+        return
+    chained = xml / official.name
+    chained.symlink_to("../java.naming/ADDITIONAL_LICENSE_INFO")
+
+    if module.normalize_jlink_runtime_links(image) != 2:
+        raise RuntimeError("jlink normalization omitted an internal legal-file alias")
+    if any(link.is_symlink() or link.read_bytes() != official.read_bytes()
+           for link in (alias, chained)):
+        raise RuntimeError("jlink normalization did not preserve the real file bytes")
+    if module.normalize_jlink_runtime_links(image) != 0:
+        raise RuntimeError("jlink normalization is not idempotent")
+
+    def expect_rejection(link: pathlib.Path, label: str) -> None:
+        try:
+            module.normalize_jlink_runtime_links(image)
+        except RuntimeError:
+            if not link.is_symlink():
+                raise RuntimeError(f"rejected jlink link was unexpectedly altered: {label}")
+        else:
+            raise RuntimeError(f"unsafe jlink link accepted: {label}")
+        link.unlink()
+
+    outside = root / "Outside JDK Runtime File"
+    outside.write_bytes(b"must remain outside")
+    malicious = naming / "OUTSIDE_LICENSE"
+    malicious.symlink_to(outside)
+    expect_rejection(malicious, "target outside the runtime")
+    if outside.read_bytes() != b"must remain outside":
+        raise RuntimeError("external file changed during refused normalization")
+
+    broken = naming / "BROKEN_LICENSE"
+    broken.symlink_to("../java.base/NO_SUCH_FILE")
+    expect_rejection(broken, "dangling legal-file alias")
+
+    directory = naming / "DIRECTORY_ALIAS"
+    directory.symlink_to(base, target_is_directory=True)
+    expect_rejection(directory, "symlink to directory")
+    print("PASS: jlink in-runtime link normalization and unsafe-link rejection")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("distribution", type=pathlib.Path)
@@ -395,6 +456,7 @@ def main() -> int:
         verifier = args.verifier.resolve()
         verify_launcher_manifest_identity_contract(verifier, root)
         verify_portable_archive_integrity_contract(verifier, root)
+        verify_jlink_runtime_link_contract(verifier.with_name("build_runnable_distribution.py"), root)
         install = root / "Read Only Program Files" / source.name
         shutil.copytree(source, install)
         profile = root / "Synthetic User Profile With Spaces"
@@ -667,6 +729,7 @@ def main() -> int:
             "nativeInstallerPayloadStage": native_stage_verified,
             "nativeInstallerPayloadStageRequired": release_hardened,
             "tamperedManifestRejected": True,
+            "jlinkRuntimeLinkNormalization": True,
             "tamperedArchiveRejected": True,
             "missingSupportRejected": True,
         }

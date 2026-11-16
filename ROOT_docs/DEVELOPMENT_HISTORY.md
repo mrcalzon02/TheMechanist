@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R Linux jlink legal-file alias normalization (2026-11-16)
+
+- Exact-commit Linux installer verification on `cf7cd61b21bb5c842c0d1b87970ad42d648ca00b` failed before native packaging: the canonical stage contained a jlink-created symbolic link at `runtime/legal/java.naming/ADDITIONAL_LICENSE_INFO`. The hardened stage verifier correctly refuses links; weakening it would reintroduce the portable ZIP extraction ambiguity closed in the November 12 repair.
+- The existing canonical distribution builder now materializes only **in-runtime regular-file targets** produced by jlink, before either launcher/canonical manifest or portable ZIP generation. Targets outside the runtime, dangling links, and directory links fail closed; staged-link and ZIP type refusal remain intact. Normalized files are copied atomically with hash agreement and retain source metadata. No alternate runtime tree or verifier bypass was added.
+- The existing packaged synthetic distribution runner now exercises chained in-runtime legal links, idempotence, escaped targets, broken links, directory links and external-file non-mutation. An isolated Python 3 probe passed the normalization/rejection behavior prior to commit. Exact-commit Linux and Windows canonical build, packaged synthetic, native installer, Java 17 and gameplay/release evidence must be re-observed after the change; this is not limited-alpha certification.
+
 ### Gate 3 live closed/open door semantic agreement (2026-11-15)
 
 - Exact-commit Java 17 Main Milestone Gate on `81a222d553b68e0b955aeb8bf5c28f96773b7f9f` compiled the source successfully but failed at `TileSemanticRuntimeRegistrySmoke`: the canonical closed-door tile alias resolved to `FIX-0008`, while generic semantic door ranking selected `WAL-0019`. That mismatch left live door presentation dependent on which bridge a renderer called.

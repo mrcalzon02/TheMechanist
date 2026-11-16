@@ -20,6 +20,7 @@ import platform as host_platform
 import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 
 RUNTIME_MODULES = (
@@ -175,6 +176,39 @@ def require_jar_version(path: pathlib.Path, expected: str, role: str) -> str:
             f"{role} version mismatch: expected {expected}, found {actual} in {path}"
         )
     return actual
+
+
+def normalize_jlink_runtime_links(runtime: pathlib.Path) -> int:
+    """Materialize only in-runtime jlink file aliases before manifest/ZIP creation."""
+    if not runtime.is_dir() or runtime.is_symlink():
+        raise RuntimeError(f"jlink runtime must be a real directory: {runtime}")
+    boundary = runtime.resolve(strict=True)
+    count = 0
+    for path in sorted(runtime.rglob("*")):
+        if not path.is_symlink():
+            continue
+        try:
+            target = path.resolve(strict=True)
+            target.relative_to(boundary)
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise RuntimeError(f"jlink runtime link escapes runtime or is broken: {path}") from exc
+        if not target.is_file():
+            raise RuntimeError(f"jlink runtime link does not target a regular file: {path}")
+        fd, temporary_name = tempfile.mkstemp(prefix=".mechanist-jlink-", dir=path.parent)
+        os.close(fd)
+        temporary = pathlib.Path(temporary_name)
+        try:
+            shutil.copy2(target, temporary)
+            if sha256(target) != sha256(temporary):
+                raise RuntimeError(f"jlink runtime link copy mismatch: {path}")
+            os.replace(temporary, path)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+        count += 1
+    if count:
+        print(f"Materialized {count} in-runtime jlink file links", flush=True)
+    return count
 
 
 def stage_playtest_documents(repo: pathlib.Path, distribution: pathlib.Path) -> list[str]:
@@ -515,6 +549,7 @@ def main() -> int:
         repo,
     )
 
+    runtime_links_materialized = normalize_jlink_runtime_links(distribution / "runtime")
     playtest_documents = stage_playtest_documents(repo, distribution)
     write_launchers(distribution, current_platform)
     write_launcher_compatibility_manifest(
@@ -540,6 +575,7 @@ def main() -> int:
         "releaseHardened": release_hardened,
         "versionAuthorityVerifiedAtBuild": True,
         "runtimeArtifactVersions": runtime_artifact_versions,
+        "runtimeLinksMaterialized": runtime_links_materialized,
         "remoteClientEntryPoint": "mechanist.RemoteClientMain",
         "playtestOperationsVerifiedAtBuild": True,
         "playtestDocumentCount": len(playtest_documents),
