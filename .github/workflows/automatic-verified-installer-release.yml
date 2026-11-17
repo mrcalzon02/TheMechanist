@@ -1,9 +1,15 @@
-name: Automatic Verified Installer Release
+name: Verified Installer Lifecycle and Authorized Prerelease
 
+# Installer lifecycle verification is operator-dispatched; packaging success alone
+# never authorizes publication while 06.R inventory/clearance is still open.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_prerelease:
+        description: 'I reviewed exact-commit release evidence and clearance and authorize public prerelease publication'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -20,7 +26,8 @@ jobs:
       release_version: ${{ format('0.9.{0}', github.run_number) }}
 
   publish:
-    name: Publish verified GitHub prerelease
+    name: Publish explicitly authorized GitHub prerelease
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_prerelease == true }}
     needs: verify-installer-lifecycle
     runs-on: ubuntu-24.04
     timeout-minutes: 35

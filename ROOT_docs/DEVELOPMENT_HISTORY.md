@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R prerelease publication now requires explicit operator authorization (2026-11-17)
+
+- The existing installer workflow had a `push` trigger and a publication job that ran automatically whenever Windows MSI and Linux DEB lifecycle tests succeeded. That was inconsistent with the live 06.R release ledger: inventory/redistribution clearance and full exact-candidate acceptance are still open. The November 16 run published an ordinary downloadable prerelease from `6e44b85b48f3c1184c858c188f185a095f6626bc` despite those outstanding gates.
+- The existing workflow now runs only by manual dispatch. Its same Windows/Linux lifecycle job remains available without publishing anything by default. The existing publication job requires an explicit, positive `publish_prerelease` authorization on a manual dispatch of `main`, in addition to successful lifecycle verification. The release tagging/assets/updater mechanism is unchanged; previously published releases were not modified or retagged.
+- This closes **unattended publication on code pushes**, not all limited-alpha acceptance gaps. Manual authorization requires an actual external review of inventory/redistribution, exact-commit Java 17, packaging, runtime, and other 06.R evidence before opting in. No new workflow, tag, release, or competing management file was created by this repair.
+
 ### 06.R Linux jlink legal-file alias normalization (2026-11-16)
 
 - Exact-commit Linux installer verification on `cf7cd61b21bb5c842c0d1b87970ad42d648ca00b` failed before native packaging: the canonical stage contained a jlink-created symbolic link at `runtime/legal/java.naming/ADDITIONAL_LICENSE_INFO`. The hardened stage verifier correctly refuses links; weakening it would reintroduce the portable ZIP extraction ambiguity closed in the November 12 repair.
