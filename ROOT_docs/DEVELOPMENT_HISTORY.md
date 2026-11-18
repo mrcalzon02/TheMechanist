@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R prerelease publication now enforces governed inventory clearance (2026-11-18)
+
+- The November 17 manual-publication guard stopped unattended releases but still allowed a positive `publish_prerelease` input to publish installer artifacts without running the existing exact-commit repository inventory and redistribution-clearance gate. The governed clearance registry has no approved asset rows at this checkpoint; native installer success alone does not constitute clearance.
+- The existing publication job now checks out the exact `main` SHA, requires `run_local_inventory_gate.py --require-release-clearance` without rewriting the committed manifest, then independently runs `certify_release_inventory.py` on that same commit and exact generated/committed manifest, registry, and audit. Before selecting packages it requires a passed, unchanged inventory and a verified, nonempty, fully approved certificate for the same SHA. The certificate becomes a checksummed release asset only after verification. Manual authorization and the existing lifecycle job remain required.
+- A focused behavioral probe accepted complete matching evidence and rejected stale SHA, stale inventory, absent or insufficient approvals, and missing certificate cases. No full checkout inventory, installer build, integrated release sequence, or actual publication ran in this change; inventory review, legal signoff, cross-platform and independent-host certification remain open, so limited-alpha distribution is **not** certified.
+
 ### 06.R prerelease publication now requires explicit operator authorization (2026-11-17)
 
 - The existing installer workflow had a `push` trigger and a publication job that ran automatically whenever Windows MSI and Linux DEB lifecycle tests succeeded. That was inconsistent with the live 06.R release ledger: inventory/redistribution clearance and full exact-candidate acceptance are still open. The November 16 run published an ordinary downloadable prerelease from `6e44b85b48f3c1184c858c188f185a095f6626bc` despite those outstanding gates.
