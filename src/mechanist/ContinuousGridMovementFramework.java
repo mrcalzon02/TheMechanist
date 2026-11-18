@@ -115,6 +115,7 @@ final class MechanistContinuousCollisionGrid implements ContinuousCollisionGrid 
     @Override public ContinuousTileType tileAt(int x, int y) {
         if (!world.inBounds(x, y)) return ContinuousTileType.SOLID_WALL;
         if (!world.walkable(x, y)) return ContinuousTileType.SOLID_WALL;
+        if (!DeveloperBattleMapAuthority.step(world,ignoredPlayerTileX,ignoredPlayerTileY,x,y)) return ContinuousTileType.SOLID_WALL;
         if (!(x == ignoredPlayerTileX && y == ignoredPlayerTileY) && world.npcAt(x, y) != null) return ContinuousTileType.ENTITY_BLOCK;
         return ContinuousTileType.EMPTY;
     }

@@ -42,12 +42,13 @@ final class DeveloperFacilityAuthority {
     private DeveloperFacilityAuthority() { }
     static boolean isFacility(World world) { return world != null && FACILITIES.containsKey(world); }
     static Layout layout(GamePanel game) { return game == null ? null : FACILITIES.get(game.world); }
+    static Layout layoutForWorld(World world) { return FACILITIES.get(world); }
     static Session session(GamePanel game) { return game != null && game.getClientProperty(SESSION) instanceof Session s ? s : null; }
 
     static String help() {
         return "/devroom [enter|exit|hub|combat|systems|trade|supplies|prepare|restock|clear|fund amount|spawn FACTION count tier|animal PROFILE count tier|"
                 + "standing FACTION value|reputation FACTION points|vendor FACTION CATEGORY quality|"
-                + "select faction/category/quality delta|tier delta|count delta|match size preset seed|scenario delta|step turns|watch|combatstats|cybernetics percent|cover count seed|fixtures none/turrets/vehicles/all seed|support A/B item|armor A/B item]. Reputation costs 20 Script per point.";
+                + "select faction/category/quality delta|tier delta|count delta|battlemap multi/materials/clutter/flat|match size preset seed|scenario delta|step turns|watch|combatstats|cybernetics percent|cover count seed|fixtures none/turrets/vehicles/all seed|support A/B item|armor A/B item]. Reputation costs 20 Script per point.";
     }
 
     static String reject(GamePanel game, String action, List<String> args) {
@@ -60,6 +61,7 @@ final class DeveloperFacilityAuthority {
             switch (action) {
                 case "hub", "combat", "systems", "trade", "supplies", "prepare", "restock", "clear" -> { if (!args.isEmpty()) return help(); }
                 case "watch", "combatstats" -> {if(!args.isEmpty()) return help();}
+                case "battlemap" -> {if(args.size()!=1 || !Set.of("multi","materials","clutter","flat").contains(args.get(0)))return "Use battlemap multi/materials/clutter/flat.";}
                 case "cover" -> {if(args.size()!=2 || integer(args,0)<0 || integer(args,0)>80) return "Use cover count(0..80) seed.";Long.parseLong(args.get(1));}
                 case "fixtures" -> {if(args.size()!=2 || !DeveloperCombatFixtureAuthority.valid(args.get(0))) return "Use fixtures none/turrets/vehicles/all seed.";Long.parseLong(args.get(1));}
                 case "cybernetics" -> {if(args.size()!=1 || integer(args,0)<0 || integer(args,0)>100) return "Use cybernetics percent(0..100) for subsequent test candidates.";}
@@ -115,6 +117,7 @@ final class DeveloperFacilityAuthority {
             case "fund" -> game.addImperialScript(integer(args,0));
             case "restock" -> { restock(game); game.logEvent("Catalog containers refilled to five of every registered item at every quality."); }
             case "clear" -> clearArena(game);
+            case "battlemap" -> {if(args.get(0).equals("clutter"))DeveloperBattleMapAuthority.clutter(game);else if(args.get(0).equals("materials"))DeveloperBattleMapAuthority.materials(game);else DeveloperBattleMapAuthority.build(game,args.get(0).equals("multi"));}
             case "cover" -> {layout.coverCount=integer(args,0);layout.coverSeed=Long.parseLong(args.get(1));DeveloperCoverLayoutAuthority.scatter(game);}
             case "fixtures" -> {layout.fixtureSet=args.get(0);layout.fixtureSeed=Long.parseLong(args.get(1));DeveloperCombatFixtureAuthority.scatter(game);}
             case "cybernetics" -> {layout.cyberneticPercent=integer(args,0);game.logEvent("Subsequent test candidates: "+layout.cyberneticPercent+"% seeded chance of fitted cybernetic limbs.");}

@@ -10,6 +10,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.EnumMap;
 
 /**
  * Semantic bridge from renderer intent to indexed graphical asset metadata.
@@ -258,13 +261,28 @@ final class SemanticRenderAssetResolver {
         return lines;
     }
 
-    private static List<AssetMetadata> candidatesFor(AssetRegistry registry, RenderIntent intent) {
-        return registry.all().stream()
+    // Registries are immutable. A replacement registry gets a separate cache;
+    // retaining only four prevents previews/reloads from retaining unbounded metadata.
+    private static final Map<AssetRegistry, EnumMap<RenderIntent, List<AssetMetadata>>> CANDIDATES =
+            new LinkedHashMap<>(4, 0.75f, true);
+
+    private static synchronized List<AssetMetadata> candidatesFor(AssetRegistry registry, RenderIntent intent) {
+        EnumMap<RenderIntent, List<AssetMetadata>> byIntent = CANDIDATES.get(registry);
+        if (byIntent == null) {
+            if (CANDIDATES.size() >= 4) CANDIDATES.remove(CANDIDATES.keySet().iterator().next());
+            byIntent = new EnumMap<>(RenderIntent.class);
+            CANDIDATES.put(registry, byIntent);
+        }
+        List<AssetMetadata> cached = byIntent.get(intent);
+        if (cached != null) return cached;
+        List<AssetMetadata> resolved = registry.all().stream()
                 .filter(asset -> canUse(asset, intent))
                 .sorted(Comparator.comparing((AssetMetadata asset) -> priority(asset, intent)).reversed()
                         .thenComparing(AssetMetadata::name, String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(AssetMetadata::id))
                 .toList();
+        byIntent.put(intent, resolved);
+        return resolved;
     }
 
     private static int priority(AssetMetadata asset, RenderIntent intent) {

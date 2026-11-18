@@ -1,0 +1,18 @@
+[
+  {
+    "name": "CharacterSaveManagerRegressionSmoke",
+    "status": "passed"
+  },
+  {
+    "name": "BootStartupAudioSilenceSmoke",
+    "status": "passed"
+  },
+  {
+    "name": "ReleaseBuildIdentitySmoke",
+    "status": "passed"
+  },
+  {
+    "name": "ActorCombatPresentationSmoke",
+    "status": "failed"
+  }
+]

@@ -52,7 +52,7 @@ final class MovementPlanningAuthority {
             for (int[] d : dirs) {
                 int nx = p.x + d[0];
                 int ny = p.y + d[1];
-                if (!canEnter(game, nx, ny) || seen[nx][ny]) continue;
+                if (!canEnter(game, nx, ny) || seen[nx][ny] || !DeveloperBattleMapAuthority.step(game.world,p.x,p.y,nx,ny)) continue;
                 seen[nx][ny] = true;
                 prevX[nx][ny] = p.x;
                 prevY[nx][ny] = p.y;
@@ -105,7 +105,7 @@ final class MovementPlanningAuthority {
             for (int[] d : dirs) {
                 int nx = p.x + d[0];
                 int ny = p.y + d[1];
-                if (!canEnter(game, nx, ny) || seen[nx][ny]) continue;
+                if (!canEnter(game, nx, ny) || seen[nx][ny] || !DeveloperBattleMapAuthority.step(game.world,p.x,p.y,nx,ny)) continue;
                 seen[nx][ny] = true;
                 dist[nx][ny] = dist[p.x][p.y] + 1;
                 q.addLast(new Point(nx, ny));
@@ -353,7 +353,7 @@ final class MovementPlanningAuthority {
                 if (game.world.tiles != null && x < game.world.tiles.length && game.world.tiles[x] != null && y < game.world.tiles[x].length) {
                     glyph = game.world.tiles[x][y];
                 }
-                ZoneTileState state = ZoneTileState.fromLegacyGlyph(glyph);
+                ZoneTileState state = ZoneTileState.fromLegacyGlyph(glyph).setStructure(TileStructureAuthority.at(game.world,x,y));
                 if (!game.world.inBounds(x, y) || !game.world.walkable(x, y)) state.addFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT);
                 tiles[x][y] = state;
             }

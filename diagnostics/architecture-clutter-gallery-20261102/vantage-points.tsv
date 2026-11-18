@@ -1,0 +1,7 @@
+image	x	z	eyeHeight	yaw	pitch	clutterVersion
+01-before-service-aisle.png	11.0	26.5	0.58	0.0	12.0	0
+02-after-service-aisle.png	11.0	26.5	0.58	0.0	12.0	1
+03-wall-pipes-and-sealed-openings.png	20.0	25.1	0.58	-95.0	5.0	1
+04-upper-wall-strata.png	25.0	36.0	3.4	-90.0	18.0	1
+05-underhang-looking-up.png	20.0	27.0	0.58	0.0	53.0	1
+06-upper-services-inspection.png	15.0	27.0	6.0	0.0	5.0	1

@@ -64,6 +64,7 @@ final class ZoneTileState {
     }
 
     private BaseTileType baseType;
+    private TileStructureAuthority.Structure structure=TileStructureAuthority.DEFAULT;
     private SpaceType spaceType;
     private Faction ownerFaction;
     private char legacyGlyph;
@@ -121,6 +122,8 @@ final class ZoneTileState {
     }
 
     BaseTileType baseType() { return baseType; }
+    TileStructureAuthority.Structure structure() { return structure; }
+    ZoneTileState setStructure(TileStructureAuthority.Structure value) {structure=java.util.Objects.requireNonNull(value);return this;}
     SpaceType spaceType() { return spaceType; }
     Faction ownerFaction() { return ownerFaction; }
     char legacyGlyph() { return legacyGlyph; }
@@ -133,7 +136,7 @@ final class ZoneTileState {
     String petEntityId() { return petEntityId; }
     String vehicleId() { return vehicleId; }
     String reservationLabel() { return reservationLabel; }
-    boolean hasFlag(TileFlag flag) { return flag != null && flags.contains(flag); }
+    boolean hasFlag(TileFlag flag) { return flag==TileFlag.BLOCKS_MOVEMENT && structure.floor()==TileStructureAuthority.Floor.VOID || flag != null && flags.contains(flag); }
     boolean hasSlot(TileSlot slot) { return slot != null && slots.containsKey(slot) && !slots.get(slot).isEmpty(); }
     List<PlacedObjectRef> objects() { return Collections.unmodifiableList(objects); }
     List<LightState> lights() { return Collections.unmodifiableList(lights); }

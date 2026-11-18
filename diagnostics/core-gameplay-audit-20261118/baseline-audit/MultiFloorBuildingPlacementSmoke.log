@@ -1,0 +1,2 @@
+[13:21:13.195] WARN/MULTI_FLOOR_BUILDING blocked building footprint/road approach id=BLD-n6gmpz9b6jgd-hab-west floor=2 bounds=java.awt.Rectangle[x=298,y=294,width=32,height=26]
+MultiFloorBuildingPlacementSmoke PASS apartmentFloors=2,4 atriumFloor=7 roadCollisionRejected=true

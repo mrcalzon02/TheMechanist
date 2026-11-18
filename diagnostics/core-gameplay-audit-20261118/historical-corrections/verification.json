@@ -1,0 +1,15 @@
+{
+  "full_gate3_passed": true,
+  "classfiles": {
+    "count": 2295,
+    "max_major": 61
+  },
+  "source_hashes": {
+    "src/mechanist/LegacyPanelContext.java": "1f4e3ce7ca9a413c32d5f31a4861c6455263f9999a3a33626acec3cd0919f8f7",
+    "src/mechanist/SemanticRenderAssetResolver.java": "6a750010738a663869f2f533f12b9f566c36e77368deadcd828597a81003e56c",
+    "src/mechanist/ActorCombatAuthority.java": "7e95d310c83b648924efba229e6246e614f49432187ec50d364e1b8eb6bcf15b",
+    "src/mechanist/CoreGameplayBoundarySmoke.java": "083bc30fb66fe6667d83e44abbbae3125a882f90526606071f07c817bb9b5ebb",
+    "src/mechanist/Gate3PlayerFacingTextSmokeSuite.java": "4b702e0da42e5668afa7279b0aa66d7ddf04d2470585924e6005ba079558cb8c"
+  },
+  "release_certified": false
+}

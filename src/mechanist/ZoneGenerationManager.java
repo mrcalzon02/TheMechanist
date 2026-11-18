@@ -20,5 +20,8 @@ final class ZoneGenerationManager {
         ZoneFixturePlacementManager.placeRoadAndRoomFixtures(world, state);
         world.worldgenPhaseBoundaryInterwallAndMetadata(state);
         EntitySpawnManager.populateAndInitializeEconomy(world, state);
+        TileStructureAuthority.authorRoomRoofs(world);
+        TileStructureAuthority.authorOpenRoads(world);
+        ArchitecturalClutterAuthority.enable(world,true);
     }
 }

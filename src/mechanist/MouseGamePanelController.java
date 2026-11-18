@@ -8,6 +8,7 @@ final class MouseGamePanelController {
     private MouseGamePanelController() {}
 
     static boolean handleGameAndPanelTargeting(GamePanel panel, MouseEvent event, int mx, int my) {
+        if(panel.screen==GamePanel.Screen.GAME && !panel.options.doomModeEnabled && PlannerLevelViewAuthority.inspecting(panel))return true;
         if (panel.screen == GamePanel.Screen.GAME && panel.world != null && panel.firstPersonRenderViewport.handleMouseClicked(panel, event, mx, my)) {
             panel.requestFocusInWindow();
             return true;

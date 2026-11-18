@@ -28,6 +28,10 @@ final class DeveloperFacilityControlSurface {
         ArrayList<Action> actions=new ArrayList<>();
         if("combat".equals(chamber)) {
             String preset=DeveloperCombatScenarioAuthority.PRESETS[layout.combatPresetIndex];
+            actions.add(new Action("Battle map: multi-level terraces","battlemap multi"));
+            actions.add(new Action("Battle map: flat arena","battlemap flat"));
+            actions.add(new Action("Battle map: glass, grating and catwalks","battlemap materials"));
+            actions.add(new Action("Battle map: layered wall and ceiling services","battlemap clutter"));
             for(int percent:new int[]{0,25,50,100}) actions.add(new Action("Cybernetics: "+percent+"%"+(layout.cyberneticPercent==percent?" selected":""),"cybernetics "+percent));
             actions.add(new Action("Scenario: "+preset+" >","scenario 1"));
             for(int size:new int[]{1,5,10,20}) actions.add(new Action("Start "+size+"v"+size+" "+preset,"match "+size+" "+preset+" 71000"));

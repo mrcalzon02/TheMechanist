@@ -13,10 +13,19 @@ import java.util.*;
 import java.util.List;
 
 class RoomProfile {
+    boolean hasRoof=true;
+    boolean roofExplicit;
+    RoomProfile withRoof(boolean roof){hasRoof=roof;roofExplicit=true;return this;}
     String name, descriptor, featureText;
     String declaredPurposeId;
     int scavengeChance; Faction faction; String[] loot; char[] contents;
-    RoomProfile(String name,String descriptor,int chance,Faction faction,String[] loot,char[] contents){this.name=name;this.descriptor=descriptor;this.featureText=defaultFeatures(name, descriptor);this.declaredPurposeId=ExplicitRoomTypeRequirementAuthority.inferDeclaredPurposeId(name, descriptor);this.scavengeChance=chance;this.faction=faction;this.loot=loot;this.contents=contents;}
+    RoomProfile(String name,String descriptor,int chance,Faction faction,String[] loot,char[] contents){
+        this.name=name;this.descriptor=descriptor;this.featureText=defaultFeatures(name, descriptor);
+        this.declaredPurposeId=ExplicitRoomTypeRequirementAuthority.inferDeclaredPurposeId(name, descriptor);
+        this.scavengeChance=chance;this.faction=faction;this.loot=loot;this.contents=contents;
+        String kind=name==null?"":name.toLowerCase(java.util.Locale.ROOT);
+        this.hasRoof=!(kind.matches(".*\\bpark\\b.*") || kind.contains("plaza") || kind.contains("courtyard"));
+    }
     static String defaultFeatures(String name, String descriptor){ return descriptor; }
     RoomProfile withFeatures(String f){ this.featureText=f; return this; }
     RoomProfile asSpecial(ZoneType z, Random r){

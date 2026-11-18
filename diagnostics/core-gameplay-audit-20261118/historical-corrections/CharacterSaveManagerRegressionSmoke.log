@@ -1,0 +1,4 @@
+[19:34:51.325] ERROR/CHARACTER_LOAD Could not load/create character for fallback_uuid-ac76a5fb-0e09-3018-ae6c-2ca348863a3c
+[19:34:51.435] ERROR/CHARACTER_SAVE Could not persist character fallback_uuid-ba0dc5c1-9d8d-3037-8cc4-350bb5ac9e4f
+[19:34:51.436] ERROR/CHARACTER_LOAD Could not load/create character for fallback_uuid-ba0dc5c1-9d8d-3037-8cc4-350bb5ac9e4f
+CharacterSaveManagerRegressionSmoke PASS progressRoundTrip=true corruptRecordFailClosed=true corruptScalarFailClosed=true strictStructureFailClosed=true nonFinitePositionRejected=true hostedMapCheckedPositionPersistence=true asyncFailuresVisible=true hardLinkProtection=verified symlinkProtection=unsupported

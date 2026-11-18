@@ -88,6 +88,8 @@ final class MovementExecutionAuthority {
                         "route contains a non-adjacent step");
                 return blockedRoute(game, fromX, fromY, "Movement route contains a non-adjacent step.", "invalid-step " + currentX + "," + currentY + "->" + destination.x + "," + destination.y);
             }
+            if(!DeveloperBattleMapAuthority.step(game.world,currentX,currentY,destination.x,destination.y))
+                return blockedRoute(game,fromX,fromY,"Blocked by a railing, unsupported floor, or height change; use a supported route.","battle-map-ledge");
             boolean occupied = inBounds(snapshot, destination.x, destination.y)
                     && snapshot[destination.x][destination.y].hasSlot(ZoneTileState.TileSlot.ENTITY);
             occupiedEncountered |= occupied;
@@ -207,7 +209,7 @@ final class MovementExecutionAuthority {
             for (int y = 0; y < game.world.h; y++) {
                 char glyph = ' ';
                 if (game.world.tiles != null && x < game.world.tiles.length && game.world.tiles[x] != null && y < game.world.tiles[x].length) glyph = game.world.tiles[x][y];
-                ZoneTileState state = ZoneTileState.fromLegacyGlyph(glyph);
+                ZoneTileState state = ZoneTileState.fromLegacyGlyph(glyph).setStructure(TileStructureAuthority.at(game.world,x,y));
                 if (!game.world.inBounds(x, y) || !game.world.walkable(x, y)) state.addFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT);
                 tiles[x][y] = state;
             }

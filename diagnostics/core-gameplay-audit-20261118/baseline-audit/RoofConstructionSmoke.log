@@ -1,0 +1,2 @@
+[13:29:41.867] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+RoofConstructionSmoke PASS walls=15 door=1 roofTiles=9 paidPerTile=true duplicateAtomic=true unsupportedDenied=true furnitureBelow=true

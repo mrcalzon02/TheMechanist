@@ -130,7 +130,7 @@ final class MultiFloorBuildingPlacementAuthority {
                     ? InterstitialInfrastructureApi.VOID_SPACE : corridor;
             fill(w, rect, glyph);
             if (space.use() == VerticalBuildingBlueprintAuthority.Use.OPEN_TO_BELOW)
-                w.buildingOpenVolumes.add(rect);
+            { w.buildingOpenVolumes.add(rect);TileStructureAuthority.open(w,rect); }
         }
 
         if (site.blueprint().kind() == VerticalBuildingBlueprintAuthority.Kind.ATRIUM_HALL) {
@@ -180,11 +180,23 @@ final class MultiFloorBuildingPlacementAuthority {
             roomsMade++;
         }
 
+        // These blueprints author a straight north-ascending flight inside each stair shaft.
+        var stairs = plate.space(VerticalBuildingBlueprintAuthority.Use.STAIRWELL);
+        if(stairs!=null) {
+            Rectangle r=site.translate(stairs.bounds());
+            for(int x=r.x+1;x<Math.min(r.x+3,r.x+r.width-1);x++)
+                for(int y=r.y+1;y<r.y+r.height-1;y++)
+                    StairTileArtAuthority.mark(w,x,y,StairTileArtAuthority.Direction.NORTH);
+        }
         var lift = plate.space(VerticalBuildingBlueprintAuthority.Use.ELEVATOR);
         if (lift != null) {
             Rectangle r = site.translate(lift.bounds());
             w.tiles[r.x + 1][r.y + 1] = 'E';
         }
+        // A stamped building floor explicitly replaces generic full-height substrate columns.
+        Rectangle built=site.footprint();
+        for(int x=built.x;x<built.x+built.width;x++)for(int y=built.y;y<built.y+built.height;y++)
+            if(w.tiles[x][y]=='#')TileStructureAuthority.modifyWallTop(w,x,y,RoofConstructionAuthority.CLEARANCE+.1);
         return roomsMade;
     }
 

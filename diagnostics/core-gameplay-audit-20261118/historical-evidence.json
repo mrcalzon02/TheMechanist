@@ -1,0 +1,13 @@
+{
+  "scope": "Historical audit and correction runs from the original dirty checkout. Some logs intentionally contain failed assertions or sandbox-denied attempts; use the associated reviewed/final verification records. These are not exact-commit claims for the synchronized branch.",
+  "baseline_reviewed_counts": {
+    "passed": 242,
+    "failed": 1,
+    "timeout": 13
+  },
+  "corrections": "All thirteen former timeouts and the combat assertion were subsequently resolved; original logs are retained rather than overwritten.",
+  "disk_probe_fixture": "The initial save-slot probe omitted the four XP normally earned by cot completion. The recheck uses twenty prior XP plus four construction XP and passes unchanged band/reload assertions.",
+  "synchronized_build": "See synchronized-build/verification.json for verification on the combined GitHub main and audit-repair source.",
+  "file_count": 312,
+  "bytes": 3262560
+}

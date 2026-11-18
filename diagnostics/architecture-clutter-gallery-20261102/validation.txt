@@ -1,0 +1,44 @@
+User date: 2026-11-02, America/Anchorage.
+Source base: 47d97022, plus the low-roof head-clearance refinement committed with this archive.
+Renderer: existing GamePanel and FirstPersonRenderViewport, native PACKAGE_client art.
+Full Java 17 compilation: exit 0.
+
+Passing checks during this iteration, all exit 0:
+ArchitecturalClutterSmoke
+ArchitecturalClutterCaptureProbe (7 facility frames, reset verified)
+CityArchitectureCaptureProbe (9 frames, actual 500x500 structural generation)
+StructureMaterialsSmoke
+TileStructureSmoke
+RoofConstructionSmoke
+ActorCombatExecutionSmoke
+Milestone02ZoneTilePushSqueezeMovementSmoke
+ViewportFogSmoke
+DeveloperBattleMapSmoke (20 authoritative combat turns)
+
+Final low-roof refinement was recompiled and rechecked with ArchitecturalClutterSmoke,
+ArchitecturalClutterCaptureProbe, CityArchitectureCaptureProbe and DeveloperBattleMapSmoke.
+The clutter smoke covers eleven feature families, four visual generations, exact
+seed replay, connected adjacent pipe sections, depth-occluding geometry, unchanged
+ground passability, glass aperture preservation, low-room clearance above 1.1-high
+characters, host edit invalidation, save/load replay, light budget/deduplication
+and disable/reset cleanup.
+
+Concurrent doorway artwork changes were left untouched and excluded from the
+committed renderer hunks. Isolated compilation used the committed renderer files
+in diagnostics/architecture-clutter-20261102/staged-source, plus this task's own
+tracked sources. Final archived captures came from that isolated compilation.
+No packaged release JAR was overwritten. No native window/mouse playtest claimed.
+
+Expected headless display-mode fallback warning occurred. City generation also
+retains existing weak-door, door-spacing and squat-corridor validation warnings;
+this architectural recipe does not claim to resolve those topology issues.
+
+City audit: seed 466713, floor 4, 930 rooms, 3 planned building sites, 8 stamped
+building rooms, 35,200 open tiles, 214,800 covered tiles, 33,997 open road tiles,
+0 covered road tiles. Population/economy simulation omitted for architectural captures.
+
+Development classes: diagnostics/architecture-clutter-20261102/classes.
+From PACKAGE_client, run with java.awt.headless=true and mechanist.assetRoot=.
+using classpath ../diagnostics/architecture-clutter-20261102/classes, main classes
+mechanist.ArchitecturalClutterSmoke and mechanist.ArchitecturalClutterCaptureProbe.
+Use workspace-local mechanist.storage.root and mechanist.client.storage.root overrides.

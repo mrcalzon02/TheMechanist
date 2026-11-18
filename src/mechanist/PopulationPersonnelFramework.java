@@ -1258,7 +1258,7 @@ class NpcEntity {
 
     boolean tryNpcPushPastCrowd(World w, int nx, int ny, int blockX, int blockY) {
         if (w == null || crowdShuffleCooldown > 0 || "Hostile".equalsIgnoreCase(state) || isProtectedCleric()) return false;
-        if (!w.inBounds(nx, ny) || !w.walkable(nx, ny) || (nx == blockX && ny == blockY)) return false;
+        if (!w.inBounds(nx, ny) || !w.walkable(nx, ny) || !DeveloperBattleMapAuthority.step(w,x,y,nx,ny) || (nx == blockX && ny == blockY)) return false;
         NpcEntity other = w.npcAt(nx, ny);
         if (other == null || other == this || other.isProtectedCleric() || "Hostile".equalsIgnoreCase(other.state)) return false;
         int oldX = x, oldY = y;
@@ -1273,7 +1273,8 @@ class NpcEntity {
     }
 
     boolean canNpcStep(World w, int nx, int ny, int blockX, int blockY) {
-        return !developerStationary && CyberneticLimbAuthority.mobile(combatSupport) && w != null && w.walkable(nx,ny) && w.npcAt(nx,ny)==null && !(nx == blockX && ny == blockY);
+        return !developerStationary && CyberneticLimbAuthority.mobile(combatSupport) && w != null && w.walkable(nx,ny) && w.npcAt(nx,ny)==null && !(nx == blockX && ny == blockY)
+                && DeveloperBattleMapAuthority.step(w,x,y,nx,ny);
     }
 
 

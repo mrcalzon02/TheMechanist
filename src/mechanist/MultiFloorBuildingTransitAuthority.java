@@ -16,6 +16,13 @@ final class MultiFloorBuildingTransitAuthority {
     private record Exploration(WorldAtlas atlas, IdentityHashMap<World,boolean[][]> memory) { }
     private static final Map<GamePanel, Exploration> EXPLORATION = new WeakHashMap<>();
     private MultiFloorBuildingTransitAuthority() { }
+    static boolean rememberedAt(GamePanel game,World world,int x,int y) {
+        if(world==game.world)return game.isRemembered(x,y);
+        Exploration exploration=EXPLORATION.get(game);
+        if(exploration==null || exploration.atlas()!=game.atlas)return false;
+        boolean[][] memory=exploration.memory().get(world);
+        return memory!=null && x>=0 && x<memory.length && y>=0 && y<memory[x].length && memory[x][y];
+    }
 
     static boolean[][] rememberedFor(Map<World,boolean[][]> memory,
                                      World from, boolean[][] visibleHistory, World destination) {

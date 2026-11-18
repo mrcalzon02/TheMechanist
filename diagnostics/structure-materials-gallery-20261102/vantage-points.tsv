@@ -1,0 +1,7 @@
+image	x	z	eyeHeight	yawDegrees	pitchDegrees
+01-wall-finishes.png	17.0	29.0	1.58	90.0	0.0
+02-glass-grating-pillar-pipe.png	25.0	30.0	1.58	90.0	0.0
+03-glass-canopy-up.png	18.0	39.0	1.58	90.0	60.0
+04-grating-canopy-up.png	21.0	39.0	1.58	90.0	60.0
+05-catwalk-along.png	37.0	39.5	1.58	0.0	-12.0
+06-catwalk-oblique.png	41.0	35.0	2.8	90.0	-25.0

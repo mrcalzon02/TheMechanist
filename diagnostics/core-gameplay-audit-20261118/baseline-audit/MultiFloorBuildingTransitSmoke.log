@@ -1,0 +1,1 @@
+MultiFloorBuildingTransitSmoke PASS stairs=true lifts=true adjacentOnly=true blockedTargetDenied=true sameBuilding=true separateFloorExploration=true

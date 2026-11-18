@@ -74,4 +74,10 @@ Use `/devroom fixtures all 91000` to place four turret mounts and all five vehic
 
 ## Distribution Notes
 
+The [architecture and vertical viewport gallery](diagnostics/architecture-gallery-20261029/README.md) archives seeded city street/roof views, stair orientations, Z-level inspection and roof-construction validation. It records the softer fog pass, explicit roof defaults and the remaining local-storey geometry work.
+
+The [material and catwalk gallery](diagnostics/structure-materials-gallery-20261102/README.md) shows transparent canopies, wall variants and guarded grating catwalks in the existing developer chamber. The [system specification](docs/STRUCTURE_MATERIALS_AND_CATWALKS.md) records saved tile data, collision rules, paid roof variants and remaining work.
+
+The [layered architecture gallery](diagnostics/architecture-clutter-gallery-20261102/README.md) shows vertical service pipes, old sealed openings, repair layers and supported underside clutter in the chamber and generated city. The [clutter system notes](docs/ARCHITECTURAL_CLUTTER.md) record placement, clearance, seed/version persistence and further architectural inspirations.
+
 A user should not need the whole development repository to run the launcher. The installer should install the thin launcher; the launcher should acquire and verify client, server, and support-library packages. Package manifests are allowed for acquisition and integrity checks, but they must not replace the physical runtime asset layout. The game client may verify package completeness, but it must not download dependencies during game launch.

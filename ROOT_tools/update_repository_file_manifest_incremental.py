@@ -129,6 +129,8 @@ def iter_files(root: Path, target: Path) -> list[Path]:
     for current_root, dir_names, file_names in os.walk(root):
         dir_names[:] = sorted(name for name in dir_names if name != ".git")
         for file_name in sorted(file_names):
+            if file_name == ".git":  # Linked worktrees use a control file, not a directory.
+                continue
             path = Path(current_root) / file_name
             if path.resolve() == target:
                 continue

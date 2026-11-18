@@ -1,0 +1,7 @@
+[14:44:50.238] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+inventory listed=1 containerUnits=0 provenanceRetained=false
+practice xp=100 coreStatsChanged=false
+wrapper registered=true food=38 itemRemaining=false
+purificationTab water=38 itemRemaining=false
+hundredTurns food=38->38 water=38->38 fatigue=0 sleepNeed=0
+newRun staleSkill=true staleStanding=87 staleBase=true/17 staleWeapon=AUDIT OLD WEAPON staleAmmo=99

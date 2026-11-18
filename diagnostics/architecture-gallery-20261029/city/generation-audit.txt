@@ -1,0 +1,5 @@
+seed=466713 mainFloor=4 dimensions=500x500
+rooms=930 buildingSites=3 stampedBuildingRooms=8
+openTiles=35200 coveredTiles=214800 openRoadTiles=33997 coveredRoadTiles=0
+Captured with actual GamePanel/FirstPersonRenderViewport and shipped graphics. Normal structural-generation stages; population/economy omitted. Elevated inspection cameras do not certify traversable upper storeys.
+Current limitation: existing building blueprints link main atlas floors; local room-over-room storeys still require a distinct geometry/occupancy model.

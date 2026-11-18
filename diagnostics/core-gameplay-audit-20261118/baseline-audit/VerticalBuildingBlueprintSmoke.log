@@ -1,0 +1,1 @@
+VerticalBuildingBlueprintSmoke PASS buildings=3 apartmentRooms=12 atriumRooms=13 sameShaft=true voidsNonWalkable=true deterministic=true

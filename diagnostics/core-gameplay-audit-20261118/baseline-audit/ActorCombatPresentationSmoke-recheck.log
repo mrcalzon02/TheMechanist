@@ -1,0 +1,4 @@
+[19:17:09.894] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+Exception in thread "main" java.lang.AssertionError: Separated melee groups must close through the cover layout
+	at mechanist.ActorCombatPresentationSmoke.require(ActorCombatPresentationSmoke.java:10)
+	at mechanist.ActorCombatPresentationSmoke.main(ActorCombatPresentationSmoke.java:39)

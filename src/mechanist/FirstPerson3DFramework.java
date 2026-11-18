@@ -21,6 +21,9 @@ import java.util.Random;
  */
 final class FirstPersonRenderViewport {
     private final FirstPersonCamera camera = new FirstPersonCamera();
+    private double[] inspectionPose;
+    void setInspectionPose(double x,double height,double z,double yaw,double pitch) {inspectionPose=new double[]{x,height,z,yaw,pitch};}
+    void clearInspectionPose(){inspectionPose=null;}
     private final FirstPersonMouseInput mouseInput = new FirstPersonMouseInput();
     private final ViewportRaycaster raycaster = new ViewportRaycaster();
     private final BillboardSpriteRenderer billboardRenderer = new BillboardSpriteRenderer();
@@ -38,6 +41,10 @@ final class FirstPersonRenderViewport {
     private BufferedImage frame;
     private int[] pixels = new int[0];
     private double[] wallDepth = new double[0];
+    private double[] glassDepth=new double[0];
+    private int[] glassColor=new int[0];
+    private byte[] glassCount=new byte[0];
+    private static final int GLASS_LAYERS=8;
     private long lastFrameMillis = System.currentTimeMillis();
     private long lastContinuousMotionNanos = System.nanoTime();
     private int lastPlayerX = Integer.MIN_VALUE, lastPlayerY = Integer.MIN_VALUE;
@@ -180,10 +187,13 @@ final class FirstPersonRenderViewport {
         projectileRenderer.update(now);
         rasterizeWorld(panel, w, h, now);
         glitchEffect.apply(pixels, w, h, now);
+        Graphics2D scene=(Graphics2D)frame.createGraphics();
+        try {renderSpritesAndEffects(scene,panel,w,h,now,dt);}finally{scene.dispose();}
+        compositeGlass(w,h);
+        ViewportDarknessAuthority.expose(pixels);
         Graphics2D gg = (Graphics2D) g.create();
         try {
             gg.drawImage(frame, 0, 0, null);
-            renderSpritesAndEffects(gg, panel, w, h, now, dt);
             renderGhostMovementProjection(gg, panel, w, h);
             renderHud(gg, panel, w, h);
             hudOverlay.renderHUD(gg, PlayerState.fromPanel(panel), w, h);
@@ -211,6 +221,11 @@ final class FirstPersonRenderViewport {
     }
 
     private void syncCameraToPlayer(GamePanel panel) {
+        if(inspectionPose!=null) {
+            camera.setPosition(inspectionPose[0],inspectionPose[1],inspectionPose[2]);
+            camera.addYawPitch(inspectionPose[3]-camera.yawRadians(),inspectionPose[4]-camera.pitchRadians());
+            return;
+        }
         ensureContinuousPlayerSynced(panel);
         camera.setPosition(continuousPlayer.posX(), cameraHeightFor(panel), continuousPlayer.posY());
         panel.setFacingToward(panel.playerX + (int)Math.round(Math.cos(camera.yawRadians()) * 1024),
@@ -220,8 +235,9 @@ final class FirstPersonRenderViewport {
     }
 
     private double cameraHeightFor(GamePanel panel) {
-        if (panel != null && panel.selectedMovementModeIndex == GamePanel.MOTION_SNEAK) return 0.42;
-        return 0.58;
+        double ground=panel==null?0:DeveloperBattleMapAuthority.height(panel.world,panel.playerX,panel.playerY);
+        if (panel != null && panel.selectedMovementModeIndex == GamePanel.MOTION_SNEAK) return ground+0.42;
+        return ground+0.58;
     }
 
     private void setMovementModifier(GamePanel panel, boolean sprint, boolean held) {
@@ -271,9 +287,11 @@ final class FirstPersonRenderViewport {
     }
 
     private void rasterizeWorld(GamePanel panel, int w, int h, long now) {
+        java.util.Arrays.fill(glassCount,(byte)0);
         World world = panel.world;
         firstPersonFloorTextureCache.clear();
         firstPersonWallTextureCache.clear();
+        if(DeveloperBattleMapAuthority.active(world) || !world.tileStructures.isEmpty() || world.architecturalClutterVersion!=0) {rasterizeBattleTerrain(panel,w,h,now);return;}
         int horizon = h / 2 + (int)(camera.pitchRadians() * h * 0.55);
         int ceiling = 0xFF07080A;
         int floor = 0xFF11100D;
@@ -325,6 +343,84 @@ final class FirstPersonRenderViewport {
                 color = fog.applyFogArgb(color, fogSettings, fogDistance);
                 int stripe = (((y - y0) / 6) + sx / 9) & 1;
                 pixels[y * w + sx] = stripe == 0 ? color : darken(color, 0.94);
+            }
+        }
+    }
+
+    /** Existing viewport raster path, extended to the facility's physical tile heights. */
+    private void rasterizeBattleTerrain(GamePanel panel,int w,int h,long now) {
+        World world=panel.world;
+        int samples=((w+1)/2)*((h+1)/2);
+        if(glassCount.length!=samples){glassCount=new byte[samples];glassDepth=new double[samples*GLASS_LAYERS];glassColor=new int[samples*GLASS_LAYERS];}
+        java.util.Arrays.fill(glassCount,(byte)0);
+        if(wallDepth.length!=w*h)wallDepth=new double[w*h];
+        java.util.Arrays.fill(wallDepth,Double.POSITIVE_INFINITY);
+        java.util.Arrays.fill(pixels,0xFF080B10);
+        panel.ensureSensoryModelCurrent("battle map viewport");
+        double yaw=camera.yawRadians(),pitch=camera.pitchRadians();
+        double cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+        double lens=Math.tan(Math.toRadians(panel.options.doomModeFovDegrees)*.5),aspect=w/(double)h;
+        DoomFogSettings settings=DoomFogSettings.fromOptions(panel.options);
+        for(int y=0;y<h;y+=2)for(int x=0;x<w;x+=2) {
+            double u=(2*(x+.5)/w-1)*aspect*lens,v=(1-2*(y+.5)/h)*lens;
+            double dx=cy*cp-u*sy-v*cy*sp,dh=sp+v*cp,dy=sy*cp+u*cy-v*sy*sp;
+            int sample=(y/2)*((w+1)/2)+x/2;
+            double minimum=.0001;int layers=0;
+            while(true) {
+                var hit=StructureSurfaceAuthority.cast(world,camera.x(),camera.y(),camera.z(),dx,dh,dy,120,minimum,true);
+                if(hit==null)break;
+                double wx=camera.x()+dx*hit.distance(),wz=camera.z()+dy*hit.distance();
+                char glyph=world.tiles[hit.x()][hit.y()];
+                boolean top=hit.kind()==StructureSurfaceAuthority.Kind.FLOOR;
+                BufferedImage texture=top?firstPersonTileTexture(panel,world,hit.x(),hit.y(),glyph,false)
+                        :hit.kind()==StructureSurfaceAuthority.Kind.WALL?firstPersonTileTexture(panel,world,hit.x(),hit.y(),glyph,true):panel.images.getTile('#');
+                double tu=hit.axis()==0?wz:wx,tv=hit.axis()==2?wz:1-hit.height();
+                var clutter=hit.clutter();
+                if(clutter!=null) {
+                    texture=panel.images.getTile(clutter.art());
+                    double spanU=hit.axis()==0?clutter.z1()-clutter.z0():clutter.x1()-clutter.x0();
+                    tu=((hit.axis()==0?wz-clutter.z0():wx-clutter.x0())/Math.max(.001,spanU));
+                    tv=1-(hit.height()-clutter.h0())/Math.max(.001,clutter.h1()-clutter.h0());
+                }
+                var structure=TileStructureAuthority.at(world,hit.x(),hit.y());
+                int nativeColor=sampleImageArgb(texture,tu,tv,0xFF5D5952);
+                boolean transparent=StructureSurfaceAuthority.glass(world,hit);
+                int color=hit.kind()==StructureSurfaceAuthority.Kind.ROOF && structure.roof()==TileStructureAuthority.Roof.GLASS && !transparent
+                        ?nativeColor:StructureAppearanceAuthority.color(nativeColor,structure,hit.kind(),tu,tv);
+                if(clutter!=null)color=ArchitecturalClutterAuthority.color(clutter,nativeColor,tu,tv);
+                double light=lightDecay.brightness(camera.x(),camera.z(),wx,wz,panel,now);
+                if(clutter!=null && clutter.emissive())light=Math.max(light,1.2);
+                if(clutter!=null)light*=ArchitecturalClutterAuthority.roundShade(clutter,wx,hit.height(),wz,dx,dh,dy);
+                boolean exposedRoof=hit.kind()==StructureSurfaceAuthority.Kind.ROOF && dh<0;
+                if(exposedRoof)light=Math.max(light,.1+WorldAmbientLightAuthority.OPEN_SPACE_BASELINE/100.0*1.05);
+                if(hit.kind()==StructureSurfaceAuthority.Kind.WALL && structure.finish()==TileStructureAuthority.Finish.LIT && StructureAppearanceAuthority.lamp(tu,tv))light=Math.max(light,.95);
+                color=applyBrightness(color,light*(top || exposedRoof?1:hit.axis()==2?.55:.8));
+                color=fog.applyFogArgb(color,settings,(float)(settings.mode()==DoomFogMode.RADIAL_DISTANCE
+                        ?hit.distance()*Math.sqrt(dx*dx+dh*dh+dy*dy):hit.distance()));
+                if(transparent) {
+                    if(layers<GLASS_LAYERS) {
+                        int index=sample*GLASS_LAYERS+layers++;glassDepth[index]=hit.distance();glassColor[index]=color;glassCount[sample]=(byte)layers;
+                    }
+                    minimum=hit.distance()+.00001;continue;
+                }
+                for(int yy=y;yy<Math.min(h,y+2);yy++)for(int xx=x;xx<Math.min(w,x+2);xx++) {
+                    pixels[yy*w+xx]=color;wallDepth[yy*w+xx]=hit.distance();
+                }
+                break;
+            }
+        }
+    }
+
+    /** Apply glass after billboards, only where the glass is in front of the visible scene. */
+    private void compositeGlass(int w,int h) {
+        for(int sample=0;sample<glassCount.length;sample++)if(glassCount[sample]>0) {
+            int x=(sample%((w+1)/2))*2,y=(sample/((w+1)/2))*2;
+            for(int layer=glassCount[sample]-1;layer>=0;layer--) {
+                int index=sample*GLASS_LAYERS+layer;
+                for(int yy=y;yy<Math.min(h,y+2);yy++)for(int xx=x;xx<Math.min(w,x+2);xx++) {
+                    int pixel=yy*w+xx;
+                    if(glassDepth[index]<wallDepth[pixel])pixels[pixel]=StructureAppearanceAuthority.tint(pixels[pixel],glassColor[index],.24);
+                }
             }
         }
     }
@@ -511,7 +607,7 @@ final class FirstPersonRenderViewport {
         renderTargetReticle(g, targetSolution, cx, cy, w);
         RaycastHit hit = targetSolution.hit();
         LogicalTile tile = continuousPlayer.currentLogicalTile();
-        lastStatus = "SECTOR " + tile.label()
+        lastStatus = (inspectionPose==null?"SECTOR "+tile.label():"INSPECTION ["+(int)camera.x()+", "+(int)camera.z()+"] height "+formatDistance2(camera.y()))
                 + (hit.hit() ? "  /  " + hit.label() + "  /  " + formatDistance2(hit.distance()) + "m" : "");
         g.setFont(new Font("Monospaced", Font.BOLD, 12));
         FirstPersonHudLayoutAuthority.drawStrip(g, lastStatus, w, 16, false, new Color(232, 210, 132));
@@ -952,7 +1048,27 @@ final class BillboardSpriteRenderer {
             int color = fog == null ? sprite.color() : fog.applyFogArgb(sprite.color(),fogSettings,(float)depth);
             Shape originalClip = g.getClip();
             try {
-                if (wallDepth == null || wallDepth.length != w) {
+                if(wallDepth!=null && wallDepth.length==w*h) {
+                    java.awt.geom.Area visible=new java.awt.geom.Area();
+                    for(int row=Math.max(0,upper);row<Math.min(h,upper+height);row++) {
+                        double v=(1-2*(row+.5)/h)*Math.tan(fov*.5);
+                        double denom=Math.cos(camera.pitchRadians())-v*Math.sin(camera.pitchRadians());
+                        double pixelDepth=denom<=.0001?Double.POSITIVE_INFINITY:depth/denom;
+                        int start=Math.max(0,left),end=Math.min(w,left+width);
+                        while(start<end) {
+                            while(start<end && pixelDepth>=wallDepth[row*w+start])start++;
+                            int first=start;
+                            while(start<end && pixelDepth<wallDepth[row*w+start]) {
+                                BufferedImage art=sprite.image();
+                                int alpha=art==null?255:(art.getRGB(Math.min(art.getWidth()-1,(start-left)*art.getWidth()/width),Math.min(art.getHeight()-1,(row-upper)*art.getHeight()/height))>>>24);
+                                if(alpha>128)wallDepth[row*w+start]=pixelDepth;
+                                start++;
+                            }
+                            if(start>first)visible.add(new java.awt.geom.Area(new Rectangle(first,row,start-first,1)));
+                        }
+                    }
+                    g.clip(visible);drawSprite(g,sprite,left,upper,width,height,color);
+                } else if (wallDepth == null || wallDepth.length != w) {
                     drawSprite(g,sprite,left,upper,width,height,color);
                 } else {
                     int start = Math.max(0,left), end = Math.min(w,left+width);
@@ -1001,7 +1117,7 @@ enum DoomFogMode {
 
 record DoomFogSettings(int fogColorArgb, float startDistance, float maxVisibilityDistance, DoomFogMode mode) {
     DoomFogSettings {
-        fogColorArgb = 0xFF090A0D | (fogColorArgb & 0x00FFFFFF);
+        fogColorArgb = 0xFF000000 | (fogColorArgb & 0x00FFFFFF);
         startDistance = Math.max(0.0f, startDistance);
         maxVisibilityDistance = Math.max(startDistance + 0.25f, maxVisibilityDistance);
         mode = mode == null ? DoomFogMode.LINEAR_DEPTH : mode;
@@ -1009,20 +1125,20 @@ record DoomFogSettings(int fogColorArgb, float startDistance, float maxVisibilit
 
     static DoomFogSettings fromOptions(GameOptions options) {
         int modeIndex = options == null ? 0 : options.doomFogModeIndex;
-        return new DoomFogSettings(0xFF090A0D, 2.0f, 17.5f, DoomFogMode.fromIndex(modeIndex));
+        return new DoomFogSettings(ViewportDarknessAuthority.DARKEST, 12.0f, 96.0f, DoomFogMode.fromIndex(modeIndex));
     }
 }
 
 final class DoomDepthFog {
     private static final int TABLE_SIZE = 2048;
     private final float[] linearFogTable = new float[TABLE_SIZE];
-    private DoomFogSettings lastSettings = new DoomFogSettings(0xFF090A0D, 2.0f, 17.5f, DoomFogMode.LINEAR_DEPTH);
+    private DoomFogSettings lastSettings = DoomFogSettings.fromOptions(null);
 
     DoomDepthFog() { rebuildTable(lastSettings); }
 
     Color applyFog(Color originalColor, float distance, boolean useRadial) {
         if (originalColor == null) originalColor = Color.BLACK;
-        DoomFogSettings settings = new DoomFogSettings(0xFF090A0D, 2.0f, 17.5f, useRadial ? DoomFogMode.RADIAL_DISTANCE : DoomFogMode.LINEAR_DEPTH);
+        DoomFogSettings settings = new DoomFogSettings(ViewportDarknessAuthority.DARKEST, 12.0f, 96.0f, useRadial ? DoomFogMode.RADIAL_DISTANCE : DoomFogMode.LINEAR_DEPTH);
         int argb = (originalColor.getAlpha() << 24) | (originalColor.getRed() << 16) | (originalColor.getGreen() << 8) | originalColor.getBlue();
         int out = applyFogArgb(argb, settings, distance);
         return new Color((out >> 16) & 255, (out >> 8) & 255, out & 255, (out >>> 24) & 255);
@@ -1046,29 +1162,7 @@ final class DoomDepthFog {
     }
 
     int applyFogArgbDistanceSquared(int argb, DoomFogSettings settings, float distanceSquared) {
-        DoomFogSettings safe = settings == null ? lastSettings : settings;
-        ensureTable(safe);
-        float start2 = safe.startDistance() * safe.startDistance();
-        float max2 = safe.maxVisibilityDistance() * safe.maxVisibilityDistance();
-        float d2 = Math.max(0.0f, distanceSquared);
-        float fog;
-        if (d2 <= start2) fog = 0.0f;
-        else if (d2 >= max2) fog = 1.0f;
-        else {
-            int idx = Math.max(0, Math.min(TABLE_SIZE - 1, Math.round((d2 - start2) * (TABLE_SIZE - 1) / Math.max(0.001f, max2 - start2))));
-            fog = linearFogTable[idx];
-        }
-        int a = (argb >>> 24) & 255;
-        int fr = (safe.fogColorArgb() >> 16) & 255;
-        int fg = (safe.fogColorArgb() >> 8) & 255;
-        int fb = safe.fogColorArgb() & 255;
-        int r = (argb >> 16) & 255;
-        int g = (argb >> 8) & 255;
-        int b = argb & 255;
-        int rr = r + Math.round((fr - r) * fog);
-        int gg = g + Math.round((fg - g) * fog);
-        int bb = b + Math.round((fb - b) * fog);
-        return (a << 24) | (VisualJuiceFramework.clamp255(rr) << 16) | (VisualJuiceFramework.clamp255(gg) << 8) | VisualJuiceFramework.clamp255(bb);
+        return applyFogArgb(argb,settings,(float)Math.sqrt(Math.max(0,distanceSquared)));
     }
 
     private float fogFactor(float distance, DoomFogSettings settings) {
@@ -1093,7 +1187,7 @@ final class DoomDepthFog {
         lastSettings = settings;
         for (int i = 0; i < TABLE_SIZE; i++) {
             float t = i / (float)(TABLE_SIZE - 1);
-            linearFogTable[i] = Math.max(0.0f, Math.min(1.0f, t));
+            linearFogTable[i] = Math.max(0.0f, Math.min(1.0f, t*t));
         }
     }
 }

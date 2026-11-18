@@ -1,0 +1,6 @@
+worldSeed=233306817
+recipeVersion=1
+featureCounts={RISER=31, SERVICE_PIPE=752, CABLE=564, SUPPORT=1006, SEALED_DOOR=13, PATCH=231, VENT=18, LAMP=18, DUCT=506, HANGER=519, SWAG=2736}
+renderer=existing GamePanel/FirstPersonRenderViewport
+assets=shipped wall and closed-door art
+Elevated inspection poses do not certify traversable local upper storeys.

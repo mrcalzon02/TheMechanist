@@ -7,6 +7,36 @@ import java.util.Random;
 final class NeedSupplyInteractionAuthority {
     private NeedSupplyInteractionAuthority() {}
 
+    static boolean isBuiltBed(BaseObject object) {
+        return object != null && !object.underConstruction && object.symbol == 'c'
+                && ItemQuality.namesMatch(object.name, "Sleeping Cot");
+    }
+
+    static boolean tryRest(GamePanel game, BaseObject bed) {
+        if (!isBuiltBed(bed)) return false;
+        if (game == null || game.world == null || !game.baseObjects.contains(bed)
+                || FactionPhysicalConstructionAuthority.isFactionManaged(bed)
+                || Math.abs(game.playerX - bed.x) + Math.abs(game.playerY - bed.y) > 1) {
+            if (game != null) game.logEvent("Rest unavailable: approach an accessible completed cot in this area.");
+            return true;
+        }
+        int sleepBefore = game.sleepNeed, fatigueBefore = game.fatigue;
+        boolean changed = restorePlayerRest(game);
+        game.logEvent("Rested on " + bed.name + ": sleep " + sleepBefore + "->" + game.sleepNeed
+                + ", fatigue " + fatigueBefore + "->" + game.fatigue + ".");
+        if (changed) game.gainXp("Survival", 1, "rested on a cot");
+        game.advanceTurn("rests on a cot.");
+        game.repaint();
+        return true;
+    }
+
+    private static boolean restorePlayerRest(GamePanel game) {
+        int sleepBefore = game.sleepNeed, fatigueBefore = game.fatigue;
+        game.sleepNeed = Math.max(0, game.sleepNeed - 10);
+        game.fatigue = Math.max(0, game.fatigue - 2);
+        return sleepBefore != game.sleepNeed || fatigueBefore != game.fatigue;
+    }
+
     static boolean tryUse(GamePanel g, MapObjectState m) {
         if (g == null || m == null) return false;
         NeedProfile profile = profileFor(m);
@@ -41,8 +71,7 @@ final class NeedSupplyInteractionAuthority {
         if (profile.sleep && (g.sleepNeed > 0 || g.fatigue > 0)) {
             int sleepBefore = g.sleepNeed;
             int fatigueBefore = g.fatigue;
-            g.sleepNeed = Math.max(0, g.sleepNeed - 10);
-            g.fatigue = Math.max(0, g.fatigue - 2);
+            restorePlayerRest(g);
             append(report, "rest sleep " + sleepBefore + "->" + g.sleepNeed + ", fatigue " + fatigueBefore + "->" + g.fatigue);
             changed = true;
             wrote = true;

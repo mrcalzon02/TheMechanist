@@ -680,6 +680,7 @@ final class ProgressiveConstructionAuthority {
         site.symbol = site.finalSymbol == 0 ? '?' : site.finalSymbol;
         site.underConstruction = false;
         site.constructionVisualProgress = 100;
+        RoofConstructionAuthority.complete(g,site);
         syncSiteTile(g, site);
         g.configureBaseObject(site);
         LiveProductionPlacementAuthority.annotateBuiltObject(g, site);
@@ -696,6 +697,7 @@ final class ProgressiveConstructionAuthority {
         site.symbol = site.finalSymbol == 0 ? '?' : site.finalSymbol;
         site.underConstruction = false;
         site.constructionVisualProgress = 100;
+        RoofConstructionAuthority.complete(g,site);
         site.description = "A completed faction facility constructed from reserved faction stock by "
                 + clean(crewLabel, "assigned faction workers") + ".";
         syncSiteTile(g, site);

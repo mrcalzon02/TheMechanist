@@ -39,7 +39,7 @@ final class ConstructionCategoryAuthority {
                 "razor wire", "reinforced door", "reinforced wall", "alarm trap", "shield relay")) return "Defense";
         if (containsAny(text, "logistics", "supply post", "carrying station")) return "Logistics";
         if (containsAny(text, "shop", "market", "clinic", "business", "vendor", "counter")) return "Commerce and Medical";
-        if (containsAny(text, "storage", "crate", "cot", "decor", "furniture")) return "Shelter and Storage";
+        if (containsAny(text, "storage", "crate", "cot", "decor", "furniture", "roof")) return "Shelter and Storage";
         return "Machines and Utilities";
     }
 
