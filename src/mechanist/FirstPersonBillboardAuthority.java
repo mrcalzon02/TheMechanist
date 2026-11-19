@@ -13,9 +13,11 @@ final class FirstPersonBillboardAuthority {
         if (world == null) return;
         for (NpcEntity npc : world.npcs) {
             if (npc == null || npc.hp <= 0 || !panel.isVisible(npc.x, npc.y)) continue;
+            DoomEntitySpriteAuthority.Profile profile = DoomEntitySpriteAuthority.profile(npc);
             out.add(new RenderableSprite(npc.x + .5, .02, npc.y + .5, npc.symbol,
                     label(npc.name, "Person"), 0xFFE2C46B, true,
-                    artwork ? panel.images.getNpcPortraitFor(npc) : null));
+                    artwork ? DoomEntitySpriteAuthority.imageFor(npc) : null,
+                    profile.width(), profile.height()));
         }
         for (MapObjectState object : world.mapObjects) {
             if (object == null || !panel.isVisible(object.x, object.y)) continue;
@@ -58,6 +60,7 @@ final class FirstPersonBillboardAuthority {
     private static String label(String value, String fallback) { return value == null || value.isBlank() ? fallback : value; }
 
     static double height(RenderableSprite sprite) {
+        if (sprite.visualHeight() > 0.0) return sprite.visualHeight();
         if (sprite.entity()) return 1.1;
         return switch (sprite.glyph()) {
             case '*', 'r', 'm', '?' -> .22;
@@ -66,7 +69,9 @@ final class FirstPersonBillboardAuthority {
         };
     }
 
-    static double width(RenderableSprite sprite) { return sprite.entity() ? .55 : .68; }
+    static double width(RenderableSprite sprite) {
+        return sprite.visualWidth() > 0.0 ? sprite.visualWidth() : sprite.entity() ? .55 : .68;
+    }
 
     static ScreenPoint project(FirstPersonCamera camera, double x, double y, double z, double fov, int w, int h) {
         double dx = x-camera.x(), dy = y-camera.y(), dz = z-camera.z();
