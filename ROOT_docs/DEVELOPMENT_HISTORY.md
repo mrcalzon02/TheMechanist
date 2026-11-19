@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 loss-smoke alignment with live player reach and title (2026-11-19)
+
+- Exact-commit milestone validation at `c03e5e6099acec9840843b1f1518aaa859568062` compiled successfully, but `Milestone06VehicleLossSmoke` failed in the Gate 3 chain: its synthetic player remained at (2,2) when stripping a hulk at (12,6). The updated live salvage authority correctly refused the remote action. The same test subsequently attempted a distant abandonment claim without a selected character, also incompatible with the new access rules.
+- Updated the existing smoke (rather than weakening production custody or reach): establish a deterministic selected character matching the legacy fixture title; assert distant salvage and claim both refuse with unchanged vehicle, inventory and turn state; then explicitly approach each physical fixture and require successful salvage/claim, including the new character-linked owner ID on the resulting claim.
+- This is an exact-test regression repair, not evidence of continuous normal-player navigation or installer certification. Full current-commit CI and save/reload remain required.
+
 ### Milestone 06 character-bound vehicle title and legacy-compatible ownership (2026-11-19)
 
 - A vehicle with `ownerType=PLAYER` previously authorized every player character, independent of who actually purchased or claimed it. The same weak check was used by operation, cargo/manifest permissions, servicing, routing, and player salvage.

@@ -13,6 +13,11 @@ final class Milestone06VehicleLossSmoke {
         game.shutdownRuntime();
         try {
             game.world = world();
+            // Live player-owned actions require an actual character. This fixture
+            // intentionally matches pre-ownerPlayerId records titled "Player".
+            game.active = Candidate.random(new Random(61019L));
+            game.active.name = "Player";
+            game.seed = game.world.seed;
             game.playerX = 2;
             game.playerY = 2;
             game.turn = 1_040;
@@ -121,6 +126,19 @@ final class Milestone06VehicleLossSmoke {
                             && burned.glyph == 'o',
                     "burned wreck should convert into a persistent recoverable salvage hulk");
             int partsBeforeStrip = count(game, "Machine part");
+            String hulkBeforeRemote = burned.stockState;
+            int remoteTurn = game.turn;
+            long remoteWorldTurn = game.worldTurn;
+            VehicleRuntimeAuthority.Result remoteSalvage =
+                    VehicleRuntimeAuthority.salvageForPlayer(game, burned);
+            require(!remoteSalvage.success() && !remoteSalvage.changed()
+                            && hulkBeforeRemote.equals(burned.stockState)
+                            && count(game, "Machine part") == partsBeforeStrip
+                            && game.turn == remoteTurn && game.worldTurn == remoteWorldTurn,
+                    "salvage must refuse an out-of-reach hulk without consuming time or materials");
+            // Ordinary player route: move adjacent before using the real salvage authority.
+            game.playerX = burned.x - 1;
+            game.playerY = burned.y;
             VehicleRuntimeAuthority.Result stripped =
                     VehicleRuntimeAuthority.salvageForPlayer(game, burned);
             require(stripped.success() && stripped.amount() > 0
@@ -150,14 +168,27 @@ final class Milestone06VehicleLossSmoke {
                             && "abandoned".equals(MapObjectState.stockValue(
                             abandoned.stockState, "ownership")),
                     "intact abandonment should become an abandoned recovery asset, not false looting");
+            String abandonedBeforeRemote = abandoned.stockState;
+            int claimTurn = game.turn;
+            long claimWorldTurn = game.worldTurn;
+            VehicleRuntimeAuthority.Result remoteClaim =
+                    VehicleRuntimeAuthority.interact(game, abandoned);
+            require(!remoteClaim.success() && !remoteClaim.changed()
+                            && abandonedBeforeRemote.equals(abandoned.stockState)
+                            && game.turn == claimTurn && game.worldTurn == claimWorldTurn,
+                    "abandoned vehicle claim must refuse remote interaction without mutation");
+            game.playerX = abandoned.x - 1;
+            game.playerY = abandoned.y;
             VehicleRuntimeAuthority.Result claimed =
                     VehicleRuntimeAuthority.interact(game, abandoned);
             require(claimed.success() && claimed.changed()
                             && "PLAYER".equals(MapObjectState.stockValue(
                             abandoned.stockState, "ownerType"))
                             && "salvage-claim".equals(MapObjectState.stockValue(
-                            abandoned.stockState, "ownership")),
-                    "legal civilian abandonment should feed the existing player claim path");
+                            abandoned.stockState, "ownership"))
+                            && SaveEfficiencyAuthority.playerIdFor(game).equals(
+                            MapObjectState.stockValue(abandoned.stockState, "ownerPlayerId")),
+                    "adjacent civilian abandonment claim should bind a real character title");
 
             MapObjectState nobleTank = vehicle(game.world, 22, 6,
                     AssetIntegrationDisciplineAuthority.PARKED_TANK,
