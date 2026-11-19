@@ -252,6 +252,10 @@ final class VehicleRuntimeAuthority {
                 + clean(snapshot.ownerName(), snapshot.ownerType().name().toLowerCase(Locale.ROOT))
                 + (snapshot.ownerFaction() == Faction.NONE ? "" : " / " + snapshot.ownerFaction().label)
                 + "; status " + clean(snapshot.ownership(), "unassigned")
+                + "; title identity " + (snapshot.ownerType() == OwnerType.PLAYER
+                        ? (value(vehicle, "ownerPlayerId").isBlank()
+                                ? "legacy name record" : "character-linked")
+                        : "not player titled")
                 + "; legal class " + clean(snapshot.legalClass(), "unlisted")
                 + "; access " + snapshot.accessSummary()
                 + ". Components: " + components + ".";
@@ -282,6 +286,10 @@ final class VehicleRuntimeAuthority {
         if (game == null || game.world == null) {
             return Result.blocked("purchase vehicle", "No vehicle market world is loaded.", null);
         }
+        if (game.active == null) {
+            return Result.blocked("purchase vehicle",
+                    "Choose a character before acquiring a vehicle title.", null);
+        }
         MapObjectState vehicle = nearest(game.world, dealership, candidate -> {
             if (!isVehicle(candidate)) return false;
             ensureInitialized(game.world, candidate);
@@ -306,6 +314,7 @@ final class VehicleRuntimeAuthority {
         appendFormerOwner(vehicle, oldOwner);
         set(vehicle, "ownerType", OwnerType.PLAYER.name());
         set(vehicle, "ownerName", playerName(game));
+        set(vehicle, "ownerPlayerId", SaveEfficiencyAuthority.playerIdFor(game));
         set(vehicle, "ownerFaction", game.playerFaction().name());
         set(vehicle, "ownership", "player-owned");
         set(vehicle, "forSale", "false");
@@ -371,6 +380,9 @@ final class VehicleRuntimeAuthority {
         if (game == null || game.world == null || vehicle == null || !isVehicle(vehicle)) {
             return Result.blocked("claim vehicle", "No abandoned vehicle is available.", vehicle);
         }
+        if (game.active == null) {
+            return Result.blocked("claim vehicle", "Choose a character before claiming abandoned property.", vehicle);
+        }
         String blocker = playerVehicleReachBlocker(game, vehicle);
         if (blocker != null) return Result.blocked("claim vehicle", blocker, vehicle);
         ensureInitialized(game.world, vehicle);
@@ -387,6 +399,7 @@ final class VehicleRuntimeAuthority {
         appendFormerOwner(vehicle, ownerDisplay(before));
         set(vehicle, "ownerType", OwnerType.PLAYER.name());
         set(vehicle, "ownerName", playerName(game));
+        set(vehicle, "ownerPlayerId", SaveEfficiencyAuthority.playerIdFor(game));
         set(vehicle, "ownerFaction", game.playerFaction().name());
         set(vehicle, "ownership", "salvage-claim");
         set(vehicle, "forSale", "false");
@@ -463,6 +476,7 @@ final class VehicleRuntimeAuthority {
         set(vehicle, "ownerType", OwnerType.FACTION.name());
         set(vehicle, "ownerFaction", faction.name());
         set(vehicle, "ownerName", faction.label);
+        set(vehicle, "ownerPlayerId", "");
         set(vehicle, "ownership", "seized");
         set(vehicle, "forSale", "false");
         append(vehicle, "captureHistory", prior + " -> " + faction.label
@@ -502,7 +516,8 @@ final class VehicleRuntimeAuthority {
         Snapshot snapshot = inspect(game.world, vehicle);
         boolean restricted = "MILITARY".equals(snapshot.legalClass())
                 || "RESTRICTED".equals(snapshot.legalClass());
-        boolean allowed = snapshot.ownerType() == OwnerType.PLAYER
+        boolean allowed = (snapshot.ownerType() == OwnerType.PLAYER
+                && playerOwns(game, vehicle))
                 || (!restricted && (snapshot.ownerType() == OwnerType.SALVAGE
                         || snapshot.ownerType() == OwnerType.ABANDONED));
         // Physical wreckage does not erase a faction's, private owner's, or
@@ -549,7 +564,20 @@ final class VehicleRuntimeAuthority {
     static boolean playerOwns(GamePanel game, MapObjectState vehicle) {
         if (game == null || vehicle == null || !isVehicle(vehicle)) return false;
         ensureInitialized(game.world, vehicle);
-        return parseOwnerType(value(vehicle, "ownerType")) == OwnerType.PLAYER;
+        if (parseOwnerType(value(vehicle, "ownerType")) != OwnerType.PLAYER) return false;
+        // Newly acquired vehicles bind to the actual deterministic character
+        // identity. Same-name characters in the same world cannot share title.
+        String ownerPlayerId = value(vehicle, "ownerPlayerId");
+        if (!ownerPlayerId.isBlank()) {
+            return game.active != null
+                    && ownerPlayerId.equals(SaveEfficiencyAuthority.playerIdFor(game));
+        }
+        // Compatibility for title records created before ownerPlayerId existed.
+        // Do not interpret OwnerType.PLAYER alone as proof of current ownership.
+        // A legacy generic "Player" name is not an in-game title for a named character.
+        String recordedName = value(vehicle, "ownerName");
+        return !recordedName.isBlank()
+                && recordedName.equalsIgnoreCase(playerName(game));
     }
 
     static boolean factionOwns(MapObjectState vehicle, Faction faction) {
@@ -593,6 +621,7 @@ final class VehicleRuntimeAuthority {
         set(vehicle, "operationState", "dismantled");
         set(vehicle, "forSale", "false");
         set(vehicle, "ownerType", OwnerType.SALVAGE.name());
+        set(vehicle, "ownerPlayerId", "");
         set(vehicle, "ownership", "stripped-hulk");
         for (Component component : Component.values()) setComponent(vehicle, component, 0);
         append(vehicle, "salvageHistory", clean(actor, "unknown salvager")

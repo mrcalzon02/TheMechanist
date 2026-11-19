@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 character-bound vehicle title and legacy-compatible ownership (2026-11-19)
+
+- A vehicle with `ownerType=PLAYER` previously authorized every player character, independent of who actually purchased or claimed it. The same weak check was used by operation, cargo/manifest permissions, servicing, routing, and player salvage.
+- New dealer purchases and civilian abandonment claims now persist `ownerPlayerId` using the existing deterministic character identity; the runtime player-ownership and permission authority verifies that exact ID. New purchases/claims reject actions before character selection. Same-name characters with different birth identities cannot use another character's title. Faction seizures and stripping clear the former player ID.
+- Saved vehicles without a recorded player ID retain exact display-name compatibility rather than being erased or silently assigned a new owner. This **legacy-only fallback** is not account-level security and cannot disambiguate two historical same-name owners; a later authenticated-host migration must resolve that provenance before claiming multiplayer account-grade custody.
+- The existing Milestone 06 vehicle foundation smoke now exercises purchase/claim ID stamping, another character's denied access and no-mutation salvage, reload-style stock round trip, and legacy-name compatibility. Exact-build Java 17/CI results and continuous graphical campaign remain separately required.
+
 ### Milestone 06 vehicle salvage custody and refused-action parity (2026-11-19)
 
 - Ordinary vehicle interaction allowed any physically wrecked vehicle to bypass owner type and become player salvage, including still-titled faction property. Direct claim/salvage also accepted distant or detached vehicle references. These paths could materialize Machine parts or transfer ownership without the player reaching the actual world fixture.

@@ -13,6 +13,9 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
         game.shutdownRuntime();
         try {
             game.world = world();
+            game.active = Candidate.random(new Random(60106L));
+            game.active.name = "Mechanist Vehicle Tester";
+            game.seed = 60106L;
             game.world.mapObjects.clear();
             game.npcFactionSites.clear();
             game.factionStrategicPlans.clear();
@@ -76,6 +79,46 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
                     "purchase should spend the exact vehicle catalog price once");
             require(hasTitle(game, purchased),
                     "purchase should issue a readable title receipt for the transferred fixture");
+            String trueOwnerId = SaveEfficiencyAuthority.playerIdFor(game);
+            require(trueOwnerId.equals(MapObjectState.stockValue(saleCar.stockState, "ownerPlayerId"))
+                            && VehicleRuntimeAuthority.playerOwns(game, saleCar),
+                    "newly purchased title must bind to the current character identity");
+            Candidate savedOwner = game.active;
+            Candidate sameNameDifferentCharacter = Candidate.random(new Random(60107L));
+            sameNameDifferentCharacter.name = savedOwner.name;
+            sameNameDifferentCharacter.job = savedOwner.job;
+            sameNameDifferentCharacter.birthWorldTurn = savedOwner.birthWorldTurn + 1;
+            game.active = sameNameDifferentCharacter;
+            String purchasedStock = saleCar.stockState;
+            int otherScript = game.carriedScript;
+            int otherParts = count(game.inventory, "Machine part");
+            game.playerX = saleCar.x - 1;
+            game.playerY = saleCar.y;
+            require(!VehicleRuntimeAuthority.playerOwns(game, saleCar),
+                    "same display name must not grant ownership to a different character");
+            require(!VehicleAccessAuthority.evaluate(game, saleCar,
+                            VehicleAccessAuthority.Permission.OPERATION).allowed(),
+                    "unrelated character must not drive the player's titled car");
+            require(!VehicleRuntimeAuthority.salvageForPlayer(game, saleCar).success()
+                            && purchasedStock.equals(saleCar.stockState)
+                            && game.carriedScript == otherScript
+                            && count(game.inventory, "Machine part") == otherParts,
+                    "other character cannot strip a titled vehicle or receive resources");
+            game.active = savedOwner;
+            require(VehicleRuntimeAuthority.playerOwns(game, saleCar),
+                    "original character must regain ownership without retitling");
+            MapObjectState legacy = vehicle(game.world, 19, 2,
+                    AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                    Faction.NONE, "player-owned", "legacy-title", false, 29L);
+            legacy.stockState = MapObjectState.setStockFlag(legacy.stockState, "ownerType", "PLAYER");
+            legacy.stockState = MapObjectState.setStockFlag(legacy.stockState, "ownerName", savedOwner.name);
+            legacy.stockState = MapObjectState.setStockFlag(legacy.stockState, "ownerPlayerId", "");
+            require(VehicleRuntimeAuthority.playerOwns(game, legacy),
+                    "legacy same-name vehicle should remain accessible to its original character");
+            game.active = sameNameDifferentCharacter;
+            require(VehicleRuntimeAuthority.playerOwns(game, legacy),
+                    "legacy name-only vehicle must preserve compatible legacy ownership behavior");
+            game.active = savedOwner;
             require(game.gangHeat > 0,
                     "vehicle acquisition should create class-scaled expansion attention");
 
@@ -127,8 +170,10 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
             game.playerY = abandonedBike.y;
             VehicleRuntimeAuthority.Result claim =
                     VehicleRuntimeAuthority.claimAbandoned(game, abandonedBike);
-            require(claim.success() && VehicleRuntimeAuthority.playerOwns(game, abandonedBike),
-                    "legal abandoned civilian vehicle should support a player salvage claim");
+            require(claim.success() && VehicleRuntimeAuthority.playerOwns(game, abandonedBike)
+                            && trueOwnerId.equals(MapObjectState.stockValue(
+                                    abandonedBike.stockState, "ownerPlayerId")),
+                    "legal abandoned civilian vehicle should record the current player's identity");
             require(game.gangHeat > heatBeforeClaim,
                     "abandoned vehicle claim should still add visible fleet attention");
 
@@ -230,6 +275,7 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
             VehicleRuntimeAuthority.Snapshot restoredSnapshot =
                     VehicleRuntimeAuthority.inspect(game.world, restored);
             require(restoredSnapshot.ownerType() == VehicleRuntimeAuthority.OwnerType.PLAYER
+                            && trueOwnerId.equals(MapObjectState.stockValue(restored.stockState, "ownerPlayerId"))
                             && restoredSnapshot.components().get(
                             VehicleRuntimeAuthority.Component.POWERPLANT) == 75,
                     "vehicle authority should reconstruct ownership and component truth from persisted stock state");
