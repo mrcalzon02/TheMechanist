@@ -1,5 +1,11 @@
 # Development History
 
+### 06.R local release sequence now enforces main-branch candidate identity (2026-11-19)
+
+- The governed local release coordinator required a stable 40-character Git HEAD but did not verify that the checkout was actually on `main`. A clean feature branch or detached HEAD at the same commit could progress to a misleading `passed` candidate report, contradicting the explicit release preflight and single-main-branch rule.
+- `ROOT_build/ci/run_local_release_sequence.py` now requires `main` before invoking any release stage, records that branch identity, and rechecks it after every successful stage. A branch switch that keeps the same commit SHA is also rejected. The existing Java release gate continues to own source-worktree cleanliness checking; update-manifest review-only behavior and candidate SHA checks are unchanged.
+- An isolated temporary-Git-repository behavioral probe passed acceptance on `main` and refusal of another branch and detached HEAD with an identical commit. Full Java 17, native packaging, cross-stage release evidence, and installed gameplay were not executed in this bounded repair. The limited alpha remains uncertified.
+
 ### 06.R prerelease publication now enforces governed inventory clearance (2026-11-18)
 
 - The November 17 manual-publication guard stopped unattended releases but still allowed a positive `publish_prerelease` input to publish installer artifacts without running the existing exact-commit repository inventory and redistribution-clearance gate. The governed clearance registry has no approved asset rows at this checkpoint; native installer success alone does not constitute clearance.
