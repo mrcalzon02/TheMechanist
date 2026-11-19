@@ -167,12 +167,21 @@ final class Milestone03PlayerConstructionCrewSmoke {
             BaseObject loadedMachine = loaded.baseObjects.stream()
                     .filter(b -> "Recovery Test Machine".equals(b.name))
                     .findFirst().orElseThrow();
+            // The smoke's source world is a hand-built 24x24 room fixture;
+            // Persistence.readCore recreates the normal deterministic atlas.
+            // Find the actual claimed room in the restored atlas rather than
+            // assuming that (10,10) still belongs to room zero.
+            moveIntoLoadedClaimedRoom(loaded);
             int restoredTurn = loaded.turn;
             int restoredScript = loaded.carriedScript;
-            require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(loaded).success()
+            PlayerRecruitmentAuthority.Result firstAfterLoad =
+                    PlayerRecruitmentAuthority.releaseUnavailableFromBase(loaded);
+            require(!firstAfterLoad.success()
                             && loaded.factionRecruits.size() == 1
-                            && loaded.turn == restoredTurn,
-                    "first roster click after reload must never immediately dismiss");
+                            && loaded.turn == restoredTurn
+                            && !loaded.pendingUnavailableWorkerKey.isBlank(),
+                    "first roster click after reload must stage confirmation, not dismiss: "
+                            + firstAfterLoad.message());
             PlayerRecruitmentAuthority.Result released =
                     PlayerRecruitmentAuthority.releaseUnavailableFromBase(loaded);
             require(released.success() && !released.hired()
@@ -184,7 +193,16 @@ final class Milestone03PlayerConstructionCrewSmoke {
                             && inserted.equals(loadedSite.constructionInsertedItems)
                             && loaded.carriedScript == restoredScript
                             && loaded.turn == restoredTurn,
-                    "confirmed deceased-worker release frees capacity and assignments without losing work or script");
+                    "confirmed deceased-worker release frees capacity and assignments without losing work or script: "
+                            + "result=" + released.message()
+                            + " roster=" + loaded.factionRecruits.size()
+                            + " siteAssignment=" + loadedSite.assignedWorker
+                            + " machineAssignment=" + loadedMachine.assignedWorker
+                            + " unfinished=" + loadedSite.underConstruction
+                            + " labor=" + loadedSite.constructionLaborDone + "/" + labor
+                            + " staged=" + loadedSite.constructionInsertedItems + "/" + inserted
+                            + " script=" + loaded.carriedScript + "/" + restoredScript
+                            + " turn=" + loaded.turn + "/" + restoredTurn);
             require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(loaded).success(),
                     "released contract cannot be removed or refunded twice");
         } finally { loaded.shutdownRuntime(); }
@@ -250,6 +268,31 @@ final class Milestone03PlayerConstructionCrewSmoke {
                 "confirmed administrative release must recover missing roster capacity");
         require(!g.world.npcs.contains(replacement),
                 "administrative roster cleanup must not mutate or teleport world actors");
+    }
+
+
+    /** The atlas loader regenerates geometry, so an in-base test must use loaded coordinates. */
+    private static void moveIntoLoadedClaimedRoom(GamePanel loaded) {
+        require(loaded.baseClaimed && loaded.world != null
+                        && loaded.claimedRoomId >= 0
+                        && loaded.claimedRoomId < loaded.world.rooms.size()
+                        && loaded.claimedRoomId < loaded.world.roomFactions.size()
+                        && loaded.world.roomFaction(loaded.claimedRoomId) == Faction.HIVER
+                        && RoomOwnershipAuthority.hasAuthoritativePlayerClaim(
+                                loaded, loaded.claimedRoomId),
+                "the authoritative room claim must survive a full save/atlas regeneration");
+        Rectangle room = loaded.world.rooms.get(loaded.claimedRoomId);
+        for (int x = Math.max(0, room.x); x < Math.min(loaded.world.w, room.x + room.width); x++) {
+            for (int y = Math.max(0, room.y); y < Math.min(loaded.world.h, room.y + room.height); y++) {
+                if (loaded.world.roomIdAt(x, y) == loaded.claimedRoomId
+                        && loaded.world.walkable(x, y)) {
+                    loaded.playerX = x;
+                    loaded.playerY = y;
+                    return;
+                }
+            }
+        }
+        throw new AssertionError("Saved player claim has no walkable cell in the restored world");
     }
 
     private static void require(boolean okay,String reason) {

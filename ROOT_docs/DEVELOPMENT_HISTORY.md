@@ -1,5 +1,11 @@
 # Development History
 
+### Gate 3 roster-recovery save/load fixture world-position correction (2026-11-19)
+
+- In the first PR #51 merged-source Java 17 validation, compilation and real TCP multiplayer passed, but `Milestone03PlayerConstructionCrewSmoke` rejected the post-load administrative release assertion. This smoke creates a hand-built 24x24 claimed room, whereas `Persistence.readCore` regenerates a deterministic world atlas. The test incorrectly assumed that the original player coordinate (10,10) remained inside the restored claimed room, so the intentionally restrictive in-base confirmation could reject the action.
+- The test now preflights authoritative claimed-room ownership in the loaded atlas, locates an actual walkable cell of the restored claimed room, and replays the two-step release there. It requires the first post-load click to create a new confirmation, so a rejected click cannot accidentally be mistaken for an ordinary preview. The final assertion reports individual assignment, resource, labor, and turn-state values if it still fails. No production ownership or save rules were relaxed.
+- This is a focused test-fixture correction pending exact-source CI readback, not a claim of graphical continuous-play certification.
+
 ### Gate 3 recruited NPC absence and roster recovery (2026-11-19)
 
 - PR #51's live recruitment and NPC construction duty could leave a dead, departed, or unloaded worker indefinitely occupying the freehold roster and staffed machine/construction slots. Dialogue dismissal required approaching the original live actor and could not recover a deceased or absent record. This was a player-visible settlement dead end, not merely an audit/readability issue.
