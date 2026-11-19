@@ -79,6 +79,52 @@ final class CoreGameplayBoundarySmoke {
                     && game.food == 78 && game.water == 76 && game.sleepNeed == 24
                     && game.fatigue == 10, "skipped turns must accrue every crossed survival threshold");
 
+            // Hire a real adult, resident world actor after claiming an abandoned room.
+            game.world.rooms.add(new java.awt.Rectangle(8, 8, 10, 10));
+            game.world.roomProfiles.add(RoomProfile.generic());
+            game.world.roomFactions.add(Faction.NONE);
+            game.world.roomSpecials.add(Boolean.FALSE);
+            for (int x = 8; x < 18; x++) for (int y = 8; y < 18; y++) game.world.roomIds[x][y] = 0;
+            game.playerX = 12; game.playerY = 12;
+            NpcEntity resident = NpcEntity.create(Faction.HIVER, game.world.zoneType, 11, 12, new Random(946));
+            resident.id = "HIRED-RESIDENT-946";
+            resident.name = "Tal Ren";
+            resident.role = "Resident";
+            resident.ageYears = 27;
+            resident.hp = 12;
+            resident.state = "Idle";
+            game.world.npcs.add(resident);
+            int startingScript = game.carriedScript;
+            check(!PlayerRecruitmentAuthority.toggle(game, resident).success()
+                    && game.carriedScript == startingScript && game.factionRecruits.isEmpty(),
+                    "recruitment must require a real claimed base");
+            check(RoomOwnershipAuthority.claimCurrentRoom(game).success(), "unowned room should become a founded base");
+            NpcEntity underage = NpcEntity.create(Faction.HIVER, game.world.zoneType, 12, 11, new Random(947));
+            underage.id = "MINOR-946"; underage.ageYears = 12; underage.name = "Child Applicant";
+            game.world.npcs.add(underage);
+            check(!PlayerRecruitmentAuthority.toggle(game, underage).success()
+                    && game.carriedScript == startingScript, "minors may not sign work contracts");
+            PlayerRecruitmentAuthority.Quote hire = PlayerRecruitmentAuthority.quote(game, resident);
+            check(hire.ready() && hire.signingCost() > 0 && hire.capacity() >= 4,
+                    "live resident recruitment should show a bounded affordable signing quote");
+            PlayerRecruitmentAuthority.Result hired = PlayerRecruitmentAuthority.toggle(game, resident);
+            check(hired.success() && hired.hired() && game.factionRecruits.size() == 1
+                    && game.carriedScript == startingScript - hire.signingCost()
+                    && resident.id.equals(game.factionRecruits.get(0).sourceNpcId),
+                    "hiring must consume exact script and register the actor's persistent identity");
+            check(!PlayerRecruitmentAuthority.toggle(game, underage).success()
+                    && game.factionRecruits.size() == 1, "an invalid hire must not disturb the existing roster");
+            game.playerX = game.playerY = 0;
+            check(!PlayerRecruitmentAuthority.toggle(game, resident).success()
+                    && game.factionRecruits.size() == 1, "remote dismissal must not mutate the roster");
+            game.playerX = game.playerY = 12;
+            BaseObject hireStation = new BaseObject("Crew Workbench", 'w', 14, 12, 0, 0);
+            game.baseObjects.add(hireStation);
+            check(ManualStaffingAssignmentAuthority.assign(game, hireStation, game.factionRecruits.get(0))
+                            .contains("assigned"),
+                    "hired world actor should be assignable to an actual built workbench");
+            check(hireStation.assignedWorker.equals(resident.name),
+                    "staffing control must bind the hired worker to a station");
             ItemProvenanceRecord carried = ItemProvenanceRecord.found("Machine part", game.world, game.turn, "saved supplier");
             game.addInventoryItem("Machine part", carried);
             String carriedId = player.itemInstanceIds.get(0);
@@ -88,6 +134,15 @@ final class CoreGameplayBoundarySmoke {
             resumed.timer.stop();
             try {
                 Persistence.readCore(resumed, checkpoint);
+                check(resumed.factionRecruits.size() == 1
+                        && "HIRED-RESIDENT-946".equals(resumed.factionRecruits.get(0).sourceNpcId),
+                        "hired actor identity must survive campaign persistence");
+                NpcEntity resumedResident = resumed.world.npcs.stream()
+                        .filter(n -> "HIRED-RESIDENT-946".equals(n.id)).findFirst().orElseThrow();
+                BaseObject resumedHireStation = resumed.baseObjects.stream()
+                        .filter(b -> "Crew Workbench".equals(b.name)).findFirst().orElseThrow();
+                check("Tal Ren".equals(resumedHireStation.assignedWorker),
+                        "hired worker's station assignment must survive campaign persistence");
                 check(resumed.turn == 250 && resumed.lastPlayerNeedsTurn == 250
                         && resumed.food == 78 && resumed.water == 76 && resumed.sleepNeed == 24
                         && resumed.fatigue == 10, "survival needs and the last-applied turn must persist");
@@ -117,6 +172,13 @@ final class CoreGameplayBoundarySmoke {
                 resumed.playerX = resumed.playerY = 0;
                 rest.action.run();
                 check(resumed.fatigue == 6 && resumed.sleepNeed == 20 && resumed.turn == beforeRest + 1, "remote cot use is refused without mutation");
+                resumed.playerX = resumed.playerY = 12;
+                PlayerRecruitmentAuthority.Result dismissed = PlayerRecruitmentAuthority.toggle(resumed, resumedResident);
+                check(dismissed.success() && !dismissed.hired() && resumed.factionRecruits.isEmpty()
+                                && resumedHireStation.assignedWorker.isBlank(),
+                        "dismissing a real NPC must free capacity and unstaff assigned machines");
+                check(!PlayerRecruitmentAuthority.toggle(resumed, underage).success(),
+                        "stale actors outside the restored world must not be hired");
             } finally { resumed.shutdownRuntime(); }
 
             game.seed = 941;
@@ -150,7 +212,7 @@ final class CoreGameplayBoundarySmoke {
                             "test", 0, 3, 0, false, 4, 4).status()),
                     "unusable spawn must block structural acceptance");
             check(game.containerItemCount(GamePanel.CONTAINER_PLAYER_INVENTORY) == game.inventory.size(), "starting kit must be registered");
-            System.out.println("CoreGameplayBoundarySmoke PASS inventoryIdentity=true provenance=true transfers=true noJunkMeals=true survivalClock=true savedNeeds=true finalWorldgenStatus=true newRunIsolation=true");
+            System.out.println("CoreGameplayBoundarySmoke PASS inventoryIdentity=true provenance=true transfers=true noJunkMeals=true survivalClock=true savedNeeds=true finalWorldgenStatus=true recruitment=true hiredWorkerSave=true newRunIsolation=true");
         } finally {
             game.shutdownRuntime();
         }

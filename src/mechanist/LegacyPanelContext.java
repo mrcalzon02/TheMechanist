@@ -2691,6 +2691,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
         statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
+        statLines.add("Freehold crew " + factionRecruits.size() + "/" + PlayerRecruitmentAuthority.capacity(this)
+                + " / sleep debt " + sleepNeed);
         statLines.add("Wounds " + wounds + " / bleeding " + bleeding + " / pain " + pain);
         statLines.add(ActorConsumableAuthority.summary(combatSupport,worldTurn));
         statLines.add("Carried load " + inventoryWeight() + "/" + carryCapacity() + ".");
@@ -3846,6 +3848,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             lines.add("Faction: " + (npc.faction == null ? "No faction" : npc.faction.label) + ".");
             lines.add(npc.rankLine());
             lines.add(NpcHappinessAuthority.statusLine(world, npc, worldTurn));
+            if (PlayerRecruitmentAuthority.dialogueCandidate(npc))
+                lines.add(PlayerRecruitmentAuthority.quote(this, npc).displayLine());
             Faction conversationFaction = npc.faction == null ? Faction.NONE : npc.faction;
             lines.addAll(ConversationReadabilityAuthority.describe(npc,
                     factionStanding.getOrDefault(conversationFaction, 0),
@@ -3908,6 +3912,12 @@ class GamePanel extends LegacyPanelBridgeBase {
                             Math.max(120, actions.width - 24), 28,
                             "Open the Skills tab with this trainer's instruction available.", this::trainWithActiveNpc);
                 }
+            }
+            if (npc != null && PlayerRecruitmentAuthority.dialogueCandidate(npc)) {
+                PlayerRecruitmentAuthority.Quote hiring = PlayerRecruitmentAuthority.quote(this, npc);
+                addOverlayButton(hiring.actionLabel(), actions.x + 12, trainerService ? by - 68 : by - 34,
+                        Math.max(120, actions.width - 24), 28, hiring.explanation(),
+                        this::toggleRecruitmentWithActiveNpc);
             }
             addOverlayButton("Look", actionX, by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
             actionX += 80;
@@ -4686,6 +4696,13 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (npc.isFactionRepresentative()) logEvent("Faction representative interface is active; contract/reputation submenu remains attached to this actor.");
         gainXp("Social", 1, "spoke with " + npc.name);
         advanceTurn("talks with " + npc.name + ".");
+        repaint();
+    }
+
+    void toggleRecruitmentWithActiveNpc() {
+        PlayerRecruitmentAuthority.Result outcome = PlayerRecruitmentAuthority.toggle(this, activeInteractionNpc);
+        logEvent(outcome.message());
+        if (outcome.success()) advanceTurn(outcome.hired() ? "hires a freehold worker." : "dismisses a freehold worker.");
         repaint();
     }
 
@@ -7575,7 +7592,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     void recordPlayerNewsEvent(String kind, String siteName, Faction faction, String text, int attention) { logEvent(text == null || text.isBlank() ? "Player news event recorded." : text); }
     Point nearestMedicalFacilityPoint() { return new Point(playerX, playerY); }
     BaseObject baseObjectAt(int x, int y) { for (BaseObject b : baseObjects) if (b != null && !RoofConstructionAuthority.overhead(b) && b.x == x && b.y == y) return b; return null; }
-    int recruitCapacity() { return Math.max(4, factionRecruits.size()); }
+    int recruitCapacity() { return PlayerRecruitmentAuthority.capacity(this); }
     int securityStaffCount() { return 0; }
     boolean buttonIsModalInteractive(ButtonBox button) { return button != null; }
     void markZoneVisitedAndCheckFirstType() {

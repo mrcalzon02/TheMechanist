@@ -1001,6 +1001,7 @@ class FactionContract {
 
 class RecruitWorker {
     String name, role; Faction faction; int skill; int loyalty; String duty = "labor";
+    String sourceNpcId = ""; // stable identity of the actor who signed the labor contract
     RecruitWorker(String name, String role, Faction faction, int skill, int loyalty){ this.name=name; this.role=role; this.faction=faction==null?Faction.NONE:faction; this.skill=skill; this.loyalty=loyalty; }
     static RecruitWorker fromNpc(NpcEntity n, int index){
         String nm = (n==null || n.name==null || n.name.isBlank()) ? ("Recruit " + index) : n.name;
@@ -1008,13 +1009,15 @@ class RecruitWorker {
         Faction f = n==null ? Faction.NONE : n.faction;
         int sk = 1 + Math.abs(Objects.hash(nm, rl)) % 4;
         int lo = 2 + Math.abs(Objects.hash(rl, nm)) % 5;
-        return new RecruitWorker(nm, rl, f, sk, lo);
+        RecruitWorker worker = new RecruitWorker(nm, rl, f, sk, lo);
+        worker.sourceNpcId = n == null || n.id == null ? "" : n.id;
+        return worker;
     }
-    String saveLine(){ return name+"|"+role+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+skill+"|"+loyalty+"|"+(duty==null?"labor":duty); }
+    String saveLine(){ return name+"|"+role+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+skill+"|"+loyalty+"|"+(duty==null?"labor":duty)+"|"+NpcEntity.enc(sourceNpcId); }
     static RecruitWorker parse(String s){
-        String[] a=s.split("\\|",6);
+        String[] a=s.split("\\|",7);
         if(a.length<5) return null;
-        try { RecruitWorker r = new RecruitWorker(a[0], a[1], Faction.valueOf(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4])); if(a.length>=6 && !a[5].isBlank()) r.duty=a[5]; return r; } catch(Exception e){ return null; }
+        try { RecruitWorker r = new RecruitWorker(a[0], a[1], Faction.valueOf(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4])); if(a.length>=6 && !a[5].isBlank()) r.duty=a[5]; if(a.length>=7) r.sourceNpcId=NpcEntity.dec(a[6]); return r; } catch(Exception e){ return null; }
     }
 }
 

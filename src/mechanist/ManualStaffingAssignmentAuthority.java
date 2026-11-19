@@ -72,6 +72,14 @@ final class ManualStaffingAssignmentAuthority {
         if (station.assignedWorker == null || station.assignedWorker.isBlank()) return "no assigned worker";
         RecruitWorker worker = assignedWorker(g, station);
         if (worker == null) return "assigned worker " + station.assignedWorker + " is no longer recruited";
+        if (g != null && g.world != null && worker.sourceNpcId != null && !worker.sourceNpcId.isBlank()) {
+            for (NpcEntity npc : g.world.npcs) {
+                if (npc != null && worker.sourceNpcId.equals(npc.id)) {
+                    if (npc.hp <= 0) return "assigned worker " + worker.name + " is deceased";
+                    break;
+                }
+            }
+        }
         StaffingRoleSkillValidationAuthority.ValidationResult validation =
                 StaffingRoleSkillValidationAuthority.validate(g, station, worker);
         return validation.allowed ? null : "assigned worker " + worker.name + " is not valid: " + validation.summary;

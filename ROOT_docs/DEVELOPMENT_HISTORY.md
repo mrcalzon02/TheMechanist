@@ -1,5 +1,13 @@
 # Development History
 
+### Player-facing NPC hiring, roster continuity and staffing integration (2026-11-19)
+
+- Extended the existing PR #51 gameplay source with `PlayerRecruitmentAuthority`. An adult, living, non-service NPC can now be hired from their actual dialogue panel if nearby, if the player holds a verified claimed room and has enough carried script. The hire quote shows the exact signing cost, current crew and capacity. Ordinary unaligned/Hiver/scavenger civilians are eligible; non-local faction members require standing 25 and ordinary rank. Children, protected representatives, traders, trainers, hostile actors, remote targets, missing NPC identities and faction-hostile targets are excluded. Failed requests never charge script or mutate the roster.
+- Successful hires record the **actual NPC ID** in `RecruitWorker.sourceNpcId`, stored in the existing `base.recruits` ledger using a backwards-compatible optional encoded field. Existing workbench Worker controls may immediately staff hired personnel; the player Character overview displays crew capacity and sleep debt. Fully constructed cots in the claimed base add two crew slots each, capped at twenty and never retroactively invalidating an existing saved roster.
+- Already-hired NPC dialogue offers a proximity-bound **Dismiss Worker** action, which clears station assignments while leaving queued production pending. On-zone deceased hires prevent staffing from producing output; workers from other (unloaded) zones are not automatically treated as deceased.
+- `CoreGameplayBoundarySmoke` adds a real room claim -> nearby adult dialogue hire -> exact script debit -> worker assignment -> campaign save/load -> dismissal/unassignment path, as well as remote and underage rejection checks. Automatic labor motion, worker wages, shifts, independent faction ID separation from civic HIVER, and zone-crossing actor liveness are NOT solved by this patch.
+- New source requires exact-commit CI compile, gameplay and loopback checks before promoting a verification result; no automatic merge or published installer.
+
 ### Final post-placement world-generation acceptance reporting (2026-11-19)
 
 - Replaced the premature `WORLDGEN_ACCEPTANCE` event (which formerly claimed ACCEPTED/REPAIRED before population, tile compilation, roofs, roads and architectural clutter, based only on repair attempts) with a pre-population progress log.
