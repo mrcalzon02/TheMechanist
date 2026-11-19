@@ -94,6 +94,9 @@ final class CoreGameplayBoundarySmoke {
             resident.hp = 12;
             resident.state = "Idle";
             game.world.npcs.add(resident);
+            // This smoke constructs a panel without the new-game initializer:
+            // give it the same 15 script the actual new-game path grants.
+            game.carriedScript = 15;
             int startingScript = game.carriedScript;
             check(!PlayerRecruitmentAuthority.toggle(game, resident).success()
                     && game.carriedScript == startingScript && game.factionRecruits.isEmpty(),
@@ -106,7 +109,7 @@ final class CoreGameplayBoundarySmoke {
                     && game.carriedScript == startingScript, "minors may not sign work contracts");
             PlayerRecruitmentAuthority.Quote hire = PlayerRecruitmentAuthority.quote(game, resident);
             check(hire.ready() && hire.signingCost() > 0 && hire.capacity() >= 4,
-                    "live resident recruitment should show a bounded affordable signing quote");
+                    "live resident recruitment should show a bounded affordable signing quote: " + hire.displayLine());
             PlayerRecruitmentAuthority.Result hired = PlayerRecruitmentAuthority.toggle(game, resident);
             check(hired.success() && hired.hired() && game.factionRecruits.size() == 1
                     && game.carriedScript == startingScript - hire.signingCost()
