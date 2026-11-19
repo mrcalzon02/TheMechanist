@@ -1,5 +1,11 @@
 # Development History
 
+### PR #51 current-main Doom actor silhouette integration without terrain regression (2026-11-19)
+
+- The independently advanced main at `5ebb96c315c0a331cb7af9a6f3f28eac1ea37227` introduced deterministic transparent species-specific 3D actor silhouettes and body-width/height profiles. The core gameplay PR had earlier terrain-aware billboard elevations, building roof suppression, and advanced ray targeting that needed to remain intact.
+- Reconciled the two overlapping classes in-place: `RenderableSprite` accepts both legacy calls and profile-scaled silhouettes; live NPCs use `DoomEntitySpriteAuthority` art while preserving PR terrain-height anchoring. Other billboards, architectural targeting, and rooftop filtering remain from the PR. Added the exact new silhouette authority and Doom HUD facing smoke from main, without discarding the PR's construction/recruitment logic.
+- This is a two-parent fast-forward merge on the existing PR branch, not an automatic merge to main. The full PR CI must validate the combined renderer and active simulation before acceptance.
+
 ### Gate 3 physical staffed-production pause and replacement persistence regression (2026-11-19)
 
 - The live-recruitment integration now has a focused operational acceptance check within `Milestone03StaffedProductionExecutionSmoke`, rather than relying solely on an abstract saved roster. A constructed machine has a real hired NPC identity, an actual generated job, staged physical inputs and two remaining runs.

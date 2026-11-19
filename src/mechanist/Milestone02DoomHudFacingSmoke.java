@@ -18,6 +18,59 @@ final class Milestone02DoomHudFacingSmoke {
         verifyTriangleDirections();
         verifySpriteVisibilityCulling();
         verifyFloorBillboards();
+        verifyNativeEntitySprites();
+    }
+
+    /** Regression for world-space sprites replacing square dialogue portraits. */
+    private static void verifyNativeEntitySprites() {
+        NpcEntity guard = new NpcEntity();
+        guard.id = "doom-guard";
+        guard.name = "Civic Warden";
+        guard.role = "Security guard";
+        guard.creatureKind = "humanoid";
+        DoomEntitySpriteAuthority.Profile adult = DoomEntitySpriteAuthority.profile(guard);
+        require(adult.height() > 1.0 && adult.width() > .5, "Humanoid billboard needs upright physical proportions.");
+        require(DoomEntitySpriteAuthority.imageFor(guard).getRGB(0, 0) == 0,
+                "World-space actor sprites must have transparent corners, not a portrait tile.");
+        NpcEntity rat = new NpcEntity();
+        rat.id = "doom-sump-rat";
+        rat.name = "Sump rat swarm";
+        rat.creatureKind = "wild-animal";
+        rat.animalProfileId = "sump-rat-swarm";
+        DoomEntitySpriteAuthority.Profile small = DoomEntitySpriteAuthority.profile(rat);
+        require(small.height() < .5 && small.width() < adult.width(),
+                "Rats must be visibly shorter than humans, not human-height square portraits.");
+        require(!small.family().equals(adult.family()), "Animal species must not resolve to humanoid art.");
+        require(DoomEntitySpriteAuthority.imageFor(rat) == DoomEntitySpriteAuthority.imageFor(rat),
+                "Generated silhouettes must be cached and not repainted on each frame.");
+        java.util.Set<String> families = new java.util.HashSet<>();
+        AnimalProfile[][] groups = {AnimalPopulationApi.SEWER_WILD, AnimalPopulationApi.URBAN_WILD,
+                AnimalPopulationApi.FARM, AnimalPopulationApi.KENNEL, AnimalPopulationApi.PETS};
+        for (AnimalProfile[] group : groups) for (AnimalProfile species : group) {
+            NpcEntity animal = new NpcEntity();
+            animal.id = species.id;
+            animal.name = species.displayName;
+            animal.role = species.role;
+            animal.creatureKind = species.category;
+            animal.animalProfileId = species.id;
+            DoomEntitySpriteAuthority.Profile profile = DoomEntitySpriteAuthority.profile(animal);
+            families.add(profile.family());
+            require(profile.width() > .15 && profile.height() > .15, "Nonzero body size required for " + species.id);
+            BufferedImage body = DoomEntitySpriteAuthority.imageFor(animal);
+            require(body.getWidth() == 32 && body.getHeight() == 32 && body.getRGB(0, 0) == 0,
+                    "Native actor silhouette must be 32x32 with a transparent exterior: " + species.id);
+            int opaque = 0;
+            for (int x = 0; x < 32; x++) for (int y = 0; y < 32; y++)
+                if ((body.getRGB(x, y) >>> 24) != 0) opaque++;
+            require(opaque > 10 && opaque < 800, "Visible silhouette must not be blank or a solid portrait tile: " + species.id);
+        }
+        require(families.size() >= 12,
+                "The existing creature catalog needs 12+ distinct anatomical families rather than a single box.");
+        RenderableSprite animal = new RenderableSprite(5.5, .02, 8.5, 'r', "Sump rat", 0xFFFFFFFF, true,
+                DoomEntitySpriteAuthority.imageFor(rat), small.width(), small.height());
+        require(FirstPersonBillboardAuthority.height(animal) == small.height()
+                        && FirstPersonBillboardAuthority.width(animal) == small.width(),
+                "Projected actor body dimensions must follow creature identity.");
     }
 
     private static void verifyFloorBillboards() {
