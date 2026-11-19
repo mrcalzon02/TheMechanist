@@ -1,5 +1,11 @@
 # Development History
 
+### Gate 3 live actor staffing safety after recruitment loss (2026-11-19)
+
+- Machine staffing previously treated a roster entry as sufficient even after its identity-backed NPC left the loaded zone or changed to `Left Faction`. Only `hp <= 0` was detected, while new assignments could also be made to a deceased hire, allowing idle/unavailable staff to masquerade as operational labor.
+- The existing manual staffing authority now verifies exact live `sourceNpcId` in the current zone before new assignment and active-readiness checks, refusing dead, departed, in-combat, ineligible, missing, or duplicate-ID actors without touching the machine or queued work. Valid live hires can still operate normally; legacy name-only recruits retain their previous abstract staffing behavior until a safe identity migration is possible. This bounded guard does not claim cross-zone autonomous physical staffing.
+- Expanded the existing player construction/recovery smoke with non-mutating dead-worker assignment refusal, restored-roster checks, and explicit departed/missing worker staffing blockers. Existing two-step roster cleanup frees station assignments without consuming saved material, labor, or production queues. Exact-source CI and ordinary GUI campaign testing remain required.
+
 ### Gate 3 roster-recovery save/load fixture world-position correction (2026-11-19)
 
 - In the first PR #51 merged-source Java 17 validation, compilation and real TCP multiplayer passed, but `Milestone03PlayerConstructionCrewSmoke` rejected the post-load administrative release assertion. This smoke creates a hand-built 24x24 claimed room, whereas `Persistence.readCore` regenerates a deterministic world atlas. The test incorrectly assumed that the original player coordinate (10,10) remained inside the restored claimed room, so the intentionally restrictive in-base confirmation could reject the action.

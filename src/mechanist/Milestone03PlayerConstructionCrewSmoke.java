@@ -113,7 +113,21 @@ final class Milestone03PlayerConstructionCrewSmoke {
         BaseObject machine = new BaseObject("Recovery Test Machine", 'w', 18, 10, 0, 0);
         machine.assignedWorker = worker.name;
         g.baseObjects.add(machine);
+        require(ManualStaffingAssignmentAuthority.liveActorProblem(
+                        g, g.factionRecruits.get(0)) == null,
+                "a living recruited world actor must be eligible for actual staffed work");
         worker.hp = 0;
+        require(ManualStaffingAssignmentAuthority.activeAssignmentProblem(g, machine)
+                        .contains("deceased"),
+                "a deceased recruit cannot keep a machine marked as ready for production");
+        BaseObject spareMachine = new BaseObject("Unstaffed Backup Machine", 'w', 19, 10, 0, 0);
+        g.baseObjects.add(spareMachine);
+        String deniedDeadAssignment = ManualStaffingAssignmentAuthority.assign(
+                g, spareMachine, g.factionRecruits.get(0));
+        require(deniedDeadAssignment.contains("deceased")
+                        && spareMachine.assignedWorker.isBlank()
+                        && worker.name.equals(machine.assignedWorker),
+                "dead worker assignment must refuse without removing an existing queued station duty");
         int labor = pending.constructionLaborDone;
         String inserted = pending.constructionInsertedItems;
         require(PlayerRecruitmentAuthority.unavailableWorker(g) != null
@@ -161,6 +175,8 @@ final class Milestone03PlayerConstructionCrewSmoke {
             require(loaded.pendingUnavailableWorkerKey.isEmpty()
                             && loaded.pendingUnavailableWorkerTurn < 0,
                     "save/load must discard the transient release confirmation");
+            require(loaded.factionRecruits.size() == 1,
+                    "save/load must preserve one recruited worker until explicit release");
             BaseObject loadedSite = loaded.baseObjects.stream()
                     .filter(b -> b.x == 17 && b.y == 10 && b.underConstruction)
                     .findFirst().orElseThrow();
@@ -243,6 +259,9 @@ final class Milestone03PlayerConstructionCrewSmoke {
                 "a spoofed detached NPC with a matching ID must not remotely dismiss a healthy hire");
 
         replacement.state = "Left Faction";
+        require(ManualStaffingAssignmentAuthority.liveActorProblem(
+                        g, g.factionRecruits.get(0)).contains("departed"),
+                "a departed NPC cannot satisfy an active staffed-production requirement");
         g.playerX = 10; g.playerY = 10;
         require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success(),
                 "departed worker requires explicit confirmation");
@@ -256,6 +275,9 @@ final class Milestone03PlayerConstructionCrewSmoke {
                 "departed worker may sign a new ordinary contract if eligible");
         g.playerX = 10; g.playerY = 10;
         g.world.npcs.remove(replacement);
+        require(ManualStaffingAssignmentAuthority.liveActorProblem(
+                        g, g.factionRecruits.get(0)).contains("absent"),
+                "an unloaded NPC cannot operate a staffed machine from a roster string");
         PlayerRecruitmentAuthority.RecoveryTarget missing =
                 PlayerRecruitmentAuthority.unavailableWorker(g);
         require(missing != null && missing.cause().contains("may be alive elsewhere"),
