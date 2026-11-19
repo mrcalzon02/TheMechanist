@@ -12,27 +12,48 @@ final class RoadTransitFixtureInteractionAuthority {
         if (g == null || g.world == null) return false;
         MapObjectState m = g.world.mapObjectAt(tx, ty);
         if (m == null || !RoadTransitFixtureAuthority.isRoadTransitType(m.type)) return false;
+        long distance = Math.abs((long) g.playerX - tx)
+                + Math.abs((long) g.playerY - ty);
+        if (distance > 1L) {
+            g.logEvent("Move adjacent to the road fixture before interacting.");
+            g.repaint();
+            return true;
+        }
         String line;
+        boolean accepted = true;
         if (RoadTransitFixtureAuthority.isVehicleType(m.type)) {
             if (VehicleRuntimeAuthority.playerOwns(g, m)
                     && g.manualMovementPlanActive
                     && g.manualMovementPlanPath != null
                     && !g.manualMovementPlanPath.isEmpty()) {
-                line = VehicleTransitAuthority.executeManualPlan(g, m).message();
+                VehicleTransitAuthority.TransitResult result =
+                        VehicleTransitAuthority.executeManualPlan(g, m);
+                line = result.message();
+                accepted = result.success();
             } else {
                 VehicleRuntimeAuthority.Result result = VehicleRuntimeAuthority.interact(g, m);
                 line = result.message();
+                accepted = result.success();
                 if (result.success() && !result.changed()
                         && VehicleRuntimeAuthority.playerOwns(g, m)) {
                     line += " Create a manual movement plan to a road or parking destination, then interact again to preview and commit a constrained vehicle route.";
                 }
             }
         } else if (VehicleEconomyFrontageAuthority.isCommerceType(m.type)) {
-            line = VehicleEconomyFrontageAuthority.interaction(g, m);
+            VehicleEconomyFrontageAuthority.InteractionResult result =
+                    VehicleEconomyFrontageAuthority.interactionResult(g, m);
+            line = result.message();
+            accepted = result.success();
         } else {
             line = RoadTransitFixtureAuthority.inspectionLine(m);
         }
         g.logEvent(line);
+        // Refusals display their reason, but cannot consume a turn, award XP,
+        // alter fixture cooldowns, or advance vendor rotation.
+        if (!accepted) {
+            g.repaint();
+            return true;
+        }
         g.gainXp("Navigation", 1, "handled road/transit fixture");
         m.vendCount++;
         m.cooldownUntilTurn = g.turn + FixtureInteractionRegistry.cooldownFor(m.type, 24);

@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 vehicle salvage custody and refused-action parity (2026-11-19)
+
+- Ordinary vehicle interaction allowed any physically wrecked vehicle to bypass owner type and become player salvage, including still-titled faction property. Direct claim/salvage also accepted distant or detached vehicle references. These paths could materialize Machine parts or transfer ownership without the player reaching the actual world fixture.
+- Player claim and salvage now require the same live object in the loaded zone and one-tile reach. A wreck's physical condition no longer grants salvage title: only player-owned, ordinary abandoned, or designated unrestricted salvage custody is eligible; military/restricted abandoned hulks require legal title. Rejections do not alter vehicle ledgers or inventory.
+- The road/transit interaction wrapper now carries success status for vehicle routes, claims, salvage, dealership purchases, parts sales, and garage service instead of treating every returned message as an accepted action. Rejected interactions report a reason without spending a world turn, granting Navigation XP, or advancing fixture vend/cooldown state; successful interactions retain their existing time cost.
+- Expanded the existing Milestone 06 vehicle runtime foundation smoke with physical reach, detached reference, titled faction wreck, restricted military wreck, stale dealer stock, and negative-action no-mutation cases. Target-platform native installer and continuous normal-player campaign playthrough remain outside this bounded source repair.
+
 ### Gate 3 world deletion now requires exact on-disk identity (2026-11-19)
 
 - The staged World Picker previously used a broad content-score and reflection fallback to guess which file to delete when its originally selected world definition was missing. A different world's `.mechworld` file could be selected by seed/name text fragments. `Files.deleteIfExists` also allowed a missing file to produce a success message.

@@ -371,6 +371,8 @@ final class VehicleRuntimeAuthority {
         if (game == null || game.world == null || vehicle == null || !isVehicle(vehicle)) {
             return Result.blocked("claim vehicle", "No abandoned vehicle is available.", vehicle);
         }
+        String blocker = playerVehicleReachBlocker(game, vehicle);
+        if (blocker != null) return Result.blocked("claim vehicle", blocker, vehicle);
         ensureInitialized(game.world, vehicle);
         Snapshot before = inspect(game.world, vehicle);
         if (before.ownerType() != OwnerType.ABANDONED) {
@@ -494,15 +496,21 @@ final class VehicleRuntimeAuthority {
         if (game == null || game.world == null || vehicle == null || !isVehicle(vehicle)) {
             return Result.blocked("salvage vehicle", "No vehicle is available to salvage.", vehicle);
         }
+        String blocker = playerVehicleReachBlocker(game, vehicle);
+        if (blocker != null) return Result.blocked("salvage vehicle", blocker, vehicle);
         ensureInitialized(game.world, vehicle);
         Snapshot snapshot = inspect(game.world, vehicle);
-        boolean allowed = snapshot.ownerType() == OwnerType.SALVAGE
-                || snapshot.ownerType() == OwnerType.ABANDONED
-                || snapshot.ownerType() == OwnerType.PLAYER
-                || "wreck".equals(snapshot.condition());
+        boolean restricted = "MILITARY".equals(snapshot.legalClass())
+                || "RESTRICTED".equals(snapshot.legalClass());
+        boolean allowed = snapshot.ownerType() == OwnerType.PLAYER
+                || (!restricted && (snapshot.ownerType() == OwnerType.SALVAGE
+                        || snapshot.ownerType() == OwnerType.ABANDONED));
+        // Physical wreckage does not erase a faction's, private owner's, or
+        // authority's surviving title. A restricted abandoned wreck also
+        // needs an actual legal title before it can be stripped.
         if (!allowed) {
             return Result.blocked("salvage vehicle",
-                    "This vehicle remains controlled property and cannot be stripped into player storage.",
+                    "This wreck remains controlled or restricted property. Secure a lawful title before stripping it.",
                     vehicle);
         }
         if ("salvaged".equals(snapshot.condition())) {
@@ -522,6 +530,20 @@ final class VehicleRuntimeAuthority {
         return new Result(true, true, "salvage vehicle",
                 "VEHICLE SALVAGE: stripped " + displayName(vehicle) + " into "
                         + yield + " Machine part(s). " + attention.summary(), vehicle, yield);
+    }
+
+    private static String playerVehicleReachBlocker(GamePanel game, MapObjectState vehicle) {
+        if (game == null || game.world == null || vehicle == null
+                || game.world.mapObjects == null
+                || !game.world.mapObjects.contains(vehicle)
+                || !game.world.inBounds(vehicle.x, vehicle.y)) {
+            return "That vehicle is no longer present in the loaded zone; select a live vehicle.";
+        }
+        long distance = Math.abs((long) game.playerX - vehicle.x)
+                + Math.abs((long) game.playerY - vehicle.y);
+        return distance > 1L
+                ? "Move next to the vehicle before claiming or stripping it."
+                : null;
     }
 
     static boolean playerOwns(GamePanel game, MapObjectState vehicle) {
