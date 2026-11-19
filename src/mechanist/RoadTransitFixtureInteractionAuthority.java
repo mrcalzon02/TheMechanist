@@ -21,6 +21,7 @@ final class RoadTransitFixtureInteractionAuthority {
         }
         String line;
         boolean accepted = true;
+        boolean changed = false;
         if (RoadTransitFixtureAuthority.isVehicleType(m.type)) {
             if (VehicleRuntimeAuthority.playerOwns(g, m)
                     && g.manualMovementPlanActive
@@ -30,10 +31,12 @@ final class RoadTransitFixtureInteractionAuthority {
                         VehicleTransitAuthority.executeManualPlan(g, m);
                 line = result.message();
                 accepted = result.success();
+                changed = result.changed();
             } else {
                 VehicleRuntimeAuthority.Result result = VehicleRuntimeAuthority.interact(g, m);
                 line = result.message();
                 accepted = result.success();
+                changed = result.changed();
                 if (result.success() && !result.changed()
                         && VehicleRuntimeAuthority.playerOwns(g, m)) {
                     line += " Create a manual movement plan to a road or parking destination, then interact again to preview and commit a constrained vehicle route.";
@@ -44,13 +47,14 @@ final class RoadTransitFixtureInteractionAuthority {
                     VehicleEconomyFrontageAuthority.interactionResult(g, m);
             line = result.message();
             accepted = result.success();
+            changed = result.changed();
         } else {
             line = RoadTransitFixtureAuthority.inspectionLine(m);
         }
         g.logEvent(line);
-        // Refusals display their reason, but cannot consume a turn, award XP,
-        // alter fixture cooldowns, or advance vendor rotation.
-        if (!accepted) {
+        // Refusals and read-only inspections may report information, but cannot
+        // consume time, earn repeatable XP, rotate stock, or start cooldowns.
+        if (!accepted || !changed) {
             g.repaint();
             return true;
         }

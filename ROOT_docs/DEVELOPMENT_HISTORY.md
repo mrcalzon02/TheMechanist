@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 informational road/vehicle inspections do not spend turns (2026-11-19)
+
+- The road interaction wrapper awarded Navigation XP and advanced the world turn, vendor counters and cooldowns even on read-only inspection of an owned vehicle, public transit stop, taxi booth or faction motor-pool information desk. Repeating inspections created an unlimited XP source without meaningful gameplay state changes.
+- Existing vehicle/commerce result types now carry both `success` and `changed`. Only a genuinely changed purchase, repair, salvage/claim, or route consumes a turn, yields normal interaction XP, advances stock/cooldown, or plays an action cue. Refusals and informational inspections still produce readable messages with no resource/time side effects. No new gameplay authority was added.
+- The Milestone 06 vehicle runtime foundation smoke now exercises repeated live-object vehicle, public-transit, motor-pool and taxi inspections, plus a successful parts-shop purchase and a subsequent insufficient-funds refusal. It asserts before/after turn, world turn, XP, item stock, script, vendor rotation and cooldown. Exact SHA CI and continuous installed graphical play are separate acceptance steps.
+
 ### Milestone 06 loss-smoke alignment with live player reach and title (2026-11-19)
 
 - Exact-commit milestone validation at `c03e5e6099acec9840843b1f1518aaa859568062` compiled successfully, but `Milestone06VehicleLossSmoke` failed in the Gate 3 chain: its synthetic player remained at (2,2) when stripping a hulk at (12,6). The updated live salvage authority correctly refused the remote action. The same test subsequently attempted a distant abandonment claim without a selected character, also incompatible with the new access rules.

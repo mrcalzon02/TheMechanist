@@ -38,7 +38,7 @@ final class VehicleEconomyFrontageAuthority {
 
     private VehicleEconomyFrontageAuthority() {}
 
-    record InteractionResult(boolean success, String message) {}
+    record InteractionResult(boolean success, boolean changed, String message) {}
 
     static Result apply(World w, ArrayList<Point> candidates, Random r) {
         Result result = new Result();
@@ -85,22 +85,22 @@ final class VehicleEconomyFrontageAuthority {
     /** Preserve success/refusal truth instead of inferring it from display text. */
     static InteractionResult interactionResult(GamePanel g, MapObjectState m) {
         if (g == null || g.world == null || m == null) {
-            return new InteractionResult(false, "Vehicle commerce requires a loaded world and a service fixture.");
+            return new InteractionResult(false, false, "Vehicle commerce requires a loaded world and a service fixture.");
         }
         String type = AssetIntegrationDisciplineAuthority.canonicalType(m.type);
         if (AssetIntegrationDisciplineAuthority.VEHICLE_DEALERSHIP_FRONTAGE.equals(type)) {
             VehicleRuntimeAuthority.Result result = VehicleRuntimeAuthority.purchaseNearestForSale(g, m);
-            return new InteractionResult(result.success(), result.message());
+            return new InteractionResult(result.success(), result.changed(), result.message());
         }
         if (AssetIntegrationDisciplineAuthority.VEHICLE_PARTS_STORE_FRONTAGE.equals(type)) return buyPart(g, m);
         if (AssetIntegrationDisciplineAuthority.VEHICLE_SERVICE_GARAGE_FRONTAGE.equals(type)) {
             VehicleMaintenanceAuthority.Result result = VehicleMaintenanceAuthority.serviceNearestPlayerVehicle(g, m);
-            return new InteractionResult(result.success(), result.message());
+            return new InteractionResult(result.success(), result.changed(), result.message());
         }
         if (AssetIntegrationDisciplineAuthority.PUBLIC_TRANSIT_STOP_FRONTAGE.equals(type)) {
-            return new InteractionResult(true, "PUBLIC TRANSIT: local taxi and mass-transit routes are posted here. Fare execution and boarding remain reserved for the transit runtime.");
+            return new InteractionResult(true, false, "PUBLIC TRANSIT: local taxi and mass-transit routes are posted here. Fare execution and boarding remain reserved for the transit runtime.");
         }
-        return new InteractionResult(true, "FACTION MOTOR POOL: " + MapObjectState.stockValue(m.stockState, "ownerFaction") +
+        return new InteractionResult(true, false, "FACTION MOTOR POOL: " + MapObjectState.stockValue(m.stockState, "ownerFaction") +
                 " vehicles are assigned here. Vehicle identity, component condition, ownership history, repair, seizure, and salvage records are live; operation remains access-controlled.");
     }
 
@@ -162,10 +162,10 @@ final class VehicleEconomyFrontageAuthority {
         String part = PARTS[Math.floorMod(m.vendCount, PARTS.length)];
         int price = Math.max(2, ItemCatalog.priceFor(part));
         if (!g.spendImperialScript(price)) {
-            return new InteractionResult(false, "PARTS STORE: " + part + " costs " + price
+            return new InteractionResult(false, false, "PARTS STORE: " + part + " costs " + price
                     + " script; you do not have enough carried script.");
         }
         g.addInventoryItem(part, null);
-        return new InteractionResult(true, "PARTS PURCHASE: paid " + price + " script for " + part + ".");
+        return new InteractionResult(true, true, "PARTS PURCHASE: paid " + price + " script for " + part + ".");
     }
 }

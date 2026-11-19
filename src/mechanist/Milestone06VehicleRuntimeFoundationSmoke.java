@@ -289,10 +289,75 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
                     VehicleRuntimeAuthority.inspectionLine(game.world, saleCar)),
                     "ordinary vehicle inspection should not leak raw implementation identifiers");
 
+            verifyReadOnlyRoadInteractions(game, saleCar);
             System.out.println("Milestone 06 vehicle runtime foundation smoke passed.");
         } finally {
             game.shutdownRuntime();
         }
+    }
+
+
+    /** Read-only information cannot mint XP or turns; actual purchases still do. */
+    private static void verifyReadOnlyRoadInteractions(GamePanel game, MapObjectState ownedCar) {
+        game.manualMovementPlanActive = false;
+        MapObjectState transit = frontage(game.world, 4, 10,
+                AssetIntegrationDisciplineAuthority.PUBLIC_TRANSIT_STOP_FRONTAGE,
+                "Civic transit information desk");
+        MapObjectState pool = frontage(game.world, 6, 10,
+                AssetIntegrationDisciplineAuthority.FACTION_MOTOR_POOL_FRONTAGE,
+                "Motor pool information desk");
+        MapObjectState taxi = frontage(game.world, 8, 10,
+                AssetIntegrationDisciplineAuthority.TAXI_BOOTH,
+                "Taxi information booth");
+        game.world.mapObjects.add(transit);
+        game.world.mapObjects.add(pool);
+        game.world.mapObjects.add(taxi);
+        for (MapObjectState fixture : new MapObjectState[]{ownedCar, transit, pool, taxi}) {
+            game.playerX = fixture.x - 1;
+            game.playerY = fixture.y;
+            int turn = game.turn, xp = game.xp, vend = fixture.vendCount;
+            long worldTurn = game.worldTurn;
+            int cooldown = fixture.cooldownUntilTurn;
+            String priorState = fixture.stockState;
+            for (int i = 0; i < 3; i++)
+                require(RoadTransitFixtureInteractionAuthority.tryInteract(
+                        game, fixture.x, fixture.y),
+                        "player must be able to inspect real road and vehicle fixtures");
+            require(game.turn == turn && game.worldTurn == worldTurn
+                            && game.xp == xp && fixture.vendCount == vend
+                            && fixture.cooldownUntilTurn == cooldown
+                            && priorState.equals(fixture.stockState),
+                    "repeat inspection must never mint XP, spend time, or change a fixture");
+        }
+        MapObjectState parts = frontage(game.world, 10, 10,
+                AssetIntegrationDisciplineAuthority.VEHICLE_PARTS_STORE_FRONTAGE,
+                "Vehicle parts store");
+        game.world.mapObjects.add(parts);
+        game.playerX = parts.x - 1;
+        game.playerY = parts.y;
+        int turn = game.turn, oldVend = parts.vendCount;
+        long worldTurn = game.worldTurn;
+        int oldParts = count(game.inventory, "Machine part");
+        int script = game.carriedScript;
+        require(RoadTransitFixtureInteractionAuthority.tryInteract(game, parts.x, parts.y),
+                "parts store action must be reachable through the real interaction router");
+        require(game.turn == turn + 1 && game.worldTurn == worldTurn + 1
+                        && parts.vendCount == oldVend + 1
+                        && parts.cooldownUntilTurn > turn
+                        && count(game.inventory, "Machine part") == oldParts + 1
+                        && game.carriedScript < script,
+                "completed parts purchase must deliver an item and advance one turn");
+        game.carriedScript = 0;
+        turn = game.turn; worldTurn = game.worldTurn;
+        int xp = game.xp, vend = parts.vendCount, cooldown = parts.cooldownUntilTurn;
+        int stock = count(game.inventory, "Machine part");
+        require(RoadTransitFixtureInteractionAuthority.tryInteract(game, parts.x, parts.y),
+                "penniless player must still receive readable price refusal");
+        require(game.turn == turn && game.worldTurn == worldTurn
+                        && game.xp == xp && parts.vendCount == vend
+                        && parts.cooldownUntilTurn == cooldown
+                        && count(game.inventory, "Machine part") == stock,
+                "refused purchase must not spend turns, XP, or change goods");
     }
 
     private static void verifyFactionLifecycle(GamePanel game) {
