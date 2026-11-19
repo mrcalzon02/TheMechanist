@@ -59,6 +59,26 @@ final class CoreGameplayBoundarySmoke {
             game.baseObjects.add(cot);
             ProgressiveConstructionAuthority.contribute(game, cot, 3, true);
             check(!cot.underConstruction && game.supplies == 0 && !game.inventory.contains("Reclaimed textile bundle"), "first cot can consume packed supplies, a registered textile and real labor");
+            // Ordinary WAIT runs the same survival clock as movement and other turn actions.
+            game.turn = 99;
+            game.worldTurn = 99L;
+            game.lastPlayerNeedsTurn = 99;
+            game.food = 80;
+            game.water = 80;
+            game.sleepNeed = 20;
+            game.fatigue = 8;
+            game.waitOneTurn();
+            check(game.turn == 100 && game.lastPlayerNeedsTurn == 100
+                    && game.food == 79 && game.water == 79 && game.sleepNeed == 21
+                    && game.fatigue == 9, "ordinary wait must advance food, hydration, sleep debt and fatigue once");
+            // A longer action can advance several turns before the normal action-completion tick.
+            game.turn = 249;
+            game.worldTurn = 249L;
+            game.waitOneTurn();
+            check(game.turn == 250 && game.lastPlayerNeedsTurn == 250
+                    && game.food == 78 && game.water == 76 && game.sleepNeed == 24
+                    && game.fatigue == 10, "skipped turns must accrue every crossed survival threshold");
+
             ItemProvenanceRecord carried = ItemProvenanceRecord.found("Machine part", game.world, game.turn, "saved supplier");
             game.addInventoryItem("Machine part", carried);
             String carriedId = player.itemInstanceIds.get(0);
@@ -68,6 +88,13 @@ final class CoreGameplayBoundarySmoke {
             resumed.timer.stop();
             try {
                 Persistence.readCore(resumed, checkpoint);
+                check(resumed.turn == 250 && resumed.lastPlayerNeedsTurn == 250
+                        && resumed.food == 78 && resumed.water == 76 && resumed.sleepNeed == 24
+                        && resumed.fatigue == 10, "survival needs and the last-applied turn must persist");
+                resumed.waitOneTurn();
+                check(resumed.turn == 251 && resumed.lastPlayerNeedsTurn == 251
+                        && resumed.food == 78 && resumed.water == 76 && resumed.sleepNeed == 24
+                        && resumed.fatigue == 10, "first post-load turn must not replay already accounted survival costs");
                 check(resumed.baseObjects.stream().anyMatch(b -> b.x == 13 && b.y == 12 && !b.underConstruction && b.symbol == 'c'), "completed cot survives full save/load");
                 check(resumed.inventory.size() == 1 && resumed.containerItemCount(GamePanel.CONTAINER_PLAYER_INVENTORY) == 1, "saved inventory views resume with one exact unit");
                 ItemInstance restoredUnit = resumed.itemInstances.get(carriedId);
@@ -107,8 +134,9 @@ final class CoreGameplayBoundarySmoke {
             check(!game.baseClaimed && game.claimedRoomId == -1 && game.baseX == -1, "new run must not inherit base ownership");
             check(game.loadedWeaponShots.isEmpty() && game.equippedRightHandItem.equals("RIGHT EMPTY"), "new candidate must not inherit equipment/ammunition");
             check(game.knowledgeXpProgress == 0 && game.knowledgeCredits == 0, "new candidate must not inherit knowledge earning progress");
+            check(game.lastPlayerNeedsTurn == 0, "new character must begin with a fresh survival clock");
             check(game.containerItemCount(GamePanel.CONTAINER_PLAYER_INVENTORY) == game.inventory.size(), "starting kit must be registered");
-            System.out.println("CoreGameplayBoundarySmoke PASS inventoryIdentity=true provenance=true transfers=true noJunkMeals=true newRunIsolation=true");
+            System.out.println("CoreGameplayBoundarySmoke PASS inventoryIdentity=true provenance=true transfers=true noJunkMeals=true survivalClock=true savedNeeds=true newRunIsolation=true");
         } finally {
             game.shutdownRuntime();
         }

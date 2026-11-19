@@ -1,5 +1,13 @@
 # Development History
 
+### Ordinary player survival turn accounting (2026-11-19)
+
+- Continued Issue #52 on the existing verified PR #51 source branch; this patch does not merge the PR, retag a release, or alter user saves. Baseline is the PR source at `2d52afdc8f877b8d12ec0be68a468d1e33549fb4`.
+- `NeedSupplyInteractionAuthority.tickPlayerNeeds` now advances the player's existing food, water, sleep-debt and fatigue gauges from authoritative turn thresholds, not paint frames or wall-clock time. Initial conservative rates: food -1 per world hour (100 turns), water -1 per half-hour, sleep debt +1 per half-hour, fatigue +1 per hour. Needs are bounded and threshold warnings are emitted only on crossing. Developer facility time is excluded.
+- `GamePanel.advanceTurnBody` invokes the player needs hook; an explicit per-character turn cursor charges every elapsed period, including manual multi-turn craft jumps, once only. A fresh character resets its cursor.
+- `Persistence.writeCore/readCore` persist the cursor; legacy saves default their cursor to the saved turn, preventing a historical hunger penalty during migration. `CoreGameplayBoundarySmoke` now checks a real WAIT action at a clock boundary, long-action skipped-turn accounting, full save/load no-double-charge, and new-run reset.
+- This is a bounded baseline: starvation penalties/death, extended sleeping, skill-dependent need rates, difficulty modifiers, and full continuous-campaign pacing remain open. CI verification is required for this new commit; do not label source edits as a completed test or native installer certificate.
+
 ### GitHub synchronization of the completed audit repairs (2026-11-18)
 
 - Prepared `sync/core-gameplay-audit-source-20261118` in an isolated worktree, preserving the original dirty checkout. It carries the source/content changes from the earlier local work on top of GitHub `main` at `8ffc2eaad92be75168cd57f096decc240ef1cfaf`, retaining the newer canonical door aliases, server-world guards, vehicle readouts and release-approval safeguards.

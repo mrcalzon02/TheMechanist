@@ -7,6 +7,35 @@ import java.util.Random;
 final class NeedSupplyInteractionAuthority {
     private NeedSupplyInteractionAuthority() {}
 
+    // Passive survival pressure is clocked by authoritative game turns, never render frames.
+    // Use absolute thresholds so multi-turn crafting cannot skip food, water or sleep costs.
+    static void tickPlayerNeeds(GamePanel game) {
+        if (game == null) return;
+        int now = Math.max(0, game.turn);
+        int previous = Math.max(0, Math.min(now, game.lastPlayerNeedsTurn));
+        game.lastPlayerNeedsTurn = now;
+        if (game.world == null || DeveloperFacilityAuthority.isFacility(game.world) || now == previous) return;
+
+        int oldFood = game.food;
+        int oldWater = game.water;
+        int oldSleep = game.sleepNeed;
+        int oldFatigue = game.fatigue;
+        int hour = GamePanel.TURNS_PER_HOUR;
+        int halfHour = Math.max(1, hour / 2);
+
+        game.food = Math.max(0, game.food - (now / hour - previous / hour));
+        game.water = Math.max(0, game.water - (now / halfHour - previous / halfHour));
+        game.sleepNeed = Math.min(GamePanel.MAX_FOOD_WATER,
+                game.sleepNeed + (now / halfHour - previous / halfHour));
+        game.fatigue = Math.min(GamePanel.MAX_FOOD_WATER,
+                game.fatigue + (now / hour - previous / hour));
+
+        if (oldFood > 25 && game.food <= 25) game.logEvent("Food supplies are running low; eat a meal or find a food source.");
+        if (oldWater > 25 && game.water <= 25) game.logEvent("Water is running low; refill or drink soon.");
+        if (oldSleep < 75 && game.sleepNeed >= 75) game.logEvent("Sleep debt is high; find a usable cot or resting space.");
+        if (oldFatigue < 75 && game.fatigue >= 75) game.logEvent("Fatigue is high; avoid strenuous work until rested.");
+    }
+
     static boolean isBuiltBed(BaseObject object) {
         return object != null && !object.underConstruction && object.symbol == 'c'
                 && ItemQuality.namesMatch(object.name, "Sleeping Cot");

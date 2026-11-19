@@ -25,6 +25,7 @@ class Persistence {
         put(p, "run.seed", Long.toString(g.seed));
         put(p, "run.worldSetup", g.worldSetup == null ? WorldSetupSettings.standard().encode() : g.worldSetup.encode());
         put(p, "run.turn", Integer.toString(g.turn));
+        put(p, "run.lastPlayerNeedsTurn", Integer.toString(g.lastPlayerNeedsTurn));
         put(p, "run.worldTurn", Long.toString(g.worldTurn));
         put(p, "run.playerX", Integer.toString(g.playerX));
         put(p, "run.playerY", Integer.toString(g.playerY));
@@ -175,6 +176,8 @@ class Persistence {
         g.visibleTiles = new boolean[g.world.w][g.world.h];
         g.rememberedTiles = new boolean[g.world.w][g.world.h];
         g.turn = getInt(p,"run.turn",0); g.worldTurn = getLong(p,"run.worldTurn", g.turn); g.lastStaffedProductionBackgroundTurn = g.turn; g.playerX = clamp(getInt(p,"run.playerX", g.world.startPoint().x),0,g.world.w-1); g.playerY = clamp(getInt(p,"run.playerY", g.world.startPoint().y),0,g.world.h-1);
+        // Legacy saves start their survival clock at load time, avoiding retroactive drain.
+        g.lastPlayerNeedsTurn = clamp(getInt(p, "run.lastPlayerNeedsTurn", g.turn), 0, Math.max(0, g.turn));
         g.lookX = g.playerX; g.lookY = g.playerY; g.lookCursorActive=false; g.interactCursorActive=false; g.panelMode=GamePanel.PanelMode.NONE;
         g.suspicion=getInt(p,"run.suspicion",0); g.gangHeat=getInt(p,"run.gangHeat",0); g.supplies=getInt(p,"run.supplies",0); g.food=getInt(p,"run.food",GamePanel.MAX_FOOD_WATER); g.water=getInt(p,"run.water",GamePanel.MAX_FOOD_WATER); g.fatigue=getInt(p,"run.fatigue",0); g.wounds=getInt(p,"run.wounds",0); g.sleepNeed=getInt(p,"run.sleepNeed",0); g.stimulantStrain=getInt(p,"run.stimulantStrain",0); g.bleeding=getInt(p,"run.bleeding",0); g.infectionRisk=getInt(p,"run.infectionRisk",0); g.pain=getInt(p,"run.pain",0); g.machineParts=getInt(p,"run.machineParts",0); g.xp=getInt(p,"run.xp",0); g.knowledgeCredits=getInt(p,"run.knowledgeCredits",0); g.unlockedKnowledges.clear(); g.unlockedKnowledges.addAll(decList(p.getProperty("run.knowledges","Underhive Basics"))); g.unlockedSkillNodes.clear(); g.unlockedSkillNodes.addAll(decList(p.getProperty("run.skillNodes",""))); g.unlockedConstructionBlueprints.clear(); g.unlockedConstructionBlueprints.addAll(decList(p.getProperty("run.constructionBlueprints",""))); g.constructionExpansionReactions.clear(); g.constructionExpansionReactions.addAll(decList(p.getProperty("run.constructionExpansionReactions",""))); RoomOwnershipAuthority.restoreHistory(g, decList(p.getProperty("run.roomOwnershipHistory","")));
         // Old saves have no separate earning remainder. Carry only the current

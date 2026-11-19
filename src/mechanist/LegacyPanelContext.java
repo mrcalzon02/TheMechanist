@@ -202,6 +202,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     int turn;
     long worldTurn;
     int lastStaffedProductionBackgroundTurn;
+    int lastPlayerNeedsTurn;
     int food;
     int water;
     int sleepNeed;
@@ -704,6 +705,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         authorityFacilityInspectionCooldownUntilTurn = bankHeistAlarmCooldownUntilTurn = 0;
         arbitesCaptureCooldownUntilTurn = arbitesInspectionCooldownUntilTurn = 0;
         lastStaffedProductionBackgroundTurn = 0;
+        lastPlayerNeedsTurn = 0;
         lastPassiveWorldTickMillis = 0L;
         nextItemInstanceSeq = 1;
         activeTraderSession = null;
@@ -5065,6 +5067,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         turn++;
         worldTurn++;
         ActorConsumableAuthority.tick(this);
+        NeedSupplyInteractionAuthority.tickPlayerNeeds(this);
         if (line != null && !line.isBlank()) logEvent(line);
         int staffedElapsed = lastStaffedProductionBackgroundTurn > turn
                 ? 1 : Math.max(1, turn - lastStaffedProductionBackgroundTurn);
