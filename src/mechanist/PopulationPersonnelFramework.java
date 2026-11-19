@@ -1085,7 +1085,9 @@ class NpcEntity {
         return n;
     }
 
-    void tick(World w, int px, int py, int turn) {
+    void tick(World w, int px, int py, int turn) { tick(w, px, py, turn, false); }
+
+    void tick(World w, int px, int py, int turn, boolean constructionDuty) {
         if (hp <= 0) return;
         if (developerStationary) { lastTickTurn=turn;state="Trade";activeMotionStateIndex=GamePanel.MOTION_STATIONARY;return; }
         if (turn == lastTickTurn) return;
@@ -1100,6 +1102,7 @@ class NpcEntity {
         if (turn % idleBias != 0) return;
         if (state.equals("Sleep")) { sleepDebt = Math.max(0, sleepDebt - 1); return; }
         if (state.equals("Search Needs")) { seekNeedProvider(w, turn, px, py); return; }
+        if (constructionDuty) return; // existing NPC needs run; work-order handler owns physical movement
         if (state.equals("Guard") && Math.abs(x-homeX)+Math.abs(y-homeY) > 2) { stepToward(w, homeX, homeY, px, py); return; }
         if ("Hostile".equalsIgnoreCase(state) && Math.abs(x-px)+Math.abs(y-py) <= 8) { stepToward(w, px, py, px, py); return; }
         if (state.equals("Patrol") || state.equals("Wander") || state.equals("Idle") || state.equals("Inspect")) wander(w, turn, px, py);

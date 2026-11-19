@@ -4050,6 +4050,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             }
             if (base.underConstruction) {
                 lines.addAll(ProgressiveConstructionAuthority.inspectionLines(base));
+                if (!FactionPhysicalConstructionAuthority.isFactionManaged(base))
+                    lines.add(PlayerConstructionCrewAuthority.status(this, base));
             } else {
                 lines.add(base.businessReturnLine(this));
                 lines.addAll(MachineRepairAuthority.detailLines(this, base, machineParts));
@@ -4067,7 +4069,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (base != null && base.underConstruction) {
             if (!FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
-                addOverlayButton("Work", x, by, 78, 28, "Contribute one turn of labor to this staged construction site.", this::workActiveConstructionSite);
+                addOverlayButton(base.assignedWorker == null || base.assignedWorker.isBlank()
+                                ? "Assign Crew" : "Release Crew",
+                        actions.x + 12, by - 34, Math.max(120, actions.width - 24), 28,
+                        "Assign a real hired NPC to physically travel here and work only with staged materials.",
+                        this::toggleActiveConstructionCrew);
+                addOverlayButton("Work", x, by, 78, 28,
+                        "Stage available materials and contribute one personal turn of construction labor.",
+                        this::workActiveConstructionSite);
                 x += 86;
                 addOverlayButton("Dismantle", x, by, 104, 28, "Remove this unfinished construction site and recover staged materials.", this::dismantleActiveConstructionSite);
                 x += 112;
@@ -4703,6 +4712,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         PlayerRecruitmentAuthority.Result outcome = PlayerRecruitmentAuthority.toggle(this, activeInteractionNpc);
         logEvent(outcome.message());
         if (outcome.success()) advanceTurn(outcome.hired() ? "hires a freehold worker." : "dismisses a freehold worker.");
+        repaint();
+    }
+
+    void toggleActiveConstructionCrew() {
+        PlayerConstructionCrewAuthority.Result result =
+                PlayerConstructionCrewAuthority.toggle(this, activeInteractionBaseObject);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("updates a construction crew work order.");
         repaint();
     }
 
