@@ -300,7 +300,205 @@ final class Milestone03StaffedProductionExecutionSmoke {
         require(unassigned.machineOperationQueue.historyCount() == 0,
                 "stale assigned worker should not add completion history");
         if (unassigned.timer != null) unassigned.timer.stop();
+        verifyLiveStaffedWorkerRecovery(variant);
         if (game.timer != null) game.timer.stop();
+    }
+
+
+    /**
+     * A real NPC-backed workforce must suspend queued work while the actor is
+     * dead, including across save/load; a healthy replacement resumes the
+     * exact remaining run with its own recorded provenance.
+     */
+    private static void verifyLiveStaffedWorkerRecovery(FactionRecipeVariant variant) {
+        GamePanel live = new GamePanel();
+        if (live.timer != null) live.timer.stop();
+        try {
+            live.seed = 73061L;
+            live.world = new World(live.seed, 24, 24);
+            live.active = Candidate.random(new java.util.Random(73061L));
+            live.worldSetup.zoneSize = 0;
+            live.worldSetup.npcDensity = 0;
+            live.worldSetup.simulationAge = 0;
+            live.baseClaimed = true;
+            live.claimedRoomId = 3;
+            live.baseX = 5;
+            live.baseY = 5;
+            live.playerX = 5;
+            live.playerY = 5;
+            live.turn = 500;
+            live.worldTurn = 500L;
+            live.lastStaffedProductionBackgroundTurn = live.turn;
+            live.lastPlayerNeedsTurn = live.turn;
+            live.unlockedKnowledges.add(variant.requiredKnowledge);
+            BaseObject station = new BaseObject("Live Crew Continuity Workbench", 'w', 5, 5, 0, 0);
+            station.qualityName = "Archeotech";
+            station.integrity = 5;
+            station.assignedRecipe = ControlledProductionJobAuthority.assignmentKey(variant);
+            station.productionQueueTarget = 2;
+            station.productionQueueRemaining = 2;
+            station.productionMaterialPolicy = "WAIT";
+            station.productionNoRoomPolicy = "WAIT";
+            station.productionOutputPolicy = "BASE";
+            live.baseObjects.add(station);
+
+            NpcEntity firstActor = NpcEntity.create(Faction.HIVER,
+                    live.world.zoneType, 6, 5, new java.util.Random(73062L));
+            firstActor.id = "LIVE-PRODUCTION-73062";
+            firstActor.name = "Arden Production Hand";
+            firstActor.role = "Forge worker";
+            firstActor.ageYears = 31;
+            firstActor.hp = 18;
+            firstActor.state = "Idle";
+            firstActor.developerStationary = false;
+            firstActor.combatTargetId = "";
+            live.world.npcs.add(firstActor);
+            RecruitWorker firstContract = new RecruitWorker(
+                    firstActor.name, "forge worker", Faction.HIVER, 7, 5);
+            firstContract.sourceNpcId = firstActor.id;
+            live.factionRecruits.add(firstContract);
+            String assignment = ManualStaffingAssignmentAuthority.assign(
+                    live, station, firstContract);
+            require(assignment.contains("assigned")
+                            && ManualStaffingAssignmentAuthority.activeAssignmentProblem(live, station) == null,
+                    "actual living hired actor must authorize a production machine: " + assignment);
+
+            addInputs(live, variant, 2);
+            int requiredTurns = StaffedProductionExecutionAuthority.requiredTurns(live, station, variant);
+            int investedProgress = Math.min(1, requiredTurns - 1);
+            station.productionProgressTurns = investedProgress;
+            int initialHistory = live.machineOperationQueue.historyCount();
+            java.util.List<String> beforeInputs = new java.util.ArrayList<>(live.baseStorage);
+            String outputName = ProductionRecipe.create(variant.base.outputBaseItem,
+                    variant.faction, variant.qualityName,
+                    variant.requiredKnowledge, variant.machineHint).outputItemName();
+            long beforeOutput = countMatches(live, outputName);
+
+            firstActor.hp = 0;
+            requireContains(ManualStaffingAssignmentAuthority.activeAssignmentProblem(live, station),
+                    "deceased", "deceased worker readiness blocker");
+            advanceTurns(live, requiredTurns + 3);
+            require(station.productionQueueRemaining == 2
+                            && station.productionProgressTurns == investedProgress
+                            && beforeInputs.equals(live.baseStorage)
+                            && live.machineOperationQueue.historyCount() == initialHistory
+                            && countMatches(live, outputName) == beforeOutput,
+                    "dead-worker blocked turns must preserve queued runs, progress, actual inputs and output count");
+            requireContains(station.productionLastBlocker, "deceased",
+                    "background dead-worker block report");
+            String refused = StaffedProductionExecutionAuthority.executeOne(live, station).message();
+            requireContains(refused, "deceased",
+                    "direct production execution must refuse a dead worker");
+            require(beforeInputs.equals(live.baseStorage),
+                    "direct refused production must not remove materials");
+
+            java.util.Properties pausedSave = new java.util.Properties();
+            Persistence.writeCore(live, pausedSave);
+            GamePanel paused = new GamePanel();
+            if (paused.timer != null) paused.timer.stop();
+            try {
+                Persistence.readCore(paused, pausedSave);
+                BaseObject savedStation = paused.baseObjects.stream()
+                        .filter(o -> "Live Crew Continuity Workbench".equals(o.name))
+                        .findFirst().orElseThrow();
+                RecruitWorker savedContract = paused.factionRecruits.stream()
+                        .filter(w -> firstActor.id.equals(w.sourceNpcId))
+                        .findFirst().orElseThrow();
+                NpcEntity savedActor = paused.world.npcs.stream()
+                        .filter(n -> firstActor.id.equals(n.id))
+                        .findFirst().orElseThrow();
+                require(savedActor.hp <= 0 && savedContract.name.equals(firstActor.name)
+                                && savedStation.productionQueueRemaining == 2
+                                && savedStation.productionProgressTurns == investedProgress
+                                && beforeInputs.equals(paused.baseStorage)
+                                && paused.lastStaffedProductionBackgroundTurn == paused.turn,
+                        "save/reload of deceased staff preserves real identity, inputs and partial production progress");
+                String pausedReason = ManualStaffingAssignmentAuthority.activeAssignmentProblem(
+                        paused, savedStation);
+                requireContains(pausedReason, "deceased", "reloaded dead-worker blocker");
+                int historyBeforeResume = paused.machineOperationQueue.historyCount();
+                advanceTurns(paused, requiredTurns + 2);
+                require(savedStation.productionQueueRemaining == 2
+                                && savedStation.productionProgressTurns == investedProgress
+                                && beforeInputs.equals(paused.baseStorage)
+                                && paused.machineOperationQueue.historyCount() == historyBeforeResume,
+                        "post-load blocked worker still cannot manufacture or consume supplies");
+
+                NpcEntity replacementActor = NpcEntity.create(Faction.HIVER,
+                        paused.world.zoneType, 7, 5, new java.util.Random(73063L));
+                replacementActor.id = "LIVE-PRODUCTION-73063";
+                replacementActor.name = "Bea Replacement Hand";
+                replacementActor.role = "Forge worker";
+                replacementActor.ageYears = 35;
+                replacementActor.hp = 18;
+                replacementActor.state = "Idle";
+                replacementActor.developerStationary = false;
+                replacementActor.combatTargetId = "";
+                paused.world.npcs.add(replacementActor);
+                RecruitWorker replacement = new RecruitWorker(
+                        replacementActor.name, "forge worker", Faction.HIVER, 7, 5);
+                replacement.sourceNpcId = replacementActor.id;
+                paused.factionRecruits.add(replacement);
+                String assigned = ManualStaffingAssignmentAuthority.assign(
+                        paused, savedStation, replacement);
+                require(assigned.contains("assigned")
+                                && replacementActor.name.equals(savedStation.assignedWorker)
+                                && savedStation.productionProgressTurns == investedProgress
+                                && savedStation.productionQueueRemaining == 2,
+                        "a real replacement can take over a paused queue without clearing invested labor: "
+                                + assigned);
+                java.util.Properties replacementSave = new java.util.Properties();
+                Persistence.writeCore(paused, replacementSave);
+
+                GamePanel resumed = new GamePanel();
+                if (resumed.timer != null) resumed.timer.stop();
+                try {
+                    Persistence.readCore(resumed, replacementSave);
+                    BaseObject activeStation = resumed.baseObjects.stream()
+                            .filter(o -> "Live Crew Continuity Workbench".equals(o.name))
+                            .findFirst().orElseThrow();
+                    RecruitWorker activeContract = resumed.factionRecruits.stream()
+                            .filter(w -> replacementActor.id.equals(w.sourceNpcId))
+                            .findFirst().orElseThrow();
+                    NpcEntity activeActor = resumed.world.npcs.stream()
+                            .filter(n -> replacementActor.id.equals(n.id))
+                            .findFirst().orElseThrow();
+                    require(activeActor.hp > 0 && activeContract.name.equals(replacementActor.name)
+                                    && activeStation.assignedWorker.equals(replacementActor.name)
+                                    && activeStation.productionQueueRemaining == 2
+                                    && activeStation.productionProgressTurns == investedProgress
+                                    && beforeInputs.equals(resumed.baseStorage)
+                                    && ManualStaffingAssignmentAuthority.activeAssignmentProblem(
+                                            resumed, activeStation) == null,
+                            "replacement identity and exact paused queue must survive a second save/load");
+                    int requiredAfterLoad = StaffedProductionExecutionAuthority.requiredTurns(
+                            resumed, activeStation, variant);
+                    int historyBeforeOutput = resumed.machineOperationQueue.historyCount();
+                    long outputBefore = countMatches(resumed, outputName);
+                    advanceTurns(resumed, Math.max(1, requiredAfterLoad - investedProgress));
+                    require(activeStation.productionQueueRemaining == 1
+                                    && activeStation.productionProgressTurns == 0
+                                    && resumed.machineOperationQueue.historyCount() == historyBeforeOutput + 1
+                                    && countMatches(resumed, outputName) > outputBefore,
+                            "reassigned live NPC must complete precisely one resumed queued batch");
+                    ItemProvenanceRecord provenance = resumed.peekProvenanceForItem(outputName);
+                    require(provenance != null, "resumed production output must have real provenance");
+                    requireContains(provenance.qualityContextLines(),
+                            "Producing operator: " + replacementActor.name,
+                            "replacement actor must be recorded as the actual producing operator");
+                    advanceTurns(resumed, requiredAfterLoad);
+                    require(activeStation.productionQueueRemaining == 0
+                                    && resumed.machineOperationQueue.historyCount() == historyBeforeOutput + 2,
+                            "a replacement worker must finish the remaining batch exactly once");
+                } finally {
+                    resumed.shutdownRuntime();
+                }
+            } finally {
+                paused.shutdownRuntime();
+            }
+        } finally {
+            live.shutdownRuntime();
+        }
     }
 
     private static void addInputs(GamePanel game, FactionRecipeVariant variant, int runs) {

@@ -1,5 +1,12 @@
 # Development History
 
+### Gate 3 physical staffed-production pause and replacement persistence regression (2026-11-19)
+
+- The live-recruitment integration now has a focused operational acceptance check within `Milestone03StaffedProductionExecutionSmoke`, rather than relying solely on an abstract saved roster. A constructed machine has a real hired NPC identity, an actual generated job, staged physical inputs and two remaining runs.
+- The test kills that actor and advances ordinary turns, then verifies the queue and invested partial progress do not change, no input is consumed, no output or completion is recorded and the blocked reason is truthful. Direct execution is also refused without mutations.
+- It persists the paused state through `Persistence.writeCore/readCore`, advances additional blocked turns after reload, assigns a living replacement through the existing role-aware staffing control, persists the replacement, and resumes queued work through ordinary turns. It verifies exactly one completion per remaining batch, unchanged historical material ownership, and output provenance identifying the replacement operator.
+- This is regression coverage for existing production and staffing authorities, not certification of autonomous cross-zone workers, a continuously navigated installed campaign, or a release candidate. Exact SHA CI must pass before acceptance.
+
 ### Gate 3 live actor staffing safety after recruitment loss (2026-11-19)
 
 - Machine staffing previously treated a roster entry as sufficient even after its identity-backed NPC left the loaded zone or changed to `Left Faction`. Only `hp <= 0` was detected, while new assignments could also be made to a deceased hire, allowing idle/unavailable staff to masquerade as operational labor.
