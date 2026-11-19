@@ -30,7 +30,10 @@ final class Milestone03PlayerConstructionCrewSmoke {
             n.id="CREW-ACTOR-17732"; n.name="Nyla Worker"; n.role="Resident"; n.ageYears=30;
             n.idleBias=1; n.routineOffset=10; n.hp=12; n.state="Idle";
             g.world.npcs.add(n);
-            require(PlayerRecruitmentAuthority.toggle(g,n).success(), "hire a living nearby adult");
+            g.playerX=11; // hiring requires immediate adjacency to the actual NPC
+            PlayerRecruitmentAuthority.Result signed=PlayerRecruitmentAuthority.toggle(g,n);
+            require(signed.success(), "hire a living nearby adult: " + signed.message());
+            g.playerX=10; // test must still reject an order issued too far from the site
 
             BaseObject site=ProgressiveConstructionAuthority.createSite(BuildRecipe.cot(),16,10,3);
             g.baseObjects.add(site);
