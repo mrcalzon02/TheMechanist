@@ -160,6 +160,10 @@ class Persistence {
     }
 
     static void readCore(GamePanel g, Properties p) {
+        // A roster release confirmation is UI-only; loading must never
+        // preserve a confirmation from an earlier character or world.
+        g.pendingUnavailableWorkerKey = "";
+        g.pendingUnavailableWorkerTurn = -1;
         CharacterEquipmentAndMedicalAuthority.readState(p, g.equippedWearableSlots, g.installedBodyModifications);
         g.combatSupport.restore(p.getProperty("run.combatSupport",""));
         String version = p.getProperty("save.version", "unknown");

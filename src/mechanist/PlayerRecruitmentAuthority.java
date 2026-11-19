@@ -103,6 +103,102 @@ final class PlayerRecruitmentAuthority {
                 + "/" + capacity(game) + ". Open a built machine's Worker control to assign a job.");
     }
 
+
+    /**
+     * A worker may still occupy a roster slot after death, departure, or an
+     * unloaded/missing actor record. Missing does NOT prove death: release is
+     * an explicit administrative contract closure, never an NPC-state edit.
+     */
+    record RecoveryTarget(RecruitWorker worker, String cause, String key) {
+        String displayName() {
+            return worker.name == null || worker.name.isBlank() ? "Unnamed worker" : worker.name;
+        }
+    }
+
+    static RecoveryTarget unavailableWorker(GamePanel game) {
+        if (game == null || game.world == null || game.factionRecruits == null) return null;
+        for (RecruitWorker worker : game.factionRecruits) {
+            if (worker == null || worker.name == null || worker.name.isBlank()) continue;
+            NpcEntity actor = null;
+            if (worker.sourceNpcId != null && !worker.sourceNpcId.isBlank()) {
+                for (NpcEntity npc : game.world.npcs) {
+                    if (npc != null && worker.sourceNpcId.equals(npc.id)) {
+                        actor = npc;
+                        break;
+                    }
+                }
+            } else {
+                // Older roster records have only names. An ambiguous matching
+                // live name is protected; it cannot prove which NPC was hired.
+                for (NpcEntity npc : game.world.npcs) {
+                    if (npc != null && worker.name.equalsIgnoreCase(npc.name)) {
+                        actor = npc;
+                        if (npc.hp > 0 && !"Left Faction".equalsIgnoreCase(npc.state))
+                            break;
+                    }
+                }
+            }
+            String cause;
+            if (actor == null) cause = "missing from this zone (may be alive elsewhere)";
+            else if (actor.hp <= 0) cause = "deceased";
+            else if ("Left Faction".equalsIgnoreCase(actor.state)) cause = "departed";
+            else continue; // Healthy, present recruits cannot be released remotely.
+            String key = SaveEfficiencyAuthority.playerIdFor(game) + "|" + game.seed
+                    + "|" + game.claimedRoomId + "|" + worker.name
+                    + "|" + (worker.sourceNpcId == null ? "" : worker.sourceNpcId) + "|" + cause;
+            return new RecoveryTarget(worker, cause, key);
+        }
+        return null;
+    }
+
+    static String recoverySummary(GamePanel game) {
+        RecoveryTarget target = unavailableWorker(game);
+        if (target == null) return "Crew records: no unavailable hires need review.";
+        return "Crew attention: " + target.displayName() + " is " + target.cause()
+                + ". Use the Character roster to review this contract from your claimed room.";
+    }
+
+    /** Two intentional clicks in the same turn, physically inside the owned base. */
+    static Result releaseUnavailableFromBase(GamePanel game) {
+        if (game == null) return new Result(false, false, "Roster review unavailable: no active game.");
+        if (!validBase(game) || !game.world.inBounds(game.playerX, game.playerY)
+                || game.world.roomIdAt(game.playerX, game.playerY) != game.claimedRoomId) {
+            game.pendingUnavailableWorkerKey = "";
+            return new Result(false, false,
+                    "Roster review blocked: stand inside your actively claimed freehold room.");
+        }
+        RecoveryTarget target = unavailableWorker(game);
+        if (target == null) {
+            game.pendingUnavailableWorkerKey = "";
+            return new Result(false, false, "No deceased, departed, or missing work contracts need review.");
+        }
+        if (!target.key().equals(game.pendingUnavailableWorkerKey)
+                || game.pendingUnavailableWorkerTurn != game.turn) {
+            game.pendingUnavailableWorkerKey = target.key();
+            game.pendingUnavailableWorkerTurn = game.turn;
+            return new Result(false, false,
+                    "Confirm release of " + target.displayName() + " (" + target.cause() + "). "
+                    + "Click Confirm Release again this turn. Missing workers may still be alive elsewhere. "
+                    + "Existing construction and production work will stay queued.");
+        }
+        // Re-read the exact live record on confirmation; never accept a stale
+        // reference, a changed actor state, or an unrelated similarly named NPC.
+        RecoveryTarget current = unavailableWorker(game);
+        if (current == null || current.worker() != target.worker()
+                || !current.key().equals(game.pendingUnavailableWorkerKey)) {
+            game.pendingUnavailableWorkerKey = "";
+            return new Result(false, false, "Roster changed; select the unavailable worker again.");
+        }
+        game.pendingUnavailableWorkerKey = "";
+        ManualStaffingAssignmentAuthority.clearWorkerFromOtherStations(game, target.worker().name, null);
+        game.factionRecruits.remove(target.worker());
+        return new Result(true, false,
+                "Released unavailable contract for " + target.displayName()
+                + " (" + target.cause() + "). Vacant station/crew assignments were cleared, "
+                + "but material reservations, labor progress and queued work remain intact. "
+                + "Crew " + game.factionRecruits.size() + "/" + capacity(game) + ".");
+    }
+
     private static boolean validBase(GamePanel game) {
         return game != null && game.world != null && game.baseClaimed
                 && game.claimedRoomId >= 0 && game.claimedRoomId < game.world.roomFactions.size()

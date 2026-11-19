@@ -1,5 +1,12 @@
 # Development History
 
+### Gate 3 recruited NPC absence and roster recovery (2026-11-19)
+
+- PR #51's live recruitment and NPC construction duty could leave a dead, departed, or unloaded worker indefinitely occupying the freehold roster and staffed machine/construction slots. Dialogue dismissal required approaching the original live actor and could not recover a deceased or absent record. This was a player-visible settlement dead end, not merely an audit/readability issue.
+- The existing recruitment authority now offers an explicit roster-recovery candidate for deceased, departed, or missing NPC identities. It does not treat combat, routine work, or temporary needs as abandonment, and a missing actor is described as *possibly alive in another zone*, never assumed dead. Recovery is authorized only while standing inside the actually claimed freehold room and requires two clicks during the same game turn; the second click revalidates the same roster identity. A healthy present recruit or detached spoofed NPC cannot be dismissed by this route. No automatic background removal.
+- The existing Character > Overview Faction Members surface now exposes a compact Review Lost Crew / Confirm Release action when an unavailable contract exists. Successful administrative release clears player-owned machine and construction crew assignments and frees the workforce slot, while preserving inserted construction materials, labor progress, queued jobs, currency, and physical NPC state. The confirmation latch is UI-only and resets on new game and save/load.
+- The existing physical construction-crew smoke now exercises real recruitment, work, NPC death, absent/departed cases, UI action visibility, off-base refusal, two-step confirmation, stale-confirmation and save/load reset, station cleanup, retained work, replacement hiring, and detached NPC spoofing. Focused PR CI and continuous installed/player-driven campaign acceptance remain separately required.
+
 ### Material staging separated from construction labor (2026-11-19)
 
 - The unfinished construction interaction panel now has two compact first-row buttons: **Assign Crew / Release Crew** and **Stage Materials**. Existing Work and Dismantle remain on the second row. This removes the previous requirement to personally advance labor merely to transfer available materials before an NPC work shift.

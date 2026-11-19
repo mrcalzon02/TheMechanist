@@ -87,8 +87,169 @@ final class Milestone03PlayerConstructionCrewSmoke {
             require(g.world.tiles[site.x][site.y]=='c',"completion must synchronize actual world tile");
             require(g.factionRecruits.size()==1 && "CREW-ACTOR-17732".equals(g.factionRecruits.get(0).sourceNpcId),
                     "completion cannot destroy actor or employment record");
-            System.out.println("Milestone03PlayerConstructionCrewSmoke PASS claim=true hire=true stage=true walking=true labor=true save=true");
+
+            verifyRosterRecovery(g, n);
+            System.out.println("Milestone03PlayerConstructionCrewSmoke PASS claim=true hire=true stage=true walking=true labor=true save=true recovery=true");
         } finally { g.shutdownRuntime(); }
+    }
+
+
+    private static void verifyRosterRecovery(GamePanel g, NpcEntity worker) {
+        g.playerX = 10;
+        g.playerY = 10;
+        int initialTurn = g.turn;
+        int initialScript = g.carriedScript;
+        require(PlayerRecruitmentAuthority.unavailableWorker(g) == null
+                        && !PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success()
+                        && g.turn == initialTurn && g.carriedScript == initialScript,
+                "healthy employee must not be dismissed remotely from the roster");
+
+        BaseObject pending = ProgressiveConstructionAuthority.createSite(
+                BuildRecipe.cot(), 17, 10, 3);
+        pending.assignedWorker = worker.name;
+        pending.constructionLaborDone = 1;
+        pending.constructionInsertedItems = "Construction supplies=1";
+        g.baseObjects.add(pending);
+        BaseObject machine = new BaseObject("Recovery Test Machine", 'w', 18, 10, 0, 0);
+        machine.assignedWorker = worker.name;
+        g.baseObjects.add(machine);
+        worker.hp = 0;
+        int labor = pending.constructionLaborDone;
+        String inserted = pending.constructionInsertedItems;
+        require(PlayerRecruitmentAuthority.unavailableWorker(g) != null
+                        && PlayerRecruitmentAuthority.recoverySummary(g).contains("deceased"),
+                "deceased real NPC must be surfaced as a reviewable roster record");
+
+        // A UI button, not a developer/admin-only command, must expose recovery.
+        g.setSize(1480, 920);
+        g.screen = GamePanel.Screen.PANEL;
+        g.panelMode = GamePanel.PanelMode.CHARACTER;
+        g.characterTab = CharacterEquipmentAndMedicalAuthority.CharacterTab.OVERVIEW.ordinal();
+        java.awt.image.BufferedImage canvas = new java.awt.image.BufferedImage(
+                1480, 920, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        var graphics = canvas.createGraphics();
+        try { g.paintComponent(graphics); } finally { graphics.dispose(); }
+        require(g.buttons.stream().anyMatch(b -> "Review Lost Crew".equals(b.label)),
+                "Character > Overview must expose an actionable lost-crew review button");
+
+        g.playerX = 0; g.playerY = 0;
+        require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success()
+                        && g.factionRecruits.size() == 1
+                        && worker.name.equals(pending.assignedWorker),
+                "roster release outside the claimed room must refuse without unstaffing");
+        g.playerX = 10; g.playerY = 10;
+        PlayerRecruitmentAuthority.Result preview =
+                PlayerRecruitmentAuthority.releaseUnavailableFromBase(g);
+        require(!preview.success() && g.factionRecruits.size() == 1
+                        && worker.name.equals(machine.assignedWorker)
+                        && g.pendingUnavailableWorkerTurn == g.turn,
+                "first click must only stage confirmation and preserve worker duty");
+        // Advancing the turn invalidates a pending one-click confirmation.
+        g.turn++;
+        require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success()
+                        && g.factionRecruits.size() == 1,
+                "stale confirmation from a previous turn must not commit");
+
+        Properties save = new Properties();
+        Persistence.writeCore(g, save);
+        GamePanel loaded = new GamePanel();
+        loaded.timer.stop();
+        try {
+            loaded.pendingUnavailableWorkerKey = g.pendingUnavailableWorkerKey;
+            loaded.pendingUnavailableWorkerTurn = g.pendingUnavailableWorkerTurn;
+            Persistence.readCore(loaded, save);
+            require(loaded.pendingUnavailableWorkerKey.isEmpty()
+                            && loaded.pendingUnavailableWorkerTurn < 0,
+                    "save/load must discard the transient release confirmation");
+            BaseObject loadedSite = loaded.baseObjects.stream()
+                    .filter(b -> b.x == 17 && b.y == 10 && b.underConstruction)
+                    .findFirst().orElseThrow();
+            BaseObject loadedMachine = loaded.baseObjects.stream()
+                    .filter(b -> "Recovery Test Machine".equals(b.name))
+                    .findFirst().orElseThrow();
+            int restoredTurn = loaded.turn;
+            int restoredScript = loaded.carriedScript;
+            require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(loaded).success()
+                            && loaded.factionRecruits.size() == 1
+                            && loaded.turn == restoredTurn,
+                    "first roster click after reload must never immediately dismiss");
+            PlayerRecruitmentAuthority.Result released =
+                    PlayerRecruitmentAuthority.releaseUnavailableFromBase(loaded);
+            require(released.success() && !released.hired()
+                            && loaded.factionRecruits.isEmpty()
+                            && loadedSite.assignedWorker.isBlank()
+                            && loadedMachine.assignedWorker.isBlank()
+                            && loadedSite.underConstruction
+                            && loadedSite.constructionLaborDone == labor
+                            && inserted.equals(loadedSite.constructionInsertedItems)
+                            && loaded.carriedScript == restoredScript
+                            && loaded.turn == restoredTurn,
+                    "confirmed deceased-worker release frees capacity and assignments without losing work or script");
+            require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(loaded).success(),
+                    "released contract cannot be removed or refunded twice");
+        } finally { loaded.shutdownRuntime(); }
+
+        PlayerRecruitmentAuthority.Result removed =
+                PlayerRecruitmentAuthority.releaseUnavailableFromBase(g);
+        require(removed.success() && g.factionRecruits.isEmpty()
+                        && pending.assignedWorker.isBlank()
+                        && machine.assignedWorker.isBlank()
+                        && pending.constructionLaborDone == labor
+                        && inserted.equals(pending.constructionInsertedItems)
+                        && g.carriedScript == initialScript,
+                "deceased employee recovery must preserve initial player funds and queued work");
+        require(g.world.npcs.contains(worker) && worker.hp <= 0,
+                "contract release must not remove or resurrect the deceased world NPC");
+
+        // A replacement can be hired normally after capacity is freed.
+        NpcEntity replacement = NpcEntity.create(Faction.HIVER,
+                g.world.zoneType, 12, 10, new Random(17734));
+        replacement.id = "CREW-REPLACEMENT-17734";
+        replacement.name = "Replacement Worker";
+        replacement.role = "Resident";
+        replacement.ageYears = 32;
+        replacement.hp = 12;
+        replacement.state = "Idle";
+        g.world.npcs.add(replacement);
+        g.playerX = 11; g.playerY = 10;
+        g.carriedScript = 30;
+        require(PlayerRecruitmentAuthority.toggle(g, replacement).success()
+                        && g.factionRecruits.size() == 1,
+                "ordinary live replacement hiring must fill the recovered roster slot");
+        NpcEntity forged = NpcEntity.create(Faction.HIVER,
+                g.world.zoneType, 10, 10, new Random(17735));
+        forged.id = replacement.id;
+        forged.name = replacement.name;
+        require(!PlayerRecruitmentAuthority.toggle(g, forged).success()
+                        && g.factionRecruits.size() == 1,
+                "a spoofed detached NPC with a matching ID must not remotely dismiss a healthy hire");
+
+        replacement.state = "Left Faction";
+        g.playerX = 10; g.playerY = 10;
+        require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success(),
+                "departed worker requires explicit confirmation");
+        require(PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success()
+                        && g.factionRecruits.isEmpty(),
+                "confirmed departed worker must free the roster slot");
+
+        replacement.state = "Idle";
+        g.playerX = 11; g.playerY = 10;
+        require(PlayerRecruitmentAuthority.toggle(g, replacement).success(),
+                "departed worker may sign a new ordinary contract if eligible");
+        g.playerX = 10; g.playerY = 10;
+        g.world.npcs.remove(replacement);
+        PlayerRecruitmentAuthority.RecoveryTarget missing =
+                PlayerRecruitmentAuthority.unavailableWorker(g);
+        require(missing != null && missing.cause().contains("may be alive elsewhere"),
+                "missing cross-zone actor must be labeled uncertain, not declared deceased");
+        require(!PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success()
+                        && g.factionRecruits.size() == 1,
+                "unverified missing actor must require explicit first click");
+        require(PlayerRecruitmentAuthority.releaseUnavailableFromBase(g).success()
+                        && g.factionRecruits.isEmpty(),
+                "confirmed administrative release must recover missing roster capacity");
+        require(!g.world.npcs.contains(replacement),
+                "administrative roster cleanup must not mutate or teleport world actors");
     }
 
     private static void require(boolean okay,String reason) {

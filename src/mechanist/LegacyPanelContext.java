@@ -71,6 +71,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     final ArrayList<String> baseStorage = new ArrayList<>();
     final ArrayList<Candidate> candidates = new ArrayList<>();
     final ArrayList<RecruitWorker> factionRecruits = new ArrayList<>();
+    // UI-only two-click safety latch. Never serialized or carried into a new run.
+    String pendingUnavailableWorkerKey = "";
+    int pendingUnavailableWorkerTurn = -1;
     final ArrayList<ButtonBox> buttons = new ArrayList<>();
     final EditorEventBus inGameEditorEvents = new EditorEventBus();
     final EditorUndoRedoController inGameEditorHistory = new EditorUndoRedoController(inGameEditorEvents);
@@ -654,6 +657,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         baseStorage.clear();
         baseObjects.clear();
         factionRecruits.clear();
+        pendingUnavailableWorkerKey = "";
+        pendingUnavailableWorkerTurn = -1;
         itemContainers.clear();
         itemInstances.clear();
         itemProvenance.clear();
@@ -2715,8 +2720,24 @@ class GamePanel extends LegacyPanelBridgeBase {
         conditionLines.add("Equipment: " + occupied + "/"
       + CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length + " slots occupied.");
         drawDetailBox(g, condition, "Condition Summary", conditionLines, null);
-        drawDetailBox(g, roster, "Faction Members",
-      FactionRosterReadabilityAuthority.summary(this, Math.max(1, (roster.height - 52) / 18)), null);
+        PlayerRecruitmentAuthority.RecoveryTarget unavailable =
+                PlayerRecruitmentAuthority.unavailableWorker(this);
+        int controlHeight = unavailable == null ? 0 : 34;
+        Rectangle rosterText = new Rectangle(roster.x, roster.y,
+                roster.width, Math.max(60, roster.height - controlHeight));
+        drawDetailBox(g, rosterText, "Faction Members",
+                FactionRosterReadabilityAuthority.summary(this,
+                        Math.max(1, (rosterText.height - 52) / 18)), null);
+        if (unavailable != null) {
+            boolean confirming = unavailable.key().equals(pendingUnavailableWorkerKey)
+                    && pendingUnavailableWorkerTurn == turn;
+            addOverlayButton(confirming ? "Confirm Release" : "Review Lost Crew",
+                    roster.x + 12, roster.y + roster.height - 30,
+                    Math.max(140, roster.width - 24), 28,
+                    unavailable.displayName() + ": " + unavailable.cause()
+                            + ". Release is only authorized from inside your claimed room.",
+                    this::releaseUnavailableWorkerFromRoster);
+        }
     }
 
     private void drawCharacterEquipmentTab(java.awt.Graphics2D g, Rectangle body) {
@@ -4754,6 +4775,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         PlayerRecruitmentAuthority.Result outcome = PlayerRecruitmentAuthority.toggle(this, activeInteractionNpc);
         logEvent(outcome.message());
         if (outcome.success()) advanceTurn(outcome.hired() ? "hires a freehold worker." : "dismisses a freehold worker.");
+        repaint();
+    }
+
+    void releaseUnavailableWorkerFromRoster() {
+        PlayerRecruitmentAuthority.Result result =
+                PlayerRecruitmentAuthority.releaseUnavailableFromBase(this);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("releases an unavailable freehold worker.");
         repaint();
     }
 
