@@ -110,7 +110,7 @@ class World {
     int architecturalClutterVersion=0;
     ArchitecturalClutterAuthority.Layout architecturalClutter;
     final java.util.Map<Long,TileStructureAuthority.Structure> tileStructures=new java.util.LinkedHashMap<>();
-    long seed; int w,h; char[][] tiles; CompiledTileDescriptor[][] compiledTileDescriptors; String compiledTileDescriptorSummary = "Tile descriptor compilation has not run."; int[][] roomIds; Random r; ArrayList<Rectangle> rooms = new ArrayList<>();
+    long seed; int w,h; char[][] tiles; CompiledTileDescriptor[][] compiledTileDescriptors; String compiledTileDescriptorSummary = "Tile descriptor compilation has not run."; GenerationValidationResult finalGenerationValidation; int[][] roomIds; Random r; ArrayList<Rectangle> rooms = new ArrayList<>();
     WorldSetupSettings generationSettings = WorldSetupSettings.standard();
     WorldGenerationScaleProfile generationScaleProfile = WorldGenerationApi.scaleProfileFor(WorldSetupSettings.standard());
     RoadGridIntegrationAuthority.Result roadGridGenerationResult = null;
@@ -202,6 +202,7 @@ class World {
         state.widenedCorridors = 0;
         state.doorwayObjectRepairs = 0;
         resetGenerationState(seed ^ 0x91010ADEL);
+        finalGenerationValidation = null;
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) tiles[x][y]='#';
         SectorGenerationTraceAuthority.record(this, "RESET", "Plaza-first zone substrate filled before central anchor placement.");
         visitedZones[Math.max(0,Math.min(2,zoneX-1))][Math.max(0,Math.min(2,zoneY-1))] = true;
@@ -317,7 +318,7 @@ class World {
         DebugLog.audit("ECONOMIC_TOPOLOGY_MAP_INTEL_BRIDGE", mapIntelResult.summary());
         RetargetReadinessAuditAuthority.Result retargetResult = RetargetReadinessAuditAuthority.apply(this);
         DebugLog.audit("RETARGET_READINESS_AUDIT", retargetResult.summary());
-        DebugLog.audit("WORLDGEN_ACCEPTANCE", "status=" + (state.repairs>0 ? "REPAIRED" : "ACCEPTED") + " repairs="+state.repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+        DebugLog.audit("WORLDGEN_PRE_POPULATE", "phase=pre-populate repairs="+state.repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
     }
 
     void worldgenPhasePopulationEconomyAndFinalCompile(WorldGenerationPipelineRunState state){
@@ -2765,7 +2766,21 @@ class World {
         return best;
     }
 
-    void validateWorldgenSelfReport(String phase){
+    /** Validation result captured after all worldgen placement and visual-structure passes. */
+    record GenerationValidationResult(String phase, int totalProblems, int roomCount,
+                                      int unreachableRooms, boolean spawnReady, int spawnX, int spawnY) {
+        String status() {
+            if (roomCount <= 0 || !spawnReady || unreachableRooms > 0) return "BLOCKED";
+            return totalProblems > 0 ? "DEGRADED" : "ACCEPTED";
+        }
+        String summary() {
+            return "phase=" + phase + " status=" + status() + " problems=" + totalProblems
+                    + " unreachableRooms=" + unreachableRooms + " rooms=" + roomCount
+                    + " spawn=" + spawnX + "," + spawnY + " spawnReady=" + spawnReady;
+        }
+    }
+
+    GenerationValidationResult validateWorldgenSelfReport(String phase){
         // 0.8.28 WORLDGEN VALIDATION PASS:
         // This is a post-build sanity report for the new plaza/corridor/door rules. It is
         // intentionally log-first: generation should remain playable, but every violation
@@ -2822,6 +2837,11 @@ class World {
         String summary = "phase="+phase+" problems="+totalProblems+" rooms="+rooms.size()+" unreachableRooms="+unreachableRooms+" weakDoors="+doorAdjacencyProblems+" smallRoomDoorWallViolations="+smallRoomWallDoorViolations+" largeDoorSpacingViolations="+largeRoomSpacingViolations+" shortCorridors="+shortCorridorComponents+" squatCorridors="+squatCorridorComponents+" edgeDoorProblems="+edgeDoorProblems+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed;
         if(totalProblems > 0) DebugLog.warn("WORLDGEN_VALIDATE", summary);
         else DebugLog.audit("WORLDGEN_VALIDATE", summary);
+        Point spawn = startPoint();
+        boolean spawnReady = inBounds(spawn.x, spawn.y) && walkable(spawn.x, spawn.y)
+                && roomIdAt(spawn.x, spawn.y) >= 0;
+        return new GenerationValidationResult(phase, totalProblems, rooms.size(),
+                unreachableRooms, spawnReady, spawn.x, spawn.y);
     }
 
     String rectText(Rectangle rr){ return rr.x+","+rr.y+","+rr.width+","+rr.height; }

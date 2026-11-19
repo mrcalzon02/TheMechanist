@@ -14,6 +14,7 @@ final class WorldGenerationSetupPersistenceSmoke {
         System.setProperty(GameStorageManager.OVERRIDE_PROPERTY, storage.toString());
         try {
             verifyAllFixedSquareDimensions();
+            verifyAcceptanceStatusRules();
             long seed = 867530912345L;
             WorldSetupSettings selected = WorldSetupSettings.standard();
             selected.zoneSize = 0;
@@ -60,6 +61,17 @@ final class WorldGenerationSetupPersistenceSmoke {
         }
     }
 
+    private static void verifyAcceptanceStatusRules() {
+        require("ACCEPTED".equals(new World.GenerationValidationResult(
+                "test", 0, 2, 0, true, 2, 2).status()), "clean structural world should pass");
+        require("DEGRADED".equals(new World.GenerationValidationResult(
+                "test", 7, 2, 0, true, 2, 2).status()), "advisory findings must produce degraded status");
+        require("BLOCKED".equals(new World.GenerationValidationResult(
+                "test", 2, 2, 1, true, 2, 2).status()), "unreachable rooms must block acceptance");
+        require("BLOCKED".equals(new World.GenerationValidationResult(
+                "test", 0, 2, 0, false, 2, 2).status()), "invalid player spawn must block acceptance");
+    }
+
     private static void verifyAllFixedSquareDimensions() {
         long[] seeds = {1L, 867530912345L, Long.MAX_VALUE, -992211L};
         for (int index = 0; index < WorldSetupSettings.ZONE_SIZE_TILES.length; index++) {
@@ -87,6 +99,13 @@ final class WorldGenerationSetupPersistenceSmoke {
 
     private static void requireWorldMatches(World world, WorldSetupSettings settings, String label) {
         require(world.generationSettings().encode().equals(settings.encode()), label + " world must retain selected setup");
+        World.GenerationValidationResult acceptance = world.finalGenerationValidation;
+        require(acceptance != null && "FINAL_POST_PLACEMENT".equals(acceptance.phase()),
+                label + " must have a final post-placement world validation report");
+        require(acceptance.roomCount() == world.rooms.size(),
+                label + " acceptance must count rooms after all placement phases");
+        require(!"ACCEPTED".equals(acceptance.status()) || acceptance.totalProblems() == 0,
+                label + " must not claim clean acceptance while validator reports problems");
         Dimension expected = WorldGenerationApi.zoneSliceSize(world.seed, settings);
         require(world.w == expected.width && world.h == expected.height,
                 label + " dimensions expected " + expected.width + "x" + expected.height + " but were " + world.w + "x" + world.h);

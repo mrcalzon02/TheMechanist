@@ -1,5 +1,12 @@
 # Development History
 
+### Final post-placement world-generation acceptance reporting (2026-11-19)
+
+- Replaced the premature `WORLDGEN_ACCEPTANCE` event (which formerly claimed ACCEPTED/REPAIRED before population, tile compilation, roofs, roads and architectural clutter, based only on repair attempts) with a pre-population progress log.
+- `World.validateWorldgenSelfReport` now returns a structured `GenerationValidationResult` preserving issue totals, room reachability, spawn suitability and final phase identity. `ZoneGenerationManager.generate` runs the validator **after** population/economy/tile compilation and the final roof/road/clutter passes, retains the report on the world, and emits the sole final `WORLDGEN_ACCEPTANCE` with `ACCEPTED` (zero reported issues), `DEGRADED` (nonfatal door/corridor findings), or `BLOCKED` (unreachable rooms or unusable spawn).
+- Existing Gate 3 `CoreGameplayBoundarySmoke` checks truthful status selection. `WorldGenerationSetupPersistenceSmoke` additionally requires a final result from actually generated preview/new/saved worlds. A status of DEGRADED is an observed worldgen diagnostic, **not** an automatic release-blocker under the existing release policy.
+- This pass **does not yet** reject or retry blocked worlds in new-game UI, prove every player exit is traversable without credentials, validate all post-save mutations, or certify a continuous graphical playthrough; those remain Issue #52 acceptance work. CI on the exact updated commit is required before a test-success claim.
+
 ### Ordinary player survival turn accounting (2026-11-19)
 
 - Continued Issue #52 on the existing verified PR #51 source branch; this patch does not merge the PR, retag a release, or alter user saves. Baseline is the PR source at `2d52afdc8f877b8d12ec0be68a468d1e33549fb4`.

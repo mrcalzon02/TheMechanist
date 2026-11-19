@@ -23,5 +23,17 @@ final class ZoneGenerationManager {
         TileStructureAuthority.authorRoomRoofs(world);
         TileStructureAuthority.authorOpenRoads(world);
         ArchitecturalClutterAuthority.enable(world,true);
+        // This is the only final acceptance label: all population, compiled tiles,
+        // roofs, roads and architectural clutter are in place before validation.
+        World.GenerationValidationResult result =
+                world.validateWorldgenSelfReport("FINAL_POST_PLACEMENT");
+        world.finalGenerationValidation = result;
+        String acceptance = result.summary() + " repairs=" + state.repairs
+                + " widenedCorridors=" + state.widenedCorridors
+                + " zone=" + world.zoneType.label + " layer=" + world.layerText()
+                + " seed=" + world.seed;
+        if ("ACCEPTED".equals(result.status())) DebugLog.audit("WORLDGEN_ACCEPTANCE", acceptance);
+        else DebugLog.warn("WORLDGEN_ACCEPTANCE", acceptance);
+        SectorGenerationTraceAuthority.record(world, "VALIDATION", acceptance);
     }
 }

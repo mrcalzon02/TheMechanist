@@ -135,8 +135,22 @@ final class CoreGameplayBoundarySmoke {
             check(game.loadedWeaponShots.isEmpty() && game.equippedRightHandItem.equals("RIGHT EMPTY"), "new candidate must not inherit equipment/ammunition");
             check(game.knowledgeXpProgress == 0 && game.knowledgeCredits == 0, "new candidate must not inherit knowledge earning progress");
             check(game.lastPlayerNeedsTurn == 0, "new character must begin with a fresh survival clock");
+            // Differentiate a sound world from one with defects rather than labelling
+            // attempted repairs as an unconditional acceptance.
+            check("ACCEPTED".equals(new World.GenerationValidationResult(
+                            "test", 0, 3, 0, true, 4, 4).status()),
+                    "zero-issue reachable world should be accepted");
+            check("DEGRADED".equals(new World.GenerationValidationResult(
+                            "test", 4, 3, 0, true, 4, 4).status()),
+                    "remaining door/corridor issues must not be labelled accepted");
+            check("BLOCKED".equals(new World.GenerationValidationResult(
+                            "test", 1, 3, 1, true, 4, 4).status()),
+                    "unreachable room must block structural acceptance");
+            check("BLOCKED".equals(new World.GenerationValidationResult(
+                            "test", 0, 3, 0, false, 4, 4).status()),
+                    "unusable spawn must block structural acceptance");
             check(game.containerItemCount(GamePanel.CONTAINER_PLAYER_INVENTORY) == game.inventory.size(), "starting kit must be registered");
-            System.out.println("CoreGameplayBoundarySmoke PASS inventoryIdentity=true provenance=true transfers=true noJunkMeals=true survivalClock=true savedNeeds=true newRunIsolation=true");
+            System.out.println("CoreGameplayBoundarySmoke PASS inventoryIdentity=true provenance=true transfers=true noJunkMeals=true survivalClock=true savedNeeds=true finalWorldgenStatus=true newRunIsolation=true");
         } finally {
             game.shutdownRuntime();
         }
