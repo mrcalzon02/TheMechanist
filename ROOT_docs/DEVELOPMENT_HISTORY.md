@@ -1,5 +1,11 @@
 # Development History
 
+### Gate 3 world deletion now requires exact on-disk identity (2026-11-19)
+
+- The staged World Picker previously used a broad content-score and reflection fallback to guess which file to delete when its originally selected world definition was missing. A different world's `.mechworld` file could be selected by seed/name text fragments. `Files.deleteIfExists` also allowed a missing file to produce a success message.
+- The two-step Delete World action now binds confirmation to world ID and original path, accepts only the directly selected, regular non-symlink `.mechworld` file inside the world-definition directory, and re-reads exact seed, world ID, hive name, and setup metadata before deletion. Stale/changed selections fail closed and refresh the picker instead of scanning for a substitute. The user-facing prompt makes clear that character saves are not deleted, and missing-file deletion cannot report success.
+- `EarlyGameInputUsabilitySmoke`, already called by the Gate 3 player-facing suite, now exercises successful exact-file removal alongside wrong metadata, seed-substring, altered setup, missing/stale records, wrong extension, path escape, optional symlink refusal, and preservation of other worlds. An isolated Java 17-compatible probe of the identity-verification algorithm passed; full repository Java 17 and native installer certification remain subject to the exact new commit's CI/target-platform evidence.
+
 ### 06.R local release sequence now enforces main-branch candidate identity (2026-11-19)
 
 - The governed local release coordinator required a stable 40-character Git HEAD but did not verify that the checkout was actually on `main`. A clean feature branch or detached HEAD at the same commit could progress to a misleading `passed` candidate report, contradicting the explicit release preflight and single-main-branch rule.
