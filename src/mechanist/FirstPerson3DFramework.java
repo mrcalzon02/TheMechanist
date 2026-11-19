@@ -611,7 +611,14 @@ record Vec3(double x, double y, double z) {
 }
 
 record ScreenPoint(int x, int y, boolean visible, double depth) {}
-record RenderableSprite(double x, double y, double z, char glyph, String label, int color, boolean entity, BufferedImage image) {}
+record RenderableSprite(double x, double y, double z, char glyph, String label, int color,
+                        boolean entity, BufferedImage image, double visualWidth, double visualHeight) {
+    // Keep existing object and test call sites source-compatible.
+    RenderableSprite(double x, double y, double z, char glyph, String label, int color,
+                     boolean entity, BufferedImage image) {
+        this(x, y, z, glyph, label, color, entity, image, 0.0, 0.0);
+    }
+}
 record InteractionRequestRecord(String sessionId, int tileX, int tileY, long clientTimestampMillis, double distance) {}
 record MotionTuning(double maxSpeed, double acceleration, double damping) {}
 
