@@ -13,6 +13,9 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
         game.shutdownRuntime();
         try {
             game.world = world();
+            game.active = Candidate.random(new Random(60106L));
+            game.active.name = "Mechanist Vehicle Tester";
+            game.seed = 60106L;
             game.world.mapObjects.clear();
             game.npcFactionSites.clear();
             game.factionStrategicPlans.clear();
@@ -76,8 +79,67 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
                     "purchase should spend the exact vehicle catalog price once");
             require(hasTitle(game, purchased),
                     "purchase should issue a readable title receipt for the transferred fixture");
+            String trueOwnerId = SaveEfficiencyAuthority.playerIdFor(game);
+            require(trueOwnerId.equals(MapObjectState.stockValue(saleCar.stockState, "ownerPlayerId"))
+                            && VehicleRuntimeAuthority.playerOwns(game, saleCar),
+                    "newly purchased title must bind to the current character identity");
+            Candidate savedOwner = game.active;
+            Candidate sameNameDifferentCharacter = Candidate.random(new Random(60107L));
+            sameNameDifferentCharacter.name = savedOwner.name;
+            sameNameDifferentCharacter.job = savedOwner.job;
+            sameNameDifferentCharacter.birthWorldTurn = savedOwner.birthWorldTurn + 1;
+            game.active = sameNameDifferentCharacter;
+            String purchasedStock = saleCar.stockState;
+            int otherScript = game.carriedScript;
+            int otherParts = count(game.inventory, "Machine part");
+            game.playerX = saleCar.x - 1;
+            game.playerY = saleCar.y;
+            require(!VehicleRuntimeAuthority.playerOwns(game, saleCar),
+                    "same display name must not grant ownership to a different character");
+            require(!VehicleAccessAuthority.evaluate(game, saleCar,
+                            VehicleAccessAuthority.Permission.OPERATION).allowed(),
+                    "unrelated character must not drive the player's titled car");
+            require(!VehicleRuntimeAuthority.salvageForPlayer(game, saleCar).success()
+                            && purchasedStock.equals(saleCar.stockState)
+                            && game.carriedScript == otherScript
+                            && count(game.inventory, "Machine part") == otherParts,
+                    "other character cannot strip a titled vehicle or receive resources");
+            game.active = savedOwner;
+            require(VehicleRuntimeAuthority.playerOwns(game, saleCar),
+                    "original character must regain ownership without retitling");
+            MapObjectState legacy = vehicle(game.world, 19, 2,
+                    AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                    Faction.NONE, "player-owned", "legacy-title", false, 29L);
+            legacy.stockState = MapObjectState.setStockFlag(legacy.stockState, "ownerType", "PLAYER");
+            legacy.stockState = MapObjectState.setStockFlag(legacy.stockState, "ownerName", savedOwner.name);
+            legacy.stockState = MapObjectState.setStockFlag(legacy.stockState, "ownerPlayerId", "");
+            require(VehicleRuntimeAuthority.playerOwns(game, legacy),
+                    "legacy same-name vehicle should remain accessible to its original character");
+            game.active = sameNameDifferentCharacter;
+            require(VehicleRuntimeAuthority.playerOwns(game, legacy),
+                    "legacy name-only vehicle must preserve compatible legacy ownership behavior");
+            game.active = savedOwner;
             require(game.gangHeat > 0,
                     "vehicle acquisition should create class-scaled expansion attention");
+
+            // A spent dealership offer must not tick time, award XP, or rotate
+            // the vendor on a refused purchase.
+            game.playerX = dealership.x - 1;
+            game.playerY = dealership.y;
+            int refusedBuyTurn = game.turn;
+            long refusedBuyWorldTurn = game.worldTurn;
+            int refusedBuyXp = game.xp;
+            int refusedBuyVend = dealership.vendCount;
+            int refusedBuyCooldown = dealership.cooldownUntilTurn;
+            int refusedBuyScript = game.carriedScript;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(game, dealership.x, dealership.y),
+                    "depleted dealership should remain an addressable physical fixture");
+            require(game.turn == refusedBuyTurn && game.worldTurn == refusedBuyWorldTurn
+                            && game.xp == refusedBuyXp
+                            && dealership.vendCount == refusedBuyVend
+                            && dealership.cooldownUntilTurn == refusedBuyCooldown
+                            && game.carriedScript == refusedBuyScript,
+                    "refused vehicle purchase must not spend time, XP, money, or fixture cooldown");
 
             VehicleRuntimeAuthority.Result damage = VehicleRuntimeAuthority.applyDamage(
                     saleCar, VehicleRuntimeAuthority.Component.POWERPLANT,
@@ -98,10 +160,20 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
                     "Engine / powerplant", "vehicle repair history");
 
             int heatBeforeClaim = game.gangHeat;
+            game.playerX = 0;
+            game.playerY = 0;
+            String abandonedBeforeDistantClaim = abandonedBike.stockState;
+            require(!VehicleRuntimeAuthority.claimAbandoned(game, abandonedBike).success()
+                            && abandonedBeforeDistantClaim.equals(abandonedBike.stockState),
+                    "remote abandoned vehicle cannot be claimed or silently retitled");
+            game.playerX = abandonedBike.x - 1;
+            game.playerY = abandonedBike.y;
             VehicleRuntimeAuthority.Result claim =
                     VehicleRuntimeAuthority.claimAbandoned(game, abandonedBike);
-            require(claim.success() && VehicleRuntimeAuthority.playerOwns(game, abandonedBike),
-                    "legal abandoned civilian vehicle should support a player salvage claim");
+            require(claim.success() && VehicleRuntimeAuthority.playerOwns(game, abandonedBike)
+                            && trueOwnerId.equals(MapObjectState.stockValue(
+                                    abandonedBike.stockState, "ownerPlayerId")),
+                    "legal abandoned civilian vehicle should record the current player's identity");
             require(game.gangHeat > heatBeforeClaim,
                     "abandoned vehicle claim should still add visible fleet attention");
 
@@ -111,6 +183,70 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
             require("wreck".equals(MapObjectState.stockValue(wreck.stockState, "condition")),
                     "zero frame integrity should create a persistent wreck condition");
             int partsBefore = count(game.inventory, "Machine part");
+            String wreckBeforeDistantSalvage = wreck.stockState;
+            game.playerX = 0;
+            game.playerY = 0;
+            require(!VehicleRuntimeAuthority.salvageForPlayer(game, wreck).success()
+                            && wreckBeforeDistantSalvage.equals(wreck.stockState)
+                            && count(game.inventory, "Machine part") == partsBefore,
+                    "remote salvage must leave the hulk and player resources unchanged");
+
+            MapObjectState unlisted = vehicle(game.world, 14, 2,
+                    AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                    Faction.NONE, "abandoned", "unlisted", false, 23L);
+            game.playerX = unlisted.x - 1;
+            game.playerY = unlisted.y;
+            String unlistedStock = unlisted.stockState;
+            require(!VehicleRuntimeAuthority.salvageForPlayer(game, unlisted).success()
+                            && unlistedStock.equals(unlisted.stockState)
+                            && count(game.inventory, "Machine part") == partsBefore,
+                    "detached vehicle references must not materialize salvage resources");
+
+            MapObjectState titledWreck = vehicle(game.world, 12, 2,
+                    AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                    Faction.NOBLE, "faction", "patrol", false, 25L);
+            game.world.mapObjects.add(titledWreck);
+            VehicleRuntimeAuthority.applyDamage(titledWreck,
+                    VehicleRuntimeAuthority.Component.FRAME, 100,
+                    game.turn, "smoke titled wreck damage");
+            game.playerX = titledWreck.x - 1;
+            game.playerY = titledWreck.y;
+            String titledWreckStock = titledWreck.stockState;
+            int titledWreckTurn = game.turn;
+            long titledWreckWorldTurn = game.worldTurn;
+            int titledWreckXp = game.xp;
+            int titledWreckVend = titledWreck.vendCount;
+            int titledWreckCooldown = titledWreck.cooldownUntilTurn;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(game, titledWreck.x, titledWreck.y),
+                    "faction-controlled wreck should remain inspectable");
+            require(titledWreckStock.equals(titledWreck.stockState)
+                            && game.turn == titledWreckTurn
+                            && game.worldTurn == titledWreckWorldTurn
+                            && game.xp == titledWreckXp
+                            && titledWreck.vendCount == titledWreckVend
+                            && titledWreck.cooldownUntilTurn == titledWreckCooldown
+                            && count(game.inventory, "Machine part") == partsBefore,
+                    "refused faction-wreck salvage must preserve custody, inventory, time, XP, and cooldown");
+            require(!VehicleRuntimeAuthority.salvageForPlayer(game, titledWreck).success(),
+                    "direct salvage cannot bypass faction wreck title");
+
+            MapObjectState restrictedWreck = vehicle(game.world, 16, 2,
+                    AssetIntegrationDisciplineAuthority.PARKED_TANK,
+                    Faction.NONE, "abandoned", "restricted", false, 26L);
+            game.world.mapObjects.add(restrictedWreck);
+            VehicleRuntimeAuthority.applyDamage(restrictedWreck,
+                    VehicleRuntimeAuthority.Component.FRAME, 100,
+                    game.turn, "smoke restricted wreck damage");
+            game.playerX = restrictedWreck.x - 1;
+            game.playerY = restrictedWreck.y;
+            String restrictedStock = restrictedWreck.stockState;
+            require(!VehicleRuntimeAuthority.salvageForPlayer(game, restrictedWreck).success()
+                            && restrictedStock.equals(restrictedWreck.stockState)
+                            && count(game.inventory, "Machine part") == partsBefore,
+                    "restricted abandoned military wreck must not bypass claim controls");
+
+            game.playerX = wreck.x - 1;
+            game.playerY = wreck.y;
             VehicleRuntimeAuthority.Result salvage =
                     VehicleRuntimeAuthority.salvageForPlayer(game, wreck);
             require(salvage.success() && salvage.amount() > 0,
@@ -139,6 +275,7 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
             VehicleRuntimeAuthority.Snapshot restoredSnapshot =
                     VehicleRuntimeAuthority.inspect(game.world, restored);
             require(restoredSnapshot.ownerType() == VehicleRuntimeAuthority.OwnerType.PLAYER
+                            && trueOwnerId.equals(MapObjectState.stockValue(restored.stockState, "ownerPlayerId"))
                             && restoredSnapshot.components().get(
                             VehicleRuntimeAuthority.Component.POWERPLANT) == 75,
                     "vehicle authority should reconstruct ownership and component truth from persisted stock state");
@@ -152,10 +289,75 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
                     VehicleRuntimeAuthority.inspectionLine(game.world, saleCar)),
                     "ordinary vehicle inspection should not leak raw implementation identifiers");
 
+            verifyReadOnlyRoadInteractions(game, saleCar);
             System.out.println("Milestone 06 vehicle runtime foundation smoke passed.");
         } finally {
             game.shutdownRuntime();
         }
+    }
+
+
+    /** Read-only information cannot mint XP or turns; actual purchases still do. */
+    private static void verifyReadOnlyRoadInteractions(GamePanel game, MapObjectState ownedCar) {
+        game.manualMovementPlanActive = false;
+        MapObjectState transit = frontage(game.world, 4, 10,
+                AssetIntegrationDisciplineAuthority.PUBLIC_TRANSIT_STOP_FRONTAGE,
+                "Civic transit information desk");
+        MapObjectState pool = frontage(game.world, 6, 10,
+                AssetIntegrationDisciplineAuthority.FACTION_MOTOR_POOL_FRONTAGE,
+                "Motor pool information desk");
+        MapObjectState taxi = frontage(game.world, 8, 10,
+                AssetIntegrationDisciplineAuthority.TAXI_BOOTH,
+                "Taxi information booth");
+        game.world.mapObjects.add(transit);
+        game.world.mapObjects.add(pool);
+        game.world.mapObjects.add(taxi);
+        for (MapObjectState fixture : new MapObjectState[]{ownedCar, transit, pool, taxi}) {
+            game.playerX = fixture.x - 1;
+            game.playerY = fixture.y;
+            int turn = game.turn, xp = game.xp, vend = fixture.vendCount;
+            long worldTurn = game.worldTurn;
+            int cooldown = fixture.cooldownUntilTurn;
+            String priorState = fixture.stockState;
+            for (int i = 0; i < 3; i++)
+                require(RoadTransitFixtureInteractionAuthority.tryInteract(
+                        game, fixture.x, fixture.y),
+                        "player must be able to inspect real road and vehicle fixtures");
+            require(game.turn == turn && game.worldTurn == worldTurn
+                            && game.xp == xp && fixture.vendCount == vend
+                            && fixture.cooldownUntilTurn == cooldown
+                            && priorState.equals(fixture.stockState),
+                    "repeat inspection must never mint XP, spend time, or change a fixture");
+        }
+        MapObjectState parts = frontage(game.world, 10, 10,
+                AssetIntegrationDisciplineAuthority.VEHICLE_PARTS_STORE_FRONTAGE,
+                "Vehicle parts store");
+        game.world.mapObjects.add(parts);
+        game.playerX = parts.x - 1;
+        game.playerY = parts.y;
+        int turn = game.turn, oldVend = parts.vendCount;
+        long worldTurn = game.worldTurn;
+        int oldParts = count(game.inventory, "Machine part");
+        int script = game.carriedScript;
+        require(RoadTransitFixtureInteractionAuthority.tryInteract(game, parts.x, parts.y),
+                "parts store action must be reachable through the real interaction router");
+        require(game.turn == turn + 1 && game.worldTurn == worldTurn + 1
+                        && parts.vendCount == oldVend + 1
+                        && parts.cooldownUntilTurn > turn
+                        && count(game.inventory, "Machine part") == oldParts + 1
+                        && game.carriedScript < script,
+                "completed parts purchase must deliver an item and advance one turn");
+        game.carriedScript = 0;
+        turn = game.turn; worldTurn = game.worldTurn;
+        int xp = game.xp, vend = parts.vendCount, cooldown = parts.cooldownUntilTurn;
+        int stock = count(game.inventory, "Machine part");
+        require(RoadTransitFixtureInteractionAuthority.tryInteract(game, parts.x, parts.y),
+                "penniless player must still receive readable price refusal");
+        require(game.turn == turn && game.worldTurn == worldTurn
+                        && game.xp == xp && parts.vendCount == vend
+                        && parts.cooldownUntilTurn == cooldown
+                        && count(game.inventory, "Machine part") == stock,
+                "refused purchase must not spend turns, XP, or change goods");
     }
 
     private static void verifyFactionLifecycle(GamePanel game) {

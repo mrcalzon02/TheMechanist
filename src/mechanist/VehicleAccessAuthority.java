@@ -51,8 +51,7 @@ final class VehicleAccessAuthority {
                     "inspection remains available");
         }
 
-        boolean playerOwned = snapshot.ownerType()
-                == VehicleRuntimeAuthority.OwnerType.PLAYER;
+        boolean playerOwned = VehicleRuntimeAuthority.playerOwns(game, vehicle);
         boolean member = snapshot.ownerType()
                 == VehicleRuntimeAuthority.OwnerType.FACTION
                 && snapshot.ownerFaction() != null

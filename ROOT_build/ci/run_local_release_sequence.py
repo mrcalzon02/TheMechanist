@@ -81,6 +81,25 @@ def git_head() -> str:
     return value
 
 
+def require_main_branch() -> str:
+    """Reject non-main and detached checkouts even when HEAD matches a candidate."""
+    completed = subprocess.run(
+        ["git", "branch", "--show-current"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    branch = completed.stdout.strip()
+    if branch != "main":
+        raise RuntimeError(
+            "local release sequence requires the single main branch; found "
+            + (branch if branch else "detached HEAD")
+        )
+    return branch
+
+
 def write_report(path: pathlib.Path, report: dict[str, object]) -> None:
     path.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n",
@@ -129,6 +148,7 @@ def main() -> int:
     stages: list[dict[str, object]] = report["stages"]  # type: ignore[assignment]
 
     try:
+        report["branch"] = require_main_branch()
         python = sys.executable
         commands: list[tuple[str, list[str]]] = [
             (
@@ -187,6 +207,7 @@ def main() -> int:
                 report["failedStageResult"] = result
                 raise RuntimeError(f"local release sequence stopped at {name}")
 
+            require_main_branch()
             current_commit = git_head()
             if current_commit != initial_commit:
                 raise RuntimeError(

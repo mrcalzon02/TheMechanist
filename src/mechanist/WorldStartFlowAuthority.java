@@ -464,67 +464,87 @@ final class WorldStartFlowAuthority {
         }
 
         void requestDeleteSelectedWorld(String reason) {
-            if (worldIndex < 0 || worldIndex >= worlds.size()) { status = "Select an existing world to delete. The Generate New row is not a world file."; pendingWorldDeleteKey = ""; return; }
+            if (worldIndex < 0 || worldIndex >= worlds.size()) {
+                status = "Select an existing world to delete. The Generate New row is not a world file.";
+                pendingWorldDeleteKey = "";
+                return;
+            }
             WorldSaveInfo info = worlds.get(worldIndex);
-            String key = info.seed + ":" + safe(info.hiveName);
-            if (!key.equals(pendingWorldDeleteKey)) { pendingWorldDeleteKey = key; status = "Confirm delete " + safe(info.hiveName) + ": press Delete/D again or click Delete World again."; return; }
-            java.nio.file.Path path = findWorldDefinitionFile(info);
-            if (path == null) { status = "Could not locate a world definition file for " + safe(info.hiveName) + "."; pendingWorldDeleteKey = ""; DebugLog.warn("WORLD_START_FLOW", status); return; }
+            String key = info.seed + ":" + safe(info.worldId) + ":" + String.valueOf(info.path);
+            if (!key.equals(pendingWorldDeleteKey)) {
+                pendingWorldDeleteKey = key;
+                status = "Confirm deletion of " + safe(info.hiveName)
+                        + "'s world definition. Character saves remain untouched. Press Delete/D or click Delete World again.";
+                return;
+            }
             try {
-                java.nio.file.Files.deleteIfExists(path);
-                status = "Deleted world " + safe(info.hiveName) + ".";
+                boolean deleted = deleteVerifiedWorldDefinition(CampaignWorldApi.worldDir(),
+                        info.path, info.seed, info.worldId, info.hiveName,
+                        info.settings == null ? null : info.settings.encode());
+                if (!deleted) {
+                    status = "Selected world definition changed or cannot be verified. List refreshed; nothing was deleted.";
+                    pendingWorldDeleteKey = "";
+                    DebugLog.warn("WORLD_START_FLOW", "refused world delete id=" + safe(info.worldId)
+                            + " path=" + info.path);
+                    worlds = WorldSaveInfo.listExistingWorlds();
+                    clampWorldPickerSelection();
+                    clearPreviewCache();
+                    repaintPanel();
+                    return;
+                }
+                status = "Deleted world definition for " + safe(info.hiveName) + ". Character saves were not deleted.";
                 panel.logEvent(status);
-                DebugLog.audit("WORLD_START_FLOW", "deleted world reason=" + safe(reason) + " path=" + path);
+                DebugLog.audit("WORLD_START_FLOW", "deleted verified world definition reason="
+                        + safe(reason) + " id=" + safe(info.worldId) + " path=" + info.path);
                 worlds = WorldSaveInfo.listExistingWorlds();
                 worldIndex = worlds.isEmpty() ? 0 : Math.max(0, Math.min(worldIndex, worlds.size() - 1));
                 clampWorldPickerSelection();
                 pendingWorldDeleteKey = "";
                 clearPreviewCache();
-            } catch (Throwable t) { status = "Could not delete " + safe(info.hiveName) + ": " + t.getMessage(); pendingWorldDeleteKey = ""; DebugLog.error("WORLD_START_FLOW", status, t); }
-        }
-
-        java.nio.file.Path findWorldDefinitionFile(WorldSaveInfo info) {
-            if (info != null && info.path != null && java.nio.file.Files.isRegularFile(info.path) && isWorldDefinitionPath(info.path)) return info.path;
-            java.nio.file.Path direct = reflectivePath(info);
-            if (direct != null && java.nio.file.Files.isRegularFile(direct) && isWorldDefinitionPath(direct)) return direct;
-            java.nio.file.Path dir;
-            try { dir = java.nio.file.Path.of(String.valueOf(CampaignWorldApi.worldDir())); } catch (Throwable t) { return null; }
-            if (!java.nio.file.Files.isDirectory(dir)) return null;
-            String seedText = Long.toString(info.seed);
-            String nameText = safe(info.hiveName);
-            java.nio.file.Path best = null;
-            int bestScore = 0;
-            try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.list(dir)) {
-                for (java.nio.file.Path path : stream.filter(java.nio.file.Files::isRegularFile).toList()) {
-                    int score = 0;
-                    String file = path.getFileName() == null ? "" : path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
-                    if (file.endsWith(".mechworld") || file.endsWith(".properties") || file.endsWith(".txt")) score++;
-                    try { String text = java.nio.file.Files.readString(path); if (text.contains(seedText)) score += 4; if (!nameText.isBlank() && text.contains(nameText)) score += 3; if (info.settings != null && text.contains(info.settings.encode())) score += 2; } catch (Throwable ignored) {}
-                    if (score > bestScore) { bestScore = score; best = path; }
-                }
-            } catch (Throwable t) { DebugLog.warn("WORLD_START_FLOW", "Could not scan world directory for delete: " + t.getMessage()); }
-            return bestScore >= 4 && best != null && isWorldDefinitionPath(best) ? best : null;
-        }
-
-        boolean isWorldDefinitionPath(java.nio.file.Path path) {
-            try {
-                java.nio.file.Path dir = CampaignWorldApi.worldDir().toAbsolutePath().normalize();
-                java.nio.file.Path full = path.toAbsolutePath().normalize();
-                String name = full.getFileName() == null ? "" : full.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
-                return full.startsWith(dir) && name.endsWith(".mechworld");
-            } catch (Throwable ignored) { return false; }
-        }
-
-        java.nio.file.Path reflectivePath(WorldSaveInfo info) {
-            if (info == null) return null;
-            for (String name : List.of("path", "file", "worldFile", "sourcePath", "definitionPath")) {
-                try { java.lang.reflect.Field f = info.getClass().getDeclaredField(name); f.setAccessible(true); java.nio.file.Path p = pathFromObject(f.get(info)); if (p != null) return p; } catch (Throwable ignored) {}
-                try { java.lang.reflect.Method m = info.getClass().getDeclaredMethod(name); m.setAccessible(true); java.nio.file.Path p = pathFromObject(m.invoke(info)); if (p != null) return p; } catch (Throwable ignored) {}
+                repaintPanel();
+            } catch (java.io.IOException | RuntimeException ex) {
+                status = "Could not delete world definition for " + safe(info.hiveName) + ": " + ex.getMessage();
+                pendingWorldDeleteKey = "";
+                DebugLog.error("WORLD_START_FLOW", status, ex);
+                repaintPanel();
             }
-            return null;
         }
 
-        java.nio.file.Path pathFromObject(Object value) { if (value instanceof java.nio.file.Path p) return p; if (value instanceof java.io.File f) return f.toPath(); if (value instanceof CharSequence s && !s.toString().isBlank()) return java.nio.file.Path.of(s.toString()); return null; }
+        /**
+         * World deletion must never guess from matching text. Verify the exact selected
+         * .mechworld file, its direct-child path, and the identity originally listed.
+         */
+        static java.nio.file.Path verifiedWorldDefinitionPath(java.nio.file.Path directory,
+                java.nio.file.Path selected, long seed, String worldId, String hiveName, String expectedSetup) {
+            if (directory == null || selected == null || worldId == null || worldId.isBlank()
+                    || hiveName == null || expectedSetup == null) return null;
+            try {
+                java.nio.file.Path root = directory.toAbsolutePath().normalize();
+                java.nio.file.Path candidate = selected.toAbsolutePath().normalize();
+                if (!root.equals(candidate.getParent())
+                        || !candidate.getFileName().toString().equals(worldId + ".mechworld")
+                        || !java.nio.file.Files.isRegularFile(candidate, java.nio.file.LinkOption.NOFOLLOW_LINKS)) return null;
+                java.util.Properties onDisk = new java.util.Properties();
+                try (java.io.InputStream in = java.nio.file.Files.newInputStream(candidate)) { onDisk.load(in); }
+                if (!Long.toString(seed).equals(onDisk.getProperty("worlddef.seed"))
+                        || !worldId.equals(onDisk.getProperty("worlddef.worldId"))
+                        || !hiveName.equals(onDisk.getProperty("worlddef.hiveName"))
+                        || !expectedSetup.equals(onDisk.getProperty("worlddef.setup"))) return null;
+                return candidate;
+            } catch (java.io.IOException | RuntimeException ex) {
+                return null;
+            }
+        }
+
+        static boolean deleteVerifiedWorldDefinition(java.nio.file.Path directory,
+                java.nio.file.Path selected, long seed, String worldId, String hiveName,
+                String expectedSetup) throws java.io.IOException {
+            java.nio.file.Path approved = verifiedWorldDefinitionPath(directory, selected,
+                    seed, worldId, hiveName, expectedSetup);
+            if (approved == null) return false;
+            java.nio.file.Files.delete(approved); // Never report a missing file as deleted.
+            return true;
+        }
 
         void handleMouse(MouseEvent e) {
             if (stage == Stage.CLOSED || e == null) return;
