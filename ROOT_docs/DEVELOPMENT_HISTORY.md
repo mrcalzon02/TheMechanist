@@ -1,5 +1,11 @@
 # Development History
 
+### Material staging separated from construction labor (2026-11-19)
+
+- The unfinished construction interaction panel now has two compact first-row buttons: **Assign Crew / Release Crew** and **Stage Materials**. Existing Work and Dismantle remain on the second row. This removes the previous requirement to personally advance labor merely to transfer available materials before an NPC work shift.
+- `GamePanel.stageActiveConstructionMaterials` validates an actual selected unfinished player site, live registration and adjacency, rejects NPC-faction sites and stale/remote panels without mutation, and calls existing provenance-aware construction consumption with **zero manual labor**. One ordinary turn is charged only if one or more real items move into the staged site. If materials are unavailable, the log lists exactly what remains and no turn is consumed. NPC labor can still advance naturally during the charged world turn.
+- Expanded `Milestone03ProgressiveConstructionInteractionWorkSmoke` in Gate 3 with material-only staging, zero labor, exact supply debit, no-charge redundant action and rejected remote staging. Existing construction Work/finish/dismantle tests remain unchanged. Full source/GUI CI must verify this revision before acceptance.
+
 ### Hired NPC construction shifts with physical movement (2026-11-19)
 
 - A player-owned unfinished construction site now offers **Assign Crew / Release Crew** inside its actual interaction overlay. The authority refuses remote work orders, invalid room claims, faction-owned sites, stale workers, deceased/minor workers and absent world actors without changing state; successful orders cost one ordinary turn in the UI. Site detail reports the assigned worker's distance and exactly which materials are missing.

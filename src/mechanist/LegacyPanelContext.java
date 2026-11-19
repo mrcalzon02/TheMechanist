@@ -4069,11 +4069,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (base != null && base.underConstruction) {
             if (!FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
+                int siteTopButtonW = Math.max(100, (actions.width - 32) / 2);
                 addOverlayButton(base.assignedWorker == null || base.assignedWorker.isBlank()
                                 ? "Assign Crew" : "Release Crew",
-                        actions.x + 12, by - 34, Math.max(120, actions.width - 24), 28,
-                        "Assign a real hired NPC to physically travel here and work only with staged materials.",
+                        actions.x + 12, by - 34, siteTopButtonW, 28,
+                        "Assign a hired NPC to physically reach this site and work with already-staged materials.",
                         this::toggleActiveConstructionCrew);
+                addOverlayButton("Stage Materials", actions.x + 20 + siteTopButtonW, by - 34,
+                        siteTopButtonW, 28, "Transfer available real construction components without adding player labor.",
+                        this::stageActiveConstructionMaterials);
                 addOverlayButton("Work", x, by, 78, 28,
                         "Stage available materials and contribute one personal turn of construction labor.",
                         this::workActiveConstructionSite);
@@ -4194,6 +4198,44 @@ class GamePanel extends LegacyPanelBridgeBase {
         logEvent("Repaired " + safeLabel(machine.name, "machine") + ". " + preview.summary()
                 + " Machine parts remaining " + machineParts + ".");
         advanceTurn("repairs " + safeLabel(machine.name, "a machine") + ".");
+    }
+
+    void stageActiveConstructionMaterials() {
+        BaseObject site = activeInteractionBaseObject;
+        if (site == null || !site.underConstruction) {
+            logEvent("Material staging blocked: select an unfinished construction site.");
+            repaint();
+            return;
+        }
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            logEvent("Material staging blocked: this construction site uses its NPC faction's reserves.");
+            repaint();
+            return;
+        }
+        if (!constructionInteractionSiteExists(site)) {
+            logEvent("Material staging blocked: the selected site no longer exists.");
+            repaint();
+            return;
+        }
+        if (!constructionInteractionInReach(site)) {
+            logEvent("Material staging blocked: approach the construction site first.");
+            repaint();
+            return;
+        }
+        int laborBefore = site.constructionLaborDone;
+        int moved = ProgressiveConstructionAuthority.contribute(this, site, 0, true);
+        if (site.constructionLaborDone != laborBefore)
+            throw new IllegalStateException("Materials-only staging must not add personal labor.");
+        if (moved > 0) {
+            logEvent("Staged " + moved + " actual material unit(s) at " + site.name
+                    + ". Remaining: " + ProgressiveConstructionAuthority.missingMaterials(site)
+                    + "; personal labor " + site.constructionLaborDone + "/" + site.constructionLaborRequired + ".");
+            advanceTurn("stages construction materials.");
+        } else {
+            logEvent("No missing materials available for " + site.name
+                    + ". Still needed: " + ProgressiveConstructionAuthority.missingMaterials(site) + ".");
+        }
+        repaint();
     }
 
     void workActiveConstructionSite() {

@@ -27,6 +27,23 @@ final class Milestone03ProgressiveConstructionInteractionWorkSmoke {
         requireContains(lastEvent(game), "Construction work made no progress", "blocked Work event");
         requireContains(lastEvent(game), "next action: stage Construction supplies x1", "blocked Work next action");
 
+        // Stage real supplies without consuming personal labor; depleted staging costs no time.
+        game.supplies = 1;
+        game.baseObjects.clear();
+        BaseObject staging = ProgressiveConstructionAuthority.createSite(recipe, siteX, siteY, 3);
+        game.baseObjects.add(staging);
+        game.activeInteractionBaseObject = staging;
+        int beforeStaging = game.turn;
+        game.stageActiveConstructionMaterials();
+        require(game.turn == beforeStaging + 1 && game.supplies == 0
+                        && staging.constructionLaborDone == 0
+                        && "none".equals(ProgressiveConstructionAuthority.missingMaterials(staging)),
+                "materials-only action must consume a real item, spend one turn and add zero labor");
+        int beforeEmptyStaging = game.turn;
+        game.stageActiveConstructionMaterials();
+        require(game.turn == beforeEmptyStaging && staging.constructionLaborDone == 0,
+                "redundant material staging must not charge turns or change labor");
+
         game.supplies = 1;
         game.baseObjects.clear();
         BaseObject productive = ProgressiveConstructionAuthority.createSite(recipe, siteX, siteY, 3);
@@ -66,6 +83,10 @@ final class Milestone03ProgressiveConstructionInteractionWorkSmoke {
         require(game.supplies == 1, "distant Work interaction should not stage supplies");
         requireContains(lastEvent(game), "no longer within reach", "distant Work reach event");
         requireContains(lastEvent(game), "Stand adjacent to work this staged site", "distant Work reach guidance");
+        int beforeRemoteStage = game.turn;
+        game.stageActiveConstructionMaterials();
+        require(game.turn == beforeRemoteStage && game.supplies == 1 && distantWork.constructionLaborDone == 0,
+                "remote material staging must not consume item or time");
 
         game.supplies = 0;
         game.machineParts = 0;
