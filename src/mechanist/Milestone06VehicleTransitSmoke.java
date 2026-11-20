@@ -22,6 +22,22 @@ final class Milestone06VehicleTransitSmoke {
                     VehicleRuntimeAuthority.OwnerType.PLAYER,
                     Faction.NONE, "player-owned", 31L);
             game.world.mapObjects.add(vehicle);
+            VehicleFuelAuthority.Snapshot initialEnergy =
+                    VehicleFuelAuthority.inspect(game.world, vehicle);
+            require(initialEnergy.current() == 24
+                            && VehicleFuelAuthority.routeEnergyCost(
+                                    VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR, 23) == 4
+                            && VehicleFuelAuthority.routeEnergyCost(
+                                    VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR, 0) == 0
+                            && VehicleFuelAuthority.routeEnergyCost(
+                                    VehicleRuntimeAuthority.VehicleClass.UTILITY_BIKE, 23) == 3
+                            && VehicleFuelAuthority.routeEnergyCost(
+                                    VehicleRuntimeAuthority.VehicleClass.CARGO_TRUCK, 23) == 6
+                            && VehicleFuelAuthority.routeEnergyCost(
+                                    VehicleRuntimeAuthority.VehicleClass.ARMORED_CAR, 23) == 8
+                            && VehicleFuelAuthority.routeEnergyCost(
+                                    VehicleRuntimeAuthority.VehicleClass.TANK, 23) == 12,
+                    "class-scaled shared local/strategic energy cost must remain deterministic");
 
             // The closest legal parking tile may be disconnected. Choose a
             // reachable one nearby rather than refusing an otherwise valid trip.
@@ -64,6 +80,8 @@ final class Milestone06VehicleTransitSmoke {
                             + plan.summary());
             require(contiguous(plan.path()),
                     "vehicle route preview must be a contiguous one-tile path");
+            requireContains(plan.summary(), "Fuel or power: 4 unit(s) required",
+                    "local route energy preview");
             int playerX = game.playerX;
             int playerY = game.playerY;
             VehicleTransitAuthority.TransitResult moved =
@@ -75,6 +93,10 @@ final class Milestone06VehicleTransitSmoke {
                     "validated route should move the physical vehicle fixture to legal parking");
             require(game.playerX == playerX && game.playerY == playerY,
                     "vehicle transit must not silently teleport the player actor");
+            require(VehicleFuelAuthority.inspect(game.world, vehicle).current() == 20,
+                    "committed 23-tile car route must debit four energy units exactly once");
+            requireContains(moved.message(), "consumed 4 unit(s)",
+                    "fuel readback after local travel");
             require("parked".equals(MapObjectState.stockValue(
                             vehicle.stockState, "operationState"))
                             && "false".equals(MapObjectState.stockValue(
@@ -128,6 +150,8 @@ final class Milestone06VehicleTransitSmoke {
             require(west.valid(), "return route should be available");
             require(VehicleTransitAuthority.execute(game, vehicle, west).success(),
                     "return route should execute");
+            require(VehicleFuelAuthority.inspect(game.world, vehicle).current() == 16,
+                    "second committed route should debit its own four energy units");
 
             VehicleTransitAuthority.RoutePlan stale =
                     VehicleTransitAuthority.plan(game, vehicle, 25, 4);
@@ -166,6 +190,52 @@ final class Milestone06VehicleTransitSmoke {
                             && vehicle.x == 25 && vehicle.y == 4
                             && !game.manualMovementPlanActive,
                     "planning cursor should execute a vehicle-range route and clear after success");
+            require(VehicleFuelAuthority.inspect(game.world, vehicle).current() == 12,
+                    "manual planned vehicle movement must pay its own four-unit energy cost");
+
+            // A valid prior preview may no longer fit after energy changes.
+            // The refetched plan must fail closed before any position or
+            // transient operation state is changed.
+            VehicleTransitAuthority.RoutePlan fueledPreview =
+                    VehicleTransitAuthority.plan(game, vehicle, 2, 4);
+            require(fueledPreview.valid(), "fixture must begin with enough fuel");
+            String stockBeforeEnergyFailure = MapObjectState.setStockFlag(
+                    vehicle.stockState, "fuelOrPowerCurrent", "0");
+            vehicle.stockState = stockBeforeEnergyFailure;
+            String historyBeforeFailure = MapObjectState.stockValue(
+                    vehicle.stockState, "deploymentHistory");
+            int tripStartX = vehicle.x, tripStartY = vehicle.y;
+            VehicleTransitAuthority.TransitResult noFuel =
+                    VehicleTransitAuthority.execute(game, vehicle, fueledPreview);
+            require(!noFuel.success()
+                            && "insufficient-energy".equals(noFuel.plan().blocker())
+                            && tripStartX == vehicle.x && tripStartY == vehicle.y
+                            && stockBeforeEnergyFailure.equals(vehicle.stockState)
+                            && historyBeforeFailure.equals(MapObjectState.stockValue(
+                                    vehicle.stockState, "deploymentHistory")),
+                    "empty-fuel refusal must not change position, history, or vehicle state");
+            require(!VehicleTransitAuthority.plan(game, vehicle, 2, 4).valid(),
+                    "fuel-aware preview must refuse a real zero-energy route");
+            // Zero-distance inspection must still work without fuel.
+            VehicleTransitAuthority.RoutePlan emptyParked =
+                    VehicleTransitAuthority.plan(game, vehicle, 25, 4);
+            require(emptyParked.valid() && emptyParked.steps() == 0
+                            && VehicleTransitAuthority.execute(game, vehicle, emptyParked).success()
+                            && stockBeforeEnergyFailure.equals(vehicle.stockState),
+                    "zero-step parking must remain free even with empty reserves");
+            vehicle.stockState = MapObjectState.setStockFlag(
+                    vehicle.stockState, "fuelOrPowerCurrent", "12");
+            vehicle.stockState = MapObjectState.setStockFlag(
+                    vehicle.stockState, "strategicTransitFuelReserved", "10");
+            String reservedState = vehicle.stockState;
+            VehicleTransitAuthority.RoutePlan reserved =
+                    VehicleTransitAuthority.plan(game, vehicle, 2, 4);
+            require(!reserved.valid() && "insufficient-energy".equals(reserved.blocker())
+                            && reserved.summary().contains("10 reserved")
+                            && vehicle.stockState.equals(reservedState),
+                    "strategic fuel reservations must prevent local travel without mutation");
+            vehicle.stockState = MapObjectState.setStockFlag(
+                    vehicle.stockState, "strategicTransitFuelReserved", "0");
 
             VehicleRuntimeAuthority.applyDamage(vehicle,
                     VehicleRuntimeAuthority.Component.MOBILITY, 100,
@@ -198,6 +268,8 @@ final class Milestone06VehicleTransitSmoke {
                     "vehicle route-range separation inspection");
             requireContains(inspection, "bounded pulse",
                     "vehicle operation feedback inspection");
+            requireContains(inspection, "Travel energy:",
+                    "local route fuel and reservation guidance");
             for (String line : inspection) {
                 require(!PlayerFacingText.containsLikelyLeak(line),
                         "vehicle transit inspection leaked implementation text: " + line);

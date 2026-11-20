@@ -1,5 +1,14 @@
 # Development History
 
+### Milestone 06 local road transit debits persistent fuel/power on commit (2026-11-19)
+
+- A successful local 23-tile route moved a vehicle, played its engine/light feedback and wrote deployment history without spending any fuel or power, despite the persistent ledger and strategic reservations used by longer routes. This made local movement free and allowed empty or fully reserved vehicles to move.
+- Local route previews now use the same per-class energy cost scaling as strategic journeys (bike 8, civilian car 6, cargo truck 4, armored car 3, tank 2 tiles per unit). Zero-distance parking costs zero. The preview exposes required, available, and strategically reserved units and refuses unaffordable trips with a useful warning.
+- The authoritative local commit revalidates the route and debits the existing vehicle fuel ledger **before** movement or engine/headlight/audio feedback. Insufficient or reserved energy cannot displace a vehicle; committed travel records the debit, remaining energy, and resource cost in existing provenance/readback. Strategic journeys retain their preexisting minimum one-unit reservation semantics; no new inventory or state authority was introduced.
+- Expanded the focused Milestone 06 vehicle transit smoke for class costs, three successful 23-tile legs, no-fuel stale-preview refusal, zero-distance free inspections, strategic-reservation nonmutation, and player guidance. Both Linux and Windows Java 17 focused gates now run this smoke independently ahead of nonblocking long Gate 3 diagnostics.
+- Exact-commit CI, packaged boot and multiplayer verification are required before treating this source change as validated; no release or installed GUI evidence is implied.
+
+
 ### Milestone 06 vehicle maintenance now requires a live fixture and physical reach (2026-11-19)
 
 - The canonical maintenance executor still allowed a caller to bypass a garage by selecting `GARAGE_REPAIR` or `FULL_REFURBISHMENT` with no service fixture, and to repair a vehicle from across a zone with an unrestricted field-mode call. A detached/stale MapObjectState also passed the initial ownership and component checks.

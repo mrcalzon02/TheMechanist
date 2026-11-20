@@ -110,12 +110,25 @@ final class VehicleTransitAuthority {
                             + " tiles; the current planning window supports at most "
                             + MAX_LOCAL_ROUTE_STEPS + ".");
         }
+        int requiredFuel = VehicleFuelAuthority.routeEnergyCost(
+                VehicleRuntimeAuthority.vehicleClass(vehicle.type), path.size() - 1);
+        VehicleFuelAuthority.Snapshot energy = VehicleFuelAuthority.inspect(game.world, vehicle);
+        if (energy.available() < requiredFuel) {
+            return RoutePlan.blocked(requested, "insufficient-energy",
+                    "This local vehicle route needs " + requiredFuel
+                            + " fuel or power unit(s); only " + energy.available()
+                            + " are available (" + energy.reserved()
+                            + " reserved for strategic transit). Refuel or choose a shorter route.");
+        }
         String summary = "Vehicle route ready: " + displayName(vehicle)
                 + " travels " + (path.size() - 1) + " road tile(s) from "
                 + vehicle.x + "," + vehicle.y + " to legal parking at "
                 + parking.x + "," + parking.y
                 + (parking.equals(requested) ? "." : " near requested "
-                + requested.x + "," + requested.y + ".");
+                + requested.x + "," + requested.y + ".")
+                + " Fuel or power: " + requiredFuel + " unit(s) required; "
+                + energy.available() + " available, " + energy.reserved()
+                + " reserved.";
         return new RoutePlan(true, List.copyOf(path), requested, parking, "", summary);
     }
 
@@ -170,6 +183,18 @@ final class VehicleTransitAuthority {
                     "Vehicle already parked at " + fromX + "," + fromY
                             + "; no movement or engine operation was needed.", plan);
         }
+        // Debit only after the current road, occupancy, and fuel checks pass,
+        // and before the first movement or engine/lighting/audio effect.
+        // The shared ledger refuses consumption of strategic reservations.
+        int requiredFuel = VehicleFuelAuthority.routeEnergyCost(
+                VehicleRuntimeAuthority.vehicleClass(vehicle.type), plan.steps());
+        VehicleFuelAuthority.Result spent = VehicleFuelAuthority.consumeCommitted(
+                game.world, vehicle, requiredFuel, game.turn, "local road transit");
+        if (!spent.success()) {
+            return TransitResult.blocked(RoutePlan.blocked(
+                    plan.requestedTarget(), "insufficient-energy",
+                    spent.message() + " The vehicle remains parked."), vehicle);
+        }
         VehicleOperationFeedbackAuthority.begin(game, vehicle, plan.steps(),
                 fromX, fromY, destination.x, destination.y, dx, dy);
         vehicle.x = destination.x;
@@ -180,7 +205,8 @@ final class VehicleTransitAuthority {
         append(vehicle, "deploymentHistory",
                 "Local road route " + fromX + "," + fromY + " -> "
                         + destination.x + "," + destination.y + " / "
-                        + plan.steps() + " step(s) / turn " + game.turn);
+                        + plan.steps() + " step(s) / fuel " + spent.amount()
+                        + " / turn " + game.turn);
         append(vehicle, "vehicleHistory",
                 "Parked after a validated local road route at turn " + game.turn);
         VehicleOperationFeedbackAuthority.Feedback feedback =
@@ -195,7 +221,7 @@ final class VehicleTransitAuthority {
                 "VEHICLE TRANSIT: " + displayName(vehicle) + " followed "
                         + plan.steps() + " validated road tile(s) and parked at "
                         + destination.x + "," + destination.y + ". "
-                        + feedback.summary(),
+                        + spent.message() + " " + feedback.summary(),
                 plan);
     }
 
@@ -236,6 +262,7 @@ final class VehicleTransitAuthority {
                 VehicleInfopediaBridgeAuthority.liveDossier(game, vehicle));
         lines.add("LOCAL TRANSIT CONTROL");
         lines.add("Transit rule: roads and marked parking carry movement; clear curb-adjacent sidewalks may receive automatic parking, but they are not through-routes.");
+        lines.add("Travel energy: local trips charge the shared class-scaled fuel or power ledger only when movement commits. Strategic reservations are unavailable to local routes; checking an already parked vehicle costs nothing.");
         lines.add("Route control: open the manual movement plan, place its cursor on the desired road or parking destination, then interact with a player-owned operational vehicle. Vehicle route range is validated independently from ordinary actor movement range.");
         lines.add("Operation feedback: validated movement drives the same running state used by the bounded pulse, forward headlights, degraded-component feedback, and distance-limited ambient operating sound.");
         if (game != null && vehicle != null && VehicleRuntimeAuthority.playerOwns(game, vehicle)) {

@@ -434,15 +434,9 @@ final class VehicleStrategicTransitAuthority {
     private static int estimatedFuel(
             VehicleRuntimeAuthority.VehicleClass definition,
             int distance) {
-        int divisor = switch (definition) {
-            case UTILITY_BIKE -> 8;
-            case CIVILIAN_CAR -> 6;
-            case CARGO_TRUCK -> 4;
-            case ARMORED_CAR -> 3;
-            case TANK -> 2;
-        };
-        return Math.max(1, (Math.max(1, distance) + divisor - 1)
-                / divisor);
+        // Keep strategic journeys' historical minimum one-unit reservation,
+        // while local zero-distance parking remains a no-op.
+        return Math.max(1, VehicleFuelAuthority.routeEnergyCost(definition, distance));
     }
 
     private static int footprint(

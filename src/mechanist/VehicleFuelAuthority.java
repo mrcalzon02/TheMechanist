@@ -192,6 +192,26 @@ final class VehicleFuelAuthority {
         return List.copyOf(lines);
     }
 
+    /**
+     * Shared terrain-independent travel energy scale for both local road paths
+     * and strategic journeys. A zero-step local inspection costs nothing.
+     * This function reads no mutable ledgers and never consumes fuel.
+     */
+    static int routeEnergyCost(VehicleRuntimeAuthority.VehicleClass definition,
+                               int routeSteps) {
+        if (routeSteps <= 0) return 0;
+        VehicleRuntimeAuthority.VehicleClass vehicleClass = definition == null
+                ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR : definition;
+        int tilesPerUnit = switch (vehicleClass) {
+            case UTILITY_BIKE -> 8;
+            case CIVILIAN_CAR -> 6;
+            case CARGO_TRUCK -> 4;
+            case ARMORED_CAR -> 3;
+            case TANK -> 2;
+        };
+        return 1 + (routeSteps - 1) / tilesPerUnit;
+    }
+
     static int capacity(VehicleRuntimeAuthority.VehicleClass definition) {
         return switch (definition) {
             case UTILITY_BIKE -> 12;

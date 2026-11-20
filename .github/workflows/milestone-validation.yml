@@ -66,6 +66,7 @@ jobs:
           $smokes = @(
             "mechanist.WorldActorSpriteResolverSmoke",
             "mechanist.Milestone06VehicleMaintenanceSmoke",
+            "mechanist.Milestone06VehicleTransitSmoke",
             "mechanist.SimulationToolSuiteRecoverySmoke",
             "mechanist.LightingFalloffStreetLightSmoke",
             "mechanist.RoadTemplateRulesSmoke"
