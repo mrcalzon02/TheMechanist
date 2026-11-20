@@ -94,8 +94,18 @@ final class VehicleEconomyFrontageAuthority {
         }
         if (AssetIntegrationDisciplineAuthority.VEHICLE_PARTS_STORE_FRONTAGE.equals(type)) return buyPart(g, m);
         if (AssetIntegrationDisciplineAuthority.VEHICLE_SERVICE_GARAGE_FRONTAGE.equals(type)) {
-            VehicleMaintenanceAuthority.Result result = VehicleMaintenanceAuthority.serviceNearestPlayerVehicle(g, m);
-            return new InteractionResult(result.success(), result.changed(), result.message());
+            VehicleMaintenanceAuthority.Result result =
+                    VehicleMaintenanceAuthority.serviceNearestPlayerVehicle(g, m);
+            // A single visit performs at most one billable operation. Once the
+            // staged vehicle no longer needs repairs, this same physical garage
+            // provides a separate paid fuel/power refill on the next visit.
+            if (!result.success() || result.changed() || result.vehicle() == null) {
+                return new InteractionResult(result.success(), result.changed(), result.message());
+            }
+            VehicleFuelAuthority.Result refilled =
+                    VehicleFuelAuthority.refuelAtGarage(g, m, result.vehicle());
+            return new InteractionResult(refilled.success(), refilled.changed(),
+                    refilled.message());
         }
         if (AssetIntegrationDisciplineAuthority.PUBLIC_TRANSIT_STOP_FRONTAGE.equals(type)) {
             return new InteractionResult(true, false, "PUBLIC TRANSIT: local taxi and mass-transit routes are posted here. Fare execution and boarding remain reserved for the transit runtime.");

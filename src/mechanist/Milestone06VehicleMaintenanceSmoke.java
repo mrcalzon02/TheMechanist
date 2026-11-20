@@ -197,6 +197,85 @@ final class Milestone06VehicleMaintenanceSmoke {
                     "garage must not search the entire zone for a remote vehicle");
             vehicle.x = priorX; vehicle.y = priorY;
 
+            // The game must provide an honest paid fuel source after local
+            // travel started consuming persistent energy, without silently
+            // charging for inspection or allowing remote/full refueling.
+            VehicleFuelAuthority.ensureInitialized(game.world, vehicle);
+            vehicle.stockState = MapObjectState.setStockFlag(
+                    vehicle.stockState, "fuelOrPowerCurrent", "8");
+            game.carriedScript = 8;
+            String beforeRefill = vehicle.stockState;
+            int beforeRefillTurn = game.turn;
+            int beforeRefillXp = game.xp;
+            int beforeRefillVend = garage.vendCount;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(
+                            game, garage.x, garage.y),
+                    "live service garage must support a paid refill after repairs");
+            VehicleFuelAuthority.Snapshot afterRefill = VehicleFuelAuthority.inspect(
+                    game.world, vehicle);
+            require(afterRefill.current() == 16 && game.carriedScript == 0
+                            && game.turn == beforeRefillTurn + 1
+                            && game.xp > beforeRefillXp
+                            && garage.vendCount == beforeRefillVend + 1
+                            && !vehicle.stockState.equals(beforeRefill),
+                    "paid live refill must add eight energy units, spend eight script and one turn");
+            requireContains(MapObjectState.stockValue(
+                            vehicle.stockState, "fuelOrPowerHistory"),
+                    "paid service garage refill", "refill provenance");
+
+            String insufficientStock = vehicle.stockState;
+            int insufficientTurn = game.turn;
+            long insufficientWorldTurn = game.worldTurn;
+            int insufficientXp = game.xp;
+            int insufficientVend = garage.vendCount;
+            int insufficientCooldown = garage.cooldownUntilTurn;
+            VehicleEconomyFrontageAuthority.InteractionResult noMoney =
+                    VehicleEconomyFrontageAuthority.interactionResult(game, garage);
+            require(!noMoney.success() && !noMoney.changed()
+                            && noMoney.message().contains("8 script")
+                            && vehicle.stockState.equals(insufficientStock)
+                            && game.turn == insufficientTurn
+                            && game.worldTurn == insufficientWorldTurn
+                            && game.xp == insufficientXp
+                            && garage.vendCount == insufficientVend
+                            && garage.cooldownUntilTurn == insufficientCooldown,
+                    "insufficient script must not grant fuel, spend time, or mutate vendor state");
+
+            game.carriedScript = 8;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(
+                            game, garage.x, garage.y),
+                    "second paid garage refill must be physically reachable");
+            require(VehicleFuelAuthority.inspect(game.world, vehicle).current() == 24
+                            && game.carriedScript == 0,
+                    "second payment should fill the vehicle without exceeding capacity");
+            String fullStock = vehicle.stockState;
+            int fullTurn = game.turn;
+            int fullXp = game.xp;
+            int fullVend = garage.vendCount;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(
+                            game, garage.x, garage.y),
+                    "full garage fuel status remains inspectable");
+            require(vehicle.stockState.equals(fullStock)
+                            && game.turn == fullTurn
+                            && game.xp == fullXp
+                            && garage.vendCount == fullVend,
+                    "full tank inspection cannot trigger hidden costs or XP rewards");
+            vehicle.stockState = MapObjectState.setStockFlag(
+                    vehicle.stockState, "fuelOrPowerCurrent", "14");
+            int savedX = vehicle.x, savedY = vehicle.y;
+            vehicle.x = 18; vehicle.y = 12;
+            String remoteFuelStock = vehicle.stockState;
+            int remoteFuelScript = game.carriedScript;
+            VehicleFuelAuthority.Result remoteFuel = VehicleFuelAuthority.refuelAtGarage(
+                    game, garage, vehicle);
+            require(!remoteFuel.success()
+                            && remoteFuelStock.equals(vehicle.stockState)
+                            && remoteFuelScript == game.carriedScript,
+                    "remote refuel requests must leave ledger and currency unchanged");
+            vehicle.x = savedX; vehicle.y = savedY;
+            vehicle.stockState = MapObjectState.setStockFlag(
+                    vehicle.stockState, "fuelOrPowerCurrent", "24");
+
             MapObjectState detached = vehicle(game.world, 9, 9,
                     VehicleRuntimeAuthority.OwnerType.PLAYER, Faction.NONE, 74L);
             VehicleRuntimeAuthority.applyDamage(detached,
@@ -238,6 +317,8 @@ final class Milestone06VehicleMaintenanceSmoke {
                     "physical field repair guidance");
             requireContains(inspection, "service garage required",
                     "required refurbishment facility guidance");
+            requireContains(VehicleFuelAuthority.inspectionLines(game.world, vehicle),
+                    "Garage refill:", "fuel and refilling player guidance");
             for (String line : inspection) {
                 require(!PlayerFacingText.containsLikelyLeak(line),
                         "vehicle maintenance guidance leaked implementation text: " + line);

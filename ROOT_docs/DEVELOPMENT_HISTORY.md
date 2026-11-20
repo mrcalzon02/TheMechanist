@@ -1,5 +1,14 @@
 # Development History
 
+### Milestone 06 paid garage refueling after local energy consumption (2026-11-19)
+
+- After local driving began consuming the persistent fuel/power ledger, the player-facing garage interaction still offered only vehicle repairs. A healthy player vehicle with an empty energy reserve was left without a normal in-world method for restoring it.
+- The same live maintenance-garage interaction now offers a separate **paid refill after repairs are complete**, preserving one transaction per action and the existing six-tile vehicle-staging boundary. Each successful visit adds up to eight fuel/power units at one script per unit, bounded by remaining capacity, with transaction cost and updated reserve shown in the response and recorded in the existing fuel-history ledger.
+- Payment is validated before the refill and charged only after the bounded ledger update succeeds. Insufficient script, a full tank, stale or remote garage/vehicle references, lack of player title, and wreck/salvage status cannot grant free fuel, advance time, or create a cooldown. The game-owned interaction wrapper still owns the single successful turn/XP/cooldown event.
+- Fuel inspection and the vehicle dashboard now explain where and how to refill. The existing focused Milestone 06 maintenance smoke covers an actual garage click, two paid refills, insufficient funds, full-tank nonmutation, remote refusal, and recorded provenance. Direct faction refueling and strategic reserved-fuel semantics are unchanged.
+- This is an in-world resource/QoL integration, not a native installer test, asset/art pass or release authorization. Exact-commit Java 17, focused tests, packaging, boot and multiplayer checks remain required.
+
+
 ### Milestone 06 local road transit debits persistent fuel/power on commit (2026-11-19)
 
 - A successful local 23-tile route moved a vehicle, played its engine/light feedback and wrote deployment history without spending any fuel or power, despite the persistent ledger and strategic reservations used by longer routes. This made local movement free and allowed empty or fully reserved vehicles to move.

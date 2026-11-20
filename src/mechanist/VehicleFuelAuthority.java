@@ -9,6 +9,9 @@ import java.util.List;
  * units. Refueling is permission-gated and atomic.
  */
 final class VehicleFuelAuthority {
+    static final int GARAGE_REFUEL_BATCH_UNITS = 8;
+    static final int GARAGE_REFUEL_SCRIPT_PER_UNIT = 1;
+
     record Snapshot(int current, int capacity, int reserved, int available,
                     String energyType, String state) { }
 
@@ -148,6 +151,66 @@ final class VehicleFuelAuthority {
                 clean(source, "authorized refueling"));
     }
 
+    /**
+     * Player-facing garage fueling transaction. One visit repairs or refuels,
+     * never both. Payment is checked before the existing fuel ledger changes.
+     * No portable instant-fuel generator is granted by this interface.
+     */
+    static Result refuelAtGarage(GamePanel game, MapObjectState garage,
+                                 MapObjectState vehicle) {
+        if (game == null || game.world == null
+                || !VehicleMaintenanceAuthority.stagedForGarage(
+                        game.world, garage, vehicle)
+                || !VehicleRuntimeAuthority.isVehicle(vehicle)) {
+            return Result.blocked(0,
+                    "Refueling requires a live player vehicle staged within "
+                            + VehicleMaintenanceAuthority.GARAGE_STAGING_RADIUS_TILES
+                            + " tiles of a service garage; no payment was taken.");
+        }
+        if (!VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
+            return Result.blocked(0,
+                    "Refueling requires title to the staged vehicle; no payment was taken.");
+        }
+        VehicleRuntimeAuthority.Snapshot runtime =
+                VehicleRuntimeAuthority.inspect(game.world, vehicle);
+        if (runtime == null || "salvaged".equals(runtime.condition())
+                || "wreck".equals(runtime.condition())
+                || "dismantled".equals(runtime.operationState())) {
+            return Result.blocked(0,
+                    "A stripped or wrecked vehicle cannot receive ordinary garage fuel.");
+        }
+        Snapshot before = inspect(game.world, vehicle);
+        int units = Math.min(GARAGE_REFUEL_BATCH_UNITS,
+                Math.max(0, before.capacity() - before.current()));
+        if (units == 0) {
+            return new Result(true, false, before.current(), before.current(), 0,
+                    "SERVICE GARAGE: fuel or power already full at "
+                            + before.current() + "/" + before.capacity()
+                            + "; no script or time spent.");
+        }
+        int price = units * GARAGE_REFUEL_SCRIPT_PER_UNIT;
+        if (game.carriedScript < price) {
+            return Result.blocked(before.current(),
+                    "SERVICE GARAGE: " + units + " fuel or power unit(s) cost "
+                            + price + " script; only " + game.carriedScript
+                            + " carried. No fuel, script, or time was spent.");
+        }
+        // No world changes occur before the transaction succeeds. Since the
+        // requested units are bounded to the remaining capacity, the existing
+        // authorized ledger update cannot refuse an otherwise valid refill.
+        Result filled = addAuthorized(game.world, vehicle, units, game.turn,
+                "paid service garage refill");
+        if (!filled.success() || !filled.changed()) return filled;
+        if (!game.spendImperialScript(price)) {
+            throw new IllegalStateException(
+                    "Validated garage fuel payment exceeded carried script.");
+        }
+        return new Result(true, true, filled.before(), filled.after(),
+                filled.amount(), "SERVICE GARAGE: added " + filled.amount()
+                + " fuel or power unit(s) for " + price + " script; "
+                + filled.after() + "/" + before.capacity() + " now available.");
+    }
+
     static Result refuelForFaction(World world, MapObjectState vehicle, int amount,
                                    int turn, Faction faction, String source) {
         if (world == null || vehicle == null
@@ -179,6 +242,11 @@ final class VehicleFuelAuthority {
         lines.add("Fuel or power: " + snapshot.current() + "/"
                 + snapshot.capacity() + " " + snapshot.energyType()
                 + " unit(s); state " + snapshot.state() + ".");
+        lines.add("Garage refill: park your vehicle within "
+                + VehicleMaintenanceAuthority.GARAGE_STAGING_RADIUS_TILES
+                + " tiles of a maintenance garage. After repairs, one visit adds up to "
+                + GARAGE_REFUEL_BATCH_UNITS + " fuel or power units at "
+                + GARAGE_REFUEL_SCRIPT_PER_UNIT + " script each.");
         if (snapshot.reserved() > 0) {
             lines.add("Strategic reservation: " + snapshot.reserved()
                     + " unit(s) reserved; " + snapshot.available()

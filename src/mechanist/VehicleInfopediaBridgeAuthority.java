@@ -112,6 +112,11 @@ final class VehicleInfopediaBridgeAuthority {
         lines.add("Energy: " + fuel.current() + "/" + fuel.capacity() + " "
                 + fuel.energyType() + " unit(s); " + fuel.reserved()
                 + " reserved; state " + fuel.state() + ".");
+        lines.add("Refill: after repairs, use a nearby service garage for up to "
+                + VehicleFuelAuthority.GARAGE_REFUEL_BATCH_UNITS
+                + " fuel or power unit(s) per visit at "
+                + VehicleFuelAuthority.GARAGE_REFUEL_SCRIPT_PER_UNIT
+                + " script each; no charge if full or short of funds.");
         lines.add("Crew and seating: driver "
                 + clean(manifest.driver(), "unassigned") + "; operational crew "
                 + manifest.assignedCrew() + "/" + runtime.vehicleClass().crewRequired
