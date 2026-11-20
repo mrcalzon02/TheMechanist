@@ -79,10 +79,10 @@ final class Milestone06VehicleTransitSmoke {
             vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
                     "vehicleComponentPowerplant", "0");
             String disabledStock = vehicle.stockState;
-            VehicleTransitAuthority.RoutePlan disabled =
+            VehicleTransitAuthority.RoutePlan disabledRoutePreview =
                     VehicleTransitAuthority.plan(game, vehicle, 25, 4);
-            require(!disabled.valid()
-                            && "vehicle-not-operational".equals(disabled.blocker())
+            require(!disabledRoutePreview.valid()
+                            && "vehicle-not-operational".equals(disabledRoutePreview.blocker())
                             && disabledStock.equals(vehicle.stockState),
                     "disabled vehicle refusal must not recompute condition or mutate components");
             vehicle.stockState = originalStock;
