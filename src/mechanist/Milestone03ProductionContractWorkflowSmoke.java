@@ -49,13 +49,17 @@ final class Milestone03ProductionContractWorkflowSmoke {
             GamePanel restored = new GamePanel();
             if (restored.timer != null) restored.timer.stop();
             try {
-                Persistence.readCore(restored, acceptedSave);
-                FactionContract persisted = restored.factionContracts.stream()
-                        .filter(candidate -> candidate != null && candidate.requiresProductionProof())
-                        .findFirst().orElseThrow(() -> new AssertionError("production order should persist"));
-                require(persisted.minimumQualityTier == contract.minimumQualityTier
-                                && persisted.skillXpReward == contract.skillXpReward,
-                        "production quality and skill XP terms should persist");
+                // Use the actual production faction-contract decoder without
+                // generating a 600x600 map to check one accepted work order.
+                Persistence.restoreFactionContractRewardState(restored, acceptedSave);
+                assertAcceptedOrderRestored(restored, contract);
+                if (args != null && java.util.Arrays.asList(args)
+                        .contains("--full-core-restore")) {
+                    // Kept as a separately named late-world-load diagnostic.
+                    // It continues to exercise the real full save loader.
+                    Persistence.readCore(restored, acceptedSave);
+                    assertAcceptedOrderRestored(restored, contract);
+                }
             } finally {
                 restored.shutdownRuntime();
             }
@@ -118,6 +122,20 @@ final class Milestone03ProductionContractWorkflowSmoke {
         } finally {
             game.shutdownRuntime();
         }
+    }
+
+    private static void assertAcceptedOrderRestored(GamePanel restored,
+                                                    FactionContract accepted) {
+        FactionContract persisted = restored.factionContracts.stream()
+                .filter(candidate -> candidate != null && candidate.id.equals(accepted.id)
+                        && candidate.requiresProductionProof())
+                .findFirst().orElseThrow(() ->
+                        new AssertionError("the same accepted production order should persist"));
+        require(!persisted.completed
+                        && persisted.minimumQualityTier == accepted.minimumQualityTier
+                        && persisted.skillXpReward == accepted.skillXpReward
+                        && persisted.requiredTurnInItem.equals(accepted.requiredTurnInItem),
+                "the exact accepted order, required item, quality and skill XP must survive save/reload");
     }
 
     private static FactionContract activeCopy(FactionContract source) {

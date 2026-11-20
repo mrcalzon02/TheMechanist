@@ -1,5 +1,13 @@
 # Development History
 
+### Gate 3 production-contract regression now tests production decoders without early world regeneration (2026-11-20)
+
+- The next two-platform Gate 3 diagnostic logs after the first contract fix confirmed 12 completed cases and a new stall at case 13, `Milestone03ProductionContractWorkflowSmoke`. Its acceptance, rendering and save/write logic was followed by an unrelated production-sized full-world generation for a tiny in-memory work-order fixture.
+- The early workflow smoke now restores the accepted order through the same `Persistence.restoreFactionContractRewardState` decoder invoked by normal `Persistence.readCore`, checking exact contract identity, incomplete status, quality minimum, required item and promised skill XP. Gameplay acceptance, low-quality and untraced-proof refusals, defect checks, completion, payout, reputation, and XP assertions remain in the test.
+- A separate named `Milestone03ProductionContractFullCoreRestoreSmoke` case retains the original complete `Persistence.readCore` path, appended to the end of the optional diagnostic suite alongside the earlier contract full-restoration case. The suite now has 249 named cases; no full-save test has been deleted.
+- This increases the number of gameplay checks reachable inside bounded diagnostic runs; it is **not** a solution for real campaign save-load performance. The full-load stall needs separate worldgen profiling and deterministic continuity validation before claiming player-facing improvement.
+
+
 ### Gate 3 contract save verification no longer regenerates the whole world before the other checks (2026-11-20)
 
 - The optional Gate 3 chain consistently stalled at its early `Milestone03ContractTurnInSmoke`: the interaction and save/write checks completed, but a synthetic 40×40 fixture then invoked `Persistence.readCore`, forcing a production-scale generated world during the twelfth case. This prevented hundreds of later diagnostics from reporting their results within the bounded CI window.

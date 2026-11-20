@@ -255,6 +255,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         // and no longer prevents the next 200+ cases from being reached.
         runSmoke("Milestone03ContractFullCoreRestoreSmoke", () ->
                 Milestone03ContractTurnInSmoke.main(new String[]{"--full-core-restore"}));
+        runSmoke("Milestone03ProductionContractFullCoreRestoreSmoke", () ->
+                Milestone03ProductionContractWorkflowSmoke.main(new String[]{"--full-core-restore"}));
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 
