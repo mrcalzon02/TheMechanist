@@ -142,12 +142,39 @@ final class Milestone06VehicleMaintenanceSmoke {
             VehicleRuntimeAuthority.applyDamage(vehicle,
                     VehicleRuntimeAuthority.Component.LIGHTS, 20,
                     game.turn, "maintenance smoke garage interaction");
+            MapObjectState healthy = vehicle(game.world, 4, 4,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER, Faction.NONE, 73L);
+            healthy.id = "000-HEALTHY-CAR";
+            game.world.mapObjects.add(healthy);
+            int healthyIntegrity = VehicleRuntimeAuthority.integrity(healthy);
             game.inventory.add("Machine part");
             String garageLine = VehicleEconomyFrontageAuthority.interaction(game, garage);
             requireContains(garageLine, "VEHICLE MAINTENANCE",
                     "live service-garage integration");
-            require(component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS) == 100,
-                    "live service garage should repair the nearest player-owned vehicle");
+            require(component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS) == 100
+                            && VehicleRuntimeAuthority.integrity(healthy) == healthyIntegrity,
+                    "garage should select a damaged staged vehicle, not a closer healthy one");
+            game.world.mapObjects.remove(healthy);
+
+            int priorX = vehicle.x, priorY = vehicle.y;
+            vehicle.x = 18; vehicle.y = 12;
+            String remoteStock = vehicle.stockState;
+            int remoteScript = game.carriedScript;
+            int remoteParts = count(game, "Machine part");
+            VehicleMaintenanceAuthority.Result remote = VehicleMaintenanceAuthority.perform(
+                    game, vehicle, VehicleMaintenanceAuthority.Mode.GARAGE_REPAIR, garage);
+            require(!remote.success() && remote.message().contains("within 6 tiles")
+                            && remoteStock.equals(vehicle.stockState)
+                            && remoteScript == game.carriedScript
+                            && remoteParts == count(game, "Machine part"),
+                    "distant garage service must refuse without spending parts, script, or changing vehicle state");
+            VehicleMaintenanceAuthority.Result remoteNearest =
+                    VehicleMaintenanceAuthority.serviceNearestPlayerVehicle(game, garage);
+            require(!remoteNearest.success()
+                            && remoteStock.equals(vehicle.stockState)
+                            && remoteScript == game.carriedScript,
+                    "garage must not search the entire zone for a remote vehicle");
+            vehicle.x = priorX; vehicle.y = priorY;
 
             MapObjectState factionVehicle = vehicle(game.world, 7, 5,
                     VehicleRuntimeAuthority.OwnerType.FACTION,

@@ -13,6 +13,25 @@ import java.util.Locale;
  * selected repair can actually begin.
  */
 final class VehicleMaintenanceAuthority {
+    // A garage cannot service a vehicle parked across a 600x600 zone.
+    static final int GARAGE_STAGING_RADIUS_TILES = 6;
+
+    static boolean liveServiceGarage(World world, MapObjectState garage) {
+        return world != null && garage != null
+                && world.mapObjects != null && world.mapObjects.contains(garage)
+                && world.inBounds(garage.x, garage.y)
+                && AssetIntegrationDisciplineAuthority.VEHICLE_SERVICE_GARAGE_FRONTAGE.equals(
+                        AssetIntegrationDisciplineAuthority.canonicalType(garage.type));
+    }
+
+    static boolean stagedForGarage(World world, MapObjectState garage, MapObjectState vehicle) {
+        return liveServiceGarage(world, garage)
+                && vehicle != null && world.mapObjects.contains(vehicle)
+                && world.inBounds(vehicle.x, vehicle.y)
+                && Math.abs((long) vehicle.x - garage.x)
+                     + Math.abs((long) vehicle.y - garage.y) <= GARAGE_STAGING_RADIUS_TILES;
+    }
+
     enum Mode {
         FIELD_PATCH("field patch", 20, 1, 0, true, 1),
         GARAGE_REPAIR("garage repair", 35, 1, 8, false, 1),
@@ -57,10 +76,16 @@ final class VehicleMaintenanceAuthority {
             return Result.blocked(Mode.GARAGE_REPAIR,
                     "SERVICE GARAGE: no vehicle-service world is loaded.", null);
         }
+        if (!liveServiceGarage(game.world, garage)) {
+            return Result.blocked(Mode.GARAGE_REPAIR,
+                    "SERVICE GARAGE: use a service garage present in this zone; no parts or payment were taken.", null);
+        }
         MapObjectState vehicle = nearestPlayerVehicle(game, garage);
         if (vehicle == null) {
             return Result.blocked(Mode.GARAGE_REPAIR,
-                    "SERVICE GARAGE: no player-owned vehicle is staged in this zone.", null);
+                    "SERVICE GARAGE: park a player-owned vehicle within "
+                            + GARAGE_STAGING_RADIUS_TILES
+                            + " tiles of this garage before requesting repairs; no parts or payment were taken.", null);
         }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
         VehicleRuntimeAuthority.Component worst = worstComponent(vehicle);
@@ -93,6 +118,13 @@ final class VehicleMaintenanceAuthority {
             return Result.blocked(mode, "No repairable vehicle is available.", vehicle);
         }
         Mode selected = mode == null ? Mode.GARAGE_REPAIR : mode;
+        if (serviceSource != null
+                && !stagedForGarage(game.world, serviceSource, vehicle)) {
+            return Result.blocked(selected,
+                    "Bring this vehicle within " + GARAGE_STAGING_RADIUS_TILES
+                            + " tiles of a live service garage before using garage maintenance; no parts or payment were taken.",
+                    vehicle);
+        }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
         if (!VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
             return Result.blocked(selected,
@@ -233,13 +265,18 @@ final class VehicleMaintenanceAuthority {
         for (MapObjectState object : game.world.mapObjects) {
             if (VehicleRuntimeAuthority.isVehicle(object)
                     && VehicleRuntimeAuthority.playerOwns(game, object)
-                    && !"salvaged".equals(value(object, "condition"))) {
+                    && !"salvaged".equals(value(object, "condition"))
+                    && stagedForGarage(game.world, origin, object)) {
                 vehicles.add(object);
             }
         }
+        // The garage's single-action UI should repair a damaged staged vehicle
+        // instead of reporting a closer already-healthy car as the only option.
         vehicles.sort(Comparator
                 .comparingInt((MapObjectState object) ->
-                        Math.abs(object.x - ox) + Math.abs(object.y - oy))
+                        worstComponent(object) == null ? 1 : 0)
+                .thenComparingLong(object ->
+                        Math.abs((long) object.x - ox) + Math.abs((long) object.y - oy))
                 .thenComparing(object -> clean(object.id, object.label)));
         return vehicles.isEmpty() ? null : vehicles.get(0);
     }

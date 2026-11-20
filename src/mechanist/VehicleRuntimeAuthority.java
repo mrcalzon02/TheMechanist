@@ -338,12 +338,26 @@ final class VehicleRuntimeAuthority {
         if (game == null || game.world == null) {
             return Result.blocked("service vehicle", "No vehicle-service world is loaded.", null);
         }
+        if (!VehicleMaintenanceAuthority.liveServiceGarage(game.world, garage)) {
+            return Result.blocked("service vehicle",
+                    "SERVICE GARAGE: use a service garage present in this zone; no parts or payment were taken.", null);
+        }
         MapObjectState vehicle = nearest(game.world, garage,
                 candidate -> isVehicle(candidate) && playerOwns(game, candidate)
-                        && !"salvaged".equals(value(candidate, "condition")));
+                        && !"salvaged".equals(value(candidate, "condition"))
+                        && VehicleMaintenanceAuthority.stagedForGarage(game.world, garage, candidate)
+                        && worstDamagedComponent(candidate) != null);
+        if (vehicle == null) {
+            vehicle = nearest(game.world, garage,
+                    candidate -> isVehicle(candidate) && playerOwns(game, candidate)
+                            && !"salvaged".equals(value(candidate, "condition"))
+                            && VehicleMaintenanceAuthority.stagedForGarage(game.world, garage, candidate));
+        }
         if (vehicle == null) {
             return Result.blocked("service vehicle",
-                    "SERVICE GARAGE: no player-owned vehicle is staged in this zone.", null);
+                    "SERVICE GARAGE: park a player-owned vehicle within "
+                            + VehicleMaintenanceAuthority.GARAGE_STAGING_RADIUS_TILES
+                            + " tiles of this garage before requesting repairs; no parts or payment were taken.", null);
         }
         ensureInitialized(game.world, vehicle);
         Component worst = worstDamagedComponent(vehicle);

@@ -1,5 +1,13 @@
 # Development History
 
+### Milestone 06 garage service staging and repair-selection QoL (2026-11-19)
+
+- The live vehicle-service garage selected the nearest player-owned vehicle from the entire loaded zone, including distant vehicles that had never been parked at the garage. A single-action service request also selected an already fully repaired vehicle ahead of another damaged vehicle nearby, reporting no work despite viable repairs.
+- Canonical garage maintenance and the older vehicle service API now require a live, registered service garage and an owned vehicle staged within six Manhattan tiles of its location. Missing or remote service requests return explicit player guidance before consuming machine parts, script, time, or vehicle history. Direct garage-mode maintenance cannot be used to bypass physical staging.
+- If several owned vehicles are staged, the garage prefers the nearest **damaged** vehicle, with a stable ID tie-breaker; when none are damaged it reports that the nearest vehicle is healthy and spends nothing. Existing title and condition checks remain in force. The change does not reinterpret field maintenance, which does not identify a garage.
+- Focused milestone smokes cover remote refusals by both APIs, non-mutation, a damaged vehicle behind a closer healthy vehicle, and normal nearby servicing. This is a source repair; exact-commit CI results and installed gameplay remain separate acceptance evidence.
+
+
 ### Bounded Gate 3 now exercises compact options first (2026-11-19)
 
 - The 320x240 options pagination patch compiled and its required Java 17, focused milestone, package-seed and multiplayer checks passed on `35eb794910034ab479a1b164bdcc1d3fe2d46009`. Both bounded Gate 3 diagnostics subsequently timed out before their final `OptionsSwingComponentSmoke` case, so that workflow could not prove the new menu behavior.

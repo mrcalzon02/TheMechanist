@@ -148,6 +148,22 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
                     VehicleRuntimeAuthority.Component.POWERPLANT) == 40,
                     "component damage should mutate the exact vehicle powerplant");
             game.inventory.add("Machine part");
+            int serviceX = saleCar.x, serviceY = saleCar.y;
+            saleCar.x = 21; saleCar.y = 12;
+            String remoteStock = saleCar.stockState;
+            int remoteScript = game.carriedScript;
+            int remoteParts = count(game.inventory, "Machine part");
+            VehicleRuntimeAuthority.Result distantLegacy =
+                    VehicleRuntimeAuthority.serviceNearestPlayerVehicle(game, garage);
+            VehicleMaintenanceAuthority.Result distantCanonical =
+                    VehicleMaintenanceAuthority.serviceNearestPlayerVehicle(game, garage);
+            require(!distantLegacy.success() && !distantCanonical.success()
+                            && distantCanonical.message().contains("within 6 tiles")
+                            && remoteStock.equals(saleCar.stockState)
+                            && remoteScript == game.carriedScript
+                            && remoteParts == count(game.inventory, "Machine part"),
+                    "both garage authorities must refuse remote repairs without resource or vehicle mutation");
+            saleCar.x = serviceX; saleCar.y = serviceY;
             VehicleRuntimeAuthority.Result repair =
                     VehicleRuntimeAuthority.serviceNearestPlayerVehicle(game, garage);
             require(repair.success() && repair.changed()
