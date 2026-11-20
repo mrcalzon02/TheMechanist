@@ -72,6 +72,41 @@ final class Milestone06VehicleTransitSmoke {
                     "same-cell vehicle route must not start an engine, spend a turn, "
                             + "write history, or emit transient operation feedback");
 
+            // Road movement may never cross the player's actual tile or
+            // park on the player. Blocking a route must be side-effect free.
+            String playerBlockStock = vehicle.stockState;
+            int playerBlockTurn = game.turn;
+            game.playerX = 13;
+            game.playerY = 4;
+            VehicleTransitAuthority.RoutePlan playerInLane =
+                    VehicleTransitAuthority.plan(game, vehicle, 25, 4);
+            require(!playerInLane.valid()
+                            && "no-road-route".equals(playerInLane.blocker())
+                            && playerInLane.summary().contains("player")
+                            && game.turn == playerBlockTurn
+                            && playerBlockStock.equals(vehicle.stockState),
+                    "player standing on the only road must prevent a trip without cost");
+            game.playerX = 25;
+            game.playerY = 4;
+            VehicleTransitAuthority.RoutePlan playerOnParking =
+                    VehicleTransitAuthority.plan(game, vehicle, 25, 4);
+            require(!playerOnParking.valid()
+                            && "no-legal-parking".equals(playerOnParking.blocker())
+                            && playerOnParking.summary().contains("occupied")
+                            && playerBlockStock.equals(vehicle.stockState),
+                    "player standing on the destination must prevent parking");
+            game.playerX = vehicle.x;
+            game.playerY = vehicle.y;
+            VehicleTransitAuthority.RoutePlan sharedStart =
+                    VehicleTransitAuthority.plan(game, vehicle, vehicle.x, vehicle.y);
+            require(sharedStart.valid() && sharedStart.steps() == 0
+                            && VehicleTransitAuthority.execute(game, vehicle, sharedStart).success()
+                            && game.turn == playerBlockTurn
+                            && playerBlockStock.equals(vehicle.stockState),
+                    "shared vehicle/player origin must preserve no-cost zero-step inspection");
+            game.playerX = 1;
+            game.playerY = 1;
+
             VehicleTransitAuthority.RoutePlan plan =
                     VehicleTransitAuthority.plan(game, vehicle, 25, 4);
             require(plan.valid() && plan.steps() == 23
@@ -82,6 +117,24 @@ final class Milestone06VehicleTransitSmoke {
                     "vehicle route preview must be a contiguous one-tile path");
             requireContains(plan.summary(), "Fuel or power: 4 unit(s) required",
                     "local route energy preview");
+            // A player who moves into an already approved route must block
+            // its final commit before energy, history or position changes.
+            game.playerX = 13;
+            game.playerY = 4;
+            String beforeStalePlayer = vehicle.stockState;
+            int beforeStaleTurn = game.turn;
+            VehicleTransitAuthority.TransitResult stalePlayer =
+                    VehicleTransitAuthority.execute(game, vehicle, plan);
+            require(!stalePlayer.success()
+                            && "no-road-route".equals(stalePlayer.plan().blocker())
+                            && vehicle.x == 2 && vehicle.y == 4
+                            && game.playerX == 13 && game.playerY == 4
+                            && beforeStalePlayer.equals(vehicle.stockState)
+                            && game.turn == beforeStaleTurn
+                            && VehicleFuelAuthority.inspect(game.world, vehicle).current() == 24,
+                    "a player entering the road after preview must block commit without spending fuel");
+            game.playerX = 1;
+            game.playerY = 1;
             int playerX = game.playerX;
             int playerY = game.playerY;
             VehicleTransitAuthority.TransitResult moved =

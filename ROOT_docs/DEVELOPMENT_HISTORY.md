@@ -1,5 +1,13 @@
 # Development History
 
+### Milestone 06 vehicle route previews and commits respect player occupancy (2026-11-19)
+
+- Per-request road occupancy correctly included live NPCs and fixtures but omitted the player actor, so a valid local route could cross or park upon the player while the player remained stationary. The occupancy snapshot now includes the in-bounds player tile at both preview and commit, except when that tile is the selected vehicle's own starting cell so zero-step inspections remain possible.
+- Route and parking refusals explain that characters, fixtures, or broken roads can block lanes and that occupied parking cannot be used. A moved player invalidates a previously approved route before any fuel debit, world position change, operation feedback, turn, or history mutation.
+- The focused Milestone 06 transit smoke covers the player blocking a single-lane road, occupying destination parking, sharing the vehicle's start tile for a free no-op inspection, and stepping into the road after preview but before commit. All other existing road, vehicle, fuel, ownership, NPC, and fixture regression tests remain.
+- This is player collision safety and clarity, not a new seated-driver movement model, installed graphical validation or 06.R release clearance.
+
+
 ### Milestone 06 bounded road planning and occupancy indexing (2026-11-19)
 
 - Local vehicle journeys were limited to 48 road steps, but road planning could nevertheless traverse the entire reachable graph of a 600×600 world before rejecting an overlong destination. Every visited cell also repeatedly scanned all NPCs and map objects through two linear world helpers, magnifying cursor-preview latency on dense maps.

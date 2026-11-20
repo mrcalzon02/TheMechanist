@@ -91,12 +91,12 @@ final class VehicleTransitAuthority {
 
         // One occupancy snapshot per request avoids a linear NPC + fixture scan
         // on every road cell. No snapshot survives a change in world state.
-        HashSet<Long> blockedTiles = occupiedTiles(game.world, vehicle);
+        HashSet<Long> blockedTiles = occupiedTiles(game, vehicle);
         List<Point> options = parkingCandidates(game.world, blockedTiles, requested);
         if (options.isEmpty()) {
             return RoutePlan.blocked(requested, "no-legal-parking",
-                    "No legal parking cell is available near " + targetX + "," + targetY
-                            + ". Vehicles must stop on marked parking or a clear curb-adjacent sidewalk.");
+                    "No unoccupied legal parking cell is available near " + targetX + "," + targetY
+                            + ". Move away from occupied parking, or choose marked parking or a clear curb-adjacent sidewalk.");
         }
         int minimumDistance = Integer.MAX_VALUE;
         for (Point option : options)
@@ -120,9 +120,10 @@ final class VehicleTransitAuthority {
                                 + "choose a closer stop or check road access.");
             }
             return RoutePlan.blocked(requested, "no-road-route",
-                    "No contiguous road or parking route connects " + vehicle.x + ","
+                    "No unobstructed road or parking route connects " + vehicle.x + ","
                             + vehicle.y + " to the requested area "
-                            + targetX + "," + targetY + ".");
+                            + targetX + "," + targetY
+                            + ". The player, other people, fixtures, or a road break may obstruct the lane.");
         }
         ParkingRoute route = search.route();
         Point parking = route.parking();
@@ -175,7 +176,7 @@ final class VehicleTransitAuthority {
                     vehicle);
         }
 
-        HashSet<Long> blockedTiles = occupiedTiles(game.world, vehicle);
+        HashSet<Long> blockedTiles = occupiedTiles(game, vehicle);
         Point previous = plan.path().get(0);
         for (int i = 1; i < plan.path().size(); i++) {
             Point step = plan.path().get(i);
@@ -423,9 +424,18 @@ final class VehicleTransitAuthority {
     }
 
     /** Recomputed on every plan/commit; no stale occupancy state is cached. */
-    private static HashSet<Long> occupiedTiles(World world, MapObjectState vehicle) {
+    private static HashSet<Long> occupiedTiles(GamePanel game, MapObjectState vehicle) {
         HashSet<Long> tiles = new HashSet<>();
-        if (world == null) return tiles;
+        if (game == null || game.world == null) return tiles;
+        World world = game.world;
+        // Player position is physically occupied, just like a live NPC.
+        // Allow the selected vehicle's own start tile to remain available:
+        // the player may already share it while performing a no-op inspection.
+        if (world.inBounds(game.playerX, game.playerY)
+                && (vehicle == null || game.playerX != vehicle.x
+                        || game.playerY != vehicle.y)) {
+            tiles.add(tileKey(game.playerX, game.playerY));
+        }
         if (world.npcs != null) for (NpcEntity npc : world.npcs) {
             if (npc != null && npc.hp > 0 && world.inBounds(npc.x, npc.y))
                 tiles.add(tileKey(npc.x, npc.y));
