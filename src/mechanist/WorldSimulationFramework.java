@@ -113,6 +113,9 @@ class HiveWorldDefinition {
     int progressTotal = 0;
     String setupEncoded = WorldSetupSettings.standard().encode();
     boolean setupExplicit = false;
+    // Transient read-path provenance, deliberately excluded from the world
+    // definition schema. Initial world creation must still seed history.
+    boolean loadedFromWorldFile = false;
     HiveWorldDefinition(long seed){
         this.seed = seed;
         this.generationVersion = Persistence.VERSION;
@@ -1798,6 +1801,7 @@ class CampaignWorldApi {
                 Properties p = new Properties();
                 try(InputStream in = Files.newInputStream(f)){ p.load(in); }
                 d = HiveWorldDefinition.readFrom(p, seed);
+                d.loadedFromWorldFile = true;
                 if(settings != null && !d.hasExplicitSettings()) d.applySettings(settings);
                 DebugLog.audit("CAMPAIGN_WORLD_LOAD", "file=" + f.toAbsolutePath() + " " + d.summary());
             }catch(IOException ex){ DebugLog.error("CAMPAIGN_WORLD_LOAD", "Could not read generated arcology world file; regenerating from seed.", ex); }

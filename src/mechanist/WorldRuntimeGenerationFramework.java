@@ -28,17 +28,44 @@ class WorldAtlas {
         };
         this.persistWorldDefinition = mode != DefinitionMode.TRANSIENT_PREVIEW;
         if(mode != DefinitionMode.TRANSIENT_PREVIEW) WorldGenerationApi.setActiveSettings(this.hiveWorld.settings());
-        int batches = Math.max(1, this.hiveWorld.settings().simulationBatches());
-        for(int i=0;i<batches;i++){
-            WorldHistoryApi.advanceFactionControlEpochs(this.hiveWorld, WorldHistoryApi.DEFAULT_BATCH);
-            ZoneFacilityHistoryApi.advanceFacilityHistory(this.hiveWorld, ZoneFacilityHistoryApi.DEFAULT_BATCH);
-            ProductionFacilityOutputSimulationApi.advanceProductionOutput(this.hiveWorld, ProductionFacilityOutputSimulationApi.DEFAULT_BATCH);
-            ProductionDistributionApi.advanceStockMovements(this.hiveWorld, ProductionDistributionApi.DEFAULT_BATCH);
-            HistoricalConflictLossApi.advanceConflictLoss(this.hiveWorld, HistoricalConflictLossApi.DEFAULT_BATCH);
-            HistoricalItemMaterializationApi.advanceHistoricalItemMaterialization(this.hiveWorld, HistoricalItemMaterializationApi.DEFAULT_BATCH);
-            PopulationWorkAssignmentApi.advanceLaborAssignments(this.hiveWorld, PopulationWorkAssignmentApi.DEFAULT_BATCH);
+        // Save/load is not a historical simulation tick. Existing definition
+        // ledgers already record which zones were synthesized. Replaying the
+        // initial age batches on each open used CPU and advanced the partial
+        // ledgers simply by loading a save. Lazy per-zone ensure calls in
+        // createSlice remain responsible for missing individual records.
+        boolean restorePersistedHistory =
+                (mode == DefinitionMode.LOAD_SAVED_RUN
+                        || mode == DefinitionMode.LOAD_OR_CREATE)
+                && this.hiveWorld.loadedFromWorldFile
+                && (!this.hiveWorld.zoneEpochs.isEmpty()
+                    || !this.hiveWorld.zoneFacilities.isEmpty()
+                    || !this.hiveWorld.zoneProduction.isEmpty()
+                    || !this.hiveWorld.zoneStockMovements.isEmpty()
+                    || !this.hiveWorld.zoneConflictLosses.isEmpty()
+                    || !this.hiveWorld.zoneMaterializedItems.isEmpty()
+                    || !this.hiveWorld.zoneLaborAssignments.isEmpty());
+        if(!restorePersistedHistory) {
+            int batches = Math.max(1, this.hiveWorld.settings().simulationBatches());
+            for(int i=0;i<batches;i++){
+                WorldHistoryApi.advanceFactionControlEpochs(this.hiveWorld, WorldHistoryApi.DEFAULT_BATCH);
+                ZoneFacilityHistoryApi.advanceFacilityHistory(this.hiveWorld, ZoneFacilityHistoryApi.DEFAULT_BATCH);
+                ProductionFacilityOutputSimulationApi.advanceProductionOutput(this.hiveWorld, ProductionFacilityOutputSimulationApi.DEFAULT_BATCH);
+                ProductionDistributionApi.advanceStockMovements(this.hiveWorld, ProductionDistributionApi.DEFAULT_BATCH);
+                HistoricalConflictLossApi.advanceConflictLoss(this.hiveWorld, HistoricalConflictLossApi.DEFAULT_BATCH);
+                HistoricalItemMaterializationApi.advanceHistoricalItemMaterialization(this.hiveWorld, HistoricalItemMaterializationApi.DEFAULT_BATCH);
+                PopulationWorkAssignmentApi.advanceLaborAssignments(this.hiveWorld, PopulationWorkAssignmentApi.DEFAULT_BATCH);
+            }
+        } else {
+            DebugLog.audit("WORLD_ATLAS_RESTORE",
+                    "historicalReplay=skipped existingDefinition=true seed="
+                            + seed + " epochs=" + this.hiveWorld.zoneEpochs.size()
+                            + " facilities=" + this.hiveWorld.zoneFacilities.size()
+                            + " progress=" + this.hiveWorld.progressStage);
         }
-        if(persistWorldDefinition) CampaignWorldApi.saveWorldDefinition(this.hiveWorld);
+        // No rewrite is required when opening an unchanged existing
+        // definition. createSlice still persists genuinely new lazy records.
+        if(persistWorldDefinition && !restorePersistedHistory)
+            CampaignWorldApi.saveWorldDefinition(this.hiveWorld);
     }
     void generateScaffold(){
         // 0.8.19: Do not synchronously pregenerate the entire 3x3x3x3x10x2 atlas during

@@ -1,5 +1,13 @@
 # Development History
 
+### Milestone 06.R saved-world definitions now avoid replaying historical creation batches (2026-11-20)
+
+- Full campaign restoration invoked `WorldAtlas.loadSavedRun` and unconditionally reran the initial simulation-age batches for seven historical world ledgers, then immediately rewrote the world-definition file. Loading an existing world could thus advance lazily seeded faction, facility, production, distribution, loss, materialization, and labor history even though no game turn had occurred, and repeatedly incur costly synthesis and disk I/O.
+- `HiveWorldDefinition` now carries a **transient, nonserialized** loaded-from-file marker after a successful world-definition read. `WorldAtlas` skips eager historical batches and the immediate constructor rewrite when it loads a persisted definition containing any existing historical ledger, for both saved-run and existing-world modes. New worlds, transient previews, missing definition files, and legacy definitions without historical records continue to run the original initialization batches. Individual missing zone ledgers remain lazily generated and persisted during genuine slice creation.
+- Added focused `Milestone06SavedWorldHistoryContinuitySmoke` with an isolated temporary world directory and deliberately sparse persisted historical records. It verifies that saved-run and existing-world opens preserve all seven ledgers, the exact selected world setup, and the on-disk world-definition bytes without eager simulation or rewriting. Both Java 17 Linux and Windows validation lanes now execute the bounded test before long Gate 3 diagnostics.
+- This directly removes redundant history synthesis and I/O during ordinary existing-world restoration; it does **not** eliminate required 500–1000-tile physical world generation, nor does it claim verified end-to-end save-load latency improvements before target-platform profiling.
+
+
 ### Gate 3 production-contract regression now tests production decoders without early world regeneration (2026-11-20)
 
 - The next two-platform Gate 3 diagnostic logs after the first contract fix confirmed 12 completed cases and a new stall at case 13, `Milestone03ProductionContractWorkflowSmoke`. Its acceptance, rendering and save/write logic was followed by an unrelated production-sized full-world generation for a tiny in-memory work-order fixture.
