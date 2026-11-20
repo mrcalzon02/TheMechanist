@@ -89,6 +89,11 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone06VehicleTransitSmoke
+          # Directly verify live dashboard fuel/reservation clarity before
+          # optional worldgen diagnostics can exhaust their time budget.
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06VehicleDashboardSmoke
           # Check saved-world historical ledgers before the optional full-world
           # generation diagnostics can consume their 120-second budget.
           java -Djava.awt.headless=true \

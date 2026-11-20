@@ -114,7 +114,9 @@ final class VehicleInfopediaBridgeAuthority {
                 + runtime.integrity() + "%; " + componentSummary(runtime.components()) + ".");
         lines.add("Energy: " + fuel.current() + "/" + fuel.capacity() + " "
                 + fuel.energyType() + " unit(s); " + fuel.reserved()
-                + " reserved; state " + fuel.state() + ".");
+                + " reserved for strategic transit; " + fuel.available()
+                + " available for local and new strategic routes; state "
+                + fuel.state() + ".");
         lines.add("Estimated local road range: up to "
                 + VehicleFuelAuthority.localRoadRangeTiles(runtime.vehicleClass(), fuel.available())
                 + " tile(s) on " + fuel.available()
@@ -139,7 +141,23 @@ final class VehicleInfopediaBridgeAuthority {
                 + "; role " + clean(pool.role(), "unrecorded")
                 + "; readiness " + pool.state() + "."
                 : "Motor pool: no active assignment.");
-        lines.add(strategicLine(vehicle));
+        lines.add(strategicLine(vehicle, fuel));
+        if ("reserved".equals(value(vehicle, "strategicTransitState"))) {
+            if (fuel.reserved() <= 0) {
+                lines.add("Departure warning: no fuel or power is held for this reservation. "
+                        + "Cancel the stale reservation and reserve the route again.");
+            } else if (fuel.current() < fuel.reserved()) {
+                lines.add("Departure warning: reserved route is underfunded by "
+                        + (fuel.reserved() - fuel.current())
+                        + " fuel or power unit(s) (" + fuel.current()
+                        + " in the vehicle, " + fuel.reserved()
+                        + " reserved). Refuel before departure.");
+            } else {
+                lines.add("Reservation note: held fuel is not spent until the transfer "
+                        + "commits; destination parking and transfer conditions "
+                        + "must still be valid at departure.");
+            }
+        }
         lines.add(lossLine(vehicle));
         lines.add("Sensory feedback: "
                 + VehicleOperationFeedbackAuthority.soundCue(vehicle)
@@ -188,13 +206,28 @@ final class VehicleInfopediaBridgeAuthority {
                 : String.join("; ", entries);
     }
 
-    private static String strategicLine(MapObjectState vehicle) {
+    private static String strategicLine(MapObjectState vehicle,
+                                        VehicleFuelAuthority.Snapshot fuel) {
         String state = value(vehicle, "strategicTransitState");
-        if (state.isBlank()) return "Strategic transit: no reservation recorded.";
-        return "Strategic transit: " + state + "; destination "
-                + clean(value(vehicle, "strategicTransitDestination"), "not recorded")
-                + "; fuel or power reserved "
-                + clean(value(vehicle, "strategicTransitFuelReserved"), "0") + ".";
+        if (state.isBlank()) {
+            return "Strategic transit: no active reservation. "
+                    + "Select a destination and confirm departure readiness.";
+        }
+        String destination = clean(value(vehicle,
+                "strategicTransitDestination"), "not recorded");
+        if (!"reserved".equals(state)) {
+            return "Strategic transit: " + state
+                    + "; last selected destination " + destination
+                    + "; no active fuel reservation.";
+        }
+        String distance = clean(value(vehicle, "strategicTransitDistance"),
+                "unrecorded");
+        String crew = clean(value(vehicle, "strategicTransitCrew"), "unrecorded");
+        return "Strategic transit: reserved; destination " + destination
+                + "; planned distance " + distance + " infrastructure unit(s)"
+                + "; recorded crew " + crew
+                + "; " + fuel.reserved()
+                + " fuel or power unit(s) held, not spent.";
     }
 
     private static String lossLine(MapObjectState vehicle) {

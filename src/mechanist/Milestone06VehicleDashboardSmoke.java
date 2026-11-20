@@ -71,6 +71,18 @@ final class Milestone06VehicleDashboardSmoke {
             requireContains(dashboard, "Civilian car", "class identity");
             requireContains(dashboard, "65%", "remaining component integrity");
             requireContains(dashboard, "18/24", "fuel ledger");
+            requireContains(dashboard, "2 reserved for strategic transit",
+                    "strategic fuel hold");
+            requireContains(dashboard, "16 available for local and new strategic routes",
+                    "unreserved fuel budget");
+            requireContains(dashboard, "planned distance 12 infrastructure unit(s)",
+                    "recorded strategic route distance");
+            requireContains(dashboard, "recorded crew 3",
+                    "recorded strategic crew");
+            requireContains(dashboard, "held, not spent",
+                    "reservation debit timing");
+            requireContains(dashboard, "Reservation note: held fuel is not spent",
+                    "live reservation still requires an actual transfer");
             requireContains(dashboard, "Dashboard Driver", "driver identity");
             requireContains(dashboard, "Dashboard Passenger", "passenger identity");
             requireContains(dashboard, "Dashboard Parcel", "cargo custody");
@@ -126,6 +138,42 @@ final class Milestone06VehicleDashboardSmoke {
             require(VehicleInfopediaBridgeAuthority.liveDossier(game, null)
                             .equals(List.of("No live vehicle dashboard is available.")),
                     "missing fixture should produce one safe dashboard refusal line");
+
+            // A saved reservation may become underfunded after another
+            // authorized fuel expenditure. The dashboard must warn using
+            // the physical ledger, rather than echoing its old route estimate.
+            String beforeShortage = dashboardCar.stockState;
+            dashboardCar.stockState = MapObjectState.setStockFlag(
+                    dashboardCar.stockState, "fuelOrPowerCurrent", "1");
+            List<String> underfunded = VehicleInfopediaBridgeAuthority.liveDossier(
+                    game, dashboardCar);
+            requireContains(underfunded, "1/24", "live shortage fuel balance");
+            requireContains(underfunded, "0 available for local and new strategic routes",
+                    "reserved fuel cannot fund local routes");
+            requireContains(underfunded, "underfunded by 1 fuel or power unit(s)",
+                    "departure shortage warning");
+            for (String line : underfunded) {
+                require(!PlayerFacingText.containsLikelyLeak(line),
+                        "underfunded dashboard leaked implementation text: " + line);
+            }
+            dashboardCar.stockState = beforeShortage;
+
+            VehicleStrategicTransitAuthority.Reservation cancelled =
+                    VehicleStrategicTransitAuthority.cancel(game, dashboardCar,
+                            "dashboard cancellation proof");
+            require(cancelled.success() && cancelled.changed(),
+                    "dashboard fixture cancellation should release reserved fuel");
+            List<String> afterCancellation =
+                    VehicleInfopediaBridgeAuthority.liveDossier(game, dashboardCar);
+            requireContains(afterCancellation, "0 reserved for strategic transit",
+                    "cancelled reservation releases its fuel hold");
+            requireContains(afterCancellation,
+                    "18 available for local and new strategic routes",
+                    "cancelled reservation restores local fuel budget");
+            requireContains(afterCancellation, "last selected destination sector-7/dashboard-depot",
+                    "cancelled reservation remains inspectable as history");
+            requireContains(afterCancellation, "no active fuel reservation",
+                    "cancelled reservation is not presented as active");
 
             MapObjectState routeCar = vehicle(game.world, 2, 5,
                     AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,

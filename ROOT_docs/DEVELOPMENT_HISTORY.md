@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 vehicle dashboard exposes spendable fuel and pending strategic commitments (2026-11-20)
+
+- Live vehicle inspection now distinguishes physical fuel/power stock, the portion reserved for strategic transit, and the amount still available to local movement or another route. A pending reservation shows its saved destination, infrastructure distance, recorded crew, and held-but-unspent fuel without leaking raw vehicle IDs.
+- The dashboard explicitly warns when a reserved route becomes underfunded or loses its positive fuel hold. Cancelled and completed reservations are labelled as historical destinations with no active hold, rather than suggesting the vehicle is still booked.
+- Expanded `Milestone06VehicleDashboardSmoke` to check the actual 18/24 fuel balance, 2-unit hold, 16-unit availability, saved distance/crew, 1-unit underfunding warning, and release of the hold after cancellation. The existing Linux and Windows Java 17 focused gates now run this dashboard smoke before optional long Gate 3 diagnostics.
+- This is presentation of current authoritative ledgers and bounded test coverage; it does not claim new route execution, world loading, installer certification, or target-platform render evidence.
+
 ### Milestone 06 strategic vehicle route readiness checks physical fuel and live fixture identity (2026-11-20)
 
 - Strategic readiness previously trusted a request-provided fuel allocation without comparing it against the current vehicle ledger. A route could be marked ready and reserved despite having too little physical fuel to commit, leaving its eventual transition to fail. It also accepted stale/detached vehicle objects not present in the loaded world.
