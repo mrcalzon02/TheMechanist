@@ -109,20 +109,31 @@ final class Milestone03ContractTurnInSmoke {
             System.out.flush();
             Properties saved = new Properties();
             Persistence.writeCore(game, saved);
-            System.out.println("[TURNIN_PROBE] before restore GamePanel construction");
+            System.out.println("[TURNIN_PROBE] before bounded restore GamePanel construction");
             System.out.flush();
             GamePanel restored = new GamePanel();
             if (restored.timer != null) restored.timer.stop();
             try {
-                Persistence.readCore(restored, saved);
-                System.out.println("[TURNIN_PROBE] after restore readCore");
+                // The normal save decoder must be exercised without requiring
+                // this synthetic 40x40 contract fixture to regenerate a 600x600
+                // production world just to validate its contract fields.
+                Persistence.restoreCarriedInventory(restored, saved);
+                Persistence.restoreCarriedScript(restored, saved);
+                Persistence.restoreFactionContractRewardState(restored, saved);
+                System.out.println("[TURNIN_PROBE] after bounded contract restore");
                 System.out.flush();
-                require(restored.factionContracts.stream().anyMatch(candidate -> candidate != null && candidate.completed),
-                        "completed contract state should persist");
-                require(restored.carriedScript == game.carriedScript,
-                        "contract payout should persist with carried script");
-                require(restored.factionStanding.getOrDefault(Faction.ARBITES, 0) == contract.repReward,
-                        "contract standing reward should persist");
+                assertRestoredContractRewards(restored, game, contract, uncarriedContract);
+                if (args != null && java.util.Arrays.asList(args)
+                        .contains("--full-core-restore")) {
+                    // This expensive end-to-end world regeneration is retained
+                    // as a separate late Gate 3 diagnostic, not discarded.
+                    System.out.println("[TURNIN_PROBE] before full readCore world restoration");
+                    System.out.flush();
+                    Persistence.readCore(restored, saved);
+                    System.out.println("[TURNIN_PROBE] after full restore readCore");
+                    System.out.flush();
+                    assertRestoredContractRewards(restored, game, contract, uncarriedContract);
+                }
             } finally {
                 restored.shutdownRuntime();
             }
@@ -131,6 +142,26 @@ final class Milestone03ContractTurnInSmoke {
             System.out.println("[TURNIN_PROBE] complete");
             System.out.flush();
         }
+    }
+
+    private static void assertRestoredContractRewards(GamePanel restored, GamePanel original,
+                                                      FactionContract completed,
+                                                      FactionContract incomplete) {
+        require(restored.factionContracts.stream().anyMatch(candidate ->
+                        candidate != null && candidate.id.equals(completed.id)
+                                && candidate.completed),
+                "the exact completed contract identity must survive save restoration");
+        require(restored.factionContracts.stream().anyMatch(candidate ->
+                        candidate != null && candidate.id.equals(incomplete.id)
+                                && !candidate.completed),
+                "an earlier uncarried contract must remain incomplete after reload");
+        require(restored.carriedScript == original.carriedScript,
+                "contract payout must persist with carried script");
+        require(restored.factionStanding.getOrDefault(Faction.ARBITES, 0)
+                        == completed.repReward,
+                "contract standing reward must persist");
+        require(!restored.inventory.contains(completed.requiredTurnInItem),
+                "restored inventory must not refund the consumed contract proof");
     }
 
     private static boolean hasButton(GamePanel game, String label) {

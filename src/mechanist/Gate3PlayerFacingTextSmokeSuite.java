@@ -250,6 +250,11 @@ final class Gate3PlayerFacingTextSmokeSuite {
         runSmoke("Milestone03ProductionStatusCommandSmoke", () -> Milestone03ProductionStatusCommandSmoke.main(args));
         runSmoke("Milestone03StaffedProductionExecutionSmoke", () -> Milestone03StaffedProductionExecutionSmoke.main(args));
         runSmoke("Milestone03ProductionControlBoardSmoke", () -> Milestone03ProductionControlBoardSmoke.main(args));
+        // Preserve the expensive full-world reload check, but run it LAST.
+        // Earlier contract behavior uses the exact production field decoders
+        // and no longer prevents the next 200+ cases from being reached.
+        runSmoke("Milestone03ContractFullCoreRestoreSmoke", () ->
+                Milestone03ContractTurnInSmoke.main(new String[]{"--full-core-restore"}));
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 

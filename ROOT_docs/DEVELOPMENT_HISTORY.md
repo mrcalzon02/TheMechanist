@@ -1,5 +1,13 @@
 # Development History
 
+### Gate 3 contract save verification no longer regenerates the whole world before the other checks (2026-11-20)
+
+- The optional Gate 3 chain consistently stalled at its early `Milestone03ContractTurnInSmoke`: the interaction and save/write checks completed, but a synthetic 40×40 fixture then invoked `Persistence.readCore`, forcing a production-scale generated world during the twelfth case. This prevented hundreds of later diagnostics from reporting their results within the bounded CI window.
+- The existing inventory, carried-script, faction-standing and contract decoders were extracted into small package-local `Persistence` helpers, called by the full production `readCore` in the same order as before. The early smoke now restores its exact completed/incomplete contract identities, consumed evidence, script payout and reputation through those production decoders without generating unrelated terrain.
+- **Full save restoration has not been removed.** The existing full `readCore` world-regeneration round-trip runs in a separately named `Milestone03ContractFullCoreRestoreSmoke` case placed last in the 248-case optional suite. All previous cases remain registered and failures remain logged by case name and elapsed time.
+- This is CI diagnostic responsiveness and safer persistence test separation, **not** an optimization or certification of player-facing full-world loading. A genuine installed-game save-load performance repair still requires profiling, deterministic world continuity checks and target-platform evidence.
+
+
 ### Milestone 06 failed preview fuel-ledger nonmutation regression repair (2026-11-19)
 
 - Exact-commit Windows CI on `507d9e8` failed the existing serpentine-road smoke: an impossible over-48-step route was expected to leave vehicle stock state unchanged. The new fuel-aware planner had called the mutating `VehicleFuelAuthority.inspect` before road search, which initialized persistent fuel fields even when the route was blocked. Compilation and multiplayer passed, but focused validation correctly rejected the regression.

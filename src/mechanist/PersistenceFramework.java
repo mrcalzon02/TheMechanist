@@ -157,6 +157,33 @@ class Persistence {
         DebugLog.audit("SAVE_WRITE_CORE", "keys=" + p.size() + " active=" + (g.active==null?"none":g.active.name) + " world=" + (g.world==null?"none":g.world.zoneCoordText()));
     }
 
+    /**
+     * Shared save decoders used by full campaign restoration and bounded
+     * contract-completion regression tests. They do not build a world, open a
+     * session, or create a game save. Full readCore still owns the rest of the
+     * authoritative world/runtime restoration.
+     */
+    static void restoreCarriedInventory(GamePanel g, Properties p) {
+        g.inventory.clear();
+        g.inventory.addAll(decList(p.getProperty("inventory", "")));
+    }
+
+    static void restoreCarriedScript(GamePanel g, Properties p) {
+        g.carriedScript = Math.max(0, getInt(p, "script.carried", 0));
+    }
+
+    static void restoreFactionContractRewardState(GamePanel g, Properties p) {
+        g.initFactionState();
+        readFactionMap(p.getProperty("factions.standing", ""), g.factionStanding);
+        readFactionMap(p.getProperty("factions.hostile", ""), g.temporaryHostileTurns);
+        readFactionMap(p.getProperty("factions.marketPressure", ""), g.factionMarketPressure);
+        g.factionContracts.clear();
+        for (String encoded : decList(p.getProperty("factions.contracts", ""))) {
+            FactionContract contract = FactionContract.parse(encoded);
+            if (contract != null) g.factionContracts.add(contract);
+        }
+    }
+
     static void readCore(GamePanel g, Properties p) {
         CharacterEquipmentAndMedicalAuthority.readState(p, g.equippedWearableSlots, g.installedBodyModifications);
         g.combatSupport.restore(p.getProperty("run.combatSupport",""));
@@ -178,9 +205,9 @@ class Persistence {
         g.suspicion=getInt(p,"run.suspicion",0); g.gangHeat=getInt(p,"run.gangHeat",0); g.supplies=getInt(p,"run.supplies",0); g.food=getInt(p,"run.food",GamePanel.MAX_FOOD_WATER); g.water=getInt(p,"run.water",GamePanel.MAX_FOOD_WATER); g.fatigue=getInt(p,"run.fatigue",0); g.wounds=getInt(p,"run.wounds",0); g.sleepNeed=getInt(p,"run.sleepNeed",0); g.stimulantStrain=getInt(p,"run.stimulantStrain",0); g.bleeding=getInt(p,"run.bleeding",0); g.infectionRisk=getInt(p,"run.infectionRisk",0); g.pain=getInt(p,"run.pain",0); g.machineParts=getInt(p,"run.machineParts",0); g.xp=getInt(p,"run.xp",0); g.knowledgeCredits=getInt(p,"run.knowledgeCredits",0); g.unlockedKnowledges.clear(); g.unlockedKnowledges.addAll(decList(p.getProperty("run.knowledges","Underhive Basics"))); g.unlockedSkillNodes.clear(); g.unlockedSkillNodes.addAll(decList(p.getProperty("run.skillNodes",""))); g.unlockedConstructionBlueprints.clear(); g.unlockedConstructionBlueprints.addAll(decList(p.getProperty("run.constructionBlueprints",""))); g.constructionExpansionReactions.clear(); g.constructionExpansionReactions.addAll(decList(p.getProperty("run.constructionExpansionReactions",""))); RoomOwnershipAuthority.restoreHistory(g, decList(p.getProperty("run.roomOwnershipHistory","")));
         g.active = readCandidate(p, g.seed);
         try { Faction cf=Faction.valueOf(p.getProperty("clothing.faction","SCAVENGER")); g.equippedClothing = new Clothing(p.getProperty("clothing.name","Scavenger rags"), cf, getInt(p,"clothing.disguise",35), getInt(p,"clothing.defense",1), false); } catch(Exception e){ g.equippedClothing=Clothing.scavengerRags(); }
-        g.inventory.clear(); g.inventory.addAll(decList(p.getProperty("inventory","")));
+        restoreCarriedInventory(g, p);
         g.baseStorage.clear(); g.baseStorage.addAll(decList(p.getProperty("base.storage","")));
-        g.carriedScript = Math.max(0, getInt(p,"script.carried",0));
+        restoreCarriedScript(g, p);
         g.baseStashedScript = Math.max(0, getInt(p,"script.baseStashed",0));
         g.activePortableLightItem = p.getProperty("light.activeItem", "");
         g.activePortableLightExpiresTurn = getInt(p,"light.activeExpires",0);
@@ -199,8 +226,7 @@ class Persistence {
         else g.repairLegacyListsFromContainersIfNeeded();
         g.visitedZoneInstances.clear(); g.visitedZoneInstances.addAll(decList(p.getProperty("visited.zoneInstances","")));
         g.visitedZoneTypes.clear(); for(String z: decList(p.getProperty("visited.zoneTypes",""))) try{ g.visitedZoneTypes.add(ZoneType.valueOf(z)); }catch(Exception ignored){}
-        g.initFactionState(); readFactionMap(p.getProperty("factions.standing",""), g.factionStanding); readFactionMap(p.getProperty("factions.hostile",""), g.temporaryHostileTurns); readFactionMap(p.getProperty("factions.marketPressure",""), g.factionMarketPressure);
-        g.factionContracts.clear(); for(String cs : decList(p.getProperty("factions.contracts",""))) { FactionContract fc = FactionContract.parse(cs); if(fc != null) g.factionContracts.add(fc); }
+        restoreFactionContractRewardState(g, p);
         g.npcFactionSites.clear(); for(String ss : decList(p.getProperty("npc.faction.sites",""))) { NpcFactionSite site = NpcFactionSite.parse(ss); if(site != null) g.npcFactionSites.add(site); }
         g.factionStrategicPlans.clear(); for(String ps : decList(p.getProperty("factions.strategicPlans",""))) { FactionStrategicPlan plan = FactionStrategicPlan.parse(ps); if(plan != null) g.factionStrategicPlans.add(plan); }
         g.lastFactionSimulationDay = getInt(p,"factions.lastSimulationDay",-1);
