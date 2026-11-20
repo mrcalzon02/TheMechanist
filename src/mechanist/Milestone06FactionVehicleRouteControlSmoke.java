@@ -177,6 +177,18 @@ final class Milestone06FactionVehicleRouteControlSmoke {
                             > assignedBalance.attackerPower(),
                     "active route deployment should contribute more than a staged assignment");
 
+            // A live registered yard may cancel a faction reservation, but
+            // its player-facing dossier must never claim the player can do so.
+            String eligibleFleetStock = armored.stockState;
+            require(!VehicleStrategicTransitAuthority.playerCancellationEligibility(
+                            game, armored).allowed()
+                            && VehicleStrategicTransitAuthority.factionCancellationEligibility(
+                            game, armored, mechanist).allowed()
+                            && eligibleFleetStock.equals(armored.stockState),
+                    "faction cancellation preflight must be authority-specific and pure");
+            requireContains(VehicleInfopediaBridgeAuthority.liveDossier(game, armored),
+                    "Cancellation eligibility: registered local faction motor pool may cancel",
+                    "live faction yard cancellation explanation");
             String beforeReservedCancel = armored.stockState;
             FactionVehicleRouteControlAuthority.Result reservedCancel =
                     FactionVehicleRouteControlAuthority.cancel(game,

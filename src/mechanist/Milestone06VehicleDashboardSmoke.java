@@ -83,6 +83,14 @@ final class Milestone06VehicleDashboardSmoke {
                     "reservation debit timing");
             requireContains(dashboard, "Reservation note: held fuel is not spent",
                     "live reservation still requires an actual transfer");
+            requireContains(dashboard,
+                    "Cancellation eligibility: recorded player owner may cancel",
+                    "owner cancellation authority in dashboard");
+            String eligibilityStock = dashboardCar.stockState;
+            require(VehicleStrategicTransitAuthority.playerCancellationEligibility(
+                    game, dashboardCar).allowed()
+                            && eligibilityStock.equals(dashboardCar.stockState),
+                    "cancellation eligibility must not write vehicle state");
             requireContains(dashboard, "Dashboard Driver", "driver identity");
             requireContains(dashboard, "Dashboard Passenger", "passenger identity");
             requireContains(dashboard, "Dashboard Parcel", "cargo custody");
@@ -110,6 +118,9 @@ final class Milestone06VehicleDashboardSmoke {
                     "restored cargo custody");
             requireContains(restoredDashboard, "sector-7/dashboard-depot",
                     "restored strategic reservation");
+            requireContains(restoredDashboard,
+                    "Cancellation eligibility: unavailable to current player",
+                    "detached restored fixture cannot be cancelled from live zone");
             // The live dossier must report degraded physical capability, not
             // the undamaged class maxima shown by its static Infopedia entry.
             VehicleRuntimeAuthority.applyDamage(restored,
@@ -158,6 +169,32 @@ final class Milestone06VehicleDashboardSmoke {
             }
             dashboardCar.stockState = beforeShortage;
 
+            dashboardCar.stockState = MapObjectState.setStockFlag(
+                    dashboardCar.stockState, "ownerPlayerId", "different-identity");
+            String otherTitle = dashboardCar.stockState;
+            var denied = VehicleStrategicTransitAuthority
+                    .playerCancellationEligibility(game, dashboardCar);
+            require(!denied.allowed() && otherTitle.equals(dashboardCar.stockState),
+                    "wrong title must fail pure cancellation preflight");
+            requireContains(VehicleInfopediaBridgeAuthority.liveDossier(
+                            game, dashboardCar),
+                    "Only the recorded player owner can cancel",
+                    "wrong character title refusal visible in dashboard");
+            dashboardCar.stockState = beforeShortage;
+
+            dashboardCar.stockState = MapObjectState.setStockFlag(
+                    dashboardCar.stockState, "strategicTransitOrigin", "outdated-world");
+            String staleOrigin = dashboardCar.stockState;
+            require(VehicleStrategicTransitAuthority.playerCancellationEligibility(
+                    game, dashboardCar).allowed()
+                            && staleOrigin.equals(dashboardCar.stockState),
+                    "old origin stays cancellable for the recorded owner");
+            requireContains(VehicleInfopediaBridgeAuthority.liveDossier(
+                            game, dashboardCar),
+                    "Reservation recovery: saved departure does not match this zone",
+                    "stale booking recovery instructions");
+            dashboardCar.stockState = beforeShortage;
+
             VehicleStrategicTransitAuthority.Reservation cancelled =
                     VehicleStrategicTransitAuthority.cancel(game, dashboardCar,
                             "dashboard cancellation proof");
@@ -174,6 +211,9 @@ final class Milestone06VehicleDashboardSmoke {
                     "cancelled reservation remains inspectable as history");
             requireContains(afterCancellation, "no active fuel reservation",
                     "cancelled reservation is not presented as active");
+            requireContains(afterCancellation,
+                    "Cancellation eligibility: no active strategic reservation",
+                    "completed cancellation has no active booking");
 
             MapObjectState routeCar = vehicle(game.world, 2, 5,
                     AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,

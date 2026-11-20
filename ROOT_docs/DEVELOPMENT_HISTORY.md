@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 dashboard cancellation eligibility and stale-booking guidance (2026-11-20)
+
+- The cancellation entry points enforce player title or registered local faction-yard ownership, but the live dashboard previously showed only a reservation and fuel warnings. Players could not see whether their character was eligible to cancel or whether a stranded booking required a faction yard.
+- Both cancellation entry points now reuse read-only eligibility results in the strategic-transit authority, and the dashboard presents those same decisions without granting permissions. Active player-owned bookings distinguish recorded owner access from mismatched or detached titles; faction bookings identify an authorized registered local motor pool or explain that one must be present.
+- A reserved route whose saved departure location differs from the current zone displays recovery guidance: the authorized party can cancel and rebook without consuming fuel or moving the vehicle. Cancelled bookings are explicitly not actionable. This adds no control button or new world-transition path.
+- Existing dashboard and faction route-control focused smokes verify the live eligibility wording, detached restored vehicle, mismatched title, stale origin, pure read-only preflight and post-cancellation state. Existing Linux and Windows Java 17 gates already execute both smokes before nonblocking Gate 3 diagnostics.
+
 ### Milestone 06 strategic reservation cancellation now enforces player title or registered faction yard (2026-11-20)
 
 - The strategic transit cancellation entry point previously accepted any vehicle object with a `reserved` state, including detached or faction-owned vehicles, without verifying the requesting game/world, title or controlling motor pool. A caller could clear persistent reserved fuel and history belonging to another owner.

@@ -142,7 +142,15 @@ final class VehicleInfopediaBridgeAuthority {
                 + "; readiness " + pool.state() + "."
                 : "Motor pool: no active assignment.");
         lines.add(strategicLine(vehicle, fuel));
+        lines.add(cancellationGuidance(game, vehicle, runtime));
         if ("reserved".equals(value(vehicle, "strategicTransitState"))) {
+            String origin = value(vehicle, "strategicTransitOrigin");
+            if (game != null && game.world != null && !origin.isBlank()
+                    && !origin.equals(Integer.toString(game.world.locationKey()))) {
+                lines.add("Reservation recovery: saved departure does not match this zone. "
+                        + "An authorized owner or registered faction yard may cancel and "
+                        + "rebook; cancellation does not consume fuel or move the vehicle.");
+            }
             if (fuel.reserved() <= 0) {
                 lines.add("Departure warning: no fuel or power is held for this reservation. "
                         + "Cancel the stale reservation and reserve the route again.");
@@ -228,6 +236,40 @@ final class VehicleInfopediaBridgeAuthority {
                 + "; recorded crew " + crew
                 + "; " + fuel.reserved()
                 + " fuel or power unit(s) held, not spent.";
+    }
+
+    /**
+     * Reuse the same read-only authorization checks as the real cancellation
+     * commands. A registered faction booking is not a player-owned booking.
+     */
+    private static String cancellationGuidance(GamePanel game,
+                                               MapObjectState vehicle,
+                                               VehicleRuntimeAuthority.Snapshot runtime) {
+        if (!"reserved".equals(value(vehicle, "strategicTransitState"))) {
+            return "Cancellation eligibility: no active strategic reservation to cancel.";
+        }
+        VehicleStrategicTransitAuthority.CancellationEligibility player =
+                VehicleStrategicTransitAuthority.playerCancellationEligibility(
+                        game, vehicle);
+        if (player.allowed()) {
+            return "Cancellation eligibility: recorded player owner may cancel "
+                    + "this reservation; held fuel is released without being spent.";
+        }
+        if (runtime.ownerType() == VehicleRuntimeAuthority.OwnerType.FACTION) {
+            if (game != null && game.npcFactionSites != null) {
+                for (NpcFactionSite site : game.npcFactionSites) {
+                    if (VehicleStrategicTransitAuthority.factionCancellationEligibility(
+                            game, vehicle, site).allowed()) {
+                        return "Cancellation eligibility: registered local faction motor "
+                                + "pool may cancel; player cancellation is not authorized.";
+                    }
+                }
+            }
+            return "Cancellation eligibility: player cancellation is not authorized; "
+                    + "the registered local faction motor pool must be present.";
+        }
+        return "Cancellation eligibility: unavailable to current player. "
+                + player.reason();
     }
 
     private static String lossLine(MapObjectState vehicle) {

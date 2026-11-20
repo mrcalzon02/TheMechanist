@@ -71,6 +71,9 @@ final class VehicleStrategicTransitAuthority {
                        String reservationId, Readiness readiness,
                        String message) { }
 
+    /** Read-only cancellation preflight used by commands and dashboards. */
+    record CancellationEligibility(boolean allowed, String reason) { }
+
     private enum AuthorityMode { PLAYER, FACTION }
 
     private VehicleStrategicTransitAuthority() { }
@@ -371,15 +374,27 @@ final class VehicleStrategicTransitAuthority {
      */
     static Reservation cancel(GamePanel game, MapObjectState vehicle,
                               String reason) {
+        CancellationEligibility check = playerCancellationEligibility(game, vehicle);
+        return check.allowed() ? cancelAuthorized(game, vehicle, reason)
+                : blockedCancellation(vehicle, check.reason());
+    }
+
+    static CancellationEligibility playerCancellationEligibility(
+            GamePanel game, MapObjectState vehicle) {
         if (!loadedVehicle(game, vehicle)) {
-            return blockedCancellation(vehicle,
+            return new CancellationEligibility(false,
                     "The selected vehicle is no longer present in the loaded zone.");
         }
         if (!VehicleRuntimeAuthority.playerOwnsReadOnly(game, vehicle)) {
-            return blockedCancellation(vehicle,
+            return new CancellationEligibility(false,
                     "Only the recorded player owner can cancel this vehicle's strategic reservation.");
         }
-        return cancelAuthorized(game, vehicle, reason);
+        if (!"reserved".equals(value(vehicle, "strategicTransitState"))) {
+            return new CancellationEligibility(false,
+                    "No active strategic transit reservation is available to cancel.");
+        }
+        return new CancellationEligibility(true,
+                "The recorded player owner may cancel this booking without spending fuel.");
     }
 
     /**
@@ -389,8 +404,16 @@ final class VehicleStrategicTransitAuthority {
      */
     static Reservation cancelForFaction(GamePanel game, MapObjectState vehicle,
                                         NpcFactionSite site, String reason) {
+        CancellationEligibility check =
+                factionCancellationEligibility(game, vehicle, site);
+        return check.allowed() ? cancelAuthorized(game, vehicle, reason)
+                : blockedCancellation(vehicle, check.reason());
+    }
+
+    static CancellationEligibility factionCancellationEligibility(
+            GamePanel game, MapObjectState vehicle, NpcFactionSite site) {
         if (!loadedVehicle(game, vehicle)) {
-            return blockedCancellation(vehicle,
+            return new CancellationEligibility(false,
                     "The selected faction vehicle is no longer present in the loaded zone.");
         }
         if (site == null || site.faction == null || site.faction == Faction.NONE
@@ -399,10 +422,15 @@ final class VehicleStrategicTransitAuthority {
                 || !VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)
                 || !VehicleMotorPoolAuthority.assignedToLocalSite(
                         game, vehicle, site)) {
-            return blockedCancellation(vehicle,
+            return new CancellationEligibility(false,
                     "Only the vehicle's registered local faction motor pool may cancel this reservation.");
         }
-        return cancelAuthorized(game, vehicle, reason);
+        if (!"reserved".equals(value(vehicle, "strategicTransitState"))) {
+            return new CancellationEligibility(false,
+                    "No active strategic transit reservation is available to cancel.");
+        }
+        return new CancellationEligibility(true,
+                "The registered local faction motor pool may cancel without spending fuel.");
     }
 
     private static boolean loadedVehicle(GamePanel game, MapObjectState vehicle) {
