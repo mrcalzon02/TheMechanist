@@ -1,0 +1,6 @@
+# World-actor body art is intentionally empty until reviewed full-body PNGs are approved.
+# Portraits, opaque squares, procedural placeholders, and unreviewed assets are not valid here.
+# Add semantic registry IDs typed ENTITY_SPRITE, with verified transparent PNG paths.
+# entity_key is an exact normalized species ID (e.g. sump-rat-swarm), or humanoid role key.
+# view: front, back, left, right; missing directions fall back only to an approved front image.
+entity_key	view	asset_id	width_m	height_m

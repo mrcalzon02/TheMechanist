@@ -11,6 +11,7 @@ import java.util.Locale;
  */
 public enum AssetType {
     PORTRAIT("Portrait"),
+    ENTITY_SPRITE("World Actor Sprite"),
     WALL_TILE("Wall Tile"),
     FLOOR_TILE("Floor Tile"),
     ROAD_TILE("Road Tile"),

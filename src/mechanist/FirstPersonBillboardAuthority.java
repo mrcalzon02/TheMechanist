@@ -2,30 +2,46 @@ package mechanist;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Visible, floor-anchored representations shared by Doom drawing and inspection. */
 final class FirstPersonBillboardAuthority {
     private FirstPersonBillboardAuthority() { }
 
     static void collect(GamePanel panel, List<RenderableSprite> out, boolean artwork) {
+        collect(panel, out, artwork, null, null);
+    }
+
+    static void collect(GamePanel panel, List<RenderableSprite> out, boolean artwork,
+                        FirstPersonCamera camera, WorldActorSpriteResolver worldArt) {
         out.clear();
         World world = panel.world;
         if (world == null) return;
+        // A fixture can only occupy one tile; constant-time suppression avoids scanning
+        // every accumulated actor/object for every visible grid cell.
+        Set<Long> occupiedFixtureTiles = new HashSet<>();
         for (NpcEntity npc : world.npcs) {
             if (npc == null || npc.hp <= 0 || !panel.isVisible(npc.x, npc.y)) continue;
+            WorldActorSpriteResolver.Sprite body = worldArt == null ? null : worldArt.resolve(npc, camera);
+            BufferedImage image = artwork
+                    ? (body == null ? panel.images.getNpcPortraitFor(npc) : body.image()) : null;
             out.add(new RenderableSprite(npc.x + .5, .02, npc.y + .5, npc.symbol,
-                    label(npc.name, "Person"), 0xFFE2C46B, true,
-                    artwork ? panel.images.getNpcPortraitFor(npc) : null));
+                    label(npc.name, "Person"), 0xFFE2C46B, true, image,
+                    body == null ? 0.0 : body.widthMeters(),
+                    body == null ? 0.0 : body.heightMeters()));
         }
         for (MapObjectState object : world.mapObjects) {
             if (object == null || !panel.isVisible(object.x, object.y)) continue;
             if (object.glyph == '*' && !world.walkable(object.x, object.y)) continue;
+            occupiedFixtureTiles.add(tileKey(object.x, object.y));
             out.add(new RenderableSprite(object.x + .5, .02, object.y + .5,
                     object.glyph == 0 ? 'o' : object.glyph, label(object.label, "Object"),
                     0xFF8FD0A6, false, artwork ? panel.images.getMapObjectImage(object) : null));
         }
         for (BaseObject object : panel.baseObjects) {
             if (object == null || !panel.isVisible(object.x, object.y)) continue;
+            occupiedFixtureTiles.add(tileKey(object.x, object.y));
             out.add(new RenderableSprite(object.x + .5, .02, object.y + .5,
                     object.symbol == 0 ? 'o' : object.symbol, label(object.name, "Built object"),
                     0xFF8FD0A6, false, artwork ? panel.images.getBaseObjectImage(object) : null));
@@ -33,7 +49,7 @@ final class FirstPersonBillboardAuthority {
         int range = panel.visionRange();
         for (int x = Math.max(0, panel.playerX-range); x <= Math.min(world.w-1, panel.playerX+range); x++) {
             for (int y = Math.max(0, panel.playerY-range); y <= Math.min(world.h-1, panel.playerY+range); y++) {
-                if (!panel.isVisible(x,y) || represented(out,x,y)) continue;
+                if (!panel.isVisible(x,y) || occupiedFixtureTiles.contains(tileKey(x,y))) continue;
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world,x,y,world.tiles[x][y]);
                 if (!descriptor.isFixture || descriptor.isDoor || descriptor.isWall) continue;
                 BufferedImage image = null;
@@ -48,16 +64,14 @@ final class FirstPersonBillboardAuthority {
         }
     }
 
-    private static boolean represented(List<RenderableSprite> sprites, int x, int y) {
-        for (RenderableSprite sprite : sprites) {
-            if (!sprite.entity() && (int)Math.floor(sprite.x()) == x && (int)Math.floor(sprite.z()) == y) return true;
-        }
-        return false;
+    private static long tileKey(int x, int y) {
+        return ((long) x << 32) ^ (y & 0xffffffffL);
     }
 
     private static String label(String value, String fallback) { return value == null || value.isBlank() ? fallback : value; }
 
     static double height(RenderableSprite sprite) {
+        if (sprite.worldHeight() > 0.0) return sprite.worldHeight();
         if (sprite.entity()) return 1.1;
         return switch (sprite.glyph()) {
             case '*', 'r', 'm', '?' -> .22;
@@ -66,7 +80,9 @@ final class FirstPersonBillboardAuthority {
         };
     }
 
-    static double width(RenderableSprite sprite) { return sprite.entity() ? .55 : .68; }
+    static double width(RenderableSprite sprite) {
+        return sprite.worldWidth() > 0.0 ? sprite.worldWidth() : sprite.entity() ? .55 : .68;
+    }
 
     static ScreenPoint project(FirstPersonCamera camera, double x, double y, double z, double fov, int w, int h) {
         double dx = x-camera.x(), dy = y-camera.y(), dz = z-camera.z();
