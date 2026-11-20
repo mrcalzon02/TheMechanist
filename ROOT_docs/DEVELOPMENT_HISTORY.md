@@ -1,5 +1,11 @@
 # Development History
 
+### Compact options paging for small game windows (2026-11-19)
+
+- At 320x240, the existing options surface rendered its eight tabs but returned early when Graphics/QOL controls exceeded the available height, silently hiding every action except a message to enlarge the window. In a small window the player could no longer change rendering or quality-of-life settings.
+- The options layout now reserves the final available command row for Prev/Next when commands overflow and presents a bounded slice on each page. Full-size windows retain the normal full-grid layout; tiny windows lacking even one command plus navigation retain the enlarge-window warning. The page index clamps, changing tabs resets to its first page, and pagination itself changes no settings, time or game saves. Per-panel page state uses weak keys and never retains abandoned panels.
+- Added pure geometry regression covering 320x240 through 1920x1080, page continuity, clamping and on-screen nav. The Swing options smoke now paints actual Graphics and QOL pages at 320x240, follows Next through every command including Back, and asserts on-screen hitboxes. This is source-level UI acceptance; headful installed testing remains separate.
+
 ### Milestone 06 local vehicle routes choose reachable parking and avoid false engine starts (2026-11-19)
 
 - The local route planner used the closest legal parking tile near a requested destination, then tried one route. A disconnected parking tile could therefore deny travel despite another equally valid reachable parking space within the five-tile resolution area. The planner now evaluates the entire bounded parking candidate set in one road-graph BFS and selects the closest reachable space within the 48-step local route budget, with stable distance/coordinate tiebreaking.

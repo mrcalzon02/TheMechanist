@@ -11,11 +11,38 @@ import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 final class OptionsScreenPainter {
     private OptionsScreenPainter() {}
 
     private static final String[] TAB_LABELS = {"Display", "Text/UI", "Audio", "Controls", "Graphics", "JVM", "Access", "QOL"};
+
+    // Weak per-panel UI-only paging state: never saved, and never retains a closed client.
+    private static final Map<GamePanel, PageState> PAGES =
+            Collections.synchronizedMap(new WeakHashMap<>());
+    private static final class PageState {
+        final int tab;
+        int page;
+        PageState(int tab) { this.tab = tab; }
+    }
+    private static PageState pageState(GamePanel panel) {
+        synchronized (PAGES) {
+            PageState state = PAGES.get(panel);
+            if (state == null || state.tab != panel.optionsTab) {
+                state = new PageState(panel.optionsTab);
+                PAGES.put(panel, state);
+            }
+            return state;
+        }
+    }
+    private static void goToPage(GamePanel panel, int page) {
+        pageState(panel).page = page;
+        panel.graphicsDropdown = -1;
+        panel.selectedButton = TAB_LABELS.length;
+        panel.repaint();
+    }
 
     static final class Layout {
         final int width;
@@ -93,7 +120,8 @@ final class OptionsScreenPainter {
             if (bodyHeight > 32) panel.drawTextPanel(g, info.x, info.y, info.width, bodyHeight, lines, false);
             if (panel.optionsTab == 4) paintColorSwatches(panel, g, info);
         }
-        if (!layout.geometry.commandsFit()) {
+        if (OptionsLayoutAuthority.commandPage(layout.geometry, commands.size(),
+                pageState(panel).page).unavailable()) {
             Rectangle controls = controlsBox(layout);
             g.setFont(panel.smallFont);
             g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_HIGHLIGHT));
@@ -179,23 +207,39 @@ final class OptionsScreenPainter {
                     "Open the " + TAB_LABELS[i] + " options panel.", () -> selectOptionsTab(panel, tab)));
         }
 
-        if (!layout.geometry.commandsFit()) {
-            clampSelectedButton(panel, panel.buttons.size());
-            return;
-        }
+        PageState state = pageState(panel);
+        OptionsLayoutAuthority.CommandPage page =
+                OptionsLayoutAuthority.commandPage(layout.geometry, commands.size(), state.page);
+        state.page = page.page();
         int cols = layout.geometry.commandColumns();
-        int commandTop = controls.y + padding + tabRows * tabH + (tabRows - 1) * gap + padding;
+        int commandTop = controls.y + OptionsLayoutAuthority.commandTop(layout.geometry);
         int commandW = Math.max(1, (controls.width - padding * 2 - gap * (cols - 1)) / cols);
-        for (int i = 0; i < commands.size(); i++) {
+        for (int i = page.first(); i < page.end(); i++) {
             OptionCommand command = commands.get(i);
-            int col = i % cols;
-            int row = i / cols;
+            int visible = i - page.first();
+            int col = visible % cols, row = visible / cols;
             int x = controls.x + padding + col * (commandW + gap);
             int y = commandTop + row * (OptionsLayoutAuthority.COMMAND_HEIGHT + gap);
             int w = col == cols - 1 ? controls.x + controls.width - padding - x : commandW;
-            if (y + OptionsLayoutAuthority.COMMAND_HEIGHT > controls.y + controls.height - padding) break;
             panel.buttons.add(new ButtonBox(command.label, x, y, Math.max(1, w),
                     OptionsLayoutAuthority.COMMAND_HEIGHT, command.tip, command.action));
+        }
+        if (page.paged()) {
+            int y = commandTop + page.navRow() * (OptionsLayoutAuthority.COMMAND_HEIGHT + gap);
+            int navW = Math.max(1, (controls.width - padding * 2 - gap) / 2);
+            if (page.page() > 0) {
+                panel.buttons.add(new ButtonBox("Prev " + (page.page() + 1) + "/" + page.pages(),
+                        controls.x + padding, y, navW, OptionsLayoutAuthority.COMMAND_HEIGHT,
+                        "Earlier options; no settings changed.",
+                        () -> goToPage(panel, page.page() - 1)));
+            }
+            if (page.page() + 1 < page.pages()) {
+                panel.buttons.add(new ButtonBox("Next " + (page.page() + 1) + "/" + page.pages(),
+                        controls.x + controls.width - padding - navW, y,
+                        navW, OptionsLayoutAuthority.COMMAND_HEIGHT,
+                        "Later options; no settings changed.",
+                        () -> goToPage(panel, page.page() + 1)));
+            }
         }
 
         int firstDropdown = panel.buttons.size();
@@ -229,6 +273,7 @@ final class OptionsScreenPainter {
 
     private static void selectOptionsTab(GamePanel panel, int tab) {
         panel.optionsTab = Math.max(0, Math.min(TAB_LABELS.length - 1, tab));
+        pageState(panel).page = 0;
         panel.graphicsDropdown = -1;
         panel.selectedButton = panel.optionsTab;
         panel.sounds.play("tab", panel.options);

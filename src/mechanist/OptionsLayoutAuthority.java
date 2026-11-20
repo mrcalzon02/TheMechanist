@@ -15,6 +15,33 @@ final class OptionsLayoutAuthority {
     record Layout(int viewportWidth, int viewportHeight, Rectangle panel, Rectangle controls,
                   Rectangle details, int tabColumns, int commandColumns, boolean commandsFit) { }
 
+    /** One visible, screen-contained page; pages=0 means even navigation cannot fit. */
+    record CommandPage(int page, int pages, int first, int end, int navRow) {
+        boolean paged() { return pages > 1; }
+        boolean unavailable() { return pages == 0; }
+    }
+
+    static int commandTop(Layout layout) {
+        int cols = Math.max(1, layout.tabColumns());
+        int rows = (TAB_COUNT + cols - 1) / cols;
+        return PAD + rows * TAB_HEIGHT + (rows - 1) * GAP + PAD;
+    }
+
+    static CommandPage commandPage(Layout layout, int commandCount, int requestedPage) {
+        int count = Math.max(0, commandCount);
+        int cols = Math.max(1, layout.commandColumns());
+        int available = Math.max(0, layout.controls().height - PAD - commandTop(layout));
+        int rows = (available + GAP) / (COMMAND_HEIGHT + GAP);
+        if (count == 0) return new CommandPage(0, 1, 0, 0, -1);
+        if (rows * cols >= count) return new CommandPage(0, 1, 0, count, -1);
+        int capacity = Math.max(0, rows - 1) * cols; // keep last row for Prev/Next
+        if (capacity == 0) return new CommandPage(0, 0, 0, 0, -1);
+        int pages = (count - 1) / capacity + 1;
+        int page = Math.max(0, Math.min(pages - 1, requestedPage));
+        int first = page * capacity;
+        return new CommandPage(page, pages, first, Math.min(count, first + capacity), rows - 1);
+    }
+
     private OptionsLayoutAuthority() { }
 
     static Layout measure(int width, int height, int commandCount, int detailLines) {

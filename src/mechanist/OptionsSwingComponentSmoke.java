@@ -20,6 +20,49 @@ final class OptionsSwingComponentSmoke {
         MultiplayerMenuController.ConnectionHistoryItem recent = new MultiplayerMenuController.ConnectionHistoryItem(
                 "203.0.113.4:25565", "Remote", "now");
         require(!recent.shortLine().contains("203.0.113.4"), "recent-server rows must not expose addresses");
+        OptionsLayoutAuthoritySmoke.main(args);
+        verifyCompactOptions();
+    }
+
+    private static void verifyCompactOptions() {
+        GamePanel panel = new GamePanel();
+        if (panel.timer != null) panel.timer.stop();
+        try {
+            panel.setSize(320, 240);
+            panel.screen = GamePanel.Screen.OPTIONS;
+            var buffer = new java.awt.image.BufferedImage(320, 240,
+                    java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            for (int tab : new int[]{4, 7}) {
+                panel.optionsTab = tab;
+                var reachable = new java.util.HashSet<String>();
+                int pages = 0;
+                while (pages++ < 30) {
+                    var graphics = buffer.createGraphics();
+                    try { OptionsScreenPainter.paintBody(panel, graphics); }
+                    finally { graphics.dispose(); }
+                    require(panel.buttons.stream().anyMatch(b -> b.label.equals("Graphics"))
+                                    && panel.buttons.stream().anyMatch(b -> b.label.equals("QOL")),
+                            "all tabs must stay visible on each page");
+                    ButtonBox next = null;
+                    for (ButtonBox button : panel.buttons) {
+                        require(button.r.x >= 0 && button.r.y >= 0
+                                        && button.r.x + button.r.width <= 320
+                                        && button.r.y + button.r.height <= 240,
+                                "button outside compact screen: " + button.label);
+                        if (button.label.startsWith("Next ")) next = button;
+                        else if (!button.label.startsWith("Prev ")
+                                && !java.util.List.of("Display", "Text/UI", "Audio",
+                                    "Controls", "Graphics", "JVM", "Access", "QOL")
+                                        .contains(button.label)) reachable.add(button.label);
+                    }
+                    if (next == null) break;
+                    next.action.run();
+                }
+                require(pages < 30 && reachable.size() >= 18 && reachable.contains("Back"),
+                        "every " + (tab == 4 ? "Graphics" : "QOL")
+                                + " command must be reachable: saw " + reachable.size());
+            }
+        } finally { panel.shutdownRuntime(); }
     }
 
     private static void require(boolean condition, String message) {

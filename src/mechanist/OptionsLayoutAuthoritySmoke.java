@@ -33,13 +33,38 @@ final class OptionsLayoutAuthoritySmoke {
                         + commandRows * OptionsLayoutAuthority.COMMAND_HEIGHT + (commandRows - 1) * OptionsLayoutAuthority.GAP;
                 if (g.commandsFit()) check(g.controls().height >= required, "commands should fit: " + viewport[0]);
                 else check(g.details().height == 0, "too-small view must not reserve a details pane");
+                var firstPage = OptionsLayoutAuthority.commandPage(g, tab[0], 0);
+                if (g.commandsFit()) {
+                    check(firstPage.pages() == 1 && firstPage.first() == 0
+                            && firstPage.end() == tab[0], "fitting controls must remain in one page");
+                } else if (!firstPage.unavailable()) {
+                    int last = 0;
+                    for (int index = 0; index < firstPage.pages(); index++) {
+                        var page = OptionsLayoutAuthority.commandPage(g, tab[0], index);
+                        check(page.first() == last && page.end() > last, "pages must be gap-free");
+                        int y = g.controls().y + OptionsLayoutAuthority.commandTop(g)
+                                + page.navRow() * (OptionsLayoutAuthority.COMMAND_HEIGHT + OptionsLayoutAuthority.GAP);
+                        check(y + OptionsLayoutAuthority.COMMAND_HEIGHT
+                                <= g.controls().y + g.controls().height - OptionsLayoutAuthority.PAD,
+                                "Prev/Next must stay within the controls");
+                        last = page.end();
+                    }
+                    check(last == tab[0], "every command must be reachable by paging");
+                }
             }
         }
         var display = OptionsLayoutAuthority.measure(1920,1080,5,5);
         check(display.panel().height <= 350, "short tabs should not reserve a full-height page");
         check(display.panel().width <= 1100, "short tabs should not stretch indefinitely");
         check(OptionsLayoutAuthority.measure(800,600,22,18).commandsFit(), "ordinary small window keeps all actions");
-        check(!OptionsLayoutAuthority.measure(320,240,22,18).commandsFit(), "unusable size is explicitly identified");
-        System.out.println("PASS: compact options layout, viewport bounds, command capacity");
+        var narrow = OptionsLayoutAuthority.measure(320,240,22,18);
+        check(!narrow.commandsFit(), "small size needs paging");
+        check(OptionsLayoutAuthority.commandPage(narrow,22,0).pages() == 11,
+                "320x240 provides two commands plus a navigation row");
+        check(OptionsLayoutAuthority.commandPage(narrow,22,999).end() == 22,
+                "page index clamps to final command");
+        check(OptionsLayoutAuthority.commandPage(narrow,22,-5).first() == 0,
+                "page index clamps to first command");
+        System.out.println("PASS: compact options layout, viewport bounds, all commands paged");
     }
 }
