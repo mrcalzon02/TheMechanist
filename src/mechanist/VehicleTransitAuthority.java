@@ -239,11 +239,13 @@ final class VehicleTransitAuthority {
             target = new Point(game.lookX, game.lookY);
         } else if (game.manualMovementPlanPath != null
                 && !game.manualMovementPlanPath.isEmpty()) {
-            target = game.manualMovementPlanPath.get(
+            Point last = game.manualMovementPlanPath.get(
                     game.manualMovementPlanPath.size() - 1);
-        } else if (game.world.inBounds(game.lookX, game.lookY)) {
-            target = new Point(game.lookX, game.lookY);
+            if (last != null && game.world.inBounds(last.x, last.y))
+                target = new Point(last.x, last.y);
         }
+        // Never accept stale lookX/lookY when the target cursor is inactive
+        // and no explicit path has been selected; no hidden vehicle movement.
         if (target == null) {
             RoutePlan blocked = RoutePlan.blocked(new Point(vehicle.x, vehicle.y),
                     "no-vehicle-route-target",
@@ -263,7 +265,7 @@ final class VehicleTransitAuthority {
         lines.add("LOCAL TRANSIT CONTROL");
         lines.add("Transit rule: roads and marked parking carry movement; clear curb-adjacent sidewalks may receive automatic parking, but they are not through-routes.");
         lines.add("Travel energy: local trips charge the shared class-scaled fuel or power ledger only when movement commits. Strategic reservations are unavailable to local routes; checking an already parked vehicle costs nothing.");
-        lines.add("Route control: open the manual movement plan, place its cursor on the desired road or parking destination, then interact with a player-owned operational vehicle. Vehicle route range is validated independently from ordinary actor movement range.");
+        lines.add("Route control: open manual movement planning, aim its cursor at a road or parking destination, then interact with a nearby player-owned operational vehicle. No walking path is required; vehicle range is validated independently.");
         lines.add("Operation feedback: validated movement drives the same running state used by the bounded pulse, forward headlights, degraded-component feedback, and distance-limited ambient operating sound.");
         if (game != null && vehicle != null && VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
             Point target = null;

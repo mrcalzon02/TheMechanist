@@ -176,22 +176,57 @@ final class Milestone06VehicleTransitSmoke {
                     "single-lane route should remain blocked while the obstacle exists");
             game.world.mapObjects.remove(obstruction);
 
-            // Vehicle routing uses the planning cursor as its destination and
-            // independently validates up to the vehicle route limit. It does not
-            // require an actor-range path to have been built successfully.
+            // The real player interaction must respect vehicle cursor range
+            // independently of an empty actor movement path. First test a
+            // missing target and an illegal target: both stay read-only.
+            game.playerX = 2;
+            game.playerY = 3;
+            game.options.soundEnabled = false;
             game.manualMovementPlanActive = true;
+            game.lookCursorActive = false;
+            game.lookX = 25;
+            game.lookY = 4; // stale coordinates must not become a hidden command
+            game.manualMovementPlanPath.clear();
+            String beforeCursorless = vehicle.stockState;
+            int beforeCursorTurn = game.turn;
+            int beforeCursorXp = game.xp;
+            int beforeCursorVend = vehicle.vendCount;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(game, 2, 4),
+                    "a planned vehicle action should be handled even without an actor path");
+            require(game.turn == beforeCursorTurn && game.xp == beforeCursorXp
+                            && vehicle.vendCount == beforeCursorVend
+                            && game.manualMovementPlanActive
+                            && vehicle.x == 2 && vehicle.y == 4
+                            && beforeCursorless.equals(vehicle.stockState),
+                    "missing vehicle destination must not use stale cursor, turn, XP, fuel or history");
             game.lookCursorActive = true;
+            game.lookX = 27;
+            game.lookY = 12;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(game, 2, 4),
+                    "off-road destination must return an actionable refusal");
+            require(game.turn == beforeCursorTurn && game.xp == beforeCursorXp
+                            && vehicle.vendCount == beforeCursorVend
+                            && vehicle.x == 2 && vehicle.y == 4
+                            && game.manualMovementPlanActive
+                            && beforeCursorless.equals(vehicle.stockState),
+                    "invalid cursor-only route must not spend time/fuel or discard the pending plan");
             game.lookX = 25;
             game.lookY = 4;
-            game.manualMovementPlanPath.clear();
-            VehicleTransitAuthority.TransitResult manual =
-                    VehicleTransitAuthority.executeManualPlan(game, vehicle);
-            require(manual.success() && manual.steps() == 23
-                            && vehicle.x == 25 && vehicle.y == 4
-                            && !game.manualMovementPlanActive,
-                    "planning cursor should execute a vehicle-range route and clear after success");
+            int manualTurn = game.turn, manualXp = game.xp;
+            long manualWorldTurn = game.worldTurn;
+            int manualVend = vehicle.vendCount;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(game, 2, 4),
+                    "real vehicle interaction should execute a cursor-only route without a walking path");
+            require(vehicle.x == 25 && vehicle.y == 4
+                            && !game.manualMovementPlanActive
+                            && !game.lookCursorActive
+                            && game.turn == manualTurn + 1
+                            && game.worldTurn == manualWorldTurn + 1
+                            && game.xp > manualXp
+                            && vehicle.vendCount == manualVend + 1,
+                    "cursor-only live interaction must drive once, award one turn, and clear planning");
             require(VehicleFuelAuthority.inspect(game.world, vehicle).current() == 12,
-                    "manual planned vehicle movement must pay its own four-unit energy cost");
+                    "live cursor-only vehicle movement must consume precisely four energy units");
 
             // A valid prior preview may no longer fit after energy changes.
             // The refetched plan must fail closed before any position or
@@ -264,7 +299,7 @@ final class Milestone06VehicleTransitSmoke {
                     "vehicle transit rule inspection");
             requireContains(inspection, "manual movement plan",
                     "vehicle transit control inspection");
-            requireContains(inspection, "ordinary actor movement range",
+            requireContains(inspection, "No walking path is required",
                     "vehicle route-range separation inspection");
             requireContains(inspection, "bounded pulse",
                     "vehicle operation feedback inspection");

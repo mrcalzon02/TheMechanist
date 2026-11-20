@@ -23,10 +23,11 @@ final class RoadTransitFixtureInteractionAuthority {
         boolean accepted = true;
         boolean changed = false;
         if (RoadTransitFixtureAuthority.isVehicleType(m.type)) {
+            // Vehicle travel has its own road-range authority, independent of
+            // the walking path planner. A valid destination cursor is enough:
+            // an empty actor path must not silently turn "drive" into "inspect".
             if (VehicleRuntimeAuthority.playerOwns(g, m)
-                    && g.manualMovementPlanActive
-                    && g.manualMovementPlanPath != null
-                    && !g.manualMovementPlanPath.isEmpty()) {
+                    && g.manualMovementPlanActive) {
                 VehicleTransitAuthority.TransitResult result =
                         VehicleTransitAuthority.executeManualPlan(g, m);
                 line = result.message();
@@ -39,7 +40,7 @@ final class RoadTransitFixtureInteractionAuthority {
                 changed = result.changed();
                 if (result.success() && !result.changed()
                         && VehicleRuntimeAuthority.playerOwns(g, m)) {
-                    line += " Create a manual movement plan to a road or parking destination, then interact again to preview and commit a constrained vehicle route.";
+                    line += " Open manual movement planning, aim the destination cursor at a road or parking cell, then interact with this vehicle to commit a validated route. A walking path is not required.";
                 }
             }
         } else if (VehicleEconomyFrontageAuthority.isCommerceType(m.type)) {

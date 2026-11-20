@@ -1,5 +1,13 @@
 # Development History
 
+### Milestone 06 vehicle cursor-only driving works through the live interaction router (2026-11-19)
+
+- A discrepancy between the vehicle transit authority and the live physical interaction handler prevented a valid vehicle trip if the ordinary walking planner could not build a nonempty movement path. The authority explicitly supported long-distance vehicle cursor targeting, but the interaction wrapper dispatched to vehicle transit only when the **actor walking path** existed, falling back silently to inspection otherwise.
+- The world fixture interaction now delegates to vehicle transit whenever a player-owned vehicle is selected with manual movement planning active, regardless of whether a pedestrian path exists. The vehicle authority remains responsible for authenticating the cursor or explicit path, road/parking legality, ownership, maximum vehicle-route steps, current occupancy, and real fuel/power on commit. A stale inactive cursor with no explicit planned path is rejected, not used as a hidden destination.
+- Help text now explicitly explains that a walking path is unnecessary. The focused `Milestone06VehicleTransitSmoke` exercises the actual interaction wrapper with an empty walking path: missing target and off-road target each preserve fuel, time, XP, history and plan state; a valid cursor-only 23-tile trip commits, spends the correct energy, updates vehicle position and turn, and clears planning.
+- The change is bounded to vehicle interaction and its existing smoke/authority. Exact-commit Java 17, Windows, package boot and required multiplayer results remain release gates; installed headful gameplay and 06.R certification are separately outstanding.
+
+
 ### Milestone 06 paid garage refueling after local energy consumption (2026-11-19)
 
 - After local driving began consuming the persistent fuel/power ledger, the player-facing garage interaction still offered only vehicle repairs. A healthy player vehicle with an empty energy reserve was left without a normal in-world method for restoring it.
