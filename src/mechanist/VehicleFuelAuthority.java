@@ -43,6 +43,38 @@ final class VehicleFuelAuthority {
 
     private VehicleFuelAuthority() { }
 
+    /**
+     * Read-only fuel/power snapshot for route previews and refused actions.
+     * Defaults match ensureInitialized/clampLedger, but the vehicle is never
+     * initialized and neither fuel nor history records are written here.
+     */
+    static Snapshot preview(MapObjectState vehicle) {
+        if (vehicle == null || !VehicleRuntimeAuthority.isVehicle(vehicle)) {
+            return new Snapshot(0, 0, 0, 0, "unavailable", "missing");
+        }
+        VehicleRuntimeAuthority.VehicleClass definition =
+                VehicleRuntimeAuthority.vehicleClass(vehicle.type);
+        int classCapacity = capacity(definition);
+        String storedCapacity = value(vehicle, "fuelOrPowerCapacity");
+        int capacity = storedCapacity.isBlank() ? classCapacity
+                : Math.max(1, intValue(storedCapacity, 1));
+        String storedCurrent = value(vehicle, "fuelOrPowerCurrent");
+        int current = storedCurrent.isBlank() ? classCapacity
+                : intValue(storedCurrent, capacity);
+        current = Math.max(0, Math.min(capacity, current));
+        int reserved = Math.max(0, Math.min(capacity,
+                intValue(value(vehicle, "strategicTransitFuelReserved"), 0)));
+        String type = value(vehicle, "fuelOrPowerType");
+        if (type.isBlank()) {
+            type = definition == VehicleRuntimeAuthority.VehicleClass.UTILITY_BIKE
+                    ? "compact power cell" : "vehicle fuel or power reserve";
+        }
+        return new Snapshot(current, capacity, reserved,
+                Math.max(0, current - reserved), type,
+                current <= 0 ? "empty" : current < Math.max(1, capacity / 4)
+                        ? "low" : current >= capacity ? "full" : "serviceable");
+    }
+
     static Snapshot inspect(World world, MapObjectState vehicle) {
         if (vehicle == null || !VehicleRuntimeAuthority.isVehicle(vehicle)) {
             return new Snapshot(0, 0, 0, 0, "unavailable", "missing");

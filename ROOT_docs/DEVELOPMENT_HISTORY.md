@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 failed preview fuel-ledger nonmutation regression repair (2026-11-19)
+
+- Exact-commit Windows CI on `507d9e8` failed the existing serpentine-road smoke: an impossible over-48-step route was expected to leave vehicle stock state unchanged. The new fuel-aware planner had called the mutating `VehicleFuelAuthority.inspect` before road search, which initialized persistent fuel fields even when the route was blocked. Compilation and multiplayer passed, but focused validation correctly rejected the regression.
+- Route planning now uses a pure fuel/power preview that reads the same class defaults, persisted capacity/current values, strategic reservation, and low/full labels without writing to the vehicle. Authoritative fuel initialization and deductions remain at commit, and normal live inspection retains its existing behavior. The focused transit smoke explicitly checks a read-only snapshot and unchanged stock state before the overlong-route refusal.
+- Verification is gated on new exact-commit Windows/Linux focused suites, packaged boot, and multiplayer checks. No release has been certified by this repair.
+
 ### Milestone 06 route selection respects affordable parking alternatives (2026-11-19)
 
 - Parking selection previously preferred the legal bay nearest the cursor even if its connecting road required more fuel than the vehicle had available. A different bay within the same five-tile resolution area could be reachable with the current reserve, yet the entire plan failed after selecting the unaffordable detour.

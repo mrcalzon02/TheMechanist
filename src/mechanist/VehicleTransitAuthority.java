@@ -111,8 +111,10 @@ final class VehicleTransitAuthority {
         }
         VehicleRuntimeAuthority.VehicleClass definition =
                 VehicleRuntimeAuthority.vehicleClass(vehicle.type);
+        // This is a preview: never initialize/write a fuel ledger just because
+        // the selected road, parking or travel budget proves invalid.
         VehicleFuelAuthority.Snapshot energy =
-                VehicleFuelAuthority.inspect(game.world, vehicle);
+                VehicleFuelAuthority.preview(vehicle);
         // Resolve parking against actual *unreserved* travel range first.
         // A closer parking tile may require a much longer road detour than a
         // nearby alternative. Avoid refusing the whole trip in that case.

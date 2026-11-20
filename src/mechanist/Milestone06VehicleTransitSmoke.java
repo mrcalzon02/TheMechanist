@@ -426,6 +426,11 @@ final class Milestone06VehicleTransitSmoke {
         winding.mapObjects.add(snakeCar);
         game.world = winding;
         String beforeWinding = snakeCar.stockState;
+        VehicleFuelAuthority.Snapshot windingPreview =
+                VehicleFuelAuthority.preview(snakeCar);
+        require(windingPreview.capacity() > 0 && windingPreview.available() > 0
+                        && snakeCar.stockState.equals(beforeWinding),
+                "read-only energy preview must never initialize a route candidate");
         VehicleTransitAuthority.RoutePlan windingRoute =
                 VehicleTransitAuthority.plan(game, snakeCar, 2, 8);
         require(!windingRoute.valid()
