@@ -89,6 +89,11 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone06VehicleTransitSmoke
+          # Strategic booking terms and replay safety must be checked before
+          # optional full-world diagnostics consume their bounded time window.
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06VehicleStrategicTransitSmoke
           # Directly verify live dashboard fuel/reservation clarity before
           # optional worldgen diagnostics can exhaust their time budget.
           java -Djava.awt.headless=true \

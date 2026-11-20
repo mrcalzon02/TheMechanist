@@ -154,6 +154,56 @@ final class Milestone06VehicleStrategicTransitSmoke {
                     "repeat reservation must reuse its own three committed units");
             car.stockState = originalReservedStock;
 
+            // A same-destination request with different terms must not
+            // masquerade as the old booking. No new reservation, changed
+            // allocation, history entry, or energy debit may occur.
+            List<VehicleStrategicTransitAuthority.Request> alteredTerms = List.of(
+                    new VehicleStrategicTransitAuthority.Request(
+                            readyRequest.destinationKey(), readyRequest.infrastructure(),
+                            19, 2, 3, true, 8, 3, true, true, false,
+                            Faction.NONE, readyRequest.routeReason()),
+                    new VehicleStrategicTransitAuthority.Request(
+                            readyRequest.destinationKey(), readyRequest.infrastructure(),
+                            18, 2, 4, true, 8, 3, true, true, false,
+                            Faction.NONE, readyRequest.routeReason()),
+                    new VehicleStrategicTransitAuthority.Request(
+                            readyRequest.destinationKey(), readyRequest.infrastructure(),
+                            18, 2, 3, true, 8, 4, true, true, false,
+                            Faction.NONE, readyRequest.routeReason()),
+                    new VehicleStrategicTransitAuthority.Request(
+                            readyRequest.destinationKey(),
+                            Set.of(VehicleStrategicTransitAuthority.Infrastructure.ROAD,
+                                    VehicleStrategicTransitAuthority.Infrastructure.PARKING_LOT),
+                            18, 2, 3, true, 8, 3, true, true, false,
+                            Faction.NONE, readyRequest.routeReason()),
+                    new VehicleStrategicTransitAuthority.Request(
+                            readyRequest.destinationKey(), readyRequest.infrastructure(),
+                            18, 2, 3, true, 8, 3, true, true, false,
+                            Faction.NONE, "revised delivery purpose"));
+            String[] termNames = {"distance", "crew allocation", "fuel allocation",
+                    "route infrastructure", "route purpose"};
+            for (int i = 0; i < alteredTerms.size(); i++) {
+                String beforeRebooking = car.stockState;
+                VehicleStrategicTransitAuthority.Readiness revised =
+                        VehicleStrategicTransitAuthority.evaluate(game, car,
+                                alteredTerms.get(i));
+                VehicleStrategicTransitAuthority.Reservation refused =
+                        VehicleStrategicTransitAuthority.reserve(game, car,
+                                alteredTerms.get(i));
+                require(!revised.allowed() && !refused.success()
+                                && !refused.changed()
+                                && beforeRebooking.equals(car.stockState)
+                                && reservation.reservationId().equals(
+                                        MapObjectState.stockValue(car.stockState,
+                                                "strategicTransitReservationId")),
+                        "same-destination " + termNames[i]
+                                + " change must refuse without changing the existing booking");
+                requireContains(revised.blockers(), termNames[i],
+                        "changed " + termNames[i] + " explanation");
+                requireContains(revised.blockers(), "cancel the active reservation",
+                        "route-term change correction guidance");
+            }
+
             VehicleStrategicTransitAuthority.Request conflictingRoute =
                     new VehicleStrategicTransitAuthority.Request(
                             "sector-3/zone-2/floor-0",

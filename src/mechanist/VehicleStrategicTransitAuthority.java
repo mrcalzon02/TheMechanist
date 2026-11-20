@@ -193,6 +193,14 @@ final class VehicleStrategicTransitAuthority {
             blockers.add("cancel the active reservation to "
                     + clean(reservedDestination, "another destination")
                     + " before selecting a different route");
+        } else if (sameReservation) {
+            String changedTerms = changedReservationTerms(game.world, vehicle,
+                    route, fuelRequired);
+            if (!changedTerms.isBlank()) {
+                blockers.add("the active reservation uses different "
+                        + changedTerms
+                        + "; cancel the active reservation before changing route terms");
+            }
         }
         // A repeated request for the currently held destination may reuse its
         // own reserved energy; new routes cannot borrow any reserved units.
@@ -292,6 +300,21 @@ final class VehicleStrategicTransitAuthority {
                         readiness.requirements(), readiness.crewRequired(),
                         readiness.fuelRequired(),
                         "Strategic vehicle route is blocked by a conflicting active reservation.");
+                return new Reservation(false, false,
+                        value(vehicle, "strategicTransitReservationId"),
+                        blocked, blocked.summary());
+            }
+            // Defense in depth: a destination match alone must not approve
+            // a changed booking if a future caller bypasses readiness checks.
+            String changedTerms = changedReservationTerms(game.world, vehicle,
+                    request, readiness.fuelRequired());
+            if (!changedTerms.isBlank()) {
+                Readiness blocked = result(false,
+                        List.of("the active reservation uses different " + changedTerms
+                                + "; cancel it before changing route terms"),
+                        readiness.requirements(), readiness.crewRequired(),
+                        readiness.fuelRequired(),
+                        "Strategic vehicle route is blocked by changed reservation terms.");
                 return new Reservation(false, false,
                         value(vehicle, "strategicTransitReservationId"),
                         blocked, blocked.summary());
@@ -404,6 +427,48 @@ final class VehicleStrategicTransitAuthority {
                     "strategicTransitDestination"), "not recorded") + ".");
         }
         return List.copyOf(lines);
+    }
+
+    /**
+     * An idempotent repeat must match the saved booking, not merely its
+     * destination. Live gate, crew availability and fuel are still rechecked
+     * independently; the historical booking terms never change on preview.
+     */
+    private static String changedReservationTerms(World source,
+                                                  MapObjectState vehicle,
+                                                  Request request,
+                                                  int fuelRequired) {
+        ArrayList<String> changed = new ArrayList<>();
+        if (source == null
+                || !value(vehicle, "strategicTransitOrigin")
+                        .equals(Integer.toString(source.locationKey()))) {
+            changed.add("departure location");
+        }
+        if (!value(vehicle, "strategicTransitDistance")
+                .equals(Integer.toString(request.routeDistance()))) {
+            changed.add("distance");
+        }
+        if (!value(vehicle, "strategicTransitCrew")
+                .equals(Integer.toString(request.assignedCrew()))) {
+            changed.add("crew allocation");
+        }
+        if (!value(vehicle, "strategicTransitFuelReserved")
+                .equals(Integer.toString(fuelRequired))) {
+            changed.add("fuel allocation");
+        }
+        if (!value(vehicle, "strategicTransitInfrastructure")
+                .equals(infrastructureText(request.infrastructure()))) {
+            changed.add("route infrastructure");
+        }
+        if (!value(vehicle, "strategicTransitController")
+                .equals(request.routeController().name())) {
+            changed.add("route control");
+        }
+        if (!value(vehicle, "strategicTransitReason")
+                .equals(request.routeReason().replace(';', ',').replace('|', '/'))) {
+            changed.add("route purpose");
+        }
+        return String.join(", ", changed);
     }
 
     private static Request safeRequest(Request request) {

@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 strategic reservation repeats now require identical saved route terms (2026-11-20)
+
+- A route reservation could be reported as a successful idempotent repeat based only on matching destination, even when the requested distance, crew count, fuel, infrastructure, route controller, purpose, or source world differed from the persisted reservation. That left a false-ready approval over an unchanged booked route.
+- Strategic readiness now compares the requested booking against the persisted source, distance, crew, fuel allocation, infrastructure, controlling faction, and reason. Changed terms produce a precise player-facing refusal directing cancellation and rebooking, without writing any reservation, history, energy, or movement state. The reservation write boundary repeats the check as defense in depth; unchanged bookings remain idempotent.
+- Extended the existing strategic-transit regression for five same-destination changes while preserving the original duplicate-request and conflicting-destination tests. Promoted the existing strategic smoke into the Linux and Windows focused Java 17 lanes ahead of optional long-running world-generation diagnostics.
+- This strengthens reservation correctness and player guidance; it does not change the authoritative transition commit, grant new vehicle access, or certify native installers.
+
 ### Milestone 06 vehicle dashboard exposes spendable fuel and pending strategic commitments (2026-11-20)
 
 - Live vehicle inspection now distinguishes physical fuel/power stock, the portion reserved for strategic transit, and the amount still available to local movement or another route. A pending reservation shows its saved destination, infrastructure distance, recorded crew, and held-but-unspent fuel without leaking raw vehicle IDs.
