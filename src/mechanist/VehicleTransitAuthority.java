@@ -26,6 +26,31 @@ final class VehicleTransitAuthority {
     record RoutePlan(boolean valid, List<Point> path, Point requestedTarget,
                      Point resolvedParking, String blocker, String summary,
                      MapObjectState previewVehicle, World previewWorld) {
+        // java.awt.Point is mutable and List.copyOf only freezes list structure.
+        // Own every point at construction and return fresh copies to consumers,
+        // so rendering and cursor code cannot silently change an approved route.
+        RoutePlan {
+            path = snapshotPath(path);
+            requestedTarget = snapshotPoint(requestedTarget);
+            resolvedParking = snapshotPoint(resolvedParking);
+        }
+
+        @Override public List<Point> path() { return snapshotPath(path); }
+        @Override public Point requestedTarget() { return snapshotPoint(requestedTarget); }
+        @Override public Point resolvedParking() { return snapshotPoint(resolvedParking); }
+
+        private static Point snapshotPoint(Point point) {
+            return point == null ? null : new Point(point);
+        }
+
+        private static List<Point> snapshotPath(List<Point> source) {
+            if (source == null || source.isEmpty()) return List.of();
+            ArrayList<Point> result = new ArrayList<>(source.size());
+            for (Point step : source)
+                result.add(new Point(Objects.requireNonNull(step, "route step")));
+            return List.copyOf(result);
+        }
+
         // Keep existing callers source-compatible; an unbound plan cannot
         // authorize movement through execute().
         RoutePlan(boolean valid, List<Point> path, Point requestedTarget,

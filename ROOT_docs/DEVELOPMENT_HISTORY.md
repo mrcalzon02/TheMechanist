@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 vehicle route previews now protect approved geometry against caller mutations (2026-11-20)
+
+- A `RoutePlan` exposed mutable `java.awt.Point` values for requested destinations, resolved parking and the cells of its path. `List.copyOf` protected only the list structure; modifying a returned Point could silently modify the already-approved route.
+- Route plans now take deep snapshots of all geometry at construction and expose independent copies through their accessors. Vehicle and world identity binding remains unchanged, and existing callers retain the same route-plan API.
+- The focused vehicle transit smoke mutates returned cursor, destination and path coordinates and attempts to append a step, then confirms the original 23-tile route and vehicle stock are unchanged. The ordinary commit path continues to execute after this attempted UI-side mutation.
+
 ### Milestone 06 local vehicle route commits now require the previewed fixture and world (2026-11-20)
 
 - The route executor revalidated a path by destination and tile coordinates but did not bind the accepted preview to the specific vehicle and loaded world. A second player-owned car on the same origin, or a replacement world with identical roads, could accept and execute the first car's preview without fresh player confirmation.

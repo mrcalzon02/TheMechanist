@@ -165,6 +165,32 @@ final class Milestone06VehicleTransitSmoke {
                     "vehicle route preview must be a contiguous one-tile path");
             requireContains(plan.summary(), "Fuel or power: 4 unit(s) required",
                     "local route energy preview");
+            // UI consumers may retain a cursor Point or mutate a rendered
+            // path Point. Neither can edit the geometry already approved for
+            // this exact vehicle/world, nor can a caller append new steps.
+            String beforePreviewGeometry = vehicle.stockState;
+            List<Point> renderedPath = plan.path();
+            Point renderedRequest = plan.requestedTarget();
+            Point renderedParking = plan.resolvedParking();
+            renderedRequest.translate(-20, 5);
+            renderedParking.translate(20, -5);
+            renderedPath.get(0).translate(20, 5);
+            renderedPath.get(renderedPath.size() - 1).translate(-20, -5);
+            boolean listIsFixed = false;
+            try {
+                renderedPath.add(new Point(3, 4));
+            } catch (UnsupportedOperationException expected) {
+                listIsFixed = true;
+            }
+            require(listIsFixed
+                            && plan.requestedTarget().equals(new Point(25, 4))
+                            && plan.resolvedParking().equals(new Point(25, 4))
+                            && plan.path().get(0).equals(new Point(2, 4))
+                            && plan.path().get(plan.path().size() - 1)
+                                    .equals(new Point(25, 4))
+                            && plan.steps() == 23
+                            && beforePreviewGeometry.equals(vehicle.stockState),
+                    "external route-preview Point/list changes must never alter the confirmed path");
             // A valid preview authorizes exactly this physical vehicle in
             // this loaded world, not another car sharing the same start tile.
             MapObjectState otherCar = vehicle(game.world, 2, 4,
