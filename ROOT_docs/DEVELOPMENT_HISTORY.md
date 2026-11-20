@@ -1,5 +1,11 @@
 # Development History
 
+### Gate 3 dead-NPC retirement and blocked-production status regression (2026-11-19)
+
+- Exact PR-head CI `35882448ab5e45b687ddf2aff341861fab9234d7` passed Java 17 compilation and multiplayer but failed its new `Milestone03StaffedProductionExecutionSmoke` after legitimate actor-loss handling. Ordinary NPC turns can retire a dead NPC from the loaded zone; `activeAssignmentProblem` then truthfully reports the worker as *absent* instead of *deceased*. The test incorrectly required the deceased label even after retirement, despite production remaining blocked.
+- The smoke now verifies unavailable worker status as either **deceased** (still present in the NPC list) or **absent** (retired/missing actor), without turning absence into a false death assertion. A saved actor may legitimately be absent from active NPC records, while the recruited workforce contract and blocked queue must remain intact. All no-material-consumption, no-output, exact queue-progress, save/reload, and replacement-production assertions remain enforced; no production authority was weakened.
+- This correction requires a new exact-commit Java 17, gameplay and multiplayer CI readback; the earlier failing workflow is retained as diagnostic evidence.
+
 ### PR #51 current-main Doom actor silhouette integration without terrain regression (2026-11-19)
 
 - The independently advanced main at `5ebb96c315c0a331cb7af9a6f3f28eac1ea37227` introduced deterministic transparent species-specific 3D actor silhouettes and body-width/height profiles. The core gameplay PR had earlier terrain-aware billboard elevations, building roof suppression, and advanced ray targeting that needed to remain intact.

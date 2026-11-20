@@ -384,11 +384,15 @@ final class Milestone03StaffedProductionExecutionSmoke {
                             && live.machineOperationQueue.historyCount() == initialHistory
                             && countMatches(live, outputName) == beforeOutput,
                     "dead-worker blocked turns must preserve queued runs, progress, actual inputs and output count");
-            requireContains(station.productionLastBlocker, "deceased",
-                    "background dead-worker block report");
+            // A deceased NPC may be retired from the active world actor list
+            // by normal NPC lifecycle ticks. No corpse record means "absent",
+            // not proof of death; both must block the same queued work.
+            require(unavailableWorkerReason(station.productionLastBlocker),
+                    "background production must report an unavailable dead/retired worker: "
+                            + station.productionLastBlocker);
             String refused = StaffedProductionExecutionAuthority.executeOne(live, station).message();
-            requireContains(refused, "deceased",
-                    "direct production execution must refuse a dead worker");
+            require(unavailableWorkerReason(refused),
+                    "direct production execution must refuse a dead or retired worker: " + refused);
             require(beforeInputs.equals(live.baseStorage),
                     "direct refused production must not remove materials");
 
@@ -406,8 +410,9 @@ final class Milestone03StaffedProductionExecutionSmoke {
                         .findFirst().orElseThrow();
                 NpcEntity savedActor = paused.world.npcs.stream()
                         .filter(n -> firstActor.id.equals(n.id))
-                        .findFirst().orElseThrow();
-                require(savedActor.hp <= 0 && savedContract.name.equals(firstActor.name)
+                        .findFirst().orElse(null);
+                require((savedActor == null || savedActor.hp <= 0)
+                                && savedContract.name.equals(firstActor.name)
                                 && savedStation.productionQueueRemaining == 2
                                 && savedStation.productionProgressTurns == investedProgress
                                 && beforeInputs.equals(paused.baseStorage)
@@ -415,7 +420,8 @@ final class Milestone03StaffedProductionExecutionSmoke {
                         "save/reload of deceased staff preserves real identity, inputs and partial production progress");
                 String pausedReason = ManualStaffingAssignmentAuthority.activeAssignmentProblem(
                         paused, savedStation);
-                requireContains(pausedReason, "deceased", "reloaded dead-worker blocker");
+                require(unavailableWorkerReason(pausedReason),
+                        "reloaded dead/retired worker must not staff production: " + pausedReason);
                 int historyBeforeResume = paused.machineOperationQueue.historyCount();
                 advanceTurns(paused, requiredTurns + 2);
                 require(savedStation.productionQueueRemaining == 2
@@ -499,6 +505,13 @@ final class Milestone03StaffedProductionExecutionSmoke {
         } finally {
             live.shutdownRuntime();
         }
+    }
+
+
+    /** Death and absence are distinct truths; neither is available labor. */
+    private static boolean unavailableWorkerReason(String message) {
+        return message != null
+                && (message.contains("deceased") || message.contains("absent"));
     }
 
     private static void addInputs(GamePanel game, FactionRecipeVariant variant, int runs) {
