@@ -182,6 +182,17 @@ final class Milestone06VehicleDashboardSmoke {
             for (int route = 1; route <= 14; route++) {
                 game.turn++;
                 game.worldTurn++;
+                // The history-retention fixture runs more travel than one
+                // factory fuel tank permits. Refill through the real
+                // authorized ledger instead of bypassing fuel validation.
+                if (route == 9) {
+                    VehicleFuelAuthority.Result refilled =
+                            VehicleFuelAuthority.refuel(game, routeCar, 16,
+                                    "dashboard route history fixture refill");
+                    require(refilled.success() && refilled.changed()
+                                    && refilled.after() > refilled.before(),
+                            "controlled route-history fixture must refill before travel");
+                }
                 int targetX = route % 2 == 1 ? 10 : 2;
                 VehicleTransitAuthority.RoutePlan plan =
                         VehicleTransitAuthority.plan(game, routeCar,
