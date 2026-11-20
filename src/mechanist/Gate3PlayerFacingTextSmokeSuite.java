@@ -3,6 +3,7 @@ package mechanist;
 /** Runs the narrow Gate 3 readability checks from one entry point. */
 final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) throws Exception {
+        runSmoke("OptionsSwingComponentSmoke", () -> OptionsSwingComponentSmoke.main(args));
         runSmoke("SpatialAudioSmoke", () -> SpatialAudioSmoke.main(args));
         runSmoke("WeaponAudioSmoke", () -> WeaponAudioSmoke.main(args));
         runSmoke("EarlyGameInputUsabilitySmoke", () -> EarlyGameInputUsabilitySmoke.main(args));
@@ -249,7 +250,6 @@ final class Gate3PlayerFacingTextSmokeSuite {
         runSmoke("Milestone03ProductionStatusCommandSmoke", () -> Milestone03ProductionStatusCommandSmoke.main(args));
         runSmoke("Milestone03StaffedProductionExecutionSmoke", () -> Milestone03StaffedProductionExecutionSmoke.main(args));
         runSmoke("Milestone03ProductionControlBoardSmoke", () -> Milestone03ProductionControlBoardSmoke.main(args));
-        runSmoke("OptionsSwingComponentSmoke", () -> OptionsSwingComponentSmoke.main(args));
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 

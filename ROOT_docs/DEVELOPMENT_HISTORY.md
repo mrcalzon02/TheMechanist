@@ -1,5 +1,11 @@
 # Development History
 
+### Bounded Gate 3 now exercises compact options first (2026-11-19)
+
+- The 320x240 options pagination patch compiled and its required Java 17, focused milestone, package-seed and multiplayer checks passed on `35eb794910034ab479a1b164bdcc1d3fe2d46009`. Both bounded Gate 3 diagnostics subsequently timed out before their final `OptionsSwingComponentSmoke` case, so that workflow could not prove the new menu behavior.
+- Moved the **existing** options Swing smoke to the beginning of the already non-blocking Gate 3 sequence, leaving all 247 named smoke cases intact and their per-case begin/end diagnostics unchanged. The focused options smoke runs pure geometry checks and clicks through actual compact Graphics/QOL pages. This is test ordering, not a new release blocker or a change to any gameplay/runtime option.
+- The exact replacement commit and diagnostic logs must show that the early options smoke actually executes before its behavior can be reported as verified. Installed headful controls and saved preferences remain separate acceptance criteria.
+
 ### Compact options paging for small game windows (2026-11-19)
 
 - At 320x240, the existing options surface rendered its eight tabs but returned early when Graphics/QOL controls exceeded the available height, silently hiding every action except a message to enlarge the window. In a small window the player could no longer change rendering or quality-of-life settings.
