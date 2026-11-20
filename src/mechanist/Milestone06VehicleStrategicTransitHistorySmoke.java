@@ -106,6 +106,7 @@ final class Milestone06VehicleStrategicTransitHistorySmoke {
                     "bounded reservation state and history should reconstruct from persisted stock state");
 
             verifyDiskSaveReload(game, car, finalReservation.reservationId(), history);
+            verifySavedEmptyAndReplacedFixtures();
             System.out.println("Milestone 06 strategic vehicle transit history and disk restore smoke passed.");
         } finally {
             game.shutdownRuntime();
@@ -262,6 +263,67 @@ final class Milestone06VehicleStrategicTransitHistorySmoke {
         World result = world();
         Persistence.readWorldState(result, restored);
         return result;
+    }
+
+    /**
+     * A generated slice may contain fixtures that were later cleared. The
+     * production decoder must honor an explicitly empty saved list, restore
+     * underlying road tiles, and only keep generated fixtures for legacy saves
+     * that omitted the field entirely.
+     */
+    private static void verifySavedEmptyAndReplacedFixtures() {
+        World cleared = world();
+        Properties saved = new Properties();
+        Persistence.writeWorldState(cleared, saved);
+        require(saved.containsKey("world.mapObjects")
+                        && saved.getProperty("world.mapObjects", "missing").isEmpty(),
+                "the production world encoder must write an explicit empty fixture list");
+
+        World emptyTarget = world();
+        MapObjectState ghost = vehicle(emptyTarget, 7, 5,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR, 191L);
+        emptyTarget.mapObjects.add(ghost);
+        emptyTarget.tiles[7][5] = ghost.glyph;
+        Persistence.readWorldState(emptyTarget, saved);
+        require(emptyTarget.mapObjects.isEmpty()
+                        && emptyTarget.tiles[7][5] == '.',
+                "loading a cleared saved zone must not respawn its generated car "
+                        + "or retain a phantom vehicle tile");
+
+        Properties legacy = new Properties();
+        legacy.putAll(saved);
+        legacy.remove("world.mapObjects");
+        World legacyTarget = world();
+        MapObjectState legacyCar = vehicle(legacyTarget, 7, 5,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR, 192L);
+        legacyTarget.mapObjects.add(legacyCar);
+        legacyTarget.tiles[7][5] = legacyCar.glyph;
+        Persistence.readWorldState(legacyTarget, legacy);
+        require(legacyTarget.mapObjects.size() == 1
+                        && legacyTarget.mapObjects.get(0) == legacyCar
+                        && legacyTarget.tiles[7][5] == legacyCar.glyph,
+                "legacy saves without a fixture field must keep generated defaults");
+
+        World oneVehicle = world();
+        MapObjectState savedCar = vehicle(oneVehicle, 4, 5,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR, 193L);
+        oneVehicle.mapObjects.add(savedCar);
+        Properties replacement = new Properties();
+        Persistence.writeWorldState(oneVehicle, replacement);
+        World replacedTarget = world();
+        MapObjectState previous = vehicle(replacedTarget, 7, 5,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR, 194L);
+        replacedTarget.mapObjects.add(previous);
+        replacedTarget.tiles[7][5] = previous.glyph;
+        Persistence.readWorldState(replacedTarget, replacement);
+        require(replacedTarget.mapObjects.size() == 1
+                        && savedCar.id.equals(replacedTarget.mapObjects.get(0).id)
+                        && savedCar.stockState.equals(
+                                replacedTarget.mapObjects.get(0).stockState)
+                        && replacedTarget.tiles[4][5] == savedCar.glyph
+                        && replacedTarget.tiles[7][5] == '.',
+                "loading a saved car must replace generated fixtures and "
+                        + "clear their stale glyphs");
     }
 
     private static VehicleStrategicTransitAuthority.Request request(int cycle) {

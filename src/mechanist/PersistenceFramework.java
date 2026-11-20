@@ -407,7 +407,37 @@ class Persistence {
         if (w == null) return;
         w.hiveName = p.getProperty("world.hiveName", w.hiveName); w.sectorName = p.getProperty("world.sectorName", w.sectorName); w.zoneName = p.getProperty("world.zoneName", w.zoneName); w.zoneHistory = p.getProperty("world.zoneHistory", w.zoneHistory); w.zoneFacilityHistory = p.getProperty("world.zoneFacilityHistory", w.zoneFacilityHistory); w.zoneProductionHistory = p.getProperty("world.zoneProductionHistory", w.zoneProductionHistory); w.zoneStockMovementHistory = p.getProperty("world.zoneStockMovementHistory", w.zoneStockMovementHistory); w.zoneConflictLossHistory = p.getProperty("world.zoneConflictLossHistory", w.zoneConflictLossHistory); w.zoneMaterializedItemHistory = p.getProperty("world.zoneMaterializedItemHistory", w.zoneMaterializedItemHistory); w.zoneLaborAssignmentHistory = p.getProperty("world.zoneLaborAssignmentHistory", w.zoneLaborAssignmentHistory);
         java.util.List<String> roomFaction=decList(p.getProperty("world.roomFactions","")); for(int i=0;i<roomFaction.size()&&i<w.roomFactions.size();i++) try{w.roomFactions.set(i,Faction.valueOf(roomFaction.get(i)));}catch(Exception ignored){}
-        java.util.List<String> objs=decList(p.getProperty("world.mapObjects","")); if(!objs.isEmpty()){ w.mapObjects.clear(); for(String s:objs){ String[] a=s.split("\\|",9); if(a.length>=9) try{ MapObjectState m=new MapObjectState(); m.id=a[0];m.type=a[1];m.label=a[2];m.x=Integer.parseInt(a[3]);m.y=Integer.parseInt(a[4]);m.cooldownUntilTurn=Integer.parseInt(a[5]);m.vendCount=Integer.parseInt(a[6]);m.glyph=a[7].isEmpty()?'?':a[7].charAt(0);m.stockState=a[8]; w.mapObjects.add(m); if(w.inBounds(m.x,m.y)) w.tiles[m.x][m.y]=m.glyph; }catch(Exception ignored){} } }
+        // Presence is authoritative even when the saved fixture list is empty:
+        // a cleared/salvaged zone must not respawn generated vehicles or other
+        // fixtures just because the persisted list has zero entries. Older
+        // saves without this key retain their generated defaults.
+        if (p.containsKey("world.mapObjects")) {
+            // The generated physical slice carries fixture glyphs in its tile
+            // grid. Remove those overlays before applying the saved list; a
+            // missing generated fixture must not survive as a phantom glyph.
+            for (MapObjectState generated : w.mapObjects) {
+                if (generated == null || !w.inBounds(generated.x, generated.y)
+                        || w.tiles[generated.x][generated.y] != generated.glyph) continue;
+                char under = MapObjectState.underlyingTileFromStock(generated.stockState);
+                w.tiles[generated.x][generated.y] = w.fallbackUnderForObject(
+                        generated.x, generated.y, under == 0 ? generated.glyph : under);
+            }
+            w.mapObjects.clear();
+            for (String s : decList(p.getProperty("world.mapObjects", ""))) {
+                String[] a = s.split("\\|", 9);
+                if (a.length >= 9) try {
+                    MapObjectState m = new MapObjectState();
+                    m.id = a[0]; m.type = a[1]; m.label = a[2];
+                    m.x = Integer.parseInt(a[3]); m.y = Integer.parseInt(a[4]);
+                    m.cooldownUntilTurn = Integer.parseInt(a[5]);
+                    m.vendCount = Integer.parseInt(a[6]);
+                    m.glyph = a[7].isEmpty() ? '?' : a[7].charAt(0);
+                    m.stockState = a[8];
+                    w.mapObjects.add(m);
+                    if (w.inBounds(m.x, m.y)) w.tiles[m.x][m.y] = m.glyph;
+                } catch (Exception ignored) { }
+            }
+        }
         w.lightSources.clear(); for(String ls: decList(p.getProperty("world.lightSources",""))){ ZoneLightSourceRecord l=ZoneLightSourceRecord.parse(ls); if(l!=null) w.lightSources.add(l); }
         w.noiseSources.clear(); for(String nz: decList(p.getProperty("world.noiseSources",""))){ ZoneNoiseSourceRecord n=ZoneNoiseSourceRecord.parse(nz); if(n!=null) w.noiseSources.add(n); }
         w.hazardWarnings.clear(); for(String hz: decList(p.getProperty("world.hazardWarnings",""))){ EnvironmentalHazardRecord h=EnvironmentalHazardRecord.parse(hz); if(h!=null) w.hazardWarnings.add(h); }

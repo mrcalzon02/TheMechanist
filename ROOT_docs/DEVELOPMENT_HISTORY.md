@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06.R saved empty vehicle/fixture lists no longer resurrect generated objects (2026-11-20)
+
+- The full save-restoration path regenerates a physical world before applying saved map objects. `Persistence.readWorldState` previously cleared generated fixtures only when `world.mapObjects` decoded to a nonempty list. A saved zone where the player had cleared every fixture therefore kept generated vehicles and other objects, because explicit empty and missing legacy fields were treated alike. The generated tile glyphs could also survive when a saved list omitted a generated object.
+- The decoder now distinguishes `world.mapObjects` **present even if empty** from the field being absent. It removes generated fixture overlays using the existing underlying-tile restoration rule before loading the saved list. Missing-key older saves still keep their generated objects; nonempty lists continue to be decoded through the same serialized `MapObjectState` contract.
+- Expanded the already focused strategic-transit history smoke to verify empty world-state encoding, cleared-zone restoration without phantom vehicle glyphs, missing-key legacy compatibility, and nonempty saved-fixture replacement of a generated vehicle. The smoke already runs in both Java 17 focused CI lanes. No terrain generator, save schema, native installer, or release tag was changed.
+
 ### Milestone 06 strategic reservation persistence now has a real disk round-trip smoke (2026-11-20)
 
 - The previous strategic history smoke verified reservation state with an in-memory `MapObjectState` copy, which did not cover the production `Persistence.writeWorldState` and `Persistence.readWorldState` object decoder or actual save-file storage. A booking could therefore pass cancellation/unit tests without proven file continuity.
