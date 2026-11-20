@@ -35,7 +35,10 @@ final class VehicleTransitAuthority {
     }
 
     private record ParkingRoute(Point parking, List<Point> path) { }
+    private record RoadSearch(ParkingRoute route, boolean hitRouteLimit) { }
     private record SearchStep(Point point, int depth) { }
+    private static final int[][] CARDINAL_STEPS =
+            {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
     record TransitResult(boolean success, boolean changed, int steps,
                          int fromX, int fromY, int toX, int toY,
@@ -86,22 +89,42 @@ final class VehicleTransitAuthority {
                     "The requested vehicle destination is outside the loaded zone.");
         }
 
-        List<Point> options = parkingCandidates(game.world, vehicle, requested);
+        // One occupancy snapshot per request avoids a linear NPC + fixture scan
+        // on every road cell. No snapshot survives a change in world state.
+        HashSet<Long> blockedTiles = occupiedTiles(game.world, vehicle);
+        List<Point> options = parkingCandidates(game.world, blockedTiles, requested);
         if (options.isEmpty()) {
             return RoutePlan.blocked(requested, "no-legal-parking",
                     "No legal parking cell is available near " + targetX + "," + targetY
                             + ". Vehicles must stop on marked parking or a clear curb-adjacent sidewalk.");
         }
-        // Search the road graph once, considering every legal parking option in
-        // the bounded destination area. The closest *legal* space may be cut off
-        // from the roads while another nearby space remains reachable.
-        ParkingRoute route = roadPath(game.world, vehicle, options,
-                VehicleRuntimeAuthority.vehicleClass(vehicle.type));
-        if (route == null) {
-            return RoutePlan.blocked(requested, "no-road-route",
-                    "No reachable legal parking cell connects to " + vehicle.x + ","
-                            + vehicle.y + " near requested " + targetX + "," + targetY + ".");
+        int minimumDistance = Integer.MAX_VALUE;
+        for (Point option : options)
+            minimumDistance = Math.min(minimumDistance,
+                    Math.abs(option.x - vehicle.x) + Math.abs(option.y - vehicle.y));
+        if (minimumDistance > MAX_LOCAL_ROUTE_STEPS) {
+            return RoutePlan.blocked(requested, "route-too-long",
+                    "The nearest legal parking is at least " + minimumDistance
+                            + " tiles away; local travel is limited to "
+                            + MAX_LOCAL_ROUTE_STEPS
+                            + " road steps. Choose a closer destination or use strategic transit.");
         }
+        RoadSearch search = roadPath(game.world, vehicle, options,
+                VehicleRuntimeAuthority.vehicleClass(vehicle.type), blockedTiles);
+        if (search.route() == null) {
+            if (search.hitRouteLimit()) {
+                return RoutePlan.blocked(requested, "route-too-long",
+                        "No parking could be reached within "
+                                + MAX_LOCAL_ROUTE_STEPS
+                                + " road steps. The road may be blocked or the route longer; "
+                                + "choose a closer stop or check road access.");
+            }
+            return RoutePlan.blocked(requested, "no-road-route",
+                    "No contiguous road or parking route connects " + vehicle.x + ","
+                            + vehicle.y + " to the requested area "
+                            + targetX + "," + targetY + ".");
+        }
+        ParkingRoute route = search.route();
         Point parking = route.parking();
         List<Point> path = route.path();
         if (path.size() - 1 > MAX_LOCAL_ROUTE_STEPS) {
@@ -152,12 +175,13 @@ final class VehicleTransitAuthority {
                     vehicle);
         }
 
+        HashSet<Long> blockedTiles = occupiedTiles(game.world, vehicle);
         Point previous = plan.path().get(0);
         for (int i = 1; i < plan.path().size(); i++) {
             Point step = plan.path().get(i);
             boolean finalParkingCell = i == plan.path().size() - 1;
             if (Math.abs(step.x - previous.x) + Math.abs(step.y - previous.y) != 1
-                    || !routeCell(game.world, vehicle, step.x, step.y,
+                    || !routeCell(game.world, blockedTiles, step.x, step.y,
                     finalParkingCell)) {
                 return TransitResult.blocked(RoutePlan.blocked(
                         plan.requestedTarget(), "route-became-blocked",
@@ -285,79 +309,71 @@ final class VehicleTransitAuthority {
     }
 
     /**
-     * One breadth-first pass over the drivable road graph. Choose the legal
-     * destination closest to the requested point *among reachable spaces*,
-     * preferring a route within the local step limit. Sidewalks can terminate
-     * a route but are never expanded as intermediate through-cells.
+     * A bounded BFS over roads with stable nearest-parking priority.
+     * Sidewalks may terminate the path but are never through-routes.
      */
-    private static ParkingRoute roadPath(World world, MapObjectState vehicle,
-                                         List<Point> options,
-                                         VehicleRuntimeAuthority.VehicleClass vehicleClass) {
-        if (options.isEmpty()) return null;
+    private static RoadSearch roadPath(World world, MapObjectState vehicle,
+                                       List<Point> options,
+                                       VehicleRuntimeAuthority.VehicleClass vehicleClass,
+                                       HashSet<Long> blockedTiles) {
+        if (options.isEmpty()) return new RoadSearch(null, false);
         Point start = new Point(vehicle.x, vehicle.y);
-        HashMap<String, Integer> priorityByCell = new HashMap<>();
+        HashMap<Long, Integer> priorityByCell = new HashMap<>();
         for (int i = 0; i < options.size(); i++) {
             Point p = options.get(i);
-            priorityByCell.put(key(p.x, p.y), i);
+            priorityByCell.put(tileKey(p.x, p.y), i);
         }
         ArrayDeque<SearchStep> queue = new ArrayDeque<>();
-        HashSet<String> seen = new HashSet<>();
-        HashMap<String, Point> previous = new HashMap<>();
+        HashSet<Long> seen = new HashSet<>();
+        HashMap<Long, Point> previous = new HashMap<>();
         queue.addLast(new SearchStep(start, 0));
-        seen.add(key(start.x, start.y));
+        seen.add(tileKey(start.x, start.y));
 
-        Point nearestWithinLimit = null;
-        int withinPriority = Integer.MAX_VALUE;
-        Point nearestTooLong = null;
-        int tooLongPriority = Integer.MAX_VALUE;
-        int[][] directions = {{1,0},{-1,0},{0,1},{0,-1}};
+        Point best = null;
+        int bestPriority = Integer.MAX_VALUE;
+        boolean hitLimit = false;
         while (!queue.isEmpty()) {
             SearchStep step = queue.removeFirst();
             Point current = step.point();
-            String currentKey = key(current.x, current.y);
-            Integer priority = priorityByCell.get(currentKey);
-            if (priority != null) {
-                if (step.depth() <= MAX_LOCAL_ROUTE_STEPS && priority < withinPriority) {
-                    withinPriority = priority;
-                    nearestWithinLimit = current;
-                    if (priority == 0) break; // exact requested parking is reachable
-                } else if (step.depth() > MAX_LOCAL_ROUTE_STEPS
-                        && priority < tooLongPriority) {
-                    tooLongPriority = priority;
-                    nearestTooLong = current;
-                }
+            Integer priority = priorityByCell.get(tileKey(current.x, current.y));
+            if (priority != null && priority < bestPriority) {
+                bestPriority = priority;
+                best = current;
+                if (priority == 0) break;
             }
-            // Sidewalk parking is permitted only as a destination, never a road.
             if (world.tiles[current.x][current.y] == RoadGridIntegrationAuthority.SIDEWALK
                     && !current.equals(start)) continue;
-            for (int[] direction : directions) {
-                int nx = current.x + direction[0];
-                int ny = current.y + direction[1];
+            for (int[] dir : CARDINAL_STEPS) {
+                int nx = current.x + dir[0], ny = current.y + dir[1];
                 if (!world.inBounds(nx, ny)) continue;
-                String nextKey = key(nx, ny);
+                long nextKey = tileKey(nx, ny);
                 if (seen.contains(nextKey)) continue;
                 boolean parkingTarget = priorityByCell.containsKey(nextKey);
-                if (!routeCell(world, vehicle, nx, ny, parkingTarget)
+                if (!routeCell(world, blockedTiles, nx, ny, parkingTarget)
                         || !sizeAllows(world, vehicleClass, nx, ny)) continue;
+                if (step.depth() >= MAX_LOCAL_ROUTE_STEPS) {
+                    // Detect a continuation but never visit a 49th step.
+                    hitLimit = true;
+                    continue;
+                }
                 seen.add(nextKey);
                 Point next = new Point(nx, ny);
                 previous.put(nextKey, current);
                 queue.addLast(new SearchStep(next, step.depth() + 1));
             }
         }
-        Point selected = nearestWithinLimit != null ? nearestWithinLimit : nearestTooLong;
-        if (selected == null) return null;
-        List<Point> path = reconstruct(previous, start, selected);
-        return path.isEmpty() ? null : new ParkingRoute(selected, path);
+        if (best == null) return new RoadSearch(null, hitLimit);
+        List<Point> path = reconstruct(previous, start, best);
+        return new RoadSearch(path.isEmpty() ? null : new ParkingRoute(best, path), hitLimit);
     }
 
-    private static List<Point> reconstruct(Map<String, Point> previous,
+    private static List<Point> reconstruct(Map<Long, Point> previous,
                                            Point start, Point target) {
         ArrayList<Point> path = new ArrayList<>();
         Point current = target;
         path.add(current);
         while (!current.equals(start)) {
-            current = previous.get(key(current.x, current.y));
+            current = previous.get(tileKey(current.x, current.y));
             if (current == null) return List.of();
             path.add(current);
         }
@@ -365,14 +381,15 @@ final class VehicleTransitAuthority {
         return path;
     }
 
-    private static List<Point> parkingCandidates(World world, MapObjectState vehicle,
+    private static List<Point> parkingCandidates(World world,
+                                                  HashSet<Long> blockedTiles,
                                                   Point requested) {
         ArrayList<Point> options = new ArrayList<>();
         for (int radius = 0; radius <= PARKING_SEARCH_RADIUS; radius++) {
             for (int x = requested.x - radius; x <= requested.x + radius; x++) {
                 for (int y = requested.y - radius; y <= requested.y + radius; y++) {
                     if (Math.abs(x - requested.x) + Math.abs(y - requested.y) != radius) continue;
-                    if (legalParking(world, vehicle, x, y)) options.add(new Point(x, y));
+                    if (legalParking(world, blockedTiles, x, y)) options.add(new Point(x, y));
                 }
             }
         }
@@ -384,20 +401,20 @@ final class VehicleTransitAuthority {
         return List.copyOf(options);
     }
 
-    private static boolean legalParking(World world, MapObjectState vehicle,
+    private static boolean legalParking(World world, HashSet<Long> blockedTiles,
                                         int x, int y) {
         if (world == null || !world.inBounds(x, y)
-                || occupied(world, vehicle, x, y)) return false;
+                || blockedTiles.contains(tileKey(x, y))) return false;
         char tile = world.tiles[x][y];
         if (tile == RoadGridIntegrationAuthority.PARKING_SPACE) return true;
         if (tile != RoadGridIntegrationAuthority.SIDEWALK) return false;
         return adjacentRoad(world, x, y);
     }
 
-    private static boolean routeCell(World world, MapObjectState vehicle,
+    private static boolean routeCell(World world, HashSet<Long> blockedTiles,
                                      int x, int y, boolean targetCell) {
         if (world == null || !world.inBounds(x, y)
-                || occupied(world, vehicle, x, y)) return false;
+                || blockedTiles.contains(tileKey(x, y))) return false;
         char tile = world.tiles[x][y];
         if (tile == RoadGridIntegrationAuthority.ROAD_LANE
                 || tile == RoadGridIntegrationAuthority.PARKING_SPACE) return true;
@@ -405,11 +422,23 @@ final class VehicleTransitAuthority {
                 && adjacentRoad(world, x, y);
     }
 
-    private static boolean occupied(World world, MapObjectState vehicle,
-                                    int x, int y) {
-        if (world.npcAt(x, y) != null) return true;
-        MapObjectState object = world.mapObjectAt(x, y);
-        return object != null && object != vehicle;
+    /** Recomputed on every plan/commit; no stale occupancy state is cached. */
+    private static HashSet<Long> occupiedTiles(World world, MapObjectState vehicle) {
+        HashSet<Long> tiles = new HashSet<>();
+        if (world == null) return tiles;
+        if (world.npcs != null) for (NpcEntity npc : world.npcs) {
+            if (npc != null && npc.hp > 0 && world.inBounds(npc.x, npc.y))
+                tiles.add(tileKey(npc.x, npc.y));
+        }
+        if (world.mapObjects != null) for (MapObjectState object : world.mapObjects) {
+            if (object != null && object != vehicle && world.inBounds(object.x, object.y))
+                tiles.add(tileKey(object.x, object.y));
+        }
+        return tiles;
+    }
+
+    private static long tileKey(int x, int y) {
+        return ((long) x << 32) | (y & 0xffffffffL);
     }
 
     private static boolean sizeAllows(World world,

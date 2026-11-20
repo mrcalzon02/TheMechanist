@@ -310,11 +310,80 @@ final class Milestone06VehicleTransitSmoke {
                         "vehicle transit inspection leaked implementation text: " + line);
             }
 
+            verifyBoundedRoadSearch(game);
             System.out.println("Milestone 06 vehicle transit smoke passed.");
         } finally {
             VehicleOperationFeedbackAuthority.clearTransientFeedback();
             game.shutdownRuntime();
         }
+    }
+
+    /** Distinguish an exactly allowed route, over-range detour and road break. */
+    private static void verifyBoundedRoadSearch(GamePanel game) {
+        World longWorld = new World(61010L, 132, 15);
+        longWorld.zoneType = ZoneType.NEUTRAL_CIVILIAN_FLOOR;
+        longWorld.mapObjects.clear();
+        longWorld.npcs.clear();
+        for (char[] column : longWorld.tiles) java.util.Arrays.fill(column, '#');
+        longWorld.tiles[2][4] = RoadGridIntegrationAuthority.PARKING_SPACE;
+        for (int x = 3; x < 125; x++)
+            longWorld.tiles[x][4] = RoadGridIntegrationAuthority.ROAD_LANE;
+        longWorld.tiles[50][4] = RoadGridIntegrationAuthority.PARKING_SPACE;
+        longWorld.tiles[125][4] = RoadGridIntegrationAuthority.PARKING_SPACE;
+        MapObjectState car = vehicle(longWorld, 2, 4,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                VehicleRuntimeAuthority.OwnerType.PLAYER,
+                Faction.NONE, "player-owned", 61010L);
+        longWorld.mapObjects.add(car);
+        game.world = longWorld;
+        VehicleTransitAuthority.RoutePlan exactLimit =
+                VehicleTransitAuthority.plan(game, car, 50, 4);
+        require(exactLimit.valid() && exactLimit.steps()
+                        == VehicleTransitAuthority.MAX_LOCAL_ROUTE_STEPS
+                        && exactLimit.resolvedParking().equals(new Point(50, 4)),
+                "an exactly 48-step road trip must remain valid");
+        String beforeFar = car.stockState;
+        VehicleTransitAuthority.RoutePlan far =
+                VehicleTransitAuthority.plan(game, car, 125, 4);
+        require(!far.valid() && "route-too-long".equals(far.blocker())
+                        && far.summary().contains("at least")
+                        && car.stockState.equals(beforeFar),
+                "far parking must fail the distance bound without mutation");
+
+        // Six Manhattan tiles separate these points, but the one-cell-wide
+        // serpentine road needs more than 48 steps to reach the destination.
+        World winding = new World(61011L, 30, 12);
+        winding.zoneType = ZoneType.NEUTRAL_CIVILIAN_FLOOR;
+        winding.mapObjects.clear();
+        winding.npcs.clear();
+        for (char[] column : winding.tiles) java.util.Arrays.fill(column, '#');
+        for (int y : new int[]{2, 4, 6, 8})
+            for (int x = 2; x <= 25; x++)
+                winding.tiles[x][y] = RoadGridIntegrationAuthority.ROAD_LANE;
+        winding.tiles[25][3] = RoadGridIntegrationAuthority.ROAD_LANE;
+        winding.tiles[2][5] = RoadGridIntegrationAuthority.ROAD_LANE;
+        winding.tiles[25][7] = RoadGridIntegrationAuthority.ROAD_LANE;
+        winding.tiles[2][2] = RoadGridIntegrationAuthority.PARKING_SPACE;
+        winding.tiles[2][8] = RoadGridIntegrationAuthority.PARKING_SPACE;
+        MapObjectState snakeCar = vehicle(winding, 2, 2,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                VehicleRuntimeAuthority.OwnerType.PLAYER,
+                Faction.NONE, "player-owned", 61011L);
+        winding.mapObjects.add(snakeCar);
+        game.world = winding;
+        String beforeWinding = snakeCar.stockState;
+        VehicleTransitAuthority.RoutePlan windingRoute =
+                VehicleTransitAuthority.plan(game, snakeCar, 2, 8);
+        require(!windingRoute.valid()
+                        && "route-too-long".equals(windingRoute.blocker())
+                        && windingRoute.summary().contains("48")
+                        && snakeCar.stockState.equals(beforeWinding),
+                "nearby destination requiring a long detour must remain outside local range");
+        winding.tiles[25][3] = '#';
+        VehicleTransitAuthority.RoutePlan severed =
+                VehicleTransitAuthority.plan(game, snakeCar, 2, 8);
+        require(!severed.valid() && "no-road-route".equals(severed.blocker()),
+                "a short, disconnected road must report no-road-route");
     }
 
     private static World world() {

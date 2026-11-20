@@ -1,5 +1,13 @@
 # Development History
 
+### Milestone 06 bounded road planning and occupancy indexing (2026-11-19)
+
+- Local vehicle journeys were limited to 48 road steps, but road planning could nevertheless traverse the entire reachable graph of a 600×600 world before rejecting an overlong destination. Every visited cell also repeatedly scanned all NPCs and map objects through two linear world helpers, magnifying cursor-preview latency on dense maps.
+- A per-request packed tile-key occupancy snapshot now handles road, parking and final-path validation without maintaining a stale cache across world changes. Route search uses a Manhattan lower-bound preflight and never queues a step beyond 48; distant destinations and long detours produce readable bounded refusal messages without inventing an exact path length.
+- Tests cover an exactly 48-step valid route, distant parking rejected before graph search, a serpentine route with a nearby destination but overlong real road distance, and a short disconnected road that must report no-road-route. Existing nearest reachable parking, stale-preview, owner access, NPC/fixture collision, fuel, and live cursor controls remain active regression constraints.
+- This bounds the number of explored road cells independent of overall world size and avoids repeated linear entity scans; no platform-specific FPS benchmark or installed visual capture has yet certified the real-world latency improvement. No renderer, artwork, installer or release authority changed.
+
+
 ### Milestone 06 garage service targets the vehicle that actually needs work (2026-11-19)
 
 - When several owned vehicles were staged at one maintenance garage, the automatic interaction correctly repaired damaged cars before healthy ones but always picked the nearest healthy car for fueling, even if that car was full and another staged car had an empty reserve. That generated free full-tank inspections instead of letting the player purchase needed fuel.
