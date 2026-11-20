@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 vehicle route previews now leave ownership and vehicle condition untouched (2026-11-20)
+
+- Local route planning called vehicle registration and the mutating ownership checker before access, operational, parking, and fuel refusals. Even merely previewing a healthy vehicle recomputed its persisted condition; legacy or unauthorized fixtures could acquire schema/history entries while a route was denied.
+- Added a read-only title check that mirrors registered identity-bound titles and the exact deterministic pre-schema ownership defaults. The route planner now derives frame/powerplant/drive/mobility and dismantled-state blockers without rewriting condition, history, ownership, or fuel. Authoritative initialization and class-scaled fuel debit remain in the committed movement path.
+- Extended the focused vehicle-transit smoke for denied private ownership, healthy registered previews, legacy unregistered title previews, and disabled-component refusals; each checks byte-exact stock-state nonmutation. These are bounded in-memory fixture checks, not installed-game performance or packaging certification.
+
 ### Milestone 06.R saved-world definitions now avoid replaying historical creation batches (2026-11-20)
 
 - Full campaign restoration invoked `WorldAtlas.loadSavedRun` and unconditionally reran the initial simulation-age batches for seven historical world ledgers, then immediately rewrote the world-definition file. Loading an existing world could thus advance lazily seeded faction, facility, production, distribution, loss, materialization, and labor history even though no game turn had occurred, and repeatedly incur costly synthesis and disk I/O.

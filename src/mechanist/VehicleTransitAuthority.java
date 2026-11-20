@@ -65,24 +65,26 @@ final class VehicleTransitAuthority {
             return RoutePlan.blocked(requested, "vehicle-not-present",
                     "The selected vehicle is not present in the loaded zone.");
         }
-        VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
-        if (!VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
+        // Pure preflight: neither preview nor denial may re-register the vehicle,
+        // recalculate its persisted condition, or write fuel/history fields.
+        // The commit path still initializes and debits the authoritative ledger.
+        if (!VehicleRuntimeAuthority.playerOwnsReadOnly(game, vehicle)) {
             return RoutePlan.blocked(requested, "vehicle-access-denied",
                     "Only a player-owned vehicle can use the player route command.");
         }
-        String condition = MapObjectState.stockValue(vehicle.stockState, "condition");
-        if ("disabled".equals(condition) || "wreck".equals(condition)
-                || "salvaged".equals(condition)) {
-            return RoutePlan.blocked(requested, "vehicle-not-operational",
-                    "The vehicle is " + clean(condition, "not operational")
-                            + " and cannot begin a route.");
-        }
+        int frame = component(vehicle, VehicleRuntimeAuthority.Component.FRAME);
         int power = component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT);
         int drive = component(vehicle, VehicleRuntimeAuthority.Component.DRIVE);
         int mobility = component(vehicle, VehicleRuntimeAuthority.Component.MOBILITY);
-        if (power <= 0 || drive <= 0 || mobility <= 0) {
-            return RoutePlan.blocked(requested, "vehicle-mobility-failure",
-                    "The vehicle needs a working powerplant, drive, and mobility assembly before routing.");
+        String operation = MapObjectState.stockValue(vehicle.stockState, "operationState");
+        // Mirror recomputeCondition's operational blockers without writing the
+        // derived condition, including a wrecked frame and dismantled salvage.
+        String condition = "dismantled".equals(operation) ? "salvaged"
+                : frame <= 0 ? "wreck"
+                : power <= 0 || drive <= 0 || mobility <= 0 ? "disabled" : "";
+        if (!condition.isEmpty()) {
+            return RoutePlan.blocked(requested, "vehicle-not-operational",
+                    "The vehicle is " + condition + " and cannot begin a route.");
         }
         if (!game.world.inBounds(targetX, targetY)) {
             return RoutePlan.blocked(requested, "target-outside-zone",

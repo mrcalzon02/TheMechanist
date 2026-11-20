@@ -578,18 +578,47 @@ final class VehicleRuntimeAuthority {
     static boolean playerOwns(GamePanel game, MapObjectState vehicle) {
         if (game == null || vehicle == null || !isVehicle(vehicle)) return false;
         ensureInitialized(game.world, vehicle);
-        if (parseOwnerType(value(vehicle, "ownerType")) != OwnerType.PLAYER) return false;
-        // Newly acquired vehicles bind to the actual deterministic character
-        // identity. Same-name characters in the same world cannot share title.
+        return playerOwnsReadOnly(game, vehicle);
+    }
+
+    /**
+     * Check the exact ownership/title rules without registering a vehicle or
+     * recomputing its condition. Route previews and refused operations must not
+     * mutate persisted provenance, even for pre-schema legacy fixtures.
+     */
+    static boolean playerOwnsReadOnly(GamePanel game, MapObjectState vehicle) {
+        if (game == null || vehicle == null || !isVehicle(vehicle)) return false;
+        Faction faction = parseFaction(value(vehicle, "ownerFaction"));
+        boolean registered = SCHEMA_VERSION.equals(value(vehicle, "vehicleSchema"));
+        OwnerType ownerType;
+        String recordedName;
+        if (registered) {
+            ownerType = parseOwnerType(value(vehicle, "ownerType"));
+            recordedName = value(vehicle, "ownerName");
+        } else {
+            // Match initialize's deterministic legacy title defaults without
+            // installing a schema or changing the source vehicle's stock data.
+            String ownership = value(vehicle, "ownership");
+            if (ownership.isBlank()) {
+                ownership = vehicle.label != null
+                        && vehicle.label.toLowerCase(Locale.ROOT).contains("abandoned")
+                        ? "abandoned" : faction != Faction.NONE ? "faction" : "private";
+            }
+            ownerType = inferOwnerType(ownership, faction,
+                    bool(value(vehicle, "forSale")));
+            recordedName = defaultOwnerName(ownerType, faction);
+        }
+        if (ownerType != OwnerType.PLAYER) return false;
+
+        // Newly acquired titles are bound to deterministic character identity;
+        // do not treat the same character name as the same vehicle owner.
         String ownerPlayerId = value(vehicle, "ownerPlayerId");
         if (!ownerPlayerId.isBlank()) {
             return game.active != null
                     && ownerPlayerId.equals(SaveEfficiencyAuthority.playerIdFor(game));
         }
-        // Compatibility for title records created before ownerPlayerId existed.
-        // Do not interpret OwnerType.PLAYER alone as proof of current ownership.
-        // A legacy generic "Player" name is not an in-game title for a named character.
-        String recordedName = value(vehicle, "ownerName");
+        // Preserve legacy name-bound title compatibility without granting
+        // ownership solely from the PLAYER owner-type marker.
         return !recordedName.isBlank()
                 && recordedName.equalsIgnoreCase(playerName(game));
     }

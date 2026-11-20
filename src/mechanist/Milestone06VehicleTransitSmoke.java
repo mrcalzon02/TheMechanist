@@ -39,6 +39,54 @@ final class Milestone06VehicleTransitSmoke {
                                     VehicleRuntimeAuthority.VehicleClass.TANK, 23) == 12,
                     "class-scaled shared local/strategic energy cost must remain deterministic");
 
+            // Preview is a query, never a hidden state-changing registration.
+            // Even a refused private title must preserve its exact persisted
+            // condition and ownership flags.
+            String originalStock = vehicle.stockState;
+            vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
+                    "ownerType", VehicleRuntimeAuthority.OwnerType.PRIVATE.name());
+            vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
+                    "condition", "unregistered-preview-sentinel");
+            String refusedStock = vehicle.stockState;
+            VehicleTransitAuthority.RoutePlan unauthorized =
+                    VehicleTransitAuthority.plan(game, vehicle, 25, 4);
+            require(!unauthorized.valid()
+                            && "vehicle-access-denied".equals(unauthorized.blocker())
+                            && refusedStock.equals(vehicle.stockState),
+                    "unauthorized route preview must not rewrite ownership or condition");
+            vehicle.stockState = originalStock;
+
+            vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
+                    "condition", "preview-should-not-recompute");
+            String previewStock = vehicle.stockState;
+            VehicleTransitAuthority.RoutePlan safePreview =
+                    VehicleTransitAuthority.plan(game, vehicle, 25, 4);
+            require(safePreview.valid() && safePreview.steps() == 23
+                            && previewStock.equals(vehicle.stockState),
+                    "valid route preview must not rewrite cached condition or vehicle history");
+            vehicle.stockState = originalStock;
+
+            vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
+                    "vehicleSchema", "pre-schema");
+            String legacyStock = vehicle.stockState;
+            VehicleTransitAuthority.RoutePlan legacyPreview =
+                    VehicleTransitAuthority.plan(game, vehicle, 25, 4);
+            require(legacyPreview.valid() && legacyPreview.steps() == 23
+                            && legacyStock.equals(vehicle.stockState),
+                    "legacy title preview must preserve schema while matching registered ownership");
+            vehicle.stockState = originalStock;
+
+            vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
+                    "vehicleComponentPowerplant", "0");
+            String disabledStock = vehicle.stockState;
+            VehicleTransitAuthority.RoutePlan disabled =
+                    VehicleTransitAuthority.plan(game, vehicle, 25, 4);
+            require(!disabled.valid()
+                            && "vehicle-not-operational".equals(disabled.blocker())
+                            && disabledStock.equals(vehicle.stockState),
+                    "disabled vehicle refusal must not recompute condition or mutate components");
+            vehicle.stockState = originalStock;
+
             // The closest legal parking tile may be disconnected. Choose a
             // reachable one nearby rather than refusing an otherwise valid trip.
             game.world.tiles[18][6] = RoadGridIntegrationAuthority.PARKING_SPACE;
