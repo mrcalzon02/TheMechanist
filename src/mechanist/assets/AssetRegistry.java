@@ -533,6 +533,7 @@ public final class AssetRegistry {
     private static String prefixFor(AssetType type) {
         return switch (type == null ? AssetType.UNKNOWN : type) {
             case PORTRAIT -> "POR";
+            case ENTITY_SPRITE -> "ACT";
             case WALL_TILE -> "WAL";
             case FLOOR_TILE -> "FLO";
             case ROAD_TILE -> "ROA";
