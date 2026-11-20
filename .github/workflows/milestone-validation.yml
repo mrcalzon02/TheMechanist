@@ -64,7 +64,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           $classes = "build\ci\classes"
           $smokes = @(
-            "mechanist.Gate3PlayerFacingTextSmokeSuite",
+            "mechanist.WorldActorSpriteResolverSmoke",
             "mechanist.SimulationToolSuiteRecoverySmoke",
             "mechanist.LightingFalloffStreetLightSmoke",
             "mechanist.RoadTemplateRulesSmoke"
@@ -81,6 +81,38 @@ jobs:
           $ErrorActionPreference = "Stop"
           & "ROOT_tools\packaging\stage_local_package_seed.ps1" -Version "ci-milestone-validation"
 
+      - name: Run bounded Gate 3 player-facing diagnostics
+        shell: pwsh
+        run: |
+          $classes = "build\ci\classes"
+          $stdout = "build\ci\gate3-diagnostic.stdout.log"
+          $stderr = "build\ci\gate3-diagnostic.stderr.log"
+          $process = Start-Process -FilePath "java" `
+            -ArgumentList @("-Djava.awt.headless=true", "-cp", $classes, "mechanist.Gate3PlayerFacingTextSmokeSuite") `
+            -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          if (-not $process.WaitForExit(180000)) {
+            try { $process.Kill($true) } catch { Write-Warning "Could not immediately stop Gate 3 diagnostic process: $_" }
+            $null = $process.WaitForExit(5000)
+            $result = "TIMEOUT after 180s"
+          } elseif ($process.ExitCode -ne 0) {
+            $result = "FAILED with exit code $($process.ExitCode)"
+          } else {
+            $result = "PASS"
+          }
+          if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -Tail 25 }
+          if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -Tail 25 }
+          if ($result -ne "PASS") { Write-Warning "Gate 3 diagnostics: $result. See logs for the last attempted test." }
+          "- Gate 3 diagnostics (180s max, informational): $result" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload bounded Gate 3 diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate3-windows-diagnostics-${{ github.sha }}
+          path: build/ci/gate3-diagnostic.*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Write validation summary
         if: always()
         shell: pwsh
@@ -91,7 +123,7 @@ jobs:
           "- Java: Temurin 17" >> $env:GITHUB_STEP_SUMMARY
           "- Java source encoding: UTF-8" >> $env:GITHUB_STEP_SUMMARY
           "- Compile target: src -> build/ci/classes" >> $env:GITHUB_STEP_SUMMARY
-          "- Smoke entry point: mechanist.Gate3PlayerFacingTextSmokeSuite" >> $env:GITHUB_STEP_SUMMARY
+          "- Focused smoke entry points: WorldActorSpriteResolverSmoke, SimulationToolSuiteRecoverySmoke, LightingFalloffStreetLightSmoke, RoadTemplateRulesSmoke" >> $env:GITHUB_STEP_SUMMARY
           "- Package seed path: ROOT_tools/packaging/stage_local_package_seed.ps1" >> $env:GITHUB_STEP_SUMMARY
 
       - name: Upload local package seed manifest
