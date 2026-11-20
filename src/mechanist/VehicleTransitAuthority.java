@@ -24,7 +24,15 @@ final class VehicleTransitAuthority {
     private static final int VEHICLE_HISTORY_LIMIT = 8;
 
     record RoutePlan(boolean valid, List<Point> path, Point requestedTarget,
-                     Point resolvedParking, String blocker, String summary) {
+                     Point resolvedParking, String blocker, String summary,
+                     MapObjectState previewVehicle, World previewWorld) {
+        // Keep existing callers source-compatible; an unbound plan cannot
+        // authorize movement through execute().
+        RoutePlan(boolean valid, List<Point> path, Point requestedTarget,
+                  Point resolvedParking, String blocker, String summary) {
+            this(valid, path, requestedTarget, resolvedParking, blocker, summary,
+                    null, null);
+        }
         static RoutePlan blocked(Point requested, String blocker, String summary) {
             return new RoutePlan(false, List.of(), requested, null,
                     clean(blocker, "route-blocked"),
@@ -183,7 +191,11 @@ final class VehicleTransitAuthority {
                 + " Fuel or power: " + requiredFuel + " unit(s) required; "
                 + energy.available() + " available, " + energy.reserved()
                 + " reserved.";
-        return new RoutePlan(true, List.copyOf(path), requested, parking, "", summary);
+        // Bind the preview to its physical fixture and loaded world. A route
+        // approved for one vehicle/map cannot move a different one whose
+        // coordinates and road geometry happen to match.
+        return new RoutePlan(true, List.copyOf(path), requested, parking, "",
+                summary, vehicle, game.world);
     }
 
     static TransitResult execute(GamePanel game, MapObjectState vehicle,
@@ -194,6 +206,12 @@ final class VehicleTransitAuthority {
             return TransitResult.blocked(RoutePlan.blocked(
                     plan.requestedTarget(), "vehicle-not-present",
                     "The vehicle route cannot execute because the fixture is no longer present."),
+                    vehicle);
+        }
+        if (plan.previewVehicle() != vehicle || plan.previewWorld() != game.world) {
+            return TransitResult.blocked(RoutePlan.blocked(
+                    plan.requestedTarget(), "route-state-changed",
+                    "The selected vehicle or loaded world changed after preview; review the route again."),
                     vehicle);
         }
         RoutePlan refreshed = plan(game, vehicle,

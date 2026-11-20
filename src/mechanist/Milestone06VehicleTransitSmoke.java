@@ -165,6 +165,43 @@ final class Milestone06VehicleTransitSmoke {
                     "vehicle route preview must be a contiguous one-tile path");
             requireContains(plan.summary(), "Fuel or power: 4 unit(s) required",
                     "local route energy preview");
+            // A valid preview authorizes exactly this physical vehicle in
+            // this loaded world, not another car sharing the same start tile.
+            MapObjectState otherCar = vehicle(game.world, 2, 4,
+                    AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER,
+                    Faction.NONE, "player-owned", 61015L);
+            game.world.mapObjects.add(otherCar);
+            String otherBefore = otherCar.stockState;
+            String selectedBefore = vehicle.stockState;
+            int beforeWrongFixtureTurn = game.turn;
+            VehicleTransitAuthority.TransitResult wrongFixture =
+                    VehicleTransitAuthority.execute(game, otherCar, plan);
+            require(!wrongFixture.success()
+                            && "route-state-changed".equals(wrongFixture.plan().blocker())
+                            && otherCar.x == 2 && otherCar.y == 4
+                            && otherBefore.equals(otherCar.stockState)
+                            && selectedBefore.equals(vehicle.stockState)
+                            && game.turn == beforeWrongFixtureTurn,
+                    "a route preview for one vehicle cannot move a different co-located vehicle");
+            game.world.mapObjects.remove(otherCar);
+
+            // A loaded-world switch also invalidates the preview, even if
+            // the same fixture appears on identical road geometry.
+            World originalRouteWorld = game.world;
+            World replacementRouteWorld = world();
+            replacementRouteWorld.mapObjects.add(vehicle);
+            game.world = replacementRouteWorld;
+            VehicleTransitAuthority.TransitResult wrongWorld =
+                    VehicleTransitAuthority.execute(game, vehicle, plan);
+            game.world = originalRouteWorld;
+            require(!wrongWorld.success()
+                            && "route-state-changed".equals(wrongWorld.plan().blocker())
+                            && vehicle.x == 2 && vehicle.y == 4
+                            && selectedBefore.equals(vehicle.stockState)
+                            && game.turn == beforeWrongFixtureTurn,
+                    "a route preview cannot be replayed against a replacement world");
+
             // A player who moves into an already approved route must block
             // its final commit before energy, history or position changes.
             game.playerX = 13;

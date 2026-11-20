@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 local vehicle route commits now require the previewed fixture and world (2026-11-20)
+
+- The route executor revalidated a path by destination and tile coordinates but did not bind the accepted preview to the specific vehicle and loaded world. A second player-owned car on the same origin, or a replacement world with identical roads, could accept and execute the first car's preview without fresh player confirmation.
+- Route plans now retain their exact preview fixture and world identities. The existing commit path refuses mismatches before recalculating roads, consuming fuel, advancing movement, or emitting feedback. Refusal is read-only with the existing route-state-changed blocker; access and 48-step road checks stay in the same authority.
+- The existing focused vehicle transit smoke covers a co-located alternate car and same-geometry replacement world with position, turn, and stock-state nonmutation assertions. These are in-memory regressions, not installed-game vehicle runtime certification.
+
 ### Milestone 06 vehicle route previews now leave ownership and vehicle condition untouched (2026-11-20)
 
 - Local route planning called vehicle registration and the mutating ownership checker before access, operational, parking, and fuel refusals. Even merely previewing a healthy vehicle recomputed its persisted condition; legacy or unauthorized fixtures could acquire schema/history entries while a route was denied.
