@@ -1,5 +1,11 @@
 # Development History
 
+### PR #51 follows removal of rejected procedural Doom actor placeholders (2026-11-19)
+
+- The latest authoritative main commit `ff0589f59932d8420a7d130e4e4bffd86b095943` reverted procedural placeholder NPC silhouettes and the associated species-profile HUD test. These temporary graphics are intentionally not restored by the gameplay PR.
+- This reconciliation removes `DoomEntitySpriteAuthority` and profile-only sprite fields/calls, uses the approved main Doom HUD smoke, and retains PR #51's existing terrain-height billboard anchoring, overhead-roof filtering, and world-surface targeting. The preceding history entry describing the temporary silhouette integration is superseded by this revert.
+- The merge is committed on the existing PR branch only; PR #51's gameplay, staffing, and production continuity work is unchanged. Exact-source Java 17 and multiplayer gates must pass again before acceptance.
+
 ### Gate 3 dead-NPC retirement and blocked-production status regression (2026-11-19)
 
 - Exact PR-head CI `35882448ab5e45b687ddf2aff341861fab9234d7` passed Java 17 compilation and multiplayer but failed its new `Milestone03StaffedProductionExecutionSmoke` after legitimate actor-loss handling. Ordinary NPC turns can retire a dead NPC from the loaded zone; `activeAssignmentProblem` then truthfully reports the worker as *absent* instead of *deceased*. The test incorrectly required the deceased label even after retirement, despite production remaining blocked.
