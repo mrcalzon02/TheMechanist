@@ -1,5 +1,13 @@
 # Development History
 
+### Release gating: bounded Gate 3 diagnostics and actionable smoke progress (2026-11-19)
+
+- A prior main-branch Java 17 build and multiplayer integration compiled/passed, but the combined 247-case Gate 3 player-facing suite ran ahead of mandatory package, JAR, and client boot validation and exceeded the Windows milestone run's 30-minute budget. The suite emitted no per-case progress, preventing efficient fault localization.
+- The Linux Java 17 gate now runs the focused world-actor sprite intake smoke immediately after the focused semantic/runtime checks. Compile, strict Java 17 classfile ceiling, client package/JAR build, and eight-second client boot remain the required gates. The full Gate 3 chain is executed **after** required checks, with a bounded 180-second diagnostic budget, attached stdout/stderr, and a non-blocking warning/status summary.
+- Windows milestone validation runs its independent focused smoke and package-seed stages before a separately bounded 180-second Gate 3 diagnostic. No existing smoke test was removed from the suite, and per-case BEGIN/END elapsed-time records now identify stalled or failing tests. Diagnostic timeout or visual/balance assertions cannot stall release verification; a real compile/packaging/boot or required multiplayer failure still blocks.
+- This change does not certify visual sprite quality, installed Windows gameplay, or a release; the new exact-commit CI result remains authoritative.
+
+
 ### Current-main semantic world-actor sprite and terrain-aware billboard reconciliation (2026-11-19)
 
 - The newer main at `bcaecb3dc5d5d0191450fcd94da32b6ddfd4f4b4` introduced a typed `ENTITY_SPRITE` registry, artist-controlled empty sprite manifest, strict transparent-PNG intake, directional facing, persistent NPC/species/role keys and a cached image resolver. This is distinct from the previously rejected procedural placeholder silhouettes. No unreviewed body art is introduced.
