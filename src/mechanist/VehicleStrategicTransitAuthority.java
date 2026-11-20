@@ -97,10 +97,11 @@ final class VehicleStrategicTransitAuthority {
         ArrayList<String> blockers = new ArrayList<>();
         ArrayList<String> requirements = new ArrayList<>();
         if (game == null || game.world == null || vehicle == null
-                || !VehicleRuntimeAuthority.isVehicle(vehicle)) {
-            blockers.add("a physical vehicle in the loaded zone is required");
+                || !VehicleRuntimeAuthority.isVehicle(vehicle)
+                || !game.world.mapObjects.contains(vehicle)) {
+            blockers.add("a physical vehicle present in the loaded zone is required");
             return result(false, blockers, requirements, 0, 0,
-                    "Strategic vehicle transit is blocked because no loaded vehicle is available.");
+                    "Strategic vehicle transit is blocked because the selected vehicle is no longer present in the loaded zone.");
         }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
         VehicleFuelAuthority.ensureInitialized(game.world, vehicle);
@@ -176,6 +177,34 @@ final class VehicleStrategicTransitAuthority {
             blockers.add("reserve " + fuelRequired
                     + " fuel or power units; only "
                     + route.fuelOrPowerAvailable() + " are available");
+        }
+        // The request's reported allocation is a planning input, not proof
+        // that the physical vehicle still has those units. The shared fuel
+        // ledger is the authority for both local and strategic movement.
+        VehicleFuelAuthority.Snapshot actualFuel =
+                VehicleFuelAuthority.preview(vehicle);
+        boolean hasReservation = "reserved".equals(
+                value(vehicle, "strategicTransitState"));
+        String reservedDestination =
+                value(vehicle, "strategicTransitDestination");
+        boolean sameReservation = hasReservation
+                && reservedDestination.equals(route.destinationKey());
+        if (hasReservation && !sameReservation) {
+            blockers.add("cancel the active reservation to "
+                    + clean(reservedDestination, "another destination")
+                    + " before selecting a different route");
+        }
+        // A repeated request for the currently held destination may reuse its
+        // own reserved energy; new routes cannot borrow any reserved units.
+        int reusable = sameReservation
+                ? Math.min(actualFuel.reserved(), fuelRequired) : 0;
+        int physicallyAvailable = Math.min(actualFuel.current(),
+                actualFuel.available() + reusable);
+        if (physicallyAvailable < fuelRequired) {
+            blockers.add("the vehicle has only " + physicallyAvailable
+                    + " uncommitted fuel or power unit(s) for this route ("
+                    + actualFuel.reserved() + " already reserved); "
+                    + fuelRequired + " are required");
         }
         if (route.securityClosure()) {
             blockers.add("the route is closed by an active security condition");

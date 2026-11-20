@@ -55,6 +55,49 @@ final class Milestone06VehicleStrategicTransitSmoke {
                             18, 2, 3, true, 8, 3,
                             true, true, false, Faction.NONE,
                             "cross-district delivery");
+            // A stale UI selection is not an owned vehicle in the loaded
+            // world, even if it carries a valid-looking player title.
+            MapObjectState detached = vehicle(game.world, 6, 5,
+                    AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER,
+                    Faction.NONE, "player-owned", 113L);
+            String detachedBefore = detached.stockState;
+            VehicleStrategicTransitAuthority.Readiness missing =
+                    VehicleStrategicTransitAuthority.evaluate(game, detached,
+                            readyRequest);
+            VehicleStrategicTransitAuthority.Reservation missingReservation =
+                    VehicleStrategicTransitAuthority.reserve(game, detached,
+                            readyRequest);
+            require(!missing.allowed() && !missingReservation.success()
+                            && !missingReservation.changed()
+                            && detachedBefore.equals(detached.stockState),
+                    "a removed vehicle cannot be reserved or initialized by stale UI selection");
+
+            // A request may report eight fuel units while the physical car
+            // actually has only two. Readiness and reservation must both
+            // refuse the shortage without creating a phantom reservation.
+            VehicleFuelAuthority.ensureInitialized(game.world, car);
+            String fullyFueled = car.stockState;
+            car.stockState = MapObjectState.setStockFlag(car.stockState,
+                    "fuelOrPowerCurrent", "2");
+            String shortFuelStock = car.stockState;
+            VehicleStrategicTransitAuthority.Readiness shortFuel =
+                    VehicleStrategicTransitAuthority.evaluate(game, car,
+                            readyRequest);
+            VehicleStrategicTransitAuthority.Reservation shortFuelReservation =
+                    VehicleStrategicTransitAuthority.reserve(game, car,
+                            readyRequest);
+            require(!shortFuel.allowed()
+                            && !shortFuelReservation.success()
+                            && !shortFuelReservation.changed()
+                            && shortFuelStock.equals(car.stockState)
+                            && !"reserved".equals(MapObjectState.stockValue(
+                                    car.stockState, "strategicTransitState")),
+                    "reported route fuel may not override the physical vehicle ledger");
+            requireContains(shortFuel.blockers(), "vehicle has only 2",
+                    "physical fuel shortage guidance");
+            car.stockState = fullyFueled;
+
             VehicleStrategicTransitAuthority.Readiness ready =
                     VehicleStrategicTransitAuthority.evaluate(game, car,
                             readyRequest);
@@ -94,6 +137,45 @@ final class Milestone06VehicleStrategicTransitSmoke {
             require(game.world.mapObjects.contains(car)
                             && car.x == 4 && car.y == 5,
                     "route reservation must not teleport or remove the physical vehicle");
+
+            // Existing reservations own their booked fuel: an identical
+            // request remains idempotent even if no *unreserved* fuel remains.
+            String originalReservedStock = car.stockState;
+            car.stockState = MapObjectState.setStockFlag(car.stockState,
+                    "fuelOrPowerCurrent", "3");
+            String exactReserveStock = car.stockState;
+            VehicleStrategicTransitAuthority.Reservation repeatAtReserve =
+                    VehicleStrategicTransitAuthority.reserve(game, car,
+                            readyRequest);
+            require(repeatAtReserve.success() && !repeatAtReserve.changed()
+                            && reservation.reservationId().equals(
+                                    repeatAtReserve.reservationId())
+                            && exactReserveStock.equals(car.stockState),
+                    "repeat reservation must reuse its own three committed units");
+            car.stockState = originalReservedStock;
+
+            VehicleStrategicTransitAuthority.Request conflictingRoute =
+                    new VehicleStrategicTransitAuthority.Request(
+                            "sector-3/zone-2/floor-0",
+                            readyRequest.infrastructure(),
+                            readyRequest.routeDistance(),
+                            readyRequest.destinationParkingCapacity(),
+                            readyRequest.assignedCrew(), true, 8, 3,
+                            true, true, false, Faction.NONE,
+                            "conflicting destination smoke");
+            String beforeConflict = car.stockState;
+            VehicleStrategicTransitAuthority.Readiness conflict =
+                    VehicleStrategicTransitAuthority.evaluate(game, car,
+                            conflictingRoute);
+            VehicleStrategicTransitAuthority.Reservation rejectedConflict =
+                    VehicleStrategicTransitAuthority.reserve(game, car,
+                            conflictingRoute);
+            require(!conflict.allowed() && !rejectedConflict.success()
+                            && !rejectedConflict.changed()
+                            && beforeConflict.equals(car.stockState),
+                    "second strategic destination must not silently overbook reserved fuel");
+            requireContains(conflict.blockers(), "cancel the active reservation",
+                    "conflicting strategic reservation guidance");
 
             VehicleStrategicTransitAuthority.Reservation duplicate =
                     VehicleStrategicTransitAuthority.reserve(game, car,

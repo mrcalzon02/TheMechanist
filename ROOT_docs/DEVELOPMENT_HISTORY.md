@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 strategic vehicle route readiness checks physical fuel and live fixture identity (2026-11-20)
+
+- Strategic readiness previously trusted a request-provided fuel allocation without comparing it against the current vehicle ledger. A route could be marked ready and reserved despite having too little physical fuel to commit, leaving its eventual transition to fail. It also accepted stale/detached vehicle objects not present in the loaded world.
+- Readiness now rejects missing fixture membership before vehicle initialization. It compares planned fuel against the read-only vehicle fuel/power snapshot and displays the shortage; a conflicting destination reports its existing reservation. Matching repeated reservations may reuse their own reserved units without requiring extra fuel, while a new route cannot borrow an active reservation.
+- Expanded the focused strategic-transit smoke to cover detached vehicle refusal, optimistic fuel estimates, exactly-funded repeat reservation idempotency, and conflicting destination refusal. No new assets, world loaders, economic rules, or release claims are introduced.
+
 ### Milestone 06 vehicle route previews now protect approved geometry against caller mutations (2026-11-20)
 
 - A `RoutePlan` exposed mutable `java.awt.Point` values for requested destinations, resolved parking and the cells of its path. `List.copyOf` protected only the list structure; modifying a returned Point could silently modify the already-approved route.
