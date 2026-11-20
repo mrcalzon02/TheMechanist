@@ -202,10 +202,13 @@ jobs:
       - name: Run bounded Gate 3 player-facing diagnostics
         shell: bash
         run: |
+          # GitHub's bash runner starts with -e. Explicitly disable errexit
+          # while collecting the intentionally non-blocking diagnostic exit.
+          set +e
           set -uo pipefail
           stdout="ROOT_build/main-java17-gate/gate3.stdout.log"
           stderr="ROOT_build/main-java17-gate/gate3.stderr.log"
-          timeout --signal=TERM --kill-after=5s 180s java -Djava.awt.headless=true \
+          timeout --signal=QUIT --kill-after=5s 120s java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Gate3PlayerFacingTextSmokeSuite >"$stdout" 2>"$stderr"
           code=$?
@@ -214,10 +217,10 @@ jobs:
           tail -n 28 "$stderr" || true
           if [ "$code" -eq 0 ]; then
             echo 'Gate 3 diagnostic suite passed.'
-            echo '- Gate 3 diagnostic: PASS (bounded to 180s).' >> "$GITHUB_STEP_SUMMARY"
+            echo '- Gate 3 diagnostic: PASS (bounded to 120s).' >> "$GITHUB_STEP_SUMMARY"
           elif [ "$code" -eq 124 ] || [ "$code" -eq 137 ]; then
-            echo "::warning::Gate 3 diagnostics exceeded 180s; inspect the last started case in uploaded logs."
-            echo '- Gate 3 diagnostic: TIMEOUT (180s), non-blocking; see uploaded logs.' >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Gate 3 diagnostics exceeded 120s; last-started test and JVM SIGQUIT thread dump are in uploaded logs."
+            echo '- Gate 3 diagnostic: TIMEOUT (120s), non-blocking; see JVM thread dump and test logs.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo "::warning::Gate 3 diagnostics reported exit code $code; inspect uploaded failure details."
             echo "- Gate 3 diagnostic: FAIL ($code), non-blocking; see uploaded logs." >> "$GITHUB_STEP_SUMMARY"

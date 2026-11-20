@@ -6,7 +6,11 @@ import java.util.Properties;
 final class Milestone03ContractTurnInSmoke {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
+        System.out.println("[TURNIN_PROBE] before GamePanel construction");
+        System.out.flush();
         GamePanel game = new GamePanel();
+        System.out.println("[TURNIN_PROBE] after GamePanel construction");
+        System.out.flush();
         if (game.timer != null) game.timer.stop();
         try {
             if (game.world == null) game.world = new World(73117L, 40, 40);
@@ -42,6 +46,8 @@ final class Milestone03ContractTurnInSmoke {
             representative.x = 5;
             representative.y = 5;
 
+            System.out.println("[TURNIN_PROBE] before proof-block checks");
+            System.out.flush();
             int scriptBefore = game.carriedScript;
             ContractTurnInAuthority.TurnInResult skillBlocked =
                     ContractTurnInAuthority.turnInFirst(game, representative);
@@ -59,6 +65,8 @@ final class Milestone03ContractTurnInSmoke {
             require(!contract.completed && game.inventory.contains(contract.requiredTurnInItem),
                     "blocked knowledge proof must remain non-mutating");
 
+            System.out.println("[TURNIN_PROBE] before dialogue rendering");
+            System.out.flush();
             game.unlockedKnowledges.add("Contract Negotiation");
             game.activeInteractionNpc = representative;
             game.panelMode = GamePanel.PanelMode.DIALOGUE;
@@ -67,6 +75,8 @@ final class Milestone03ContractTurnInSmoke {
             java.awt.image.BufferedImage canvas = new java.awt.image.BufferedImage(1280, 720,
                     java.awt.image.BufferedImage.TYPE_INT_ARGB);
             java.awt.Graphics2D graphics = canvas.createGraphics();
+            System.out.println("[TURNIN_PROBE] before dialogue paintComponent");
+            System.out.flush();
             game.paintComponent(graphics);
             graphics.dispose();
             require(hasButton(game, "Turn In"),
@@ -74,8 +84,12 @@ final class Milestone03ContractTurnInSmoke {
             requireContains(ContractTurnInAuthority.representativeLine(game, representative),
                     "Contract turn-in ready", "ready representative readback");
 
+            System.out.println("[TURNIN_PROBE] before successful turn-in");
+            System.out.flush();
             int turnBefore = game.turn;
             game.turnInContractWithActiveNpc();
+            System.out.println("[TURNIN_PROBE] after successful turn-in");
+            System.out.flush();
             require(contract.completed, "successful representative turn-in should complete the contract");
             require(!uncarriedContract.completed,
                     "an earlier uncarried contract must not mask or receive a later carried turn-in");
@@ -91,12 +105,18 @@ final class Milestone03ContractTurnInSmoke {
             requireNotContains(lastEventContaining(game, "Contract completed"), "F-PRIVATE",
                     "private contract ID in completion event");
 
+            System.out.println("[TURNIN_PROBE] before persistence write");
+            System.out.flush();
             Properties saved = new Properties();
             Persistence.writeCore(game, saved);
+            System.out.println("[TURNIN_PROBE] before restore GamePanel construction");
+            System.out.flush();
             GamePanel restored = new GamePanel();
             if (restored.timer != null) restored.timer.stop();
             try {
                 Persistence.readCore(restored, saved);
+                System.out.println("[TURNIN_PROBE] after restore readCore");
+                System.out.flush();
                 require(restored.factionContracts.stream().anyMatch(candidate -> candidate != null && candidate.completed),
                         "completed contract state should persist");
                 require(restored.carriedScript == game.carriedScript,
@@ -108,6 +128,8 @@ final class Milestone03ContractTurnInSmoke {
             }
         } finally {
             game.shutdownRuntime();
+            System.out.println("[TURNIN_PROBE] complete");
+            System.out.flush();
         }
     }
 

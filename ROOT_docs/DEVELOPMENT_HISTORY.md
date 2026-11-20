@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 03 contract-turn-in smoke timeout localized on both CI platforms (2026-11-19)
+
+- The newly instrumented 247-case Gate 3 suite reached and stalled at `Milestone03ContractTurnInSmoke` on both Linux and Windows, following 10 completed smoke checks. Both 180-second diagnostic windows expired while the test remained active; its latest messages were world generation validation for a large 600x600 slice.
+- The Linux workflow originally inherited `bash -e` from GitHub Actions, so its diagnostic timeout (124) inadvertently failed the job despite the intended non-blocking policy. Explicitly clear errexit before the bounded execution; reduce the diagnostic window to 120 seconds and use JVM SIGQUIT on timeout to preserve a Java thread dump in the uploaded stderr log.
+- Stage markers in the exact smoke test now distinguish GamePanel construction, proof checks, dialogue rendering, turn-in turn advancement, persistence write, and restored-state loading. This is diagnostic instrumentation, not a production simulation behavior change. Do not mark the game hang repaired until the stack and execution boundary have been analyzed and a targeted regression passes.
+
+
 ### Release gating: bounded Gate 3 diagnostics and actionable smoke progress (2026-11-19)
 
 - A prior main-branch Java 17 build and multiplayer integration compiled/passed, but the combined 247-case Gate 3 player-facing suite ran ahead of mandatory package, JAR, and client boot validation and exceeded the Windows milestone run's 30-minute budget. The suite emitted no per-case progress, preventing efficient fault localization.
