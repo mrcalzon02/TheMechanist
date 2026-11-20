@@ -278,6 +278,7 @@ final class VehicleMaintenanceAuthority {
                 + " tiles of a service garage; 1 Machine part or 8 script restores 35% to the lowest component.");
         lines.add("Component replacement: stand next to the vehicle for field work, or stage it at a service garage; Tool bundle, 2 Machine parts, and 12 script replaces the lowest component.");
         lines.add("Full refurbishment: service garage required; Tool bundle, 4 Machine parts, and 30 script restores all major component groups.");
+        lines.add("Garage queue: damaged staged vehicles first, then healthy vehicles needing fuel, then fully serviced vehicles; nearest in each group.");
         if ("recovered".equals(value(vehicle, "lossRecoveryState"))) {
             lines.add("Loss recovery: critical systems are restored; active leak and loss-obstruction flags were cleared while historical loss records were retained.");
         }
@@ -297,15 +298,23 @@ final class VehicleMaintenanceAuthority {
                 vehicles.add(object);
             }
         }
-        // The garage's single-action UI should repair a damaged staged vehicle
-        // instead of reporting a closer already-healthy car as the only option.
+        // Automatic one-action servicing must not inspect a full car while
+        // a different staged car needs fuel. Repair damage first, then fuel
+        // healthy underfilled cars, then inspect full healthy vehicles.
+        // Preserve the nearest/deterministic tie-breaks inside each tier.
+        // Ranking reads raw fuel ledger fields: do not initialize or mutate
+        // every candidate just to decide who needs a refill.
         vehicles.sort(Comparator
-                .comparingInt((MapObjectState object) ->
-                        worstComponent(object) == null ? 1 : 0)
+                .comparingInt(VehicleMaintenanceAuthority::garageServicePriority)
                 .thenComparingLong(object ->
                         Math.abs((long) object.x - ox) + Math.abs((long) object.y - oy))
                 .thenComparing(object -> clean(object.id, object.label)));
         return vehicles.isEmpty() ? null : vehicles.get(0);
+    }
+
+    private static int garageServicePriority(MapObjectState vehicle) {
+        if (worstComponent(vehicle) != null) return 0;
+        return VehicleFuelAuthority.needsGarageRefill(vehicle) ? 1 : 2;
     }
 
     private static VehicleRuntimeAuthority.Component worstComponent(
@@ -424,7 +433,8 @@ final class VehicleMaintenanceAuthority {
                 : " / " + clean(source.label, "vehicle service facility");
     }
 
-    private static String displayName(MapObjectState vehicle) {
+    /** Shared player-readable make/model for garage receipts; never expose raw IDs. */
+    static String displayName(MapObjectState vehicle) {
         VehicleRuntimeAuthority.Snapshot snapshot =
                 VehicleRuntimeAuthority.inspect(null, vehicle);
         if (snapshot == null) return "vehicle";

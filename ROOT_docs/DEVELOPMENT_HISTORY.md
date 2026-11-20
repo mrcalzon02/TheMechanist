@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 garage service targets the vehicle that actually needs work (2026-11-19)
+
+- When several owned vehicles were staged at one maintenance garage, the automatic interaction correctly repaired damaged cars before healthy ones but always picked the nearest healthy car for fueling, even if that car was full and another staged car had an empty reserve. That generated free full-tank inspections instead of letting the player purchase needed fuel.
+- Garage target ordering now preserves the repair-first rule, then prioritizes healthy cars with a stored fuel deficit over full healthy cars; each tier retains nearest-first and stable identity ordering. The new deficit check reads persisted fields without initializing or mutating all candidates during queue ranking. Uninitialized or malformed fuel entries are not treated as purchase requests.
+- Paid, insufficient-funds, and full-tank garage messages now identify the selected vehicle by make/model and its parking coordinates to disambiguate multiple similar cars. Vehicle inspection adds a plain-language description of automatic queue priority. The existing focused garage smoke now checks damaged-versus-empty priority, full-neighbor-versus-distant-needy selection, real paid fixture interaction, exact one-turn/XP/vendor effects, unchanged full cars, and named receipts. Full Java 17 and platform/package checks remain required before release claims.
+
 ### Milestone 06 affordable garage top-ups and live road-range guidance (2026-11-19)
 
 - A garage required enough script for the entire eight-unit refill despite selling by the unit, leaving players with smaller purses unable to buy any fuel. Garage refueling now accepts a bounded, affordable partial purchase (one to eight units) after all live-fixture, title, condition and capacity checks; exact paid units, available unreserved energy, and a partial-purchase receipt are reported. With zero purchasing power or a full tank, interaction remains free, without time/XP/vendor mutation.

@@ -18,6 +18,17 @@ final class VehicleFuelAuthority {
         return Math.min(maximum, Math.max(0, carriedScript) / GARAGE_REFUEL_SCRIPT_PER_UNIT);
     }
 
+    /** Read-only garage queue check. Uninitialized/malformed energy is not a purchase request. */
+    static boolean needsGarageRefill(MapObjectState vehicle) {
+        if (vehicle == null || !VehicleRuntimeAuthority.isVehicle(vehicle)) return false;
+        String storedCurrent = value(vehicle, "fuelOrPowerCurrent");
+        String storedCapacity = value(vehicle, "fuelOrPowerCapacity");
+        if (storedCurrent.isBlank() || storedCapacity.isBlank()) return false;
+        int capacity = intValue(storedCapacity, 0);
+        int current = intValue(storedCurrent, Integer.MAX_VALUE);
+        return capacity > 0 && current >= 0 && current < capacity;
+    }
+
     record Snapshot(int current, int capacity, int reserved, int available,
                     String energyType, String state) { }
 
@@ -190,14 +201,16 @@ final class VehicleFuelAuthority {
                 Math.max(0, before.capacity() - before.current()));
         if (wanted == 0) {
             return new Result(true, false, before.current(), before.current(), 0,
-                    "SERVICE GARAGE: fuel or power already full at "
+                    "SERVICE GARAGE: " + stagedVehicleLabel(vehicle)
+                            + " already has full fuel or power at "
                             + before.current() + "/" + before.capacity()
                             + "; no script or time spent.");
         }
         int units = affordableGarageUnits(wanted, game.carriedScript);
         if (units == 0) {
             return Result.blocked(before.current(),
-                    "SERVICE GARAGE: " + wanted + " fuel or power unit(s) cost "
+                    "SERVICE GARAGE: " + stagedVehicleLabel(vehicle)
+                            + " needs " + wanted + " fuel or power unit(s), costing "
                             + (wanted * GARAGE_REFUEL_SCRIPT_PER_UNIT)
                             + " script; only " + game.carriedScript
                             + " carried. At least " + GARAGE_REFUEL_SCRIPT_PER_UNIT
@@ -216,7 +229,8 @@ final class VehicleFuelAuthority {
         }
         Snapshot after = inspect(game.world, vehicle);
         return new Result(true, true, filled.before(), filled.after(),
-                filled.amount(), "SERVICE GARAGE: added " + filled.amount()
+                filled.amount(), "SERVICE GARAGE: " + stagedVehicleLabel(vehicle)
+                + " received " + filled.amount()
                 + " fuel or power unit(s) for " + price + " script"
                 + (units < wanted ? " (partial purchase)" : "") + "; tank "
                 + after.current() + "/" + after.capacity() + ", "
@@ -259,7 +273,8 @@ final class VehicleFuelAuthority {
                 + " tiles of a maintenance garage. After repairs, one visit adds up to "
                 + GARAGE_REFUEL_BATCH_UNITS + " fuel or power units at "
                 + GARAGE_REFUEL_SCRIPT_PER_UNIT
-                + " script each. Smaller purchases are allowed if you have less script.");
+                + " script each. Smaller purchases are allowed if you have less script."
+                + " Damaged staged vehicles take priority, followed by healthy cars needing fuel.");
         VehicleRuntimeAuthority.VehicleClass definition = vehicle == null
                 || !VehicleRuntimeAuthority.isVehicle(vehicle)
                 ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR
@@ -353,6 +368,11 @@ final class VehicleFuelAuthority {
         set(vehicle, "fuelOrPowerCapacity", Integer.toString(capacity));
         set(vehicle, "fuelOrPowerCurrent", Integer.toString(current));
         set(vehicle, "strategicTransitFuelReserved", Integer.toString(reserved));
+    }
+
+    private static String stagedVehicleLabel(MapObjectState vehicle) {
+        return VehicleMaintenanceAuthority.displayName(vehicle)
+                + " parked at " + vehicle.x + "," + vehicle.y;
     }
 
     private static int intValue(String value, int fallback) {

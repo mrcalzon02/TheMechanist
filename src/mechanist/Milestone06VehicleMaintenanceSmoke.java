@@ -167,14 +167,18 @@ final class Milestone06VehicleMaintenanceSmoke {
                     VehicleRuntimeAuthority.OwnerType.PLAYER, Faction.NONE, 73L);
             healthy.id = "000-HEALTHY-CAR";
             game.world.mapObjects.add(healthy);
+            VehicleFuelAuthority.inspect(game.world, healthy);
+            healthy.stockState = MapObjectState.setStockFlag(
+                    healthy.stockState, "fuelOrPowerCurrent", "0");
             int healthyIntegrity = VehicleRuntimeAuthority.integrity(healthy);
             game.inventory.add("Machine part");
             String garageLine = VehicleEconomyFrontageAuthority.interaction(game, garage);
             requireContains(garageLine, "VEHICLE MAINTENANCE",
                     "live service-garage integration");
             require(component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS) == 100
-                            && VehicleRuntimeAuthority.integrity(healthy) == healthyIntegrity,
-                    "garage should select a damaged staged vehicle, not a closer healthy one");
+                            && VehicleRuntimeAuthority.integrity(healthy) == healthyIntegrity
+                            && VehicleFuelAuthority.inspect(game.world, healthy).current() == 0,
+                    "damaged staged vehicle must be repaired before refueling a closer healthy one");
             game.world.mapObjects.remove(healthy);
 
             int priorX = vehicle.x, priorY = vehicle.y;
@@ -287,6 +291,64 @@ final class Milestone06VehicleMaintenanceSmoke {
                             && game.xp == fullXp
                             && garage.vendCount == fullVend,
                     "full tank inspection cannot trigger hidden costs or XP rewards");
+
+            // Two healthy full cars are closer to the service bay than the
+            // player-owned car that actually needs fuel. A garage click must
+            // service the underfilled vehicle and identify it in the receipt.
+            MapObjectState nearFull = vehicle(game.world, 4, 4,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER, Faction.NONE, 91L);
+            MapObjectState fartherHungry = vehicle(game.world, 8, 5,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER, Faction.NONE, 92L);
+            nearFull.id = "GARAGE-NEAR-FULL";
+            fartherHungry.id = "GARAGE-FAR-NEEDS-FUEL";
+            game.world.mapObjects.add(nearFull);
+            game.world.mapObjects.add(fartherHungry);
+            VehicleFuelAuthority.inspect(game.world, nearFull);
+            VehicleFuelAuthority.inspect(game.world, fartherHungry);
+            fartherHungry.stockState = MapObjectState.setStockFlag(
+                    fartherHungry.stockState, "fuelOrPowerCurrent", "20");
+            String fullNeighborStock = nearFull.stockState;
+            require(VehicleFuelAuthority.needsGarageRefill(fartherHungry)
+                            && !VehicleFuelAuthority.needsGarageRefill(nearFull)
+                            && !VehicleFuelAuthority.needsGarageRefill(vehicle)
+                            && VehicleMaintenanceAuthority.serviceNearestPlayerVehicle(
+                            game, garage).vehicle() == fartherHungry,
+                    "garage must prefer a healthy car needing fuel over nearer full cars");
+            game.carriedScript = 4;
+            int targetedTurn = game.turn;
+            int targetedXp = game.xp;
+            int targetedVend = garage.vendCount;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(
+                            game, garage.x, garage.y),
+                    "actual garage click should service the underfilled staged vehicle");
+            require(VehicleFuelAuthority.inspect(game.world, fartherHungry).current() == 24
+                            && VehicleFuelAuthority.inspect(game.world, vehicle).current() == 24
+                            && nearFull.stockState.equals(fullNeighborStock)
+                            && game.carriedScript == 0
+                            && game.turn == targetedTurn + 1
+                            && game.xp > targetedXp
+                            && garage.vendCount == targetedVend + 1,
+                    "one paid garage action must refuel the needy car and leave full cars unchanged");
+            VehicleFuelAuthority.Result fullReceipt = VehicleFuelAuthority.refuelAtGarage(
+                    game, garage, fartherHungry);
+            require(fullReceipt.success() && !fullReceipt.changed()
+                            && fullReceipt.message().contains("parked at 8,5"),
+                    "free full-tank inspection should name the correct staged vehicle");
+            fartherHungry.stockState = MapObjectState.setStockFlag(
+                    fartherHungry.stockState, "fuelOrPowerCurrent", "23");
+            game.carriedScript = 1;
+            int directTurn = game.turn;
+            VehicleFuelAuthority.Result paidReceipt = VehicleFuelAuthority.refuelAtGarage(
+                    game, garage, fartherHungry);
+            require(paidReceipt.success() && paidReceipt.changed()
+                            && paidReceipt.amount() == 1
+                            && paidReceipt.message().contains("parked at 8,5")
+                            && VehicleFuelAuthority.inspect(game.world, fartherHungry).current() == 24
+                            && game.carriedScript == 0 && game.turn == directTurn,
+                    "paid fuel receipt must name its vehicle; authority cannot advance player turns");
+            game.world.mapObjects.remove(nearFull);
+            game.world.mapObjects.remove(fartherHungry);
+
             vehicle.stockState = MapObjectState.setStockFlag(
                     vehicle.stockState, "fuelOrPowerCurrent", "14");
             int savedX = vehicle.x, savedY = vehicle.y;
@@ -346,6 +408,8 @@ final class Milestone06VehicleMaintenanceSmoke {
                     "required refurbishment facility guidance");
             requireContains(VehicleFuelAuthority.inspectionLines(game.world, vehicle),
                     "Garage refill:", "fuel and refilling player guidance");
+            requireContains(VehicleMaintenanceAuthority.inspectionLines(game, vehicle),
+                    "Garage queue:", "garage target-selection guidance");
             requireContains(VehicleFuelAuthority.inspectionLines(game.world, vehicle),
                     "Estimated local road range:", "reserve-aware local-road range guidance");
             requireContains(VehicleInfopediaBridgeAuthority.liveDossier(game, vehicle),
