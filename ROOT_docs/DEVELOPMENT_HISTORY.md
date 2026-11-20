@@ -1,5 +1,11 @@
 # Development History
 
+### Current-main semantic world-actor sprite and terrain-aware billboard reconciliation (2026-11-19)
+
+- The newer main at `bcaecb3dc5d5d0191450fcd94da32b6ddfd4f4b4` introduced a typed `ENTITY_SPRITE` registry, artist-controlled empty sprite manifest, strict transparent-PNG intake, directional facing, persistent NPC/species/role keys and a cached image resolver. This is distinct from the previously rejected procedural placeholder silhouettes. No unreviewed body art is introduced.
+- Integrated the exact seven non-overlapping main files, including all asset registry/switch repairs and the semantic sprite smoke, into the existing core gameplay PR. Resolved its two overlapping Doom classes deliberately: `RenderableSprite` accepts both older test/fixture calls and accepted physical body dimensions; the renderer and ray targeting share one cached resolver; world actors, map objects and base objects retain the gameplay PR's terrain-height anchors and building-roof suppression. A per-pass hash set replaces the quadratic fixture-overlap scan, and the null base-object check precedes the roof check.
+- Legacy portrait fallback remains only where no reviewed body sprite is registered, matching main's current explicit policy. The PR still owns the live recruitment, staff recovery and save/reload production queue work. The two-parent merge remains on PR #51; it does not merge into `main`, alter saved games or publish release artifacts. Exact combined-source CI and native graphical acceptance remain separately required.
+
 ### PR #51 follows removal of rejected procedural Doom actor placeholders (2026-11-19)
 
 - The latest authoritative main commit `ff0589f59932d8420a7d130e4e4bffd86b095943` reverted procedural placeholder NPC silhouettes and the associated species-profile HUD test. These temporary graphics are intentionally not restored by the gameplay PR.

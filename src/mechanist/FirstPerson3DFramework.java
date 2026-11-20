@@ -27,6 +27,7 @@ final class FirstPersonRenderViewport {
     private final FirstPersonMouseInput mouseInput = new FirstPersonMouseInput();
     private final ViewportRaycaster raycaster = new ViewportRaycaster();
     private final BillboardSpriteRenderer billboardRenderer = new BillboardSpriteRenderer();
+    private final WorldActorSpriteResolver worldActorSprites = new WorldActorSpriteResolver();
     private final LightDecayEngine lightDecay = new LightDecayEngine();
     private final DoomDepthFog fog = new DoomDepthFog();
     private final ThreeDimensionalProjectileRenderer projectileRenderer = new ThreeDimensionalProjectileRenderer();
@@ -563,7 +564,7 @@ final class FirstPersonRenderViewport {
     }
 
     private void renderSpritesAndEffects(Graphics2D g, GamePanel panel, int w, int h, long now, double dt) {
-        FirstPersonBillboardAuthority.collect(panel, spriteScratch, true);
+        FirstPersonBillboardAuthority.collect(panel, spriteScratch, true, camera, worldActorSprites);
         spriteScratch.sort(Comparator.comparingDouble(s -> -dist2(s.x(), s.z())));
         billboardRenderer.renderSprites(g, camera, spriteScratch, Math.toRadians(panel.options.doomModeFovDegrees), w, h, DoomFogSettings.fromOptions(panel.options), fog, wallDepth);
         ActorCombatFeedbackAuthority.renderDoom(g,panel,camera,w,h,wallDepth);
@@ -625,7 +626,7 @@ final class FirstPersonRenderViewport {
 
     private DoomRayTarget acquireTarget(GamePanel panel) {
         panel.ensureSensoryModelCurrent("doom examination");
-        FirstPersonBillboardAuthority.collect(panel, spriteScratch, false);
+        FirstPersonBillboardAuthority.collect(panel, spriteScratch, false, camera, worldActorSprites);
         RaycastHit hit = FirstPersonBillboardAuthority.target(panel, camera, spriteScratch, raycaster, DoomRayTarget.MAX_RANGE);
         return DoomRayTarget.from(hit);
     }
@@ -707,7 +708,14 @@ record Vec3(double x, double y, double z) {
 }
 
 record ScreenPoint(int x, int y, boolean visible, double depth) {}
-record RenderableSprite(double x, double y, double z, char glyph, String label, int color, boolean entity, BufferedImage image) {}
+record RenderableSprite(double x, double y, double z, char glyph, String label, int color,
+                        boolean entity, BufferedImage image, double worldWidth, double worldHeight) {
+    // Existing object fixtures and diagnostic call sites preserve the old signature.
+    RenderableSprite(double x, double y, double z, char glyph, String label, int color,
+                     boolean entity, BufferedImage image) {
+        this(x, y, z, glyph, label, color, entity, image, 0.0, 0.0);
+    }
+}
 record InteractionRequestRecord(String sessionId, int tileX, int tileY, long clientTimestampMillis, double distance) {}
 record MotionTuning(double maxSpeed, double acceleration, double damping) {}
 

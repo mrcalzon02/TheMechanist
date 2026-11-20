@@ -268,6 +268,7 @@ public final class AssetManager {
             case MACHINE -> new Color(23, 37, 30, 238);
             case ITEM_ICON, WEAPON_ICON, ARMOR_ICON -> new Color(42, 25, 24, 238);
             case PORTRAIT -> new Color(28, 28, 48, 238);
+            case ENTITY_SPRITE -> new Color(24, 42, 40, 238);
             case CORPSE_DECAY -> new Color(45, 16, 18, 238);
             case UI_ICON, INTERNAL -> new Color(28, 28, 28, 238);
             case UNKNOWN -> new Color(48, 10, 54, 235);
@@ -281,6 +282,7 @@ public final class AssetManager {
             case MACHINE -> new Color(110, 225, 160);
             case ITEM_ICON, WEAPON_ICON, ARMOR_ICON -> new Color(235, 120, 90);
             case PORTRAIT -> new Color(175, 150, 245);
+            case ENTITY_SPRITE -> new Color(113, 211, 183);
             case CORPSE_DECAY -> new Color(220, 85, 85);
             case UI_ICON, INTERNAL -> new Color(200, 200, 200);
             case UNKNOWN -> new Color(255, 0, 255);
@@ -301,6 +303,7 @@ public final class AssetManager {
             case WEAPON_ICON -> "MISSWPN";
             case ARMOR_ICON -> "MISSARM";
             case PORTRAIT -> "MISSPOR";
+            case ENTITY_SPRITE -> "MISSACT";
             case CORPSE_DECAY -> "MISSCORP";
             case UI_ICON -> "MISSUI";
             case INTERNAL -> "MISSINT";

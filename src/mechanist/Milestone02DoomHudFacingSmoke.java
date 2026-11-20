@@ -18,6 +18,7 @@ final class Milestone02DoomHudFacingSmoke {
         verifyTriangleDirections();
         verifySpriteVisibilityCulling();
         verifyFloorBillboards();
+        WorldActorSpriteResolverSmoke.main(args);
     }
 
     private static void verifyFloorBillboards() {
