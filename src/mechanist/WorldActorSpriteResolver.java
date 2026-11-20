@@ -133,7 +133,7 @@ final class WorldActorSpriteResolver {
                     continue;
                 }
                 if (key.isEmpty() || !key.equals(parts[0].trim()) || !validView(view)
-                        || !assetId.matches("[A-Z0-9]{3,4}-[A-Z0-9]{3,4}")
+                        || assetId.length() != 8 || !assetId.matches("[A-Z0-9]{3,4}-[A-Z0-9]{3,4}")
                         || !Double.isFinite(width) || !Double.isFinite(height)
                         || width < .15 || width > 4.0 || height < .15 || height > 4.0) {
                     rejectedRows++;

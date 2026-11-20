@@ -57,18 +57,18 @@ final class WorldActorSpriteResolverSmoke {
         Path manifest = dir.resolve("world_actor_sprites.tsv");
         Files.writeString(manifest,
                 "entity_key\tview\tasset_id\twidth_m\theight_m\n"
-                + "sump-rat-swarm\tfront\tACTR-R001\t0.46\t0.31\n"
-                + "sump-rat-swarm\tback\tACTR-R002\t0.47\t0.32\n"
-                + "sump-rat-swarm\tleft\tACTR-R003\t0.48\t0.33\n"
-                + "humanoid-guard\tfront\tACTR-H001\t0.64\t1.18\n"
-                + "humanoid\tfront\tACTR-H002\t0.60\t1.12\n"
-                + "sump-rat-swarm\tfront\tACTR-R004\t0.46\t0.31\n"
-                + "bad path\tfront\tACTR-Z001\t0.45\t0.50\n"
-                + "sump-rat-swarm\tinverted\tACTR-Z002\t0.45\t0.50\n",
+                + "sump-rat-swarm\tfront\tACTR-R01\t0.46\t0.31\n"
+                + "sump-rat-swarm\tback\tACTR-R02\t0.47\t0.32\n"
+                + "sump-rat-swarm\tleft\tACTR-R03\t0.48\t0.33\n"
+                + "humanoid-guard\tfront\tACTR-H01\t0.64\t1.18\n"
+                + "humanoid\tfront\tACTR-H02\t0.60\t1.12\n"
+                + "sump-rat-swarm\tfront\tACTR-R04\t0.46\t0.31\n"
+                + "bad path\tfront\tACTR-Z01\t0.45\t0.50\n"
+                + "sump-rat-swarm\tinverted\tACTR-Z02\t0.45\t0.50\n",
                 StandardCharsets.UTF_8);
         Map<String, AssetMetadata> assets = new HashMap<>();
         Map<String, Path> paths = new HashMap<>();
-        for (String id : new String[]{"ACTR-R001","ACTR-R002","ACTR-R003","ACTR-H001","ACTR-H002"}) {
+        for (String id : new String[]{"ACTR-R01","ACTR-R02","ACTR-R03","ACTR-H01","ACTR-H02"}) {
             assets.put(id, new AssetMetadata(id, png.toString(), "World actor body", AssetType.ENTITY_SPRITE, "artist approved body sprite"));
             paths.put(id, png);
         }
@@ -104,11 +104,11 @@ final class WorldActorSpriteResolverSmoke {
                 "Duplicate and malformed manifest rows must not silently shadow entries");
 
         // Mismatched typed metadata is never allowed to masquerade as a world body.
-        assets.put("ACTR-R001", new AssetMetadata("ACTR-R001", opaque.toString(), "Portrait", AssetType.PORTRAIT, "face card"));
+        assets.put("ACTR-R01", new AssetMetadata("ACTR-R01", opaque.toString(), "Portrait", AssetType.PORTRAIT, "face card"));
         resolver.clear();
         require(resolver.resolve(rat, camera) == null, "A portrait semantic type must be rejected when selected");
-        assets.put("ACTR-R001", new AssetMetadata("ACTR-R001", opaque.toString(), "Wrong image", AssetType.ENTITY_SPRITE, "opaque frame"));
-        paths.put("ACTR-R001", opaque);
+        assets.put("ACTR-R01", new AssetMetadata("ACTR-R01", opaque.toString(), "Wrong image", AssetType.ENTITY_SPRITE, "opaque frame"));
+        paths.put("ACTR-R01", opaque);
         resolver.clear();
         require(resolver.resolve(rat, camera) == null, "An opaque square PNG must not enter the world-body renderer");
     }
