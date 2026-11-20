@@ -63,6 +63,20 @@ final class Milestone06VehicleLossSmoke {
             beforeLoss.requireSame(game,
                     "loss-state resolution must not spend player resources");
 
+            String beforeRemoteRepair = disabled.stockState;
+            PlayerState remoteState = PlayerState.capture(game);
+            VehicleMaintenanceAuthority.Result distantRepair =
+                    VehicleMaintenanceAuthority.perform(game, disabled,
+                            VehicleMaintenanceAuthority.Mode.COMPONENT_REPLACEMENT,
+                            null);
+            require(!distantRepair.success()
+                            && distantRepair.message().contains("Move adjacent")
+                            && beforeRemoteRepair.equals(disabled.stockState),
+                    "a remote component replacement must not repair a disabled vehicle");
+            remoteState.requireSame(game,
+                    "remote repair refusal must not spend player resources");
+            game.playerX = disabled.x - 1;
+            game.playerY = disabled.y;
             VehicleMaintenanceAuthority.Result recovery =
                     VehicleMaintenanceAuthority.perform(game, disabled,
                             VehicleMaintenanceAuthority.Mode.COMPONENT_REPLACEMENT,
@@ -83,6 +97,8 @@ final class Milestone06VehicleLossSmoke {
                             disabled.stockState, "lossOutcomeTags"),
                     "DISABLED_REPAIR_PROJECT", "retained historical loss tags");
 
+            game.playerX = 2;
+            game.playerY = 2;
             MapObjectState burned = vehicle(game.world, 12, 6,
                     AssetIntegrationDisciplineAuthority.PARKED_CARGO_TRUCK,
                     VehicleRuntimeAuthority.OwnerType.PRIVATE,

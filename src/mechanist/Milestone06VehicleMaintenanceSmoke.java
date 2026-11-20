@@ -31,6 +31,27 @@ final class Milestone06VehicleMaintenanceSmoke {
             VehicleRuntimeAuthority.applyDamage(vehicle,
                     VehicleRuntimeAuthority.Component.MOBILITY, 60,
                     game.turn, "maintenance smoke worn wheels");
+            String beforeReach = vehicle.stockState;
+            int scriptBeforeReach = game.carriedScript;
+            int partsBeforeReach = count(game, "Machine part");
+            VehicleMaintenanceAuthority.Result distantField =
+                    VehicleMaintenanceAuthority.perform(game, vehicle,
+                            VehicleMaintenanceAuthority.Mode.FIELD_PATCH, null);
+            VehicleMaintenanceAuthority.Result remoteGarage =
+                    VehicleMaintenanceAuthority.perform(game, vehicle,
+                            VehicleMaintenanceAuthority.Mode.GARAGE_REPAIR, null);
+            VehicleMaintenanceAuthority.Result phantomRefurbishment =
+                    VehicleMaintenanceAuthority.perform(game, vehicle,
+                            VehicleMaintenanceAuthority.Mode.FULL_REFURBISHMENT, null);
+            require(!distantField.success() && distantField.message().contains("Move adjacent")
+                            && !remoteGarage.success() && remoteGarage.message().contains("service garage")
+                            && !phantomRefurbishment.success()
+                            && beforeReach.equals(vehicle.stockState)
+                            && scriptBeforeReach == game.carriedScript
+                            && partsBeforeReach == count(game, "Machine part"),
+                    "remote field work and phantom garage modes must refuse without resource or vehicle mutation");
+            game.playerX = 4;
+            game.playerY = 5;
             VehicleMaintenanceAuthority.Result field =
                     VehicleMaintenanceAuthority.perform(game, vehicle,
                             VehicleMaintenanceAuthority.Mode.FIELD_PATCH, null);
@@ -176,6 +197,22 @@ final class Milestone06VehicleMaintenanceSmoke {
                     "garage must not search the entire zone for a remote vehicle");
             vehicle.x = priorX; vehicle.y = priorY;
 
+            MapObjectState detached = vehicle(game.world, 9, 9,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER, Faction.NONE, 74L);
+            VehicleRuntimeAuthority.applyDamage(detached,
+                    VehicleRuntimeAuthority.Component.MOBILITY, 35,
+                    game.turn, "detached vehicle regression");
+            String detachedStock = detached.stockState;
+            int detachedScript = game.carriedScript;
+            int detachedParts = count(game, "Machine part");
+            VehicleMaintenanceAuthority.Result stale = VehicleMaintenanceAuthority.perform(
+                    game, detached, VehicleMaintenanceAuthority.Mode.GARAGE_REPAIR, garage);
+            require(!stale.success() && stale.message().contains("actual vehicle")
+                            && detachedStock.equals(detached.stockState)
+                            && detachedScript == game.carriedScript
+                            && detachedParts == count(game, "Machine part"),
+                    "a detached but otherwise titled vehicle cannot be serviced through a stale reference");
+
             MapObjectState factionVehicle = vehicle(game.world, 7, 5,
                     VehicleRuntimeAuthority.OwnerType.FACTION,
                     Faction.NOBLE, 72L);
@@ -197,6 +234,10 @@ final class Milestone06VehicleMaintenanceSmoke {
                     "replacement guidance");
             requireContains(inspection, "Full refurbishment",
                     "refurbishment guidance");
+            requireContains(inspection, "stand next to the vehicle",
+                    "physical field repair guidance");
+            requireContains(inspection, "service garage required",
+                    "required refurbishment facility guidance");
             for (String line : inspection) {
                 require(!PlayerFacingText.containsLikelyLeak(line),
                         "vehicle maintenance guidance leaked implementation text: " + line);

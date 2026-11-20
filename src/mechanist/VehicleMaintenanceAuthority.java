@@ -118,12 +118,38 @@ final class VehicleMaintenanceAuthority {
             return Result.blocked(mode, "No repairable vehicle is available.", vehicle);
         }
         Mode selected = mode == null ? Mode.GARAGE_REPAIR : mode;
-        if (serviceSource != null
-                && !stagedForGarage(game.world, serviceSource, vehicle)) {
+        // The referenced vehicle must be the live fixture, not a stale copy
+        // loaded from a different zone or retained after it has been removed.
+        // Reject before initialization or any component/inventory mutation.
+        if (game.world.mapObjects == null || !game.world.mapObjects.contains(vehicle)
+                || !game.world.inBounds(vehicle.x, vehicle.y)) {
             return Result.blocked(selected,
-                    "Bring this vehicle within " + GARAGE_STAGING_RADIUS_TILES
-                            + " tiles of a live service garage before using garage maintenance; no parts or payment were taken.",
+                    "Maintenance requires the actual vehicle in the loaded zone; no resources were consumed.",
                     vehicle);
+        }
+        if (serviceSource != null) {
+            if (!stagedForGarage(game.world, serviceSource, vehicle)) {
+                return Result.blocked(selected,
+                        "Bring this vehicle within " + GARAGE_STAGING_RADIUS_TILES
+                                + " tiles of a live service garage before using garage maintenance; no parts or payment were taken.",
+                        vehicle);
+            }
+        } else {
+            // Only field work is permitted without a physical service fixture.
+            // Null cannot mean an invisible, free-standing garage or workshop.
+            if (selected == Mode.GARAGE_REPAIR
+                    || selected == Mode.FULL_REFURBISHMENT) {
+                return Result.blocked(selected,
+                        "This repair requires a live service garage. Park the vehicle nearby and use its service fixture; no resources were consumed.",
+                        vehicle);
+            }
+            long reach = Math.abs((long) game.playerX - vehicle.x)
+                    + Math.abs((long) game.playerY - vehicle.y);
+            if (reach > 1L) {
+                return Result.blocked(selected,
+                        "Move adjacent to this vehicle before attempting field maintenance; no resources were consumed.",
+                        vehicle);
+            }
         }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
         if (!VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
@@ -247,10 +273,11 @@ final class VehicleMaintenanceAuthority {
                 ? "All major component groups are at full integrity."
                 : "Lowest component: " + worst.label + " at "
                 + component(vehicle, worst) + "%.");
-        lines.add("Field patch: Tool bundle plus 1 Machine part; restores 20% to the lowest component.");
-        lines.add("Garage repair: 1 Machine part or 8 script; restores 35% to the lowest component.");
-        lines.add("Component replacement: Tool bundle, 2 Machine parts, and 12 script; replaces the lowest component.");
-        lines.add("Full refurbishment: Tool bundle, 4 Machine parts, and 30 script; restores all major component groups.");
+        lines.add("Field patch: stand next to the vehicle with a Tool bundle and 1 Machine part; restores 20% to the lowest component.");
+        lines.add("Garage repair: stage the vehicle within " + GARAGE_STAGING_RADIUS_TILES
+                + " tiles of a service garage; 1 Machine part or 8 script restores 35% to the lowest component.");
+        lines.add("Component replacement: stand next to the vehicle for field work, or stage it at a service garage; Tool bundle, 2 Machine parts, and 12 script replaces the lowest component.");
+        lines.add("Full refurbishment: service garage required; Tool bundle, 4 Machine parts, and 30 script restores all major component groups.");
         if ("recovered".equals(value(vehicle, "lossRecoveryState"))) {
             lines.add("Loss recovery: critical systems are restored; active leak and loss-obstruction flags were cleared while historical loss records were retained.");
         }

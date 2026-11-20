@@ -1,5 +1,13 @@
 # Development History
 
+### Milestone 06 vehicle maintenance now requires a live fixture and physical reach (2026-11-19)
+
+- The canonical maintenance executor still allowed a caller to bypass a garage by selecting `GARAGE_REPAIR` or `FULL_REFURBISHMENT` with no service fixture, and to repair a vehicle from across a zone with an unrestricted field-mode call. A detached/stale MapObjectState also passed the initial ownership and component checks.
+- All maintenance modes now reject a vehicle that is not the exact live fixture in the loaded zone, before initialization, payment, inventory mutation or repair. Garage repair/full refurbishment require a real staged service fixture. A field patch or unsupervised component replacement requires the player to be on or adjacent to the vehicle. The existing six-tile garage staging rule, character-bound title checks, component-cost checks, and valid recovery pathways remain intact.
+- Maintenance inspection explains the physical reach and garage requirements. The two existing focused maintenance/loss smokes now assert remote field refusal, absence of phantom garage repairs, unchanged resources and records, refusal of detached vehicle references, and successful adjacent-field recovery after movement.
+- This is an authorization/quality-of-life source repair, not a graphical playthrough, native installer approval, or prerelease. Exact-commit Linux/Windows focused smoke, package boot, and multiplayer checks remain verification requirements.
+
+
 ### Milestone 06 garage regression promoted into both focused CI lanes (2026-11-19)
 
 - The existing Milestone 06 maintenance smoke, which includes vehicle-loss recovery, was previously nested deep inside a 247-case Gate 3 suite that often times out before reaching it. Its garage-selection/remote-staging assertions were therefore not guaranteed to execute.
