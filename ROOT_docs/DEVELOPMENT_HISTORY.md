@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 garage regression promoted into both focused CI lanes (2026-11-19)
+
+- The existing Milestone 06 maintenance smoke, which includes vehicle-loss recovery, was previously nested deep inside a 247-case Gate 3 suite that often times out before reaching it. Its garage-selection/remote-staging assertions were therefore not guaranteed to execute.
+- The Linux Java 17 milestone gate and Windows focused-validation workflow now both run `Milestone06VehicleMaintenanceSmoke` independently after compilation. The smoke retains its full contents and nested loss tests. Any real compile or focused garage/maintenance regression remains release-blocking; the large diagnostic suite remains non-blocking.
+- This changes test coverage only; results must be checked on the exact commit, and neither a compiled package nor a smoke constitutes installed headful playthrough certification.
+
+
 ### Milestone 06 garage service staging and repair-selection QoL (2026-11-19)
 
 - The live vehicle-service garage selected the nearest player-owned vehicle from the entire loaded zone, including distant vehicles that had never been parked at the garage. A single-action service request also selected an already fully repaired vehicle ahead of another damaged vehicle nearby, reporting no work despite viable repairs.

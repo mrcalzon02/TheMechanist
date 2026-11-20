@@ -65,6 +65,7 @@ jobs:
           $classes = "build\ci\classes"
           $smokes = @(
             "mechanist.WorldActorSpriteResolverSmoke",
+            "mechanist.Milestone06VehicleMaintenanceSmoke",
             "mechanist.SimulationToolSuiteRecoverySmoke",
             "mechanist.LightingFalloffStreetLightSmoke",
             "mechanist.RoadTemplateRulesSmoke"

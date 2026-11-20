@@ -79,6 +79,11 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone06VehicleRuntimeFoundationSmoke
+          # Canonical garage staging and maintenance must run before the
+          # bounded legacy Gate 3 diagnostics can time out.
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06VehicleMaintenanceSmoke
           # Vehicle transit is also exercised independently, because the
           # comprehensive legacy Gate 3 suite may time out before reaching it.
           java -Djava.awt.headless=true \
