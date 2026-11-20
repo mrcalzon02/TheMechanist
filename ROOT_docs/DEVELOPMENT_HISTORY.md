@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 strategic reservation persistence now has a real disk round-trip smoke (2026-11-20)
+
+- The previous strategic history smoke verified reservation state with an in-memory `MapObjectState` copy, which did not cover the production `Persistence.writeWorldState` and `Persistence.readWorldState` object decoder or actual save-file storage. A booking could therefore pass cancellation/unit tests without proven file continuity.
+- The existing bounded `Milestone06VehicleStrategicTransitHistorySmoke` now also writes a small physical world snapshot through the production world-state encoder to a temporary `.properties` file, reloads it through the production decoder into a fresh world, and verifies the restored vehicle's identity, title, complete reservation stock, three-unit fuel hold, and 12-entry historical ledger.
+- The restored owner must be able to repeat the same booking idempotently and cancel it without consuming fuel; an unrelated owner is refused without mutation. A second disk round trip verifies that cancellation remains cancelled and cannot be repeated. It then rebooks, saves a deliberately stale origin/missing reservation hold, reloads, recovers through authorized cancellation, and verifies one final on-disk cancellation with unchanged vehicle position and physical fuel.
+- The history smoke is already part of the focused strategic transit smoke in both Java 17 platform gates. This is real file-level world-state codec coverage without production-scale physical regeneration; it does not claim certified full `Persistence.readCore` latency, native installation, or published release.
+
 ### Milestone 06 dashboard cancellation eligibility and stale-booking guidance (2026-11-20)
 
 - The cancellation entry points enforce player title or registered local faction-yard ownership, but the live dashboard previously showed only a reservation and fuel warnings. Players could not see whether their character was eligible to cancel or whether a stranded booking required a faction yard.
