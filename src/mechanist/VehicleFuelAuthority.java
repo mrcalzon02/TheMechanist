@@ -12,6 +12,12 @@ final class VehicleFuelAuthority {
     static final int GARAGE_REFUEL_BATCH_UNITS = 8;
     static final int GARAGE_REFUEL_SCRIPT_PER_UNIT = 1;
 
+    /** An affordable partial batch is better than leaving a player stranded. */
+    static int affordableGarageUnits(int neededUnits, int carriedScript) {
+        int maximum = Math.min(GARAGE_REFUEL_BATCH_UNITS, Math.max(0, neededUnits));
+        return Math.min(maximum, Math.max(0, carriedScript) / GARAGE_REFUEL_SCRIPT_PER_UNIT);
+    }
+
     record Snapshot(int current, int capacity, int reserved, int available,
                     String energyType, String state) { }
 
@@ -180,21 +186,24 @@ final class VehicleFuelAuthority {
                     "A stripped or wrecked vehicle cannot receive ordinary garage fuel.");
         }
         Snapshot before = inspect(game.world, vehicle);
-        int units = Math.min(GARAGE_REFUEL_BATCH_UNITS,
+        int wanted = Math.min(GARAGE_REFUEL_BATCH_UNITS,
                 Math.max(0, before.capacity() - before.current()));
-        if (units == 0) {
+        if (wanted == 0) {
             return new Result(true, false, before.current(), before.current(), 0,
                     "SERVICE GARAGE: fuel or power already full at "
                             + before.current() + "/" + before.capacity()
                             + "; no script or time spent.");
         }
-        int price = units * GARAGE_REFUEL_SCRIPT_PER_UNIT;
-        if (game.carriedScript < price) {
+        int units = affordableGarageUnits(wanted, game.carriedScript);
+        if (units == 0) {
             return Result.blocked(before.current(),
-                    "SERVICE GARAGE: " + units + " fuel or power unit(s) cost "
-                            + price + " script; only " + game.carriedScript
-                            + " carried. No fuel, script, or time was spent.");
+                    "SERVICE GARAGE: " + wanted + " fuel or power unit(s) cost "
+                            + (wanted * GARAGE_REFUEL_SCRIPT_PER_UNIT)
+                            + " script; only " + game.carriedScript
+                            + " carried. At least " + GARAGE_REFUEL_SCRIPT_PER_UNIT
+                            + " script is required to buy one unit; no fuel, script, or time was spent.");
         }
+        int price = units * GARAGE_REFUEL_SCRIPT_PER_UNIT;
         // No world changes occur before the transaction succeeds. Since the
         // requested units are bounded to the remaining capacity, the existing
         // authorized ledger update cannot refuse an otherwise valid refill.
@@ -205,10 +214,13 @@ final class VehicleFuelAuthority {
             throw new IllegalStateException(
                     "Validated garage fuel payment exceeded carried script.");
         }
+        Snapshot after = inspect(game.world, vehicle);
         return new Result(true, true, filled.before(), filled.after(),
                 filled.amount(), "SERVICE GARAGE: added " + filled.amount()
-                + " fuel or power unit(s) for " + price + " script; "
-                + filled.after() + "/" + before.capacity() + " now available.");
+                + " fuel or power unit(s) for " + price + " script"
+                + (units < wanted ? " (partial purchase)" : "") + "; tank "
+                + after.current() + "/" + after.capacity() + ", "
+                + after.available() + " unreserved for travel.");
     }
 
     static Result refuelForFaction(World world, MapObjectState vehicle, int amount,
@@ -246,7 +258,16 @@ final class VehicleFuelAuthority {
                 + VehicleMaintenanceAuthority.GARAGE_STAGING_RADIUS_TILES
                 + " tiles of a maintenance garage. After repairs, one visit adds up to "
                 + GARAGE_REFUEL_BATCH_UNITS + " fuel or power units at "
-                + GARAGE_REFUEL_SCRIPT_PER_UNIT + " script each.");
+                + GARAGE_REFUEL_SCRIPT_PER_UNIT
+                + " script each. Smaller purchases are allowed if you have less script.");
+        VehicleRuntimeAuthority.VehicleClass definition = vehicle == null
+                || !VehicleRuntimeAuthority.isVehicle(vehicle)
+                ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR
+                : VehicleRuntimeAuthority.vehicleClass(vehicle.type);
+        lines.add("Estimated local road range: up to "
+                + localRoadRangeTiles(definition, snapshot.available())
+                + " tile(s) on " + snapshot.available()
+                + " unreserved unit(s); connected roads, parking, and vehicle readiness may limit travel.");
         if (snapshot.reserved() > 0) {
             lines.add("Strategic reservation: " + snapshot.reserved()
                     + " unit(s) reserved; " + snapshot.available()
@@ -268,16 +289,26 @@ final class VehicleFuelAuthority {
     static int routeEnergyCost(VehicleRuntimeAuthority.VehicleClass definition,
                                int routeSteps) {
         if (routeSteps <= 0) return 0;
+        return 1 + (routeSteps - 1) / tilesPerEnergyUnit(definition);
+    }
+
+    /** Uses the same class efficiency as actual committed local route charges. */
+    static int tilesPerEnergyUnit(VehicleRuntimeAuthority.VehicleClass definition) {
         VehicleRuntimeAuthority.VehicleClass vehicleClass = definition == null
                 ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR : definition;
-        int tilesPerUnit = switch (vehicleClass) {
+        return switch (vehicleClass) {
             case UTILITY_BIKE -> 8;
             case CIVILIAN_CAR -> 6;
             case CARGO_TRUCK -> 4;
             case ARMORED_CAR -> 3;
             case TANK -> 2;
         };
-        return 1 + (routeSteps - 1) / tilesPerUnit;
+    }
+
+    static int localRoadRangeTiles(VehicleRuntimeAuthority.VehicleClass definition,
+                                   int availableUnits) {
+        return (int) Math.min(Integer.MAX_VALUE,
+                (long) Math.max(0, availableUnits) * tilesPerEnergyUnit(definition));
     }
 
     static int capacity(VehicleRuntimeAuthority.VehicleClass definition) {

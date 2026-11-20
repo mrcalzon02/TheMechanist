@@ -66,6 +66,9 @@ final class VehicleInfopediaBridgeAuthority {
                 + safe.cargoCapacity + " cargo unit(s).");
         lines.add("Energy capacity: " + VehicleFuelAuthority.capacity(safe)
                 + " fuel or power unit(s).");
+        lines.add("Local road efficiency: up to "
+                + VehicleFuelAuthority.tilesPerEnergyUnit(safe)
+                + " road tile(s) per fuel or power unit, subject to road and parking access.");
         lines.add("Ordinary manufacturers: "
                 + String.join(", ", safe.manufacturers) + ".");
         lines.add("Registered models: " + String.join(", ", safe.models) + ".");
@@ -112,11 +115,15 @@ final class VehicleInfopediaBridgeAuthority {
         lines.add("Energy: " + fuel.current() + "/" + fuel.capacity() + " "
                 + fuel.energyType() + " unit(s); " + fuel.reserved()
                 + " reserved; state " + fuel.state() + ".");
+        lines.add("Estimated local road range: up to "
+                + VehicleFuelAuthority.localRoadRangeTiles(runtime.vehicleClass(), fuel.available())
+                + " tile(s) on " + fuel.available()
+                + " unreserved unit(s); reachable roads, parking and condition may limit travel.");
         lines.add("Refill: after repairs, use a nearby service garage for up to "
                 + VehicleFuelAuthority.GARAGE_REFUEL_BATCH_UNITS
                 + " fuel or power unit(s) per visit at "
                 + VehicleFuelAuthority.GARAGE_REFUEL_SCRIPT_PER_UNIT
-                + " script each; no charge if full or short of funds.");
+                + " script each; partial purchases cost only what you can afford.");
         lines.add("Crew and seating: driver "
                 + clean(manifest.driver(), "unassigned") + "; operational crew "
                 + manifest.assignedCrew() + "/" + runtime.vehicleClass().crewRequired

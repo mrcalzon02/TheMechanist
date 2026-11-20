@@ -203,6 +203,19 @@ final class Milestone06VehicleMaintenanceSmoke {
             VehicleFuelAuthority.ensureInitialized(game.world, vehicle);
             vehicle.stockState = MapObjectState.setStockFlag(
                     vehicle.stockState, "fuelOrPowerCurrent", "8");
+            require(VehicleFuelAuthority.affordableGarageUnits(8, 0) == 0
+                            && VehicleFuelAuthority.affordableGarageUnits(8, 3) == 3
+                            && VehicleFuelAuthority.affordableGarageUnits(8, 99) == 8
+                            && VehicleFuelAuthority.affordableGarageUnits(2, 99) == 2
+                            && VehicleFuelAuthority.affordableGarageUnits(0, 99) == 0,
+                    "garage refilling must handle zero, partial, capped and full batches");
+            require(VehicleFuelAuthority.localRoadRangeTiles(
+                            VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR, 4) == 24
+                            && VehicleFuelAuthority.routeEnergyCost(
+                            VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR, 24) == 4
+                            && VehicleFuelAuthority.localRoadRangeTiles(
+                            VehicleRuntimeAuthority.VehicleClass.TANK, 4) == 8,
+                    "readable road range must invert the same class-specific travel cost");
             game.carriedScript = 8;
             String beforeRefill = vehicle.stockState;
             int beforeRefillTurn = game.turn;
@@ -241,13 +254,27 @@ final class Milestone06VehicleMaintenanceSmoke {
                             && garage.cooldownUntilTurn == insufficientCooldown,
                     "insufficient script must not grant fuel, spend time, or mutate vendor state");
 
-            game.carriedScript = 8;
+            game.carriedScript = 3;
+            int partialTurn = game.turn;
+            int partialXp = game.xp;
+            int partialVend = garage.vendCount;
             require(RoadTransitFixtureInteractionAuthority.tryInteract(
                             game, garage.x, garage.y),
-                    "second paid garage refill must be physically reachable");
+                    "three script must purchase a partial batch from the live garage");
+            require(VehicleFuelAuthority.inspect(game.world, vehicle).current() == 19
+                            && game.carriedScript == 0
+                            && game.turn == partialTurn + 1
+                            && game.xp > partialXp
+                            && garage.vendCount == partialVend + 1,
+                    "partial garage refill must add three units and charge exactly three script once");
+
+            game.carriedScript = 5;
+            require(RoadTransitFixtureInteractionAuthority.tryInteract(
+                            game, garage.x, garage.y),
+                    "remaining five unit top-up must be physically reachable");
             require(VehicleFuelAuthority.inspect(game.world, vehicle).current() == 24
                             && game.carriedScript == 0,
-                    "second payment should fill the vehicle without exceeding capacity");
+                    "final five script must finish filling the tank without exceeding capacity");
             String fullStock = vehicle.stockState;
             int fullTurn = game.turn;
             int fullXp = game.xp;
@@ -319,6 +346,10 @@ final class Milestone06VehicleMaintenanceSmoke {
                     "required refurbishment facility guidance");
             requireContains(VehicleFuelAuthority.inspectionLines(game.world, vehicle),
                     "Garage refill:", "fuel and refilling player guidance");
+            requireContains(VehicleFuelAuthority.inspectionLines(game.world, vehicle),
+                    "Estimated local road range:", "reserve-aware local-road range guidance");
+            requireContains(VehicleInfopediaBridgeAuthority.liveDossier(game, vehicle),
+                    "Estimated local road range:", "live vehicle dashboard range guidance");
             for (String line : inspection) {
                 require(!PlayerFacingText.containsLikelyLeak(line),
                         "vehicle maintenance guidance leaked implementation text: " + line);

@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 affordable garage top-ups and live road-range guidance (2026-11-19)
+
+- A garage required enough script for the entire eight-unit refill despite selling by the unit, leaving players with smaller purses unable to buy any fuel. Garage refueling now accepts a bounded, affordable partial purchase (one to eight units) after all live-fixture, title, condition and capacity checks; exact paid units, available unreserved energy, and a partial-purchase receipt are reported. With zero purchasing power or a full tank, interaction remains free, without time/XP/vendor mutation.
+- Local range estimates in vehicle inspection, live dashboard and static class dossiers now use the exact same per-class efficiency mapping as committed local travel. Reserves are excluded from the displayed travel budget; guidance explicitly warns that connected roads, parking and readiness remain binding. No fuel, currency, or strategic reservation is consumed by this estimate.
+- The existing Milestone 06 maintenance smoke adds affordability edges, a real three-script partial garage purchase followed by a five-script top-up, one-turn/XP/vendor assertions, and dashboard/inspection readback. A standalone Java 17 arithmetic contract was locally compiled and passed; full-source Java 17, installed-client, multiplayer, and platform CI verification remain required. This change is not release clearance.
+
 ### Milestone 06 vehicle cursor-only driving works through the live interaction router (2026-11-19)
 
 - A discrepancy between the vehicle transit authority and the live physical interaction handler prevented a valid vehicle trip if the ordinary walking planner could not build a nonempty movement path. The authority explicitly supported long-distance vehicle cursor targeting, but the interaction wrapper dispatched to vehicle transit only when the **actor walking path** existed, falling back silently to inspection otherwise.
