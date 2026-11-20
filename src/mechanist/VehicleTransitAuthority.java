@@ -564,11 +564,16 @@ final class VehicleTransitAuthority {
     }
 
     private static String displayName(MapObjectState vehicle) {
-        VehicleRuntimeAuthority.Snapshot snapshot =
-                VehicleRuntimeAuthority.inspect(null, vehicle);
-        if (snapshot == null) return "vehicle";
-        return (clean(snapshot.manufacturer(), "") + " "
-                + clean(snapshot.model(), snapshot.vehicleClass().label)).trim();
+        if (vehicle == null || !VehicleRuntimeAuthority.isVehicle(vehicle))
+            return "vehicle";
+        // A route preview must not call inspect(): it registers a legacy
+        // fixture and recomputes/persists condition even for display labels.
+        VehicleRuntimeAuthority.VehicleClass definition =
+                VehicleRuntimeAuthority.vehicleClass(vehicle.type);
+        String manufacturer = MapObjectState.stockValue(vehicle.stockState, "manufacturer");
+        String model = MapObjectState.stockValue(vehicle.stockState, "model");
+        return (clean(manufacturer, "") + " "
+                + clean(model, definition.label)).trim();
     }
 
     private static String key(int x, int y) { return x + ":" + y; }
