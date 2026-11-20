@@ -185,6 +185,9 @@ class Persistence {
     }
 
     static void readCore(GamePanel g, Properties p) {
+        boolean profileLoad = Boolean.getBoolean("mechanist.profileSaveLoad");
+        long profileStart = profileLoad ? System.nanoTime() : 0L;
+        if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=atlas-definition status=started");
         CharacterEquipmentAndMedicalAuthority.readState(p, g.equippedWearableSlots, g.installedBodyModifications);
         g.combatSupport.restore(p.getProperty("run.combatSupport",""));
         String version = p.getProperty("save.version", "unknown");
@@ -193,11 +196,19 @@ class Persistence {
         g.worldSetup = WorldSetupSettings.decode(p.getProperty("run.worldSetup", WorldSetupSettings.standard().encode()));
         long atlasSeed = getLong(p,"atlas.seed",g.seed);
         g.atlas = WorldAtlas.loadSavedRun(atlasSeed, g.worldSetup);
+        long afterDefinition = profileLoad ? System.nanoTime() : 0L;
+        if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=atlas-definition status=completed"
+                + " elapsedMs=" + (afterDefinition - profileStart) / 1_000_000L);
         g.atlas.sectorX = clamp(getInt(p,"atlas.sx",1),1,3); g.atlas.sectorY = clamp(getInt(p,"atlas.sy",1),1,3);
         g.atlas.zoneX = clamp(getInt(p,"atlas.zx",2),1,3); g.atlas.zoneY = clamp(getInt(p,"atlas.zy",2),1,3);
         g.atlas.floor = clamp(getInt(p,"atlas.floor",4),1,10); g.atlas.sewer = Boolean.parseBoolean(p.getProperty("atlas.sewer","false"));
+        if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=physical-slice status=started");
         g.atlas.generateScaffold();
         g.world = g.atlas.currentWorld();
+        long afterSlice = profileLoad ? System.nanoTime() : 0L;
+        if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=physical-slice status=completed"
+                + " elapsedMs=" + (afterSlice - afterDefinition) / 1_000_000L
+                + " tiles=" + g.world.w + "x" + g.world.h);
         g.visibleTiles = new boolean[g.world.w][g.world.h];
         g.rememberedTiles = new boolean[g.world.w][g.world.h];
         g.turn = getInt(p,"run.turn",0); g.worldTurn = getLong(p,"run.worldTurn", g.turn); g.lastStaffedProductionBackgroundTurn = g.turn; g.playerX = clamp(getInt(p,"run.playerX", g.world.startPoint().x),0,g.world.w-1); g.playerY = clamp(getInt(p,"run.playerY", g.world.startPoint().y),0,g.world.h-1);
@@ -331,7 +342,13 @@ class Persistence {
         g.nextLogisticsHaulExecutionSeq = Math.max(1, getInt(p, "logistics.haulExecution.nextSeq", g.nextLogisticsHaulExecutionSeq));
         LogisticsManualHaulExecutionAuthority.restoreHistory(g, decList(p.getProperty("logistics.haulExecution.history", "")));
         g.lastLogisticsHaulExecutionReport = p.getProperty("logistics.haulExecution.lastReport", g.lastLogisticsHaulExecutionReport);
+        long beforeWorldApply = profileLoad ? System.nanoTime() : 0L;
+        if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=apply-saved-world status=started");
         readWorldState(g.world, p);
+        long afterWorldApply = profileLoad ? System.nanoTime() : 0L;
+        if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=apply-saved-world status=completed"
+                + " elapsedMs=" + (afterWorldApply - beforeWorldApply) / 1_000_000L
+                + " fixtures=" + g.world.mapObjects.size());
         int restoredPlayerX = g.playerX;
         int restoredPlayerY = g.playerY;
         try {
@@ -345,6 +362,16 @@ class Persistence {
         g.markZoneVisitedAndCheckFirstType();
         g.migrateLegacyPhysicalScript("save/read");
         g.auditItemLedgers("save/read");
+        if (profileLoad) {
+            long end = System.nanoTime();
+            DebugLog.log("SAVE_LOAD_PROFILE stage=complete status=completed"
+                    + " totalMs=" + (end - profileStart) / 1_000_000L
+                    + " atlasMs=" + (afterDefinition - profileStart) / 1_000_000L
+                    + " sliceMs=" + (afterSlice - afterDefinition) / 1_000_000L
+                    + " playerLedgerMs=" + (beforeWorldApply - afterSlice) / 1_000_000L
+                    + " worldApplyMs=" + (afterWorldApply - beforeWorldApply) / 1_000_000L
+                    + " postWorldMs=" + (end - afterWorldApply) / 1_000_000L);
+        }
         DebugLog.audit("SAVE_READ_CORE", "version=" + version + " state=" + g.stateSummary());
     }
 

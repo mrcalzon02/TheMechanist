@@ -14,11 +14,56 @@ final class ZoneGenerationManager {
     static void generate(World world) {
         if (world == null) return;
         WorldGenerationPipelineRunState state = new WorldGenerationPipelineRunState();
-        TileGenerationManager.resetSubstrate(world, state);
-        world.worldgenPhasePlazaAndRoads(state);
-        RoomGenerationManager.placeRoadFirstRoomsAndClaims(world, state);
-        ZoneFixturePlacementManager.placeRoadAndRoomFixtures(world, state);
-        world.worldgenPhaseBoundaryInterwallAndMetadata(state);
-        EntitySpawnManager.populateAndInitializeEconomy(world, state);
+        // Keep normal generation unchanged and profiling disabled unless
+        // requested by a developer or the bounded diagnostic jobs.
+        if (!Boolean.getBoolean("mechanist.profileWorldgen")) {
+            TileGenerationManager.resetSubstrate(world, state);
+            world.worldgenPhasePlazaAndRoads(state);
+            RoomGenerationManager.placeRoadFirstRoomsAndClaims(world, state);
+            ZoneFixturePlacementManager.placeRoadAndRoomFixtures(world, state);
+            world.worldgenPhaseBoundaryInterwallAndMetadata(state);
+            EntitySpawnManager.populateAndInitializeEconomy(world, state);
+            return;
+        }
+        long begin = System.nanoTime();
+        try {
+            profilePhase(world, "substrate", () ->
+                    TileGenerationManager.resetSubstrate(world, state));
+            profilePhase(world, "plaza-roads", () ->
+                    world.worldgenPhasePlazaAndRoads(state));
+            profilePhase(world, "rooms-faction", () ->
+                    RoomGenerationManager.placeRoadFirstRoomsAndClaims(world, state));
+            profilePhase(world, "road-room-fixtures", () ->
+                    ZoneFixturePlacementManager.placeRoadAndRoomFixtures(world, state));
+            profilePhase(world, "boundary-interwall", () ->
+                    world.worldgenPhaseBoundaryInterwallAndMetadata(state));
+            profilePhase(world, "population-economy-compile", () ->
+                    EntitySpawnManager.populateAndInitializeEconomy(world, state));
+        } finally {
+            DebugLog.log("WORLDGEN_PROFILE phase=all status=finished totalMs="
+                    + elapsedMs(begin) + " tiles=" + world.w + "x" + world.h
+                    + " rooms=" + world.rooms.size() + " seed=" + world.seed);
+        }
+    }
+
+    private static void profilePhase(World world, String phase, Runnable work) {
+        long start = System.nanoTime();
+        DebugLog.log("WORLDGEN_PROFILE phase=" + phase + " status=started"
+                + " seed=" + world.seed + " tiles=" + world.w + "x" + world.h);
+        try {
+            work.run();
+            DebugLog.log("WORLDGEN_PROFILE phase=" + phase + " status=completed"
+                    + " elapsedMs=" + elapsedMs(start)
+                    + " rooms=" + world.rooms.size());
+        } catch (RuntimeException | Error failure) {
+            DebugLog.log("WORLDGEN_PROFILE phase=" + phase + " status=failed"
+                    + " elapsedMs=" + elapsedMs(start)
+                    + " error=" + failure.getClass().getSimpleName());
+            throw failure;
+        }
+    }
+
+    private static long elapsedMs(long start) {
+        return Math.max(0L, (System.nanoTime() - start) / 1_000_000L);
     }
 }

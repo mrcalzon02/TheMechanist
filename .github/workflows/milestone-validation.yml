@@ -95,7 +95,7 @@ jobs:
           $stdout = "build\ci\gate3-diagnostic.stdout.log"
           $stderr = "build\ci\gate3-diagnostic.stderr.log"
           $process = Start-Process -FilePath "java" `
-            -ArgumentList @("-Djava.awt.headless=true", "-cp", $classes, "mechanist.Gate3PlayerFacingTextSmokeSuite") `
+            -ArgumentList @("-Djava.awt.headless=true", "-Dmechanist.profileWorldgen=true", "-Dmechanist.profileSaveLoad=true", "-cp", $classes, "mechanist.Gate3PlayerFacingTextSmokeSuite") `
             -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           if (-not $process.WaitForExit(180000)) {
             try { $process.Kill($true) } catch { Write-Warning "Could not immediately stop Gate 3 diagnostic process: $_" }
@@ -106,7 +106,12 @@ jobs:
           } else {
             $result = "PASS"
           }
-          if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -Tail 25 }
+          if (Test-Path -LiteralPath $stdout) {
+            Write-Host "--- Save-load / worldgen phase timing readback ---"
+            Select-String -LiteralPath $stdout -Pattern 'WORLDGEN_PROFILE|SAVE_LOAD_PROFILE' |
+              Select-Object -Last 20 | ForEach-Object { Write-Host $_.Line }
+            Get-Content -LiteralPath $stdout -Tail 25
+          }
           if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -Tail 25 }
           if ($result -ne "PASS") { Write-Warning "Gate 3 diagnostics: $result. See logs for the last attempted test." }
           "- Gate 3 diagnostics (180s max, informational): $result" >> $env:GITHUB_STEP_SUMMARY

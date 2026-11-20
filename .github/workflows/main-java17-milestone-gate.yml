@@ -242,9 +242,12 @@ jobs:
           stdout="ROOT_build/main-java17-gate/gate3.stdout.log"
           stderr="ROOT_build/main-java17-gate/gate3.stderr.log"
           timeout --signal=QUIT --kill-after=5s 120s java -Djava.awt.headless=true \
+            -Dmechanist.profileWorldgen=true -Dmechanist.profileSaveLoad=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Gate3PlayerFacingTextSmokeSuite >"$stdout" 2>"$stderr"
           code=$?
+          echo '--- Save-load / worldgen phase timing readback ---'
+          grep -E 'WORLDGEN_PROFILE|SAVE_LOAD_PROFILE' "$stdout" | tail -n 20 || true
           echo '--- Gate 3 recent cases ---'
           tail -n 28 "$stdout" || true
           tail -n 28 "$stderr" || true

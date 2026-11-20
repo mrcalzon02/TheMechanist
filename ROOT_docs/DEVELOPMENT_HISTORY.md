@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06.R optional worldgen and campaign restore profiling now identify the stall phase (2026-11-20)
+
+- Existing bounded Gate 3 diagnostics repeatedly consumed their 120-second Linux and 180-second Windows windows during production-scale physical world generation, but the output did not separate atlas-definition loading, generated slice work, player-ledger reconstruction, or saved-world overlay cost. Tuning blindly could damage terrain topology, deterministic persistence, or interaction readability.
+- Added opt-in `mechanist.profileWorldgen` timing around the existing six ordered generation phases (substrate, plaza/roads, rooms/factions, fixtures, boundary/interwall, population/economy/compile). Each phase emits a start marker before running and elapsed time on completion, so a timeout still identifies the last incomplete phase. Without the system property, generation follows its prior path unchanged.
+- Added opt-in `mechanist.profileSaveLoad` stage timings to the full `Persistence.readCore` path: atlas definition, physical slice, character/ledger restoration, saved-world overlay, and post-load work. The bounded optional Linux and Windows Gate 3 workflows enable both profiles and report the last timing records. Production gameplay and required focused smoke tests remain unprofiled.
+- This pass adds actionable timing evidence, **not** a claim that world generation or full save loading is faster. Numeric performance improvements require exact-run measurements and a subsequent bounded repair with deterministic world and asset acceptance checks.
+
 ### Milestone 06.R saved empty vehicle/fixture lists no longer resurrect generated objects (2026-11-20)
 
 - The full save-restoration path regenerates a physical world before applying saved map objects. `Persistence.readWorldState` previously cleared generated fixtures only when `world.mapObjects` decoded to a nonempty list. A saved zone where the player had cleared every fixture therefore kept generated vehicles and other objects, because explicit empty and missing legacy fields were treated alike. The generated tile glyphs could also survive when a saved list omitted a generated object.
