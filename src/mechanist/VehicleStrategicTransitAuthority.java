@@ -365,24 +365,75 @@ final class VehicleStrategicTransitAuthority {
                         + ". Fuel or power is reserved in the vehicle ledger but is not consumed until the authoritative transition commits.");
     }
 
+    /**
+     * Player cancellation requires the recorded title on a fixture in the
+     * current world. Preview/access refusal never initializes or rewrites it.
+     */
     static Reservation cancel(GamePanel game, MapObjectState vehicle,
                               String reason) {
-        if (vehicle == null || !VehicleRuntimeAuthority.isVehicle(vehicle)
-                || !"reserved".equals(value(vehicle,
-                "strategicTransitState"))) {
-            Readiness blocked = new Readiness(Status.BLOCKED, false,
-                    List.of("no active strategic transit reservation"),
-                    List.of(), 0, 0,
-                    "No strategic transit reservation is active.");
-            return new Reservation(false, false, "", blocked,
-                    blocked.summary());
+        if (!loadedVehicle(game, vehicle)) {
+            return blockedCancellation(vehicle,
+                    "The selected vehicle is no longer present in the loaded zone.");
         }
+        if (!VehicleRuntimeAuthority.playerOwnsReadOnly(game, vehicle)) {
+            return blockedCancellation(vehicle,
+                    "Only the recorded player owner can cancel this vehicle's strategic reservation.");
+        }
+        return cancelAuthorized(game, vehicle, reason);
+    }
+
+    /**
+     * Faction cancellation uses the actual registered local motor-pool site,
+     * not the player's inventory, faction membership, or a caller-supplied
+     * vehicle object with a plausible faction title.
+     */
+    static Reservation cancelForFaction(GamePanel game, MapObjectState vehicle,
+                                        NpcFactionSite site, String reason) {
+        if (!loadedVehicle(game, vehicle)) {
+            return blockedCancellation(vehicle,
+                    "The selected faction vehicle is no longer present in the loaded zone.");
+        }
+        if (site == null || site.faction == null || site.faction == Faction.NONE
+                || game.npcFactionSites == null
+                || !game.npcFactionSites.contains(site)
+                || !VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)
+                || !VehicleMotorPoolAuthority.assignedToLocalSite(
+                        game, vehicle, site)) {
+            return blockedCancellation(vehicle,
+                    "Only the vehicle's registered local faction motor pool may cancel this reservation.");
+        }
+        return cancelAuthorized(game, vehicle, reason);
+    }
+
+    private static boolean loadedVehicle(GamePanel game, MapObjectState vehicle) {
+        return game != null && game.world != null && vehicle != null
+                && VehicleRuntimeAuthority.isVehicle(vehicle)
+                && game.world.mapObjects != null
+                && game.world.mapObjects.contains(vehicle);
+    }
+
+    private static Reservation blockedCancellation(MapObjectState vehicle,
+                                                    String summary) {
+        Readiness blocked = new Readiness(Status.BLOCKED, false,
+                List.of(summary), List.of(), 0, 0, summary);
+        return new Reservation(false, false, "", blocked, blocked.summary());
+    }
+
+    private static Reservation cancelAuthorized(GamePanel game,
+                                                MapObjectState vehicle,
+                                                String reason) {
+        if (!"reserved".equals(value(vehicle, "strategicTransitState"))) {
+            return blockedCancellation(vehicle,
+                    "No active strategic transit reservation is available to cancel.");
+        }
+        // Stale or malformed booking origin/fuel fields do not prevent lawful
+        // cancellation: this is how the current owner releases a stranded hold
+        // after an interrupted or outdated booking without moving the vehicle.
         String id = value(vehicle, "strategicTransitReservationId");
         set(vehicle, "strategicTransitState", "cancelled");
         set(vehicle, "strategicTransitFuelReserved", "0");
         set(vehicle, "strategicTransitCancelledTurn",
-                Long.toString(game == null ? 0L
-                        : Math.max(0L, game.worldTurn)));
+                Long.toString(Math.max(0L, game.worldTurn)));
         append(vehicle, "deploymentHistory", "Strategic route reservation "
                 + id + " cancelled / "
                 + clean(reason, "route cancelled"));

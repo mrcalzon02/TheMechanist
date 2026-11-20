@@ -68,6 +68,8 @@ jobs:
             "mechanist.Milestone06VehicleMaintenanceSmoke",
             "mechanist.Milestone06VehicleTransitSmoke",
             "mechanist.Milestone06VehicleStrategicTransitSmoke",
+            "mechanist.Milestone06FactionVehicleRouteControlSmoke",
+            "mechanist.Milestone06FactionVehicleStrategicRouteControlSmoke",
             "mechanist.Milestone06VehicleDashboardSmoke",
             "mechanist.Milestone06SavedWorldHistoryContinuitySmoke",
             "mechanist.SimulationToolSuiteRecoverySmoke",

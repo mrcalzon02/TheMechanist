@@ -94,6 +94,14 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone06VehicleStrategicTransitSmoke
+          # Faction motor-pool cancellation must be tested with the same
+          # title and site controls as player-owned strategic reservations.
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06FactionVehicleRouteControlSmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06FactionVehicleStrategicRouteControlSmoke
           # Directly verify live dashboard fuel/reservation clarity before
           # optional worldgen diagnostics can exhaust their time budget.
           java -Djava.awt.headless=true \

@@ -235,9 +235,52 @@ final class Milestone06VehicleStrategicTransitSmoke {
                             reservation.reservationId()),
                     "repeat reservation should be idempotent");
 
+            // Cancellation has the same player-title and live-fixture
+            // boundaries as departure: detached, null-context, or differently
+            // titled vehicles must retain their reservation byte-for-byte.
+            String cancelBefore = car.stockState;
+            require(!VehicleStrategicTransitAuthority.cancel(null, car,
+                            "missing game context").success()
+                            && cancelBefore.equals(car.stockState),
+                    "cancel without an active world must not release the reservation");
+            game.world.mapObjects.remove(car);
+            require(!VehicleStrategicTransitAuthority.cancel(game, car,
+                            "stale selection").success()
+                            && cancelBefore.equals(car.stockState),
+                    "detached vehicle cancellation must not alter saved fuel or history");
+            game.world.mapObjects.add(car);
+            car.stockState = MapObjectState.setStockFlag(car.stockState,
+                    "ownerPlayerId", "other-character-title");
+            String mismatchedTitle = car.stockState;
+            require(!VehicleStrategicTransitAuthority.cancel(game, car,
+                            "wrong character").success()
+                            && mismatchedTitle.equals(car.stockState),
+                    "another character may not cancel a title-bound reservation");
+            car.stockState = cancelBefore;
+            car.stockState = MapObjectState.setStockFlag(car.stockState,
+                    "ownerType", VehicleRuntimeAuthority.OwnerType.PRIVATE.name());
+            String privateTitle = car.stockState;
+            require(!VehicleStrategicTransitAuthority.cancel(game, car,
+                            "private property").success()
+                            && privateTitle.equals(car.stockState),
+                    "a private owner's reservation cannot be cancelled by the player");
+            car.stockState = cancelBefore;
+
+            // The lawful owner can recover a stale booking with an outdated
+            // origin and missing fuel hold without advancing travel or debiting
+            // energy. Cancellation is not a simulated departure.
+            car.stockState = MapObjectState.setStockFlag(car.stockState,
+                    "strategicTransitOrigin", "old-world-location");
+            car.stockState = MapObjectState.setStockFlag(car.stockState,
+                    "strategicTransitFuelReserved", "0");
+            int fuelBeforeRecovery = VehicleFuelAuthority.preview(car).current();
             VehicleStrategicTransitAuthority.Reservation cancelled =
                     VehicleStrategicTransitAuthority.cancel(game, car,
-                            "destination gate schedule changed");
+                            "recover interrupted strategic booking");
+            require(VehicleFuelAuthority.preview(car).current() == fuelBeforeRecovery
+                            && game.world.mapObjects.contains(car)
+                            && car.x == 4 && car.y == 5,
+                    "stale booking recovery must preserve fuel and vehicle position");
             require(cancelled.success() && cancelled.changed()
                             && "cancelled".equals(MapObjectState.stockValue(
                             car.stockState, "strategicTransitState"))

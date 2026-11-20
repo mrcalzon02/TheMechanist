@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 strategic reservation cancellation now enforces player title or registered faction yard (2026-11-20)
+
+- The strategic transit cancellation entry point previously accepted any vehicle object with a `reserved` state, including detached or faction-owned vehicles, without verifying the requesting game/world, title or controlling motor pool. A caller could clear persistent reserved fuel and history belonging to another owner.
+- Player cancellation now checks loaded fixture membership and the nonmutating deterministic player-title authority. Faction cancellation has a separate `cancelForFaction` entry point requiring a live registered local faction site, matching faction ownership and the existing motor-pool site key. Unauthorised and detached requests return refusals without writing stock data or fuel history.
+- The shared authorized cancellation path still clears a valid pending booking without consuming fuel. A lawful owner can release a stranded reservation even if its saved origin is outdated or fuel hold is missing, then rebook normally. It does not cancel an in-progress commit or force a world transfer.
+- The focused player transit, faction route-control, and faction strategic-route tests now cover cancellation permissions and preserve existing successful closure paths. Both Java 17 gates run the faction smokes before optional long Gate 3 diagnostics; no new release or target-native installer is certified by these in-memory tests.
+
 ### Milestone 06 strategic reservation repeats now require identical saved route terms (2026-11-20)
 
 - A route reservation could be reported as a successful idempotent repeat based only on matching destination, even when the requested distance, crew count, fuel, infrastructure, route controller, purpose, or source world differed from the persisted reservation. That left a false-ready approval over an unchanged booked route.

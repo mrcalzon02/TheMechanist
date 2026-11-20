@@ -185,9 +185,24 @@ final class Milestone06FactionVehicleRouteControlSmoke {
             require(!reservedCancel.success()
                             && beforeReservedCancel.equals(armored.stockState),
                     "active transit reservation must block route-order cancellation without mutation");
-            VehicleStrategicTransitAuthority.Reservation transitCancelled =
+            // Player cancellation cannot take ownership of a faction motor-
+            // pool booking. A forged yard, even with the same site name and
+            // coordinates, must not be a substitute for the registered site.
+            VehicleStrategicTransitAuthority.Reservation unauthorizedPlayer =
                     VehicleStrategicTransitAuthority.cancel(game, armored,
-                            "checkpoint patrol stood down");
+                            "unauthorized player cancellation");
+            NpcFactionSite forgedSite = site("Mechanist Route Yard",
+                    mechanist.faction, game.world);
+            VehicleStrategicTransitAuthority.Reservation unauthorizedYard =
+                    VehicleStrategicTransitAuthority.cancelForFaction(
+                            game, armored, forgedSite, "forged yard");
+            require(!unauthorizedPlayer.success()
+                            && !unauthorizedYard.success()
+                            && beforeReservedCancel.equals(armored.stockState),
+                    "neither player nor unregistered faction yard may release fleet fuel");
+            VehicleStrategicTransitAuthority.Reservation transitCancelled =
+                    VehicleStrategicTransitAuthority.cancelForFaction(
+                            game, armored, mechanist, "checkpoint patrol stood down");
             require(transitCancelled.success()
                             && transitCancelled.changed(),
                     "authoritative transit owner should cancel the pending reservation");

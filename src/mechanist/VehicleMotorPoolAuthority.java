@@ -397,6 +397,20 @@ final class VehicleMotorPoolAuthority {
         return blockers;
     }
 
+    /**
+     * Pure membership check for authoritative faction cancellation.
+     * Unlike inspect(), it does not initialize a vehicle or its fuel ledger.
+     */
+    static boolean assignedToLocalSite(GamePanel game, MapObjectState vehicle,
+                                       NpcFactionSite site) {
+        return game != null && game.world != null && vehicle != null
+                && VehicleRuntimeAuthority.isVehicle(vehicle)
+                && game.world.mapObjects != null
+                && game.world.mapObjects.contains(vehicle)
+                && localSite(site, game.world)
+                && siteKey(site).equals(value(vehicle, "motorPoolSiteKey"));
+    }
+
     private static boolean localSite(NpcFactionSite site, World world) {
         return site != null && world != null
                 && site.sectorX == world.sectorX

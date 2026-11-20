@@ -233,8 +233,8 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
                             && mechanist.stock < stockBeforeCancelledStage,
                     "a second route mission should stage pending before cancellation");
             int stockAfterCancelledStage = mechanist.stock;
-            require(VehicleStrategicTransitAuthority.cancel(
-                    game, cancelledVehicle,
+            require(VehicleStrategicTransitAuthority.cancelForFaction(
+                    game, cancelledVehicle, mechanist,
                     "strategic route cancellation smoke").success(),
                     "the authoritative transit owner should cancel the staged reservation");
             int cancelledResolved =
