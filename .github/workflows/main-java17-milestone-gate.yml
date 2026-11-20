@@ -79,6 +79,11 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone06VehicleRuntimeFoundationSmoke
+          # Vehicle transit is also exercised independently, because the
+          # comprehensive legacy Gate 3 suite may time out before reaching it.
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06VehicleTransitSmoke
 
       - name: Verify world-actor sprite intake without placeholder assets
         shell: bash

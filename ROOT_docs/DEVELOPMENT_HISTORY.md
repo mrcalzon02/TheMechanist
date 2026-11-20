@@ -1,5 +1,13 @@
 # Development History
 
+### Milestone 06 local vehicle routes choose reachable parking and avoid false engine starts (2026-11-19)
+
+- The local route planner used the closest legal parking tile near a requested destination, then tried one route. A disconnected parking tile could therefore deny travel despite another equally valid reachable parking space within the five-tile resolution area. The planner now evaluates the entire bounded parking candidate set in one road-graph BFS and selects the closest reachable space within the 48-step local route budget, with stable distance/coordinate tiebreaking.
+- Parking-sidewalk cells remain terminals, never through-routes. Invalid ownership, mobility, occupancy, road clearance, and last-moment route checks continue through the same execution authority.
+- A zero-step route now returns a successful, unchanged "already parked" result without transient start/stop pulses, lighting/audio changes, deployment history, or inventory/turn changes.
+- The focused `Milestone06VehicleTransitSmoke` exercises disconnected-nearest parking, deterministic alternate selection, and no-op nonmutation, and is invoked in the Java 17 Milestone gate ahead of the separately bounded Gate 3 diagnostic suite. Existing ordinary/cargo/ownership routes remain regression checks. Source changes require exact-commit CI and target client integration evidence before release claims.
+
+
 ### Milestone 03 contract-turn-in smoke timeout localized on both CI platforms (2026-11-19)
 
 - The newly instrumented 247-case Gate 3 suite reached and stalled at `Milestone03ContractTurnInSmoke` on both Linux and Windows, following 10 completed smoke checks. Both 180-second diagnostic windows expired while the test remained active; its latest messages were world generation validation for a large 600x600 slice.

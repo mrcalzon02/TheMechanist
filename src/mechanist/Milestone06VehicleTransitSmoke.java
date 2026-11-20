@@ -23,6 +23,39 @@ final class Milestone06VehicleTransitSmoke {
                     Faction.NONE, "player-owned", 31L);
             game.world.mapObjects.add(vehicle);
 
+            // The closest legal parking tile may be disconnected. Choose a
+            // reachable one nearby rather than refusing an otherwise valid trip.
+            game.world.tiles[18][6] = RoadGridIntegrationAuthority.PARKING_SPACE;
+            game.world.tiles[18][4] = RoadGridIntegrationAuthority.PARKING_SPACE;
+            VehicleTransitAuthority.RoutePlan alternate =
+                    VehicleTransitAuthority.plan(game, vehicle, 18, 6);
+            require(alternate.valid()
+                            && alternate.resolvedParking().equals(new Point(18, 4))
+                            && alternate.path().get(alternate.path().size() - 1)
+                                    .equals(new Point(18, 4)),
+                    "disconnected closest parking must not hide reachable alternative: "
+                            + alternate.summary());
+            requireContains(alternate.summary(), "near requested 18,6",
+                    "alternate parking explanation");
+            game.world.tiles[18][6] = '#';
+            game.world.tiles[18][4] = RoadGridIntegrationAuthority.ROAD_LANE;
+
+            // An already-parked route must not produce fake engine activity.
+            String beforeNoOp = vehicle.stockState;
+            int beforeNoOpTurn = game.turn;
+            VehicleTransitAuthority.RoutePlan parked =
+                    VehicleTransitAuthority.plan(game, vehicle, 2, 4);
+            require(parked.valid() && parked.steps() == 0, "same-cell parking preview");
+            VehicleTransitAuthority.TransitResult noOp =
+                    VehicleTransitAuthority.execute(game, vehicle, parked);
+            require(noOp.success() && !noOp.changed() && noOp.steps() == 0
+                            && game.turn == beforeNoOpTurn
+                            && vehicle.stockState.equals(beforeNoOp)
+                            && !VehicleOperationFeedbackAuthority.visualState(game, vehicle,
+                                    System.currentTimeMillis()).visible(),
+                    "same-cell vehicle route must not start an engine, spend a turn, "
+                            + "write history, or emit transient operation feedback");
+
             VehicleTransitAuthority.RoutePlan plan =
                     VehicleTransitAuthority.plan(game, vehicle, 25, 4);
             require(plan.valid() && plan.steps() == 23
