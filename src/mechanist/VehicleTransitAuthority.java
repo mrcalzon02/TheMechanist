@@ -109,9 +109,35 @@ final class VehicleTransitAuthority {
                             + MAX_LOCAL_ROUTE_STEPS
                             + " road steps. Choose a closer destination or use strategic transit.");
         }
+        VehicleRuntimeAuthority.VehicleClass definition =
+                VehicleRuntimeAuthority.vehicleClass(vehicle.type);
+        VehicleFuelAuthority.Snapshot energy =
+                VehicleFuelAuthority.inspect(game.world, vehicle);
+        // Resolve parking against actual *unreserved* travel range first.
+        // A closer parking tile may require a much longer road detour than a
+        // nearby alternative. Avoid refusing the whole trip in that case.
+        int fuelStepLimit = Math.min(MAX_LOCAL_ROUTE_STEPS,
+                VehicleFuelAuthority.localRoadRangeTiles(definition, energy.available()));
         RoadSearch search = roadPath(game.world, vehicle, options,
-                VehicleRuntimeAuthority.vehicleClass(vehicle.type), blockedTiles);
+                definition, blockedTiles, fuelStepLimit);
         if (search.route() == null) {
+            // Only when fuel-constrained search hits its boundary, retry the
+            // bounded 48-step road graph to distinguish insufficient energy
+            // from disconnected roads or an overlong route.
+            if (fuelStepLimit < MAX_LOCAL_ROUTE_STEPS && search.hitRouteLimit()) {
+                RoadSearch unrestricted = roadPath(game.world, vehicle, options,
+                        definition, blockedTiles, MAX_LOCAL_ROUTE_STEPS);
+                if (unrestricted.route() != null) {
+                    return RoutePlan.blocked(requested, "insufficient-energy",
+                            "No legal parking near " + targetX + "," + targetY
+                                    + " is reachable with " + energy.available()
+                                    + " unreserved fuel or power unit(s) ("
+                                    + energy.reserved()
+                                    + " reserved for strategic transit)."
+                                    + " Refuel or choose a closer road destination.");
+                }
+                search = unrestricted;
+            }
             if (search.hitRouteLimit()) {
                 return RoutePlan.blocked(requested, "route-too-long",
                         "No parking could be reached within "
@@ -135,8 +161,8 @@ final class VehicleTransitAuthority {
                             + MAX_LOCAL_ROUTE_STEPS + ".");
         }
         int requiredFuel = VehicleFuelAuthority.routeEnergyCost(
-                VehicleRuntimeAuthority.vehicleClass(vehicle.type), path.size() - 1);
-        VehicleFuelAuthority.Snapshot energy = VehicleFuelAuthority.inspect(game.world, vehicle);
+                definition, path.size() - 1);
+        // Defense in depth: a constrained path may never consume reserved fuel.
         if (energy.available() < requiredFuel) {
             return RoutePlan.blocked(requested, "insufficient-energy",
                     "This local vehicle route needs " + requiredFuel
@@ -289,7 +315,7 @@ final class VehicleTransitAuthority {
                 VehicleInfopediaBridgeAuthority.liveDossier(game, vehicle));
         lines.add("LOCAL TRANSIT CONTROL");
         lines.add("Transit rule: roads and marked parking carry movement; clear curb-adjacent sidewalks may receive automatic parking, but they are not through-routes.");
-        lines.add("Travel energy: local trips charge the shared class-scaled fuel or power ledger only when movement commits. Strategic reservations are unavailable to local routes; checking an already parked vehicle costs nothing.");
+        lines.add("Travel energy: local trips charge the shared class-scaled fuel or power ledger only when movement commits. The route planner tries reachable parking within unreserved energy first; a nearer parking bay with an unaffordable detour is skipped. Strategic reservations remain unavailable to local routes; checking an already parked vehicle costs nothing.");
         lines.add("Route control: open manual movement planning, aim its cursor at a road or parking destination, then interact with a nearby player-owned operational vehicle. No walking path is required; vehicle range is validated independently.");
         lines.add("Operation feedback: validated movement drives the same running state used by the bounded pulse, forward headlights, degraded-component feedback, and distance-limited ambient operating sound.");
         if (game != null && vehicle != null && VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
@@ -316,7 +342,7 @@ final class VehicleTransitAuthority {
     private static RoadSearch roadPath(World world, MapObjectState vehicle,
                                        List<Point> options,
                                        VehicleRuntimeAuthority.VehicleClass vehicleClass,
-                                       HashSet<Long> blockedTiles) {
+                                       HashSet<Long> blockedTiles, int maxSteps) {
         if (options.isEmpty()) return new RoadSearch(null, false);
         Point start = new Point(vehicle.x, vehicle.y);
         HashMap<Long, Integer> priorityByCell = new HashMap<>();
@@ -352,8 +378,9 @@ final class VehicleTransitAuthority {
                 boolean parkingTarget = priorityByCell.containsKey(nextKey);
                 if (!routeCell(world, blockedTiles, nx, ny, parkingTarget)
                         || !sizeAllows(world, vehicleClass, nx, ny)) continue;
-                if (step.depth() >= MAX_LOCAL_ROUTE_STEPS) {
-                    // Detect a continuation but never visit a 49th step.
+                if (step.depth() >= maxSteps) {
+                    // Detect a continuation without visiting a step beyond
+                    // the current energy/routing budget.
                     hitLimit = true;
                     continue;
                 }

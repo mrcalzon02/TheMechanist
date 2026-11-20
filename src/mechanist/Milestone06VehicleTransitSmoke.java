@@ -364,6 +364,7 @@ final class Milestone06VehicleTransitSmoke {
             }
 
             verifyBoundedRoadSearch(game);
+            verifyFuelAwareParkingChoice(game);
             System.out.println("Milestone 06 vehicle transit smoke passed.");
         } finally {
             VehicleOperationFeedbackAuthority.clearTransientFeedback();
@@ -437,6 +438,95 @@ final class Milestone06VehicleTransitSmoke {
                 VehicleTransitAuthority.plan(game, snakeCar, 2, 8);
         require(!severed.valid() && "no-road-route".equals(severed.blocker()),
                 "a short, disconnected road must report no-road-route");
+    }
+
+    /**
+     * Requested parking takes a long detour, while a slightly farther bay can
+     * be reached with the actual unreserved fuel. The route must choose the
+     * affordable bay rather than reject a trip that is otherwise possible.
+     */
+    private static void verifyFuelAwareParkingChoice(GamePanel game) {
+        World road = new World(61012L, 26, 13);
+        road.zoneType = ZoneType.NEUTRAL_CIVILIAN_FLOOR;
+        road.mapObjects.clear();
+        road.npcs.clear();
+        for (char[] column : road.tiles) java.util.Arrays.fill(column, '#');
+
+        road.tiles[2][6] = RoadGridIntegrationAuthority.PARKING_SPACE;
+        for (int x = 3; x <= 11; x++)
+            road.tiles[x][6] = RoadGridIntegrationAuthority.ROAD_LANE;
+        road.tiles[12][6] = RoadGridIntegrationAuthority.PARKING_SPACE;
+        for (int y = 7; y <= 9; y++)
+            road.tiles[2][y] = RoadGridIntegrationAuthority.ROAD_LANE;
+        for (int x = 3; x <= 21; x++)
+            road.tiles[x][9] = RoadGridIntegrationAuthority.ROAD_LANE;
+        for (int y = 4; y <= 8; y++)
+            road.tiles[21][y] = RoadGridIntegrationAuthority.ROAD_LANE;
+        for (int x = 13; x <= 20; x++)
+            road.tiles[x][4] = RoadGridIntegrationAuthority.ROAD_LANE;
+        road.tiles[12][4] = RoadGridIntegrationAuthority.PARKING_SPACE;
+
+        MapObjectState car = vehicle(road, 2, 6,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                VehicleRuntimeAuthority.OwnerType.PLAYER,
+                Faction.NONE, "player-owned", 61012L);
+        road.mapObjects.add(car);
+        game.world = road;
+        game.playerX = 2;
+        game.playerY = 5;
+        game.options.soundEnabled = false;
+        VehicleFuelAuthority.inspect(road, car);
+
+        // With ample fuel, the exact requested bay is legal, but requires
+        // the 36-step detour on the isolated road branch.
+        VehicleTransitAuthority.RoutePlan fullFuel =
+                VehicleTransitAuthority.plan(game, car, 12, 4);
+        require(fullFuel.valid() && fullFuel.steps() == 36
+                        && fullFuel.resolvedParking().equals(new Point(12, 4)),
+                "unconstrained route should prefer the exact requested parking bay: "
+                        + fullFuel.summary());
+
+        // A 12-unit reserve leaves only one unit: even the ten-step
+        // alternate bay is unaffordable. Refusal must not alter the ledger.
+        car.stockState = MapObjectState.setStockFlag(
+                car.stockState, "fuelOrPowerCurrent", "12");
+        car.stockState = MapObjectState.setStockFlag(
+                car.stockState, "strategicTransitFuelReserved", "11");
+        String beforeRefusal = car.stockState;
+        VehicleTransitAuthority.RoutePlan insufficient =
+                VehicleTransitAuthority.plan(game, car, 12, 4);
+        require(!insufficient.valid()
+                        && "insufficient-energy".equals(insufficient.blocker())
+                        && insufficient.summary().contains("11 reserved")
+                        && beforeRefusal.equals(car.stockState),
+                "one unreserved unit cannot reach either parking bay or mutate fuel");
+
+        // Two unreserved units cover the nearby 10-step alternative, but
+        // not the preferred 36-step bay. The same preview must execute
+        // without consuming one of the 10 strategically reserved units.
+        car.stockState = MapObjectState.setStockFlag(
+                car.stockState, "strategicTransitFuelReserved", "10");
+        String beforePreview = car.stockState;
+        VehicleTransitAuthority.RoutePlan affordable =
+                VehicleTransitAuthority.plan(game, car, 12, 4);
+        require(affordable.valid() && affordable.steps() == 10
+                        && affordable.resolvedParking().equals(new Point(12, 6))
+                        && affordable.summary().contains("near requested 12,4")
+                        && affordable.summary().contains("2 unit(s) required")
+                        && affordable.summary().contains("10 reserved")
+                        && beforePreview.equals(car.stockState),
+                "fuel-aware preview must select reachable parking without mutation: "
+                        + affordable.summary());
+        int turnBefore = game.turn;
+        VehicleTransitAuthority.TransitResult delivered =
+                VehicleTransitAuthority.execute(game, car, affordable);
+        VehicleFuelAuthority.Snapshot after = VehicleFuelAuthority.inspect(road, car);
+        require(delivered.success() && delivered.changed()
+                        && delivered.toX() == 12 && delivered.toY() == 6
+                        && after.current() == 10 && after.reserved() == 10
+                        && after.available() == 0
+                        && game.turn == turnBefore,
+                "committed alternate parking must debit only two unreserved units");
     }
 
     private static World world() {

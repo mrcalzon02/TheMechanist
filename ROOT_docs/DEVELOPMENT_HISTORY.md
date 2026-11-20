@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06 route selection respects affordable parking alternatives (2026-11-19)
+
+- Parking selection previously preferred the legal bay nearest the cursor even if its connecting road required more fuel than the vehicle had available. A different bay within the same five-tile resolution area could be reachable with the current reserve, yet the entire plan failed after selecting the unaffordable detour.
+- The existing 48-step bounded route planner now first searches within the actual class-scaled **unreserved** fuel/power range. When no suitable parking is reachable within that energy budget, one bounded unconstrained search distinguishes genuine insufficient fuel from disconnected roads or routes over the local maximum. Zero-step inspections remain free, and plans/refusals retain the existing deterministic road/parking rules and single-commit debit.
+- Player transit guidance explains fuel-aware parking selection. The focused Milestone 06 transit smoke adds two parking bays: an exact requested bay requiring a 36-step detour, and a nearby 10-step bay. It checks full-fuel priority, one-unit insufficient/reserved nonmutation, the affordable alternative, and a committed debit that leaves ten strategically reserved units untouched. Java 17, package boot, multiplayer, and exact-commit platform tests remain required before release claims.
+
 ### Milestone 06 vehicle route previews and commits respect player occupancy (2026-11-19)
 
 - Per-request road occupancy correctly included live NPCs and fixtures but omitted the player actor, so a valid local route could cross or park upon the player while the player remained stationary. The occupancy snapshot now includes the in-bounds player tile at both preview and commit, except when that tile is the selected vehicle's own starting cell so zero-step inspections remain possible.
