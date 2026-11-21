@@ -20,6 +20,26 @@ final class ProgressiveConstructionAuthority {
 
     record FactionWorkResult(boolean advanced, int laborAdded, boolean completed, String summary) {}
 
+    record WorkerWorkResult(boolean advanced, int laborAdded, boolean completed, String summary) { }
+
+    /** Real staffed labor is applied only after player-owned site materials are staged. */
+    static WorkerWorkResult contributeWorker(GamePanel g, BaseObject site, int turns, String workerName) {
+        if (!PlayerConstructionCrewAuthority.validSite(g, site) || turns <= 0)
+            return new WorkerWorkResult(false, 0, false, "Crew work blocked: site ownership changed.");
+        if (!materialsComplete(site))
+            return new WorkerWorkResult(false, 0, false, "Crew work blocked: stage " + missingMaterials(site) + ".");
+        int before = site.constructionLaborDone;
+        site.constructionLaborDone = Math.min(Math.max(1, site.constructionLaborRequired), before + Math.min(1, turns));
+        int added = site.constructionLaborDone - before;
+        site.constructionVisualProgress = progressPercent(site);
+        boolean completed = complete(site);
+        if (completed) finalizeSite(g, site);
+        return new WorkerWorkResult(added > 0, added, completed,
+                completed ? "Construction complete by " + workerName + "."
+                          : workerName + " contributed " + added + " actual construction labor.");
+    }
+
+
     static BaseObject createSite(BuildRecipe recipe, int x, int y, int requiredLabor) {
         BaseObject site = new BaseObject("Under construction: " + clean(recipe == null ? null : recipe.name, "unknown structure"), '?', x, y,
                 recipe == null ? 0 : recipe.supplyCost, recipe == null ? 0 : recipe.attention);
@@ -680,6 +700,8 @@ final class ProgressiveConstructionAuthority {
         site.symbol = site.finalSymbol == 0 ? '?' : site.finalSymbol;
         site.underConstruction = false;
         site.constructionVisualProgress = 100;
+        site.assignedWorker = ""; // completed construction does not automatically staff a finished machine
+        RoofConstructionAuthority.complete(g,site);
         syncSiteTile(g, site);
         g.configureBaseObject(site);
         LiveProductionPlacementAuthority.annotateBuiltObject(g, site);
@@ -696,6 +718,7 @@ final class ProgressiveConstructionAuthority {
         site.symbol = site.finalSymbol == 0 ? '?' : site.finalSymbol;
         site.underConstruction = false;
         site.constructionVisualProgress = 100;
+        RoofConstructionAuthority.complete(g,site);
         site.description = "A completed faction facility constructed from reserved faction stock by "
                 + clean(crewLabel, "assigned faction workers") + ".";
         syncSiteTile(g, site);
@@ -766,7 +789,7 @@ final class ProgressiveConstructionAuthority {
         return String.join(", ", lines);
     }
 
-    private static String missingMaterials(BaseObject site) {
+    static String missingMaterials(BaseObject site) {
         Map<String,Integer> req = decode(site.constructionRequiredItems);
         Map<String,Integer> ins = decode(site.constructionInsertedItems);
         ArrayList<String> miss = new ArrayList<>();

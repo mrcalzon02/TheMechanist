@@ -1,0 +1,6 @@
+[13:28:39.737] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+[13:28:42.789] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Emergency ration paste from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[13:28:42.789] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Ration wrapper roll from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[13:28:42.789] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Tin can sleeve from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[13:28:42.789] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Civic inspection chit from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[13:28:42.790] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Food-safe sealant from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE

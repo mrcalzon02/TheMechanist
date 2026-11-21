@@ -1,0 +1,1805 @@
+{
+  "source_sha256": "68a33ed825148cd7c975e53ed36d3940c1623b226338c643810c8cbcaa739775",
+  "java": "C:\\Program Files\\Java\\jdk-17\\bin\\java.exe",
+  "compiled_with": "mvn -o -DskipTests compile (release 17)",
+  "scope": "isolated headless component smokes; not a continuous player journey or installer certification",
+  "results": [
+    {
+      "name": "SpatialAudioSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.25,
+      "log": "SpatialAudioSmoke.log"
+    },
+    {
+      "name": "WeaponAudioSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.45,
+      "log": "WeaponAudioSmoke.log"
+    },
+    {
+      "name": "EarlyGameInputUsabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "EarlyGameInputUsabilitySmoke.log"
+    },
+    {
+      "name": "MainMenuLayoutAuthoritySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "MainMenuLayoutAuthoritySmoke.log"
+    },
+    {
+      "name": "RoadFrontageDepthSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "RoadFrontageDepthSmoke.log"
+    },
+    {
+      "name": "VerticalBuildingBlueprintSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "VerticalBuildingBlueprintSmoke.log"
+    },
+    {
+      "name": "MultiFloorBuildingPlacementSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.5,
+      "log": "MultiFloorBuildingPlacementSmoke.log"
+    },
+    {
+      "name": "MultiFloorBuildingTransitSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.45,
+      "log": "MultiFloorBuildingTransitSmoke.log"
+    },
+    {
+      "name": "CharacterSaveManagerRegressionSmoke",
+      "status": "failed",
+      "exit_code": 1,
+      "seconds": 0.19,
+      "log": "CharacterSaveManagerRegressionSmoke.log"
+    },
+    {
+      "name": "FactionContractDisplaySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "FactionContractDisplaySmoke.log"
+    },
+    {
+      "name": "Milestone03ContractTurnInSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.03,
+      "log": "Milestone03ContractTurnInSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionContractWorkflowSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.03,
+      "log": "Milestone03ProductionContractWorkflowSmoke.log"
+    },
+    {
+      "name": "Milestone04PopulationMarketPressureSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.86,
+      "log": "Milestone04PopulationMarketPressureSmoke.log"
+    },
+    {
+      "name": "Milestone04PopulationOriginDemandSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone04PopulationOriginDemandSmoke.log"
+    },
+    {
+      "name": "Milestone04FactionSiteWorkforceMarketSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.19,
+      "log": "Milestone04FactionSiteWorkforceMarketSmoke.log"
+    },
+    {
+      "name": "Milestone04EssentialSupplyProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.91,
+      "log": "Milestone04EssentialSupplyProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone04VerticalFloorTradeSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.98,
+      "log": "Milestone04VerticalFloorTradeSmoke.log"
+    },
+    {
+      "name": "Milestone04SecuritySupplyProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.97,
+      "log": "Milestone04SecuritySupplyProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone04MedicalSupplyProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.88,
+      "log": "Milestone04MedicalSupplyProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone04NobleDraughtProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.91,
+      "log": "Milestone04NobleDraughtProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone04AnimalAgricultureProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.0,
+      "log": "Milestone04AnimalAgricultureProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone04RawMaterialProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.89,
+      "log": "Milestone04RawMaterialProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone04ShipmentProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.91,
+      "log": "Milestone04ShipmentProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone04FactionFacilityVendorGenerationSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.36,
+      "log": "Milestone04FactionFacilityVendorGenerationSmoke.log"
+    },
+    {
+      "name": "Milestone04ImportNodeGenerationSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.77,
+      "log": "Milestone04ImportNodeGenerationSmoke.log"
+    },
+    {
+      "name": "Milestone04DeferredOutOfSectorSimulationSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.25,
+      "log": "Milestone04DeferredOutOfSectorSimulationSmoke.log"
+    },
+    {
+      "name": "Milestone04TopDownWorldEventSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.12,
+      "log": "Milestone04TopDownWorldEventSmoke.log"
+    },
+    {
+      "name": "Milestone04WorldEventFacilityMutationSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.28,
+      "log": "Milestone04WorldEventFacilityMutationSmoke.log"
+    },
+    {
+      "name": "Milestone04FactionMarketAccessSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.06,
+      "log": "Milestone04FactionMarketAccessSmoke.log"
+    },
+    {
+      "name": "Milestone04FactionMarketContractNewsSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 11.08,
+      "log": "Milestone04FactionMarketContractNewsSmoke.log"
+    },
+    {
+      "name": "Milestone04NpcHappinessFactionRecruitmentSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.55,
+      "log": "Milestone04NpcHappinessFactionRecruitmentSmoke.log"
+    },
+    {
+      "name": "NpcContinuityDeterminismSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.27,
+      "log": "NpcContinuityDeterminismSmoke.log"
+    },
+    {
+      "name": "Milestone04EconomyWorldEditorInfopediaSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.2,
+      "log": "Milestone04EconomyWorldEditorInfopediaSmoke.log"
+    },
+    {
+      "name": "PlayerFacingCopySanitizerSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "PlayerFacingCopySanitizerSmoke.log"
+    },
+    {
+      "name": "PlayerFacingUiTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "PlayerFacingUiTextSmoke.log"
+    },
+    {
+      "name": "PlayerFacingDenialTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "PlayerFacingDenialTextSmoke.log"
+    },
+    {
+      "name": "PlayerFacingInspectionTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "PlayerFacingInspectionTextSmoke.log"
+    },
+    {
+      "name": "PlayerFacingActionTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "PlayerFacingActionTextSmoke.log"
+    },
+    {
+      "name": "PlayerFacingTextWrapSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "PlayerFacingTextWrapSmoke.log"
+    },
+    {
+      "name": "PlayerFacingPanelBodySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "PlayerFacingPanelBodySmoke.log"
+    },
+    {
+      "name": "PlayerFacingEventLogTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "PlayerFacingEventLogTextSmoke.log"
+    },
+    {
+      "name": "PlayerFacingTooltipTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "PlayerFacingTooltipTextSmoke.log"
+    },
+    {
+      "name": "PlayerFacingListRowTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "PlayerFacingListRowTextSmoke.log"
+    },
+    {
+      "name": "PlayerFacingMenuOptionTextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "PlayerFacingMenuOptionTextSmoke.log"
+    },
+    {
+      "name": "Gate3PresentationAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Gate3PresentationAuditSmoke.log"
+    },
+    {
+      "name": "Milestone02LookExamineReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone02LookExamineReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02MovementPlanningReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone02MovementPlanningReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02MovementPlanningDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02MovementPlanningDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone02MovementPlanningFocusResetSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02MovementPlanningFocusResetSmoke.log"
+    },
+    {
+      "name": "Milestone02MovementExecutionAuthoritySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02MovementExecutionAuthoritySmoke.log"
+    },
+    {
+      "name": "Milestone02PauseMovementRecoverySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02PauseMovementRecoverySmoke.log"
+    },
+    {
+      "name": "Milestone02MovementDebugOverlaySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02MovementDebugOverlaySmoke.log"
+    },
+    {
+      "name": "Milestone02QuestObjectiveGuidanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02QuestObjectiveGuidanceSmoke.log"
+    },
+    {
+      "name": "Milestone02PetInteractionFeedbackSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02PetInteractionFeedbackSmoke.log"
+    },
+    {
+      "name": "Milestone02ActionDenialGuidanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02ActionDenialGuidanceSmoke.log"
+    },
+    {
+      "name": "Milestone02ConversationReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.16,
+      "log": "Milestone02ConversationReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02ContextPromptReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02ContextPromptReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02InfopediaMechanicsReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.67,
+      "log": "Milestone02InfopediaMechanicsReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02InfopediaHotLinkSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02InfopediaHotLinkSmoke.log"
+    },
+    {
+      "name": "Milestone02MenuUniformityReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone02MenuUniformityReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02MenuDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02MenuDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone02InputRebindingAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "Milestone02InputRebindingAuditSmoke.log"
+    },
+    {
+      "name": "Milestone02InputConflictRecoverySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone02InputConflictRecoverySmoke.log"
+    },
+    {
+      "name": "Milestone02CurrentBindingPromptSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02CurrentBindingPromptSmoke.log"
+    },
+    {
+      "name": "Milestone02InputProfilePersistenceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone02InputProfilePersistenceSmoke.log"
+    },
+    {
+      "name": "Milestone02ControllerTuningRuntimeSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02ControllerTuningRuntimeSmoke.log"
+    },
+    {
+      "name": "Milestone02ControllerTapHoldSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone02ControllerTapHoldSmoke.log"
+    },
+    {
+      "name": "Milestone02ControllerConnectionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02ControllerConnectionSmoke.log"
+    },
+    {
+      "name": "Milestone02ControllerGlyphPromptSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.16,
+      "log": "Milestone02ControllerGlyphPromptSmoke.log"
+    },
+    {
+      "name": "Milestone02ZoneTileSlotStateSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02ZoneTileSlotStateSmoke.log"
+    },
+    {
+      "name": "Milestone02ZoneTileLayerMappingSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02ZoneTileLayerMappingSmoke.log"
+    },
+    {
+      "name": "Milestone02ZoneTilePushSqueezeMovementSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone02ZoneTilePushSqueezeMovementSmoke.log"
+    },
+    {
+      "name": "Milestone02DoomHudFacingSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.88,
+      "log": "Milestone02DoomHudFacingSmoke.log"
+    },
+    {
+      "name": "DeveloperFacilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 7.91,
+      "log": "DeveloperFacilitySmoke.log"
+    },
+    {
+      "name": "ActorCombatExecutionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 7.08,
+      "log": "ActorCombatExecutionSmoke.log"
+    },
+    {
+      "name": "CombatSupportExecutionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 7.55,
+      "log": "CombatSupportExecutionSmoke.log"
+    },
+    {
+      "name": "MedicalTreatmentBoundarySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 6.92,
+      "log": "MedicalTreatmentBoundarySmoke.log"
+    },
+    {
+      "name": "CyberneticLimbExecutionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 7.19,
+      "log": "CyberneticLimbExecutionSmoke.log"
+    },
+    {
+      "name": "ActorCombatPresentationSmoke",
+      "status": "failed",
+      "exit_code": 1,
+      "seconds": 7.66,
+      "log": "ActorCombatPresentationSmoke.log"
+    },
+    {
+      "name": "Milestone02TradeReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.0,
+      "log": "Milestone02TradeReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02InventoryReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02InventoryReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02ContainerReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02ContainerReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02FactionRosterReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02FactionRosterReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02ProductionReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "Milestone02ProductionReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02ConstructionReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02ConstructionReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02ConstructionCategorySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02ConstructionCategorySmoke.log"
+    },
+    {
+      "name": "Milestone02ConstructionKeyboardSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.92,
+      "log": "Milestone02ConstructionKeyboardSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone03BlueprintDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintNoSelfEntombmentAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03BlueprintNoSelfEntombmentAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03SelfEntombmentRuntimeGuardSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.97,
+      "log": "Milestone03SelfEntombmentRuntimeGuardSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintParityAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03BlueprintParityAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintAcquisitionPathAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03BlueprintAcquisitionPathAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintOwnershipPermissionReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone03BlueprintOwnershipPermissionReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintPermissionReadinessAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone03BlueprintPermissionReadinessAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionCapabilityAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03BlueprintFactionConstructionCapabilityAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionJobDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone03BlueprintFactionConstructionJobDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionMaterialReservationAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone03BlueprintFactionConstructionMaterialReservationAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionCrewAssignmentAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone03BlueprintFactionConstructionCrewAssignmentAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionSiteReadinessAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03BlueprintFactionConstructionSiteReadinessAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionBudgetHeatAuthorizationAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03BlueprintFactionConstructionBudgetHeatAuthorizationAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionCancellationReleaseAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03BlueprintFactionConstructionCancellationReleaseAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionExecutionHandoffAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "Milestone03BlueprintFactionConstructionExecutionHandoffAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionQueueAdmissionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "Milestone03BlueprintFactionConstructionQueueAdmissionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionReservationLedgerAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.19,
+      "log": "Milestone03BlueprintFactionConstructionReservationLedgerAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionStagedHandoffAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.19,
+      "log": "Milestone03BlueprintFactionConstructionStagedHandoffAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionPlacementOutcomeAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.2,
+      "log": "Milestone03BlueprintFactionConstructionPlacementOutcomeAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionProgressTickAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.2,
+      "log": "Milestone03BlueprintFactionConstructionProgressTickAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionCompletionReadinessAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.2,
+      "log": "Milestone03BlueprintFactionConstructionCompletionReadinessAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionJobCloseoutAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.2,
+      "log": "Milestone03BlueprintFactionConstructionJobCloseoutAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionStatusReportAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionStatusReportAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionNotificationReadinessAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionNotificationReadinessAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseActionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionResponseActionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseExecutionHandoffAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.24,
+      "log": "Milestone03BlueprintFactionConstructionResponseExecutionHandoffAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseResultAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionResponseResultAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseFollowupAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseFollowupAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleCloseAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleCloseAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleArchiveAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleArchiveAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReadbackAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReadbackAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionHandoffAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionHandoffAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionResultAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionResultAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionFollowupAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionFollowupAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionCloseAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionCloseAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionArchiveAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionArchiveAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReadbackAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReadbackAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewActionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewActionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewHandoffAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewHandoffAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewResultAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewResultAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewFollowupAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewFollowupAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewCloseAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewCloseAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewArchiveAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewArchiveAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReadbackAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReadbackAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionHandoffAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionHandoffAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03RoomConstructionParityAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03RoomConstructionParityAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintExpansionHeatAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone03BlueprintExpansionHeatAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03BlueprintUtilityReadinessAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone03BlueprintUtilityReadinessAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03ProgressiveConstructionDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 10.64,
+      "log": "Milestone03ProgressiveConstructionDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03ProgressiveConstructionPersistenceSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.05,
+      "log": "Milestone03ProgressiveConstructionPersistenceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProgressiveConstructionDismantleSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.89,
+      "log": "Milestone03ProgressiveConstructionDismantleSmoke.log"
+    },
+    {
+      "name": "Milestone03ProgressiveConstructionInteractionWorkSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.92,
+      "log": "Milestone03ProgressiveConstructionInteractionWorkSmoke.log"
+    },
+    {
+      "name": "Milestone03ProgressiveConstructionTileSyncSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.05,
+      "log": "Milestone03ProgressiveConstructionTileSyncSmoke.log"
+    },
+    {
+      "name": "Milestone03ProgressiveConstructionOriginalTileSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.03,
+      "log": "Milestone03ProgressiveConstructionOriginalTileSmoke.log"
+    },
+    {
+      "name": "Milestone05ConstructionGameplayCommandSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.94,
+      "log": "Milestone05ConstructionGameplayCommandSmoke.log"
+    },
+    {
+      "name": "Milestone05ConstructionBlueprintOwnershipSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.05,
+      "log": "Milestone05ConstructionBlueprintOwnershipSmoke.log"
+    },
+    {
+      "name": "Milestone05ConstructionBlueprintOfferReadinessSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.98,
+      "log": "Milestone05ConstructionBlueprintOfferReadinessSmoke.log"
+    },
+    {
+      "name": "Milestone05ConstructionAttentionSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.05,
+      "log": "Milestone05ConstructionAttentionSmoke.log"
+    },
+    {
+      "name": "Milestone05ConstructionExpansionReactionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.25,
+      "log": "Milestone05ConstructionExpansionReactionSmoke.log"
+    },
+    {
+      "name": "Milestone05FactionBlueprintSiteUpgradeSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.05,
+      "log": "Milestone05FactionBlueprintSiteUpgradeSmoke.log"
+    },
+    {
+      "name": "Milestone05FactionPhysicalConstructionSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.03,
+      "log": "Milestone05FactionPhysicalConstructionSmoke.log"
+    },
+    {
+      "name": "Milestone05FactionRoomShellConstructionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.56,
+      "log": "Milestone05FactionRoomShellConstructionSmoke.log"
+    },
+    {
+      "name": "Milestone05FactionStrategicAssetSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.08,
+      "log": "Milestone05FactionStrategicAssetSmoke.log"
+    },
+    {
+      "name": "VehicleEconomyFrontageSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.19,
+      "log": "VehicleEconomyFrontageSmoke.log"
+    },
+    {
+      "name": "Milestone06VehicleRuntimeFoundationSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.2,
+      "log": "Milestone06VehicleRuntimeFoundationSmoke.log"
+    },
+    {
+      "name": "Milestone06VehicleTransitSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.09,
+      "log": "Milestone06VehicleTransitSmoke.log"
+    },
+    {
+      "name": "Milestone06VehicleFuelHistorySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.19,
+      "log": "Milestone06VehicleFuelHistorySmoke.log"
+    },
+    {
+      "name": "Milestone06VehicleStrategicTransitSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 5.38,
+      "log": "Milestone06VehicleStrategicTransitSmoke.log"
+    },
+    {
+      "name": "Milestone06VehicleOperationFeedbackSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 34.53,
+      "log": "Milestone06VehicleOperationFeedbackSmoke.log"
+    },
+    {
+      "name": "Milestone05BlueprintContractRewardSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.06,
+      "log": "Milestone05BlueprintContractRewardSmoke.log"
+    },
+    {
+      "name": "Milestone05BlueprintInfopediaBridgeSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.47,
+      "log": "Milestone05BlueprintInfopediaBridgeSmoke.log"
+    },
+    {
+      "name": "Milestone05ConstructionParityInspectionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.39,
+      "log": "Milestone05ConstructionParityInspectionSmoke.log"
+    },
+    {
+      "name": "Milestone05ReleaseAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.3,
+      "log": "Milestone05ReleaseAuditSmoke.log"
+    },
+    {
+      "name": "Milestone05ConstructionParityEditorSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.16,
+      "log": "Milestone05ConstructionParityEditorSmoke.log"
+    },
+    {
+      "name": "Milestone05RoomConstructionParityEditorSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.02,
+      "log": "Milestone05RoomConstructionParityEditorSmoke.log"
+    },
+    {
+      "name": "Milestone05RoomOwnershipCommandSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 5.84,
+      "log": "Milestone05RoomOwnershipCommandSmoke.log"
+    },
+    {
+      "name": "Milestone05RoomOwnershipUiSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.27,
+      "log": "Milestone05RoomOwnershipUiSmoke.log"
+    },
+    {
+      "name": "Milestone05RoomPurchaseSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.11,
+      "log": "Milestone05RoomPurchaseSmoke.log"
+    },
+    {
+      "name": "Milestone05RoomControlProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.12,
+      "log": "Milestone05RoomControlProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone05RoomPlanSellerGuidanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.27,
+      "log": "Milestone05RoomPlanSellerGuidanceSmoke.log"
+    },
+    {
+      "name": "Milestone02BodyConditionReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone02BodyConditionReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02CharacterPaperDollSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.2,
+      "log": "Milestone02CharacterPaperDollSmoke.log"
+    },
+    {
+      "name": "Milestone02CharacterEquipmentMedicalSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "Milestone02CharacterEquipmentMedicalSmoke.log"
+    },
+    {
+      "name": "Milestone02CharacterEquipmentScreenIntegrationSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.97,
+      "log": "Milestone02CharacterEquipmentScreenIntegrationSmoke.log"
+    },
+    {
+      "name": "Milestone02MedicalTreatmentReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone02MedicalTreatmentReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02EntityIdentityReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.16,
+      "log": "Milestone02EntityIdentityReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02ExpansionHeatReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone02ExpansionHeatReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02InteractionApproachSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02InteractionApproachSmoke.log"
+    },
+    {
+      "name": "Milestone02ContractObjectiveReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone02ContractObjectiveReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone02TransferWorkflowConsistencySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02TransferWorkflowConsistencySmoke.log"
+    },
+    {
+      "name": "Milestone02LivePanelPromptSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone02LivePanelPromptSmoke.log"
+    },
+    {
+      "name": "Milestone02RenderAssetBindingDoctrineSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02RenderAssetBindingDoctrineSmoke.log"
+    },
+    {
+      "name": "Milestone02SemanticRenderAssetResolverSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.19,
+      "log": "Milestone02SemanticRenderAssetResolverSmoke.log"
+    },
+    {
+      "name": "Milestone02SemanticRuntimeIntentBridgeSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.16,
+      "log": "Milestone02SemanticRuntimeIntentBridgeSmoke.log"
+    },
+    {
+      "name": "Milestone02DistrictRoomTileContextSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.86,
+      "log": "Milestone02DistrictRoomTileContextSmoke.log"
+    },
+    {
+      "name": "Milestone02SemanticCompiledIndexBoundarySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone02SemanticCompiledIndexBoundarySmoke.log"
+    },
+    {
+      "name": "Milestone02SemanticAssetMigrationCoverageSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.16,
+      "log": "Milestone02SemanticAssetMigrationCoverageSmoke.log"
+    },
+    {
+      "name": "PortraitSemanticPartitionResolverSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.06,
+      "log": "PortraitSemanticPartitionResolverSmoke.log"
+    },
+    {
+      "name": "PortraitSemanticNpcIdentityResolverSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.28,
+      "log": "PortraitSemanticNpcIdentityResolverSmoke.log"
+    },
+    {
+      "name": "TileSemanticRuntimeRegistrySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 6.47,
+      "log": "TileSemanticRuntimeRegistrySmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionQualityTraceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone03ProductionQualityTraceSmoke.log"
+    },
+    {
+      "name": "Milestone03QualityBandDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "Milestone03QualityBandDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03QualityProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.19,
+      "log": "Milestone03QualityProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionOutcomeForecastSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone03ProductionOutcomeForecastSmoke.log"
+    },
+    {
+      "name": "Milestone03MachineConditionProductionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone03MachineConditionProductionSmoke.log"
+    },
+    {
+      "name": "Milestone03MachineRepairWorkflowSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone03MachineRepairWorkflowSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionOperatorSkillSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone03ProductionOperatorSkillSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionMaterialQualitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.92,
+      "log": "Milestone03ProductionMaterialQualitySmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionWorkerQualitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.86,
+      "log": "Milestone03ProductionWorkerQualitySmoke.log"
+    },
+    {
+      "name": "Milestone03MachineKnowledgeSourceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.95,
+      "log": "Milestone03MachineKnowledgeSourceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionFacilityKnowledgeSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.89,
+      "log": "Milestone03ProductionFacilityKnowledgeSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionKnowledgeSourceAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.88,
+      "log": "Milestone03ProductionKnowledgeSourceAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionBatchProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone03ProductionBatchProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionFacilityQualitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.98,
+      "log": "Milestone03ProductionFacilityQualitySmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionDefectAppraisalSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone03ProductionDefectAppraisalSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionToolQualitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.95,
+      "log": "Milestone03ProductionToolQualitySmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionFactionMutationSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03ProductionFactionMutationSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionFactionMutationAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone03ProductionFactionMutationAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionFatiguePressureSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 10.3,
+      "log": "Milestone03ProductionFatiguePressureSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionLocationProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.02,
+      "log": "Milestone03ProductionLocationProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionMachineProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03ProductionMachineProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionOperatorProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03ProductionOperatorProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionWorkforceModeProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03ProductionWorkforceModeProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionLegalStatusProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.23,
+      "log": "Milestone03ProductionLegalStatusProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionSourceProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03ProductionSourceProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionBatchIssueTagsSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.25,
+      "log": "Milestone03ProductionBatchIssueTagsSmoke.log"
+    },
+    {
+      "name": "Milestone03BatchIssueDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.22,
+      "log": "Milestone03BatchIssueDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionRepairHistoryProvenanceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.16,
+      "log": "Milestone03ProductionRepairHistoryProvenanceSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionQualityDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone03ProductionQualityDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeProgressionReadabilitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone03SkillTreeProgressionReadabilitySmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeSpendingPersistenceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.97,
+      "log": "Milestone03SkillTreeSpendingPersistenceSmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeCharacterPanelSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.67,
+      "log": "Milestone03SkillTreeCharacterPanelSmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeAccessGateSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.92,
+      "log": "Milestone03SkillTreeAccessGateSmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeStatGateSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.0,
+      "log": "Milestone03SkillTreeStatGateSmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeMutualExclusionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone03SkillTreeMutualExclusionSmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeCapabilityHooksSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone03SkillTreeCapabilityHooksSmoke.log"
+    },
+    {
+      "name": "Milestone03SkillTreeDefinitionAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone03SkillTreeDefinitionAuditSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionSkillCapabilityPreviewSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.0,
+      "log": "Milestone03ProductionSkillCapabilityPreviewSmoke.log"
+    },
+    {
+      "name": "Milestone03TradeSkillAppraisalSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "Milestone03TradeSkillAppraisalSmoke.log"
+    },
+    {
+      "name": "Milestone03TradeCertifiedAppraisalSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "Milestone03TradeCertifiedAppraisalSmoke.log"
+    },
+    {
+      "name": "Milestone03ContractSkillProofSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "Milestone03ContractSkillProofSmoke.log"
+    },
+    {
+      "name": "Milestone03ContractSkillProofInfopediaSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "Milestone03ContractSkillProofInfopediaSmoke.log"
+    },
+    {
+      "name": "Milestone03ContractSkillProofAuditSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "Milestone03ContractSkillProofAuditSmoke.log"
+    },
+    {
+      "name": "Milestone04FactionReinforcementLifecycleSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.66,
+      "log": "Milestone04FactionReinforcementLifecycleSmoke.log"
+    },
+    {
+      "name": "Milestone04ReinforcementSourcePolicySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.67,
+      "log": "Milestone04ReinforcementSourcePolicySmoke.log"
+    },
+    {
+      "name": "Milestone04CrecheGenerationMaturitySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.78,
+      "log": "Milestone04CrecheGenerationMaturitySmoke.log"
+    },
+    {
+      "name": "Milestone09ExplicitRoomPurposeCrecheSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.36,
+      "log": "Milestone09ExplicitRoomPurposeCrecheSmoke.log"
+    },
+    {
+      "name": "Milestone09ExplicitRoomPurposeBarracksSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.33,
+      "log": "Milestone09ExplicitRoomPurposeBarracksSmoke.log"
+    },
+    {
+      "name": "BootMenuMusicDelaySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "log": "BootMenuMusicDelaySmoke.log"
+    },
+    {
+      "name": "BootStartupAudioSilenceSmoke",
+      "status": "failed",
+      "exit_code": 1,
+      "seconds": 0.23,
+      "log": "BootStartupAudioSilenceSmoke.log"
+    },
+    {
+      "name": "Milestone03ManualProductionOperationRecordSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 3.3,
+      "log": "Milestone03ManualProductionOperationRecordSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionStatusCommandSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 4.09,
+      "log": "Milestone03ProductionStatusCommandSmoke.log"
+    },
+    {
+      "name": "Milestone03StaffedProductionExecutionSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.03,
+      "log": "Milestone03StaffedProductionExecutionSmoke.log"
+    },
+    {
+      "name": "Milestone03ProductionControlBoardSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.94,
+      "log": "Milestone03ProductionControlBoardSmoke.log"
+    },
+    {
+      "name": "OptionsSwingComponentSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 1.36,
+      "log": "OptionsSwingComponentSmoke.log"
+    },
+    {
+      "name": "WorldStartLayoutAuthoritySmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "WorldStartLayoutAuthoritySmoke.log"
+    },
+    {
+      "name": "WorldGenerationSetupPersistenceSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.03,
+      "log": "WorldGenerationSetupPersistenceSmoke.log"
+    },
+    {
+      "name": "WorldGenerationOptionModifierSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "WorldGenerationOptionModifierSmoke.log"
+    },
+    {
+      "name": "CharacterCreationPortraitSelectionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "CharacterCreationPortraitSelectionSmoke.log"
+    },
+    {
+      "name": "EconomyRuntimePersistenceSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.17,
+      "log": "EconomyRuntimePersistenceSmoke.log"
+    },
+    {
+      "name": "RoofConstructionSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 2.28,
+      "log": "RoofConstructionSmoke.log"
+    },
+    {
+      "name": "RoomShellAndRoadNeighborSmoke",
+      "status": "passed",
+      "exit_code": 0,
+      "seconds": 0.14,
+      "log": "RoomShellAndRoadNeighborSmoke.log"
+    },
+    {
+      "name": "SinglePlayerInternalHostLifecycleSmoke",
+      "status": "timeout",
+      "exit_code": null,
+      "seconds": 60.03,
+      "log": "SinglePlayerInternalHostLifecycleSmoke.log"
+    },
+    {
+      "name": "ReleaseBuildIdentitySmoke",
+      "status": "failed",
+      "exit_code": 1,
+      "seconds": 0.17,
+      "log": "ReleaseBuildIdentitySmoke.log"
+    }
+  ],
+  "counts": {
+    "passed": 239,
+    "failed": 4,
+    "timeout": 13
+  }
+}

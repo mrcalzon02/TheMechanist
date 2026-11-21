@@ -57,6 +57,14 @@ final class ProgressiveLookAuthority {
         lines.add(observationDepthLine(d));
         lines.add(tileSurfaceLine(game.world.walkable(x, y), ch));
         CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(game.world, x, y, ch);
+        if(d>=1) {
+            var structure=TileStructureAuthority.at(game.world,x,y);
+            lines.add("Roof: "+structure.roof().name().toLowerCase(java.util.Locale.ROOT)
+                    +(structure.hasRoof()?" / clearance "+structure.roofClearance():"")
+                    +" / wall span to elevation "+structure.wallTopElevation()+".");
+            if(game.world.architecturalClutterVersion!=0)lines.add("Layered services: "+java.util.Arrays.stream(ArchitecturalClutterAuthority.pieces(game.world,x,y)).map(p->p.feature().name().toLowerCase(java.util.Locale.ROOT)).distinct().collect(java.util.stream.Collectors.joining(", "))+".");
+            lines.add("Wall: "+structure.wall()+" / finish "+structure.finish()+" / floor "+structure.floor()+" / railing edges N/E/S/W bits "+structure.railings()+".");
+        }
         if (descriptor != null && d >= 1) lines.add(tileDescriptorLine(descriptor));
         lines.addAll(RoomOwnershipAuthority.inspectionLines(game, x, y, d));
         if (x == game.playerX && y == game.playerY) lines.add("Player position.");

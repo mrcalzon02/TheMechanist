@@ -6,7 +6,7 @@ import java.util.List;
 
 /** Presentation emitted by confirmed attacks; no gameplay RNG, damage or movement lives here. */
 final class ActorCombatFeedbackAuthority {
-    record Shot(int x,int y,int tx,int ty,String weapon,boolean ranged,boolean hit,long born) { }
+    record Shot(int x,int y,int tx,int ty,String weapon,boolean ranged,boolean hit,long born,double sourceHeight,double targetHeight) { }
     interface AudioSink {void cue(String key,int x,int y,boolean occluded,boolean enclosed,double strength);default void cue(String key,int x,int y,boolean occluded,boolean enclosed,double strength,WeaponSoundVariationAuthority.Variation variation){cue(key,x,y,occluded,enclosed,strength);}}
     private static final Map<GamePanel,ArrayDeque<Shot>> SHOTS=new WeakHashMap<>();
     private static final Map<GamePanel,AudioSink> AUDIO=new WeakHashMap<>();
@@ -17,7 +17,7 @@ final class ActorCombatFeedbackAuthority {
     static void recordAudio(GamePanel game,String key,int x,int y,boolean occluded,boolean enclosed,double strength,WeaponSoundVariationAuthority.Variation variation) {AudioSink sink=AUDIO.get(game);if(sink!=null)sink.cue(key,x,y,occluded,enclosed,strength,variation);}
     static void attack(GamePanel game,int x,int y,int tx,int ty,String weapon,boolean ranged,boolean hit) {
         var variation=WorldPositionalSoundAuthority.playAttackAt(game,weapon,ranged,x,y);
-        var queue=SHOTS.computeIfAbsent(game,g->new ArrayDeque<>());queue.add(new Shot(x,y,tx,ty,weapon,ranged,hit,now(game)+variation.delayMillis()));while(queue.size()>128)queue.removeFirst();
+        var queue=SHOTS.computeIfAbsent(game,g->new ArrayDeque<>());queue.add(new Shot(x,y,tx,ty,weapon,ranged,hit,now(game)+variation.delayMillis(),DeveloperBattleMapAuthority.height(game.world,x,y),DeveloperBattleMapAuthority.height(game.world,tx,ty)));while(queue.size()>128)queue.removeFirst();
     }
     static List<Shot> shots(GamePanel game) {var queue=SHOTS.get(game);if(queue==null)return List.of();long time=now(game);queue.removeIf(s->time-s.born>450);return List.copyOf(queue);}
     private record Point(double x,double y,double depth,boolean visible) { }
@@ -29,7 +29,10 @@ final class ActorCombatFeedbackAuthority {
         } finally {gg.dispose();}
     }
     static void renderDoom(Graphics2D g,GamePanel game,FirstPersonCamera camera,int w,int h,double[] walls) {
-        render(g,game,(x,y,height)->{ScreenPoint p=FirstPersonBillboardAuthority.project(camera,x,height,y,Math.toRadians(game.options.doomModeFovDegrees),w,h);return new Point(p.x(),p.y(),p.depth(),p.visible());},walls);
+        boolean perPixel=walls!=null && walls.length==w*h;
+        render(g,game,(x,y,height)->{ScreenPoint p=FirstPersonBillboardAuthority.project(camera,x,height,y,Math.toRadians(game.options.doomModeFovDegrees),w,h);
+            boolean visible=p.visible();if(perPixel)visible &= p.x()>=0 && p.x()<w && p.y()>=0 && p.y()<h && p.depth()<=walls[p.y()*w+p.x()]+.08;
+            return new Point(p.x(),p.y(),p.depth(),visible);},perPixel?null:walls);
     }
     private static final BasicStroke CORE=new BasicStroke(1.3f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND),BODY=new BasicStroke(3f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND),GLOW=new BasicStroke(7f,BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND);
     private static void render(Graphics2D original,GamePanel game,Project project,double[] walls) {
@@ -66,7 +69,7 @@ final class ActorCombatFeedbackAuthority {
             }
         }}finally{g.dispose();}
     }
-    private static Point at(Project project,Shot s,double t,double lateral,double nx,double ny){return project.at(s.x+.5+(s.tx-s.x)*t-ny*lateral,s.y+.5+(s.ty-s.y)*t+nx*lateral,.62);}
+    private static Point at(Project project,Shot s,double t,double lateral,double nx,double ny){return project.at(s.x+.5+(s.tx-s.x)*t-ny*lateral,s.y+.5+(s.ty-s.y)*t+nx*lateral,.62+s.sourceHeight+(s.targetHeight-s.sourceHeight)*t);}
     private static void path(Graphics2D g,GamePanel game,Project project,double[] walls,Shot s,double from,double to,double lateral,double nx,double ny,int color,double alpha,boolean glow,int seed,double jagged) {
         Point previous=null;
         for(int i=0;i<=32;i++){double t=from+(to-from)*i/32,wiggle=jagged*Math.sin(i*2.41+seed)*Math.sin(t*Math.PI);Point p=at(project,s,t,lateral*t+wiggle,nx,ny);int x=(int)(s.x+.5+(s.tx-s.x)*t-ny*(lateral*t+wiggle)),y=(int)(s.y+.5+(s.ty-s.y)*t+nx*(lateral*t+wiggle));boolean draw=game.isVisible(x,y)&&visible(p,walls);if(draw && previous!=null){if(glow){line(g,previous,p,GLOW,color,alpha*.13);line(g,previous,p,BODY,color,alpha*.6);}line(g,previous,p,CORE,glow?0xFFFFF4DD:color,alpha);}previous=draw?p:null;}

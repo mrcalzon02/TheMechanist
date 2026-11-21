@@ -23,6 +23,7 @@ final class ZoneGenerationManager {
             ZoneFixturePlacementManager.placeRoadAndRoomFixtures(world, state);
             world.worldgenPhaseBoundaryInterwallAndMetadata(state);
             EntitySpawnManager.populateAndInitializeEconomy(world, state);
+            finishGeneration(world, state);
             return;
         }
         long begin = System.nanoTime();
@@ -39,11 +40,30 @@ final class ZoneGenerationManager {
                     world.worldgenPhaseBoundaryInterwallAndMetadata(state));
             profilePhase(world, "population-economy-compile", () ->
                     EntitySpawnManager.populateAndInitializeEconomy(world, state));
+            finishGeneration(world, state);
         } finally {
             DebugLog.log("WORLDGEN_PROFILE phase=all status=finished totalMs="
                     + elapsedMs(begin) + " tiles=" + world.w + "x" + world.h
                     + " rooms=" + world.rooms.size() + " seed=" + world.seed);
         }
+    }
+
+    /** Final acceptance is shared by ordinary and profiled generation. */
+    private static void finishGeneration(World world, WorldGenerationPipelineRunState state) {
+        TileStructureAuthority.authorRoomRoofs(world);
+        TileStructureAuthority.authorOpenRoads(world);
+        ArchitecturalClutterAuthority.enable(world, true);
+        World.GenerationValidationResult result =
+                world.validateWorldgenSelfReport("FINAL_POST_PLACEMENT");
+        world.finalGenerationValidation = result;
+        String acceptance = result.summary() + " repairs=" + state.repairs
+                + " widenedCorridors=" + state.widenedCorridors
+                + " zone=" + world.zoneType.label + " layer=" + world.layerText()
+                + " seed=" + world.seed;
+        if ("ACCEPTED".equals(result.status()))
+            DebugLog.audit("WORLDGEN_ACCEPTANCE", acceptance);
+        else DebugLog.warn("WORLDGEN_ACCEPTANCE", acceptance);
+        SectorGenerationTraceAuthority.record(world, "VALIDATION", acceptance);
     }
 
     private static void profilePhase(World world, String phase, Runnable work) {

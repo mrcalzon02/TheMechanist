@@ -107,6 +107,7 @@ final class ZoneTileMovementResolutionAuthority {
                                              ArrayList<String> debug, ArrayList<String> pushStack, int depth) {
         if (depth > Math.max(8, tiles.length * 4)) return new MoveAttempt(false, "Failsafe stopped excessive push-chain recursion.");
         if (!canStandOn(tiles, toX, toY)) return new MoveAttempt(false, "Destination blocks movement.");
+        if(!edgeAllowed(tiles,fromX,fromY,toX,toY))return new MoveAttempt(false,"Railing blocks movement.");
         String targetKey = key(toX, toY);
         String targetOccupant = occupantByPosition.get(targetKey);
         if (targetOccupant == null || targetOccupant.equals(actorId)) {
@@ -136,6 +137,7 @@ final class ZoneTileMovementResolutionAuthority {
             int nx = x + candidate[0];
             int ny = y + candidate[1];
             if (!canStandOn(tiles, nx, ny)) continue;
+            if(!edgeAllowed(tiles,x,y,nx,ny))continue;
             String occupant = occupantByPosition.get(key(nx, ny));
             if (occupant == null || !pushStack.contains(occupant)) {
                 debug.add("Relief candidate for " + actorId + ": " + key(nx, ny) + ".");
@@ -172,6 +174,10 @@ final class ZoneTileMovementResolutionAuthority {
         return ordered;
     }
 
+    private static boolean edgeAllowed(ZoneTileState[][] tiles,int x,int y,int nx,int ny) {
+        return inBounds(tiles,x,y) && inBounds(tiles,nx,ny)
+                && StructureSurfaceAuthority.edgeAllowed(tiles[x][y].structure(),tiles[nx][ny].structure(),nx-x,ny-y);
+    }
     private static boolean canStandOn(ZoneTileState[][] tiles, int x, int y) {
         return inBounds(tiles, x, y) && tiles[x][y] != null && !tiles[x][y].hasFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT);
     }

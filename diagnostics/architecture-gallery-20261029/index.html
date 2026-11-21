@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Mechanist — Architecture archive, 2026-10-29</title>
+<style>
+body{margin:30px auto;max-width:1350px;padding:0 24px;background:#001a33;color:#e4edf6;font:17px/1.5 system-ui}a{color:#9cd8ff}h1,h2{color:#f3d59b}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:22px}figure{margin:0;background:#092743;border:1px solid #547089;padding:12px}img{width:100%;height:auto;display:block}figcaption{padding-top:8px}.note{padding:16px;border-left:4px solid #b4cce3;background:#0d304e}code{color:#f3d59b}
+</style>
+<h1>The Mechanist: architecture archive</h1>
+<p>2026-10-29 · Source checkpoints <code>51a9f137</code> / <code>3c708f79</code> · Existing game viewport and native artwork.</p>
+<p><a href="README.md">Evidence and limitations</a> · <a href="city/generation-audit.txt">Generation audit</a> · <a href="city/vantage-points.tsv">Camera poses</a> · <a href="battle/results.txt">Combat results</a></p>
+<p class="note">Seed 466713 · main floor 4 · 500×500 · 930 generated rooms · 8 stamped building rooms · 33,997 open road tiles · no accidentally covered roads. Structural generation is real; population/economy is omitted. Elevated cameras inspect the current geometry and do not certify reachable upper storeys.</p>
+<h2>City streets, buildings and roofs</h2>
+<section>
+<figure><a href="city/01-plaza-street.png"><img src="city/01-plaza-street.png" alt="Generated plaza at street level"></a><figcaption>Street-level plaza.</figcaption></figure>
+<figure><a href="city/02-plaza-look-up.png"><img src="city/02-plaza-look-up.png" alt="Looking up from the plaza" loading="lazy"></a><figcaption>Upward view through the main-level headspace.</figcaption></figure>
+<figure><a href="city/03-building-roof-oblique.png"><img src="city/03-building-roof-oblique.png" alt="First building oblique roof inspection" loading="lazy"></a><figcaption>First building, elevated oblique inspection.</figcaption></figure>
+<figure><a href="city/04-building-roof-down.png"><img src="city/04-building-roof-down.png" alt="First building looking down" loading="lazy"></a><figcaption>First building, downward roof view.</figcaption></figure>
+<figure><a href="city/05-building-facade.png"><img src="city/05-building-facade.png" alt="First building facade" loading="lazy"></a><figcaption>First building facade.</figcaption></figure>
+<figure><a href="city/06-building-roof-oblique.png"><img src="city/06-building-roof-oblique.png" alt="Second building oblique roof view" loading="lazy"></a><figcaption>Second building, elevated oblique inspection.</figcaption></figure>
+<figure><a href="city/07-building-roof-down.png"><img src="city/07-building-roof-down.png" alt="Second building roof looking down" loading="lazy"></a><figcaption>Second building, downward roof view.</figcaption></figure>
+<figure><a href="city/08-building-facade.png"><img src="city/08-building-facade.png" alt="Second building facade" loading="lazy"></a><figcaption>Second building facade.</figcaption></figure>
+<figure><a href="city/09-planner-generated-city.png"><img src="city/09-planner-generated-city.png" alt="Normal generated-city planner" loading="lazy"></a><figcaption>Existing 2D planner.</figcaption></figure>
+</section>
+<h2>Battle-map roofs and Z inspection</h2>
+<section>
+<figure><img src="battle/02-first-person.png" alt="Raised battle terrain and covered terrace" loading="lazy"><figcaption>Existing combat chamber, native artwork and a roofed terrace.</figcaption></figure>
+<figure><img src="battle/03-first-person.png" alt="Battle gallery looking down" loading="lazy"><figcaption>Gallery view.</figcaption></figure>
+<figure><img src="battle/07-planner-z-plus-1.png" alt="Inspecting Z plus one in 2D" loading="lazy"><figcaption>Z +1 inspection; player stays on the occupied level.</figcaption></figure>
+<figure><img src="battle/08-planner-z-plus-2.png" alt="Inspecting Z plus two in 2D" loading="lazy"><figcaption>Z +2 inspection.</figcaption></figure>
+<figure><img src="battle/09-stair-orientations.png" alt="Stair art oriented to north east south and west ascent" loading="lazy"><figcaption>Shared stair artwork, four authored ascent orientations.</figcaption></figure>
+</section>
+<h2>Earlier iteration</h2><p>Retained for comparison. The following predate multiple rendering refinements; this is not a controlled fog-only comparison.</p>
+<section><figure><img src="earlier-pass/building-oblique.png" alt="Earlier building inspection" loading="lazy"><figcaption>Earlier roof inspection.</figcaption></figure><figure><img src="earlier-pass/plaza-street.png" alt="Earlier plaza street" loading="lazy"><figcaption>Earlier street view.</figcaption></figure></section>
+<h2>Next development</h2><p>Room-over-room storeys still need distinct geometry and occupancy. Height-based material bands, surface wear and architectural variation are recorded for later development.</p>
+</html>

@@ -27,6 +27,11 @@ final class ManualStaffingAssignmentAuthority {
             return "Staffing assignment failed: " + station.name + " is not a staffable machine or defensive station.";
         }
         if (worker.name == null || worker.name.isBlank()) return "Staffing assignment failed: selected worker has no valid name.";
+        if (!g.factionRecruits.contains(worker)) {
+            return "Staffing assignment failed: selected worker is not on the current freehold roster.";
+        }
+        String actorProblem = liveActorProblem(g, worker);
+        if (actorProblem != null) return "Staffing assignment failed: " + actorProblem;
         StaffingRoleSkillValidationAuthority.ValidationResult validation = StaffingRoleSkillValidationAuthority.validate(g, station, worker);
         if (!validation.allowed) return "Staffing assignment failed: " + validation.summary;
         clearWorkerFromOtherStations(g, worker.name, station);
@@ -72,9 +77,52 @@ final class ManualStaffingAssignmentAuthority {
         if (station.assignedWorker == null || station.assignedWorker.isBlank()) return "no assigned worker";
         RecruitWorker worker = assignedWorker(g, station);
         if (worker == null) return "assigned worker " + station.assignedWorker + " is no longer recruited";
+        String actorProblem = liveActorProblem(g, worker);
+        if (actorProblem != null) return actorProblem;
         StaffingRoleSkillValidationAuthority.ValidationResult validation =
                 StaffingRoleSkillValidationAuthority.validate(g, station, worker);
         return validation.allowed ? null : "assigned worker " + worker.name + " is not valid: " + validation.summary;
+    }
+
+
+    /**
+     * Identity-backed hires cannot operate machines as disembodied roster text.
+     * Legacy workers without sourceNpcId retain their historical abstract
+     * staffing behavior until an authoritative actor migration exists.
+     */
+    static String liveActorProblem(GamePanel g, RecruitWorker worker) {
+        if (worker == null) return "no recruited worker selected";
+        if (worker.sourceNpcId == null || worker.sourceNpcId.isBlank()) return null;
+        if (g == null || g.world == null || g.world.npcs == null) {
+            return "assigned worker " + worker.name + " is not in a loaded work zone";
+        }
+        NpcEntity matched = null;
+        for (NpcEntity npc : g.world.npcs) {
+            if (npc != null && worker.sourceNpcId.equals(npc.id)) {
+                if (matched != null) {
+                    return "assigned worker " + worker.name
+                            + " has an ambiguous actor identity; resolve duplicate NPC IDs";
+                }
+                matched = npc;
+            }
+        }
+        if (matched == null) {
+            return "assigned worker " + worker.name
+                    + " is absent from this zone; queued jobs will wait for a real worker";
+        }
+        if (matched.hp <= 0) return "assigned worker " + worker.name + " is deceased";
+        if ("Left Faction".equalsIgnoreCase(matched.state)) {
+            return "assigned worker " + worker.name + " has departed the faction";
+        }
+        if (matched.isAnimalActor() || matched.isMinorActor()
+                || matched.developerStationary || matched.isUntargetableAnchor()) {
+            return "assigned worker " + worker.name + " is not an eligible civilian worker";
+        }
+        if ("Hostile".equalsIgnoreCase(matched.state)
+                || (matched.combatTargetId != null && !matched.combatTargetId.isBlank())) {
+            return "assigned worker " + worker.name + " is engaged in hostilities";
+        }
+        return null;
     }
 
     static String selectionLine(GamePanel g, BaseObject station, RecruitWorker worker) {

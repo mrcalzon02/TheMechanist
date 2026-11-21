@@ -4,6 +4,9 @@ package mechanist;
 final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) throws Exception {
         runSmoke("OptionsSwingComponentSmoke", () -> OptionsSwingComponentSmoke.main(args));
+        runSmoke("CoreGameplayBoundarySmoke", () -> CoreGameplayBoundarySmoke.main(args));
+        runSmoke("Milestone03PlayerConstructionCrewSmoke", () -> Milestone03PlayerConstructionCrewSmoke.main(args));
+        runSmoke("KnowledgeProgressionIntegrationSmoke", () -> KnowledgeProgressionIntegrationSmoke.main(args));
         runSmoke("SpatialAudioSmoke", () -> SpatialAudioSmoke.main(args));
         runSmoke("WeaponAudioSmoke", () -> WeaponAudioSmoke.main(args));
         runSmoke("EarlyGameInputUsabilitySmoke", () -> EarlyGameInputUsabilitySmoke.main(args));

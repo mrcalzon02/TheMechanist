@@ -1,0 +1,2 @@
+[19:34:38.753] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+CoreGameplayBoundarySmoke PASS inventoryIdentity=true provenance=true transfers=true noJunkMeals=true newRunIsolation=true

@@ -74,12 +74,16 @@ final class NpcNeedsDutyRuntimeAuthority {
             boolean combat=CyberneticLimbAuthority.autoService(game,npc);
             if(!combat) combat=ActorConsumableAuthority.autoUse(game,npc,false);
             if(!combat) combat=ActorCombatAuthority.takeNpcTurn(game,npc);
-            if(!combat) npc.tick(world, game.playerX, game.playerY, game.turn);
+            boolean constructionDuty = !combat && PlayerConstructionCrewAuthority.hasDuty(game, npc);
+            if (!combat) {
+                npc.tick(world, game.playerX, game.playerY, game.turn, constructionDuty);
+                if (constructionDuty) PlayerConstructionCrewAuthority.takeNpcTurn(game, npc);
+            }
             if (isNeedState(npc)) out.needs++;
             if (isDutyState(npc)) out.duties++;
             if (npc.x != beforeX || npc.y != beforeY) {
                 out.moved++;
-            } else if (!combat && !sleeping && applyPassiveDesire(world, npc, game.turn, game.worldTurn, game.playerX, game.playerY)) {
+            } else if (!combat && !constructionDuty && !sleeping && applyPassiveDesire(world, npc, game.turn, game.worldTurn, game.playerX, game.playerY)) {
                 out.passiveDesires++;
                 if (npc.x != beforeX || npc.y != beforeY) out.moved++;
             }

@@ -1,0 +1,42 @@
+[
+  {
+    "path": "diagnostics/combat-support-20261026/item-quality-audit.tsv",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\diagnostics\\combat-support-20261026\\item-quality-audit.tsv"
+  },
+  {
+    "path": "diagnostics/combat-support-20261026/summary.json",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\diagnostics\\combat-support-20261026\\summary.json"
+  },
+  {
+    "path": "diagnostics/cybernetics-20261026/cybernetic-results.txt",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\diagnostics\\cybernetics-20261026\\cybernetic-results.txt"
+  },
+  {
+    "path": "diagnostics/cybernetics-20261026/medical-controls.png",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\diagnostics\\cybernetics-20261026\\medical-controls.png"
+  },
+  {
+    "path": "diagnostics/native-battles-20261026/weapon-audio/pcm-audit.tsv",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\diagnostics\\native-battles-20261026\\weapon-audio\\pcm-audit.tsv"
+  },
+  {
+    "path": "diagnostics/native-battles-20261026/weapon-audio/weapon-bindings.tsv",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\diagnostics\\native-battles-20261026\\weapon-audio\\weapon-bindings.tsv"
+  },
+  {
+    "path": "PACKAGE_launcher/java/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\PACKAGE_launcher\\java\\target\\maven-status\\maven-compiler-plugin\\compile\\default-compile\\createdFiles.lst"
+  },
+  {
+    "path": "PACKAGE_launcher/java/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst",
+    "restored_from": "HEAD",
+    "audit_output_copy": "build\\core-gameplay-audit\\regenerated-historical-outputs\\PACKAGE_launcher\\java\\target\\maven-status\\maven-compiler-plugin\\compile\\default-compile\\inputFiles.lst"
+  }
+]

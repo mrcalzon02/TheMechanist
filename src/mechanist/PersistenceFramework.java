@@ -25,6 +25,7 @@ class Persistence {
         put(p, "run.seed", Long.toString(g.seed));
         put(p, "run.worldSetup", g.worldSetup == null ? WorldSetupSettings.standard().encode() : g.worldSetup.encode());
         put(p, "run.turn", Integer.toString(g.turn));
+        put(p, "run.lastPlayerNeedsTurn", Integer.toString(g.lastPlayerNeedsTurn));
         put(p, "run.worldTurn", Long.toString(g.worldTurn));
         put(p, "run.playerX", Integer.toString(g.playerX));
         put(p, "run.playerY", Integer.toString(g.playerY));
@@ -43,6 +44,7 @@ class Persistence {
         put(p, "run.machineParts", Integer.toString(g.machineParts));
         put(p, "run.xp", Integer.toString(g.xp));
         put(p, "run.knowledgeCredits", Integer.toString(g.knowledgeCredits));
+        put(p, "run.knowledgeXpProgress", Integer.toString(g.knowledgeXpProgress));
         put(p, "run.kills", Integer.toString(g.runKills));
         put(p, "run.crafted", Integer.toString(g.runCrafted));
         put(p, "run.npcTalked", Integer.toString(g.runNpcTalkedTo));
@@ -185,6 +187,9 @@ class Persistence {
     }
 
     static void readCore(GamePanel g, Properties p) {
+        // Roster release confirmation never follows a new loaded character.
+        g.pendingUnavailableWorkerKey = "";
+        g.pendingUnavailableWorkerTurn = -1;
         boolean profileLoad = Boolean.getBoolean("mechanist.profileSaveLoad");
         long profileStart = profileLoad ? System.nanoTime() : 0L;
         if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=atlas-definition status=started");
@@ -212,8 +217,14 @@ class Persistence {
         g.visibleTiles = new boolean[g.world.w][g.world.h];
         g.rememberedTiles = new boolean[g.world.w][g.world.h];
         g.turn = getInt(p,"run.turn",0); g.worldTurn = getLong(p,"run.worldTurn", g.turn); g.lastStaffedProductionBackgroundTurn = g.turn; g.playerX = clamp(getInt(p,"run.playerX", g.world.startPoint().x),0,g.world.w-1); g.playerY = clamp(getInt(p,"run.playerY", g.world.startPoint().y),0,g.world.h-1);
+        // Legacy saves start the survival clock at load time.
+        g.lastPlayerNeedsTurn = clamp(getInt(p, "run.lastPlayerNeedsTurn", g.turn), 0, Math.max(0, g.turn));
         g.lookX = g.playerX; g.lookY = g.playerY; g.lookCursorActive=false; g.interactCursorActive=false; g.panelMode=GamePanel.PanelMode.NONE;
         g.suspicion=getInt(p,"run.suspicion",0); g.gangHeat=getInt(p,"run.gangHeat",0); g.supplies=getInt(p,"run.supplies",0); g.food=getInt(p,"run.food",GamePanel.MAX_FOOD_WATER); g.water=getInt(p,"run.water",GamePanel.MAX_FOOD_WATER); g.fatigue=getInt(p,"run.fatigue",0); g.wounds=getInt(p,"run.wounds",0); g.sleepNeed=getInt(p,"run.sleepNeed",0); g.stimulantStrain=getInt(p,"run.stimulantStrain",0); g.bleeding=getInt(p,"run.bleeding",0); g.infectionRisk=getInt(p,"run.infectionRisk",0); g.pain=getInt(p,"run.pain",0); g.machineParts=getInt(p,"run.machineParts",0); g.xp=getInt(p,"run.xp",0); g.knowledgeCredits=getInt(p,"run.knowledgeCredits",0); g.unlockedKnowledges.clear(); g.unlockedKnowledges.addAll(decList(p.getProperty("run.knowledges","Underhive Basics"))); g.unlockedSkillNodes.clear(); g.unlockedSkillNodes.addAll(decList(p.getProperty("run.skillNodes",""))); g.unlockedConstructionBlueprints.clear(); g.unlockedConstructionBlueprints.addAll(decList(p.getProperty("run.constructionBlueprints",""))); g.constructionExpansionReactions.clear(); g.constructionExpansionReactions.addAll(decList(p.getProperty("run.constructionExpansionReactions",""))); RoomOwnershipAuthority.restoreHistory(g, decList(p.getProperty("run.roomOwnershipHistory","")));
+        // Legacy XP remainder does not retroactively grant knowledge credits.
+        g.knowledgeXpProgress = clamp(getInt(p, "run.knowledgeXpProgress",
+                Math.max(0, g.xp) % KnowledgeProgressionAuthority.XP_PER_CREDIT),
+                0, KnowledgeProgressionAuthority.XP_PER_CREDIT - 1);
         g.active = readCandidate(p, g.seed);
         try { Faction cf=Faction.valueOf(p.getProperty("clothing.faction","SCAVENGER")); g.equippedClothing = new Clothing(p.getProperty("clothing.name","Scavenger rags"), cf, getInt(p,"clothing.disguise",35), getInt(p,"clothing.defense",1), false); } catch(Exception e){ g.equippedClothing=Clothing.scavengerRags(); }
         restoreCarriedInventory(g, p);
@@ -401,6 +412,8 @@ class Persistence {
     }
     static void writeWorldState(World w, Properties p) {
         if (w == null) return;
+        TileStructureAuthority.write(w,p);
+        put(p,"world.architecturalClutter.version",Integer.toString(w.architecturalClutterVersion));
         put(p,"world.seed",Long.toString(w.seed)); put(p,"world.w",Integer.toString(w.w)); put(p,"world.h",Integer.toString(w.h)); put(p,"world.zoneType",w.zoneType.name()); put(p,"world.coord",w.sectorX+","+w.sectorY+","+w.zoneX+","+w.zoneY+","+w.floor+","+w.sewerLayer); put(p,"world.hiveName",w.hiveName); put(p,"world.sectorName",w.sectorName); put(p,"world.zoneName",w.zoneName); put(p,"world.zoneHistory",w.zoneHistory); put(p,"world.zoneFacilityHistory",w.zoneFacilityHistory); put(p,"world.zoneProductionHistory",w.zoneProductionHistory); put(p,"world.zoneStockMovementHistory",w.zoneStockMovementHistory); put(p,"world.zoneConflictLossHistory",w.zoneConflictLossHistory); put(p,"world.zoneMaterializedItemHistory",w.zoneMaterializedItemHistory); put(p,"world.zoneLaborAssignmentHistory",w.zoneLaborAssignmentHistory);
         ArrayList<String> objs=new ArrayList<>(); for(MapObjectState m:w.mapObjects) objs.add(m.id+"|"+m.type+"|"+m.label+"|"+m.x+"|"+m.y+"|"+m.cooldownUntilTurn+"|"+m.vendCount+"|"+m.glyph+"|"+m.stockState); put(p,"world.mapObjects",encList(objs));
         ArrayList<String> lsrc=new ArrayList<>(); for(ZoneLightSourceRecord l:w.lightSources) if(l!=null) lsrc.add(l.encode()); put(p,"world.lightSources",encList(lsrc));
@@ -432,6 +445,21 @@ class Persistence {
     }
     static void readWorldState(World w, Properties p) {
         if (w == null) return;
+        TileStructureAuthority.read(w, p);
+        String clutterVersion = p.getProperty("world.architecturalClutter.version");
+        if (clutterVersion != null) {
+            try {
+                int version = Integer.parseInt(clutterVersion);
+                if (version < 0 || version > ArchitecturalClutterAuthority.VERSION)
+                    throw new IllegalArgumentException("Unsupported clutter recipe");
+                w.architecturalClutterVersion = version;
+                w.architecturalClutter = null;
+            } catch (IllegalArgumentException invalid) {
+                w.architecturalClutterVersion = 0;
+                w.architecturalClutter = null;
+                DebugLog.warn("CLUTTER_LOAD", "Unsupported architectural clutter recipe disabled.");
+            }
+        }
         w.hiveName = p.getProperty("world.hiveName", w.hiveName); w.sectorName = p.getProperty("world.sectorName", w.sectorName); w.zoneName = p.getProperty("world.zoneName", w.zoneName); w.zoneHistory = p.getProperty("world.zoneHistory", w.zoneHistory); w.zoneFacilityHistory = p.getProperty("world.zoneFacilityHistory", w.zoneFacilityHistory); w.zoneProductionHistory = p.getProperty("world.zoneProductionHistory", w.zoneProductionHistory); w.zoneStockMovementHistory = p.getProperty("world.zoneStockMovementHistory", w.zoneStockMovementHistory); w.zoneConflictLossHistory = p.getProperty("world.zoneConflictLossHistory", w.zoneConflictLossHistory); w.zoneMaterializedItemHistory = p.getProperty("world.zoneMaterializedItemHistory", w.zoneMaterializedItemHistory); w.zoneLaborAssignmentHistory = p.getProperty("world.zoneLaborAssignmentHistory", w.zoneLaborAssignmentHistory);
         java.util.List<String> roomFaction=decList(p.getProperty("world.roomFactions","")); for(int i=0;i<roomFaction.size()&&i<w.roomFactions.size();i++) try{w.roomFactions.set(i,Faction.valueOf(roomFaction.get(i)));}catch(Exception ignored){}
         // Presence is authoritative even when the saved fixture list is empty:
@@ -491,6 +519,7 @@ class Persistence {
         WorldEventFacilityMutationAuthority.restorePersistedState(w);
         w.factionHappinessBoost.clear(); readFactionMap(p.getProperty("world.factionHappinessBoost",""), w.factionHappinessBoost);
         ZoneEconomyInitializationManager.readPersistence(w, p);
+        ArchitecturalClutterAuthority.synchronizeLights(w);
     }
     static void readFactionMap(String text, EnumMap<Faction,Integer> map) { for(String s: decList(text)) { String[] a=s.split(":",2); if(a.length==2) try{ map.put(Faction.valueOf(a[0]),Integer.parseInt(a[1])); }catch(Exception ignored){} } }
     static void put(Properties p,String k,String v){ if(v!=null) p.setProperty(k,v); }

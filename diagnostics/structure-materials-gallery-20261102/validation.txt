@@ -1,0 +1,40 @@
+Validation date: 2026-11-02 (user timezone America/Anchorage)
+Runtime: installed Java 17, headless; existing PACKAGE_client assets.
+Build: complete src tree compiled with javac 17; exit 0.
+
+Passing checks (exit 0):
+StructureMaterialsSmoke
+TileStructureSmoke
+RoofConstructionSmoke
+ViewportFogSmoke
+Milestone02MovementExecutionAuthoritySmoke
+Milestone02ZoneTilePushSqueezeMovementSmoke
+Milestone02ConstructionCategorySmoke
+ActorCombatExecutionSmoke
+DeveloperBattleMapSmoke (20 authoritative NPC combat turns and native GamePanel captures)
+StructureMaterialsCaptureProbe (7 archived frames; original arena restored afterward)
+
+After the final concrete-above-glass shading correction, complete compilation,
+StructureMaterialsSmoke and the seven-frame capture probe were rerun successfully.
+git diff --check passed. Images reviewed visually through the local image viewer.
+
+StructureMaterialsSmoke assertions cover translucent glass layers, opaque remote
+concrete underside, grating apertures and bars, narrower pillar/pipe silhouettes,
+rail crossings in both directions, diagonal rail bypass rejection, unsupported
+floor rejection, structured crowd push rejection, full material persistence,
+snapshot fields, real wall light registration without reload duplication,
+normal paid glazing/grating roof placement and exact resource consumption,
+duplicate refusal, planner glass visibility, physical glass firing obstruction,
+normal player movement and continuous viewport collision.
+
+Headless display-mode enumeration emits an expected safe-default warning.
+This is no claim of native window/mouse playtesting, installer validation,
+procedural city material distribution, or completed room-over-room occupancy.
+Development classes live in diagnostics/multilevel-battle-20261029/classes;
+the packaged release JAR was not overwritten.
+
+Reproduce from PACKAGE_client after compiling the full src tree:
+java -Djava.awt.headless=true -Dmechanist.assetRoot=. -cp ../diagnostics/multilevel-battle-20261029/classes mechanist.StructureMaterialsSmoke
+java -Djava.awt.headless=true -Dmechanist.assetRoot=. -cp ../diagnostics/multilevel-battle-20261029/classes mechanist.StructureMaterialsCaptureProbe
+Use workspace-local mechanist.storage.root and mechanist.client.storage.root
+overrides for diagnostics to keep mutable test data inside the checkout.

@@ -34,11 +34,11 @@ final class ActorCombatAuthority {
         ActorConsumableAuthority.ensure(actor);
         NpcEntity target=null;int best=Integer.MAX_VALUE;
         for(NpcEntity other:game.world.npcs) if(enemies(actor,other)) {
-            int distance=distance(actor.x,actor.y,other.x,other.y);
+            int distance=combatDistance(game,actor.x,actor.y,other.x,other.y);
             if(distance<=NpcTurnBudgetScheduler.ACTIVE_RADIUS && (distance<best || distance==best && other.id.compareTo(target.id)<0)) {target=other;best=distance;}
         }
         boolean playerEnemy=playerAlive(game) && actor.combatTeam.isBlank() && ("Hostile".equalsIgnoreCase(actor.state) || "PLAYER".equals(actor.combatTargetId));
-        int playerDistance=distance(actor.x,actor.y,game.playerX,game.playerY);
+        int playerDistance=combatDistance(game,actor.x,actor.y,game.playerX,game.playerY);
         boolean player=playerEnemy && playerDistance<=12 && playerDistance<best;
         if(target==null && !player) {
             if(!actor.combatTeam.isBlank()) {actor.lastTickTurn=game.turn;event(game,actor.id,"","",Outcome.NO_TARGET,0,0,0,0);return true;}
@@ -52,7 +52,7 @@ final class ActorCombatAuthority {
         actor.selectedMovementModeIndex=actor.chooseMovementModeIndex(game.turn);
         int tx=player?game.playerX:target.x,ty=player?game.playerY:target.y;
         String targetId=player?"PLAYER":target.id;
-        int d=distance(actor.x,actor.y,tx,ty);
+        int d=combatDistance(game,actor.x,actor.y,tx,ty);
         String weapon=d<=1?melee(actor):actor.equippedRangedWeapon;
         if(weapon==null || weapon.isBlank()) weapon=melee(actor);
         var profile=StructuralScaleCombatAuthority.weaponProfile(weapon,"SNAP");
@@ -113,7 +113,7 @@ final class ActorCombatAuthority {
         if(!eligible(target)) return refusal(game,target.id,weapon,Outcome.PROTECTED,"Target is a protected noncombatant.");
         String bodyRefusal=MedicalTreatmentAuthority.attackRejection(game,profile);
         if(!bodyRefusal.isBlank()) return refusal(game,target.id,weapon,Outcome.DISABLED,bodyRefusal);
-        int d=distance(game.playerX,game.playerY,target.x,target.y);
+        int d=combatDistance(game,game.playerX,game.playerY,target.x,target.y);
         if(d>profile.range()) return refusal(game,target.id,weapon,Outcome.RANGE,"Target outside weapon range ("+d+"/"+profile.range()+").");
         if(!StructuralScaleCombatAuthority.clearLine(game.world,game.playerX,game.playerY,target.x,target.y)) return refusal(game,target.id,weapon,Outcome.WALL,"Attack blocked by a wall or closed door.");
         int required=profile.firearm() && "BURST".equalsIgnoreCase(game.fireModeLabel())?3:profile.firearm()?1:0;
@@ -139,12 +139,16 @@ final class ActorCombatAuthority {
     static int hitChance(int skill,int defense,int distance,int quality,int cover) {
         return Math.max(5,Math.min(95,40+Math.max(0,skill)*4-Math.max(0,defense)*2-Math.max(0,distance-1)*2+Math.max(0,quality)*2-cover));
     }
+    private static int combatDistance(GamePanel game,int x,int y,int tx,int ty) {
+        return DeveloperBattleMapAuthority.active(game.world)?DeveloperBattleMapAuthority.distance(game.world,x,y,tx,ty):distance(x,y,tx,ty);
+    }
     private static int damage(StructuralScaleCombatAuthority.WeaponProfile weapon,int skill,int quality,int armor) {
         // Actor HP scale, using the shared weapon force profile; initial tuning, not balance certification.
         return Math.max(1,weapon.force()+Math.max(0,skill)/4+Math.max(0,quality)-Math.max(0,armor-weapon.penetration()/2));
     }
     private static int cover(GamePanel game,int x,int y) {
-        int value=0;for(BaseObject object:game.baseObjects) if(object.integrity>0 && distance(x,y,object.x,object.y)<=1) value=Math.max(value,PassiveDefenseEffectsAuthority.coverPenalty(object));
+        int value=0;for(BaseObject object:game.baseObjects) if(object.integrity>0 && distance(x,y,object.x,object.y)<=1
+                && Math.abs(DeveloperBattleMapAuthority.height(game.world,x,y)-DeveloperBattleMapAuthority.height(game.world,object.x,object.y))<.3) value=Math.max(value,PassiveDefenseEffectsAuthority.coverPenalty(object));
         return Math.min(30,value*2);
     }
     private static String melee(NpcEntity npc) { return npc.equippedMeleeWeapon==null || npc.equippedMeleeWeapon.isBlank()?"Bare hands":npc.equippedMeleeWeapon; }
@@ -153,8 +157,17 @@ final class ActorCombatAuthority {
         return occupiedLineFrom(game,shooter==null?game.playerX:shooter.x,shooter==null?game.playerY:shooter.y,tx,ty);
     }
     private static boolean occupiedLineFrom(GamePanel game,int x,int y,int tx,int ty) {
+        int originX=x,originY=y;
         int dx=Math.abs(tx-x),dy=Math.abs(ty-y),sx=x<tx?1:-1,sy=y<ty?1:-1,err=dx-dy;
-        while(x!=tx || y!=ty) {int e=2*err;if(e>-dy){err-=dy;x+=sx;}if(e<dx){err+=dx;y+=sy;}if(x==tx && y==ty) break;if(game.world.npcAt(x,y)!=null || x==game.playerX && y==game.playerY) return true;}
+        while(x!=tx || y!=ty) {int e=2*err;if(e>-dy){err-=dy;x+=sx;}if(e<dx){err+=dx;y+=sy;}if(x==tx && y==ty) break;
+            if(game.world.npcAt(x,y)!=null || x==game.playerX && y==game.playerY) {
+                if(!DeveloperBattleMapAuthority.active(game.world))return true;
+                double fraction=Math.hypot(x-originX,y-originY)/Math.max(.001,Math.hypot(tx-originX,ty-originY));
+                double rayHeight=.58+DeveloperBattleMapAuthority.height(game.world,originX,originY)*(1-fraction)+DeveloperBattleMapAuthority.height(game.world,tx,ty)*fraction;
+                double ground=DeveloperBattleMapAuthority.height(game.world,x,y);
+                if(rayHeight>=ground && rayHeight<=ground+1.1)return true;
+            }
+        }
         return false;
     }
     /** Bounded combat routing around occupied firing lanes; never pushes or walks through an actor. */
@@ -164,11 +177,15 @@ final class ActorCombatAuthority {
         ArrayDeque<Node> queue=new ArrayDeque<>();Set<Long> seen=new HashSet<>();queue.add(new Node(actor.x,actor.y,actor.x,actor.y));
         seen.add(((long)actor.x<<32)^(actor.y&0xffffffffL));int visited=0;
         while(!queue.isEmpty() && visited++<512) {
-            Node at=queue.removeFirst();int d=distance(at.x,at.y,tx,ty);
+            Node at=queue.removeFirst();int d=combatDistance(game,at.x,at.y,tx,ty);
             if((at.x!=actor.x || at.y!=actor.y) && d>0 && d<=weapon.range() && StructuralScaleCombatAuthority.clearLine(game.world,at.x,at.y,tx,ty) && (!weapon.firearm() || !occupiedLineFrom(game,at.x,at.y,tx,ty))) {actor.moveTo(at.firstX,at.firstY);return true;}
             int dx=Integer.compare(tx,at.x),dy=Integer.compare(ty,at.y);
             int[][] directions=Math.abs(tx-at.x)>=Math.abs(ty-at.y)?new int[][]{{dx,0},{0,dy},{0,-1},{0,1},{-1,0},{1,0}}:new int[][]{{0,dy},{dx,0},{-1,0},{1,0},{0,-1},{0,1}};
-            for(int[] direction:directions) {int nx=at.x+direction[0],ny=at.y+direction[1];if(nx==at.x && ny==at.y || distance(nx,ny,actor.x,actor.y)>12 || !actor.canNpcStep(game.world,nx,ny,game.playerX,game.playerY))continue;
+            // Search edges originate at the queued node, not the actor's live
+            // position. canNpcStep checks a live one-step move and therefore
+            // rejects the second and later edges of an otherwise valid route.
+            for(int[] direction:directions) {int nx=at.x+direction[0],ny=at.y+direction[1];if(nx==at.x && ny==at.y || distance(nx,ny,actor.x,actor.y)>12 || !game.world.walkable(nx,ny) || game.world.npcAt(nx,ny)!=null || nx==game.playerX && ny==game.playerY)continue;
+                if(!DeveloperBattleMapAuthority.step(game.world,at.x,at.y,nx,ny))continue;
                 long key=((long)nx<<32)^(ny&0xffffffffL);if(!seen.add(key))continue;boolean first=at.x==actor.x && at.y==actor.y;queue.add(new Node(nx,ny,first?nx:at.firstX,first?ny:at.firstY));}
         }
         return false;

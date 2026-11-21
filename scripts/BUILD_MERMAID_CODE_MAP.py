@@ -55,6 +55,7 @@ ZONE_LABELS: Dict[str, str] = {zone_id: label for zone_id, label, _patterns, _de
 ZONE_LABELS["UNPOSITIONED"] = "Unpositioned / Needs Map Assignment"
 
 MODULE_OVERRIDES: List[Tuple[str, str, str]] = [
+    ("KnowledgeProgressionAuthority.java", "COMBAT_SIM", "Character earned-XP conversion and authoritative knowledge purchase owner."),
     ("SemanticTextManager.java", "LOCALIZATION_TEXT", "Semantic key text manager and locale loader."),
     ("MainMenuLanguageSelectorAuthority.java", "LOCALIZATION_TEXT", "Main-menu language selector and locale override surface."),
     ("BuildIdentityAuthority.java", "RUNTIME_OPTIONS", "Runtime build identity resolver."),

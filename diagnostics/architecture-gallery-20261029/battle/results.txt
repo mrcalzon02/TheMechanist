@@ -1,0 +1,2 @@
+PASS: same GamePanel/world/actors/assets; elevations 0/1/2; stairs; ledges; vertical LOS; ambient; NPC combat.
+Actor combat {RANGE=16, WALL=35, ALLY_IN_LINE=3, RELOAD=9, MOVE=35, MISS=110, HIT=36, KILL=16} damage=534 shots=162 healing=0 supplies={}

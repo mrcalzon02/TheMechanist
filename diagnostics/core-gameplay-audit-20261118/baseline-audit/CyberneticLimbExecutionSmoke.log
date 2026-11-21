@@ -1,0 +1,7 @@
+[13:22:58.425] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+Cybernetic lifecycle checks
+16 part definitions x 8 qualities: lifecycle, treatment separation, resource use, fitting, repair, calibration and removal.
+25% seeded pool: 499/2000 fitted; 0% and 100% controls and exact replay passed.
+PASS 7429 checks.
+
+[13:23:04.109] WARN/MULTIPLAYER_MENU Could not save multiplayer settings: C:\GITS\The Mechanist\TheMechanist\build\core-gameplay-audit\isolated\CyberneticLimbExecutionSmoke\storage\saves\data\settings\multiplayer_servers.properties.tmp-e73ec6ea-d6c5-4613-ba5b-8a2f64a55508 -> C:\GITS\The Mechanist\TheMechanist\build\core-gameplay-audit\isolated\CyberneticLimbExecutionSmoke\storage\saves\data\settings\multiplayer_servers.properties

@@ -1,0 +1,132 @@
+[
+  {
+    "name": "Milestone03ContractTurnInSmoke",
+    "status": "passed",
+    "seconds": 14.5
+  },
+  {
+    "name": "Milestone03ProductionContractWorkflowSmoke",
+    "status": "passed",
+    "seconds": 14.64
+  },
+  {
+    "name": "Milestone03ProgressiveConstructionPersistenceSmoke",
+    "status": "passed",
+    "seconds": 13.91
+  },
+  {
+    "name": "Milestone03ProgressiveConstructionTileSyncSmoke",
+    "status": "passed",
+    "seconds": 13.74
+  },
+  {
+    "name": "Milestone03ProgressiveConstructionOriginalTileSmoke",
+    "status": "passed",
+    "seconds": 15.7
+  },
+  {
+    "name": "Milestone05ConstructionBlueprintOwnershipSmoke",
+    "status": "passed",
+    "seconds": 14.39
+  },
+  {
+    "name": "Milestone05ConstructionAttentionSmoke",
+    "status": "passed",
+    "seconds": 14.86
+  },
+  {
+    "name": "Milestone05FactionBlueprintSiteUpgradeSmoke",
+    "status": "passed",
+    "seconds": 12.84
+  },
+  {
+    "name": "Milestone05FactionPhysicalConstructionSmoke",
+    "status": "passed",
+    "seconds": 13.2
+  },
+  {
+    "name": "Milestone05BlueprintContractRewardSmoke",
+    "status": "passed",
+    "seconds": 45.17
+  },
+  {
+    "name": "Milestone03StaffedProductionExecutionSmoke",
+    "status": "passed",
+    "seconds": 19.51
+  },
+  {
+    "name": "WorldGenerationSetupPersistenceSmoke",
+    "status": "passed",
+    "seconds": 13.94
+  },
+  {
+    "name": "SinglePlayerInternalHostLifecycleSmoke",
+    "status": "passed",
+    "seconds": 19.91
+  },
+  {
+    "name": "CoreGameplayBoundarySmoke",
+    "status": "passed",
+    "seconds": 2.08
+  },
+  {
+    "name": "Milestone02SemanticRenderAssetResolverSmoke",
+    "status": "passed",
+    "seconds": 0.16
+  },
+  {
+    "name": "Milestone02SemanticRenderAssetVariantCohortSmoke",
+    "status": "passed",
+    "seconds": 0.12
+  },
+  {
+    "name": "SemanticAssetRegistryExtensionSmoke",
+    "status": "passed",
+    "seconds": 0.17
+  },
+  {
+    "name": "Milestone02InventoryReadabilitySmoke",
+    "status": "passed",
+    "seconds": 0.14
+  },
+  {
+    "name": "Milestone02ContainerReadabilitySmoke",
+    "status": "passed",
+    "seconds": 0.11
+  },
+  {
+    "name": "Milestone02TransferWorkflowConsistencySmoke",
+    "status": "passed",
+    "seconds": 0.08
+  },
+  {
+    "name": "Milestone03ProductionSourceProvenanceSmoke",
+    "status": "passed",
+    "seconds": 0.25
+  },
+  {
+    "name": "Milestone03ProductionControlBoardSmoke",
+    "status": "passed",
+    "seconds": 2.58
+  },
+  {
+    "name": "Milestone03MachineKnowledgeSourceSmoke",
+    "status": "passed",
+    "seconds": 1.48
+  },
+  {
+    "name": "Milestone03SkillTreeSpendingPersistenceSmoke",
+    "status": "passed",
+    "seconds": 1.55
+  },
+  {
+    "name": "Milestone05RoomOwnershipCommandSmoke",
+    "status": "passed",
+    "seconds": 3.92
+  },
+  {
+    "name": "CharacterSaveManagerRegressionSmoke",
+    "status": "passed",
+    "seconds": 0.42
+  }
+]

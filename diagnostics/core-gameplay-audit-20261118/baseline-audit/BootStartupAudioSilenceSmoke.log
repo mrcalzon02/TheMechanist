@@ -1,0 +1,27 @@
+Exception in thread "main" java.lang.IllegalStateException: remote session ledger could not persist atomically
+	at mechanist.RemoteSessionLedgerAuthority.persistOrRollback(RemoteSessionLedgerAuthority.java:419)
+	at mechanist.RemoteSessionLedgerAuthority.attach(RemoteSessionLedgerAuthority.java:148)
+	at mechanist.RemoteSessionLedgerAuthority.attach(RemoteSessionLedgerAuthority.java:70)
+	at mechanist.RemoteSessionLedgerAuthoritySmoke.verifyAtomicPersistenceRules(RemoteSessionLedgerAuthoritySmoke.java:227)
+	at mechanist.RemoteSessionLedgerAuthoritySmoke.main(RemoteSessionLedgerAuthoritySmoke.java:14)
+	at mechanist.ReleaseBuildIdentitySmoke.main(ReleaseBuildIdentitySmoke.java:85)
+	at mechanist.BootStartupAudioSilenceSmoke.main(BootStartupAudioSilenceSmoke.java:26)
+	Suppressed: java.nio.file.AccessDeniedException: C:\Users\Admin\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-remote-ledger-smoke 10510479789808385041\world alpha.sessions.properties.tmp-ab1b1647bafcf55ed5b3c4f7e00b2cc1 -> C:\Users\Admin\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-remote-ledger-smoke 10510479789808385041\world alpha.sessions.properties
+		at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:89)
+		at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+		at java.base/sun.nio.fs.WindowsFileCopy.move(WindowsFileCopy.java:317)
+		at java.base/sun.nio.fs.WindowsFileSystemProvider.move(WindowsFileSystemProvider.java:293)
+		at java.base/java.nio.file.Files.move(Files.java:1432)
+		at mechanist.RemoteSessionLedgerAuthority.persist(RemoteSessionLedgerAuthority.java:573)
+		at mechanist.RemoteSessionLedgerAuthority.close(RemoteSessionLedgerAuthority.java:757)
+		at mechanist.RemoteSessionLedgerAuthoritySmoke.verifyAtomicPersistenceRules(RemoteSessionLedgerAuthoritySmoke.java:223)
+		... 3 more
+Caused by: java.nio.file.AccessDeniedException: C:\Users\Admin\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-remote-ledger-smoke 10510479789808385041\world alpha.sessions.properties.tmp-01067582492f84c05251aad6ad9f9c9c -> C:\Users\Admin\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-remote-ledger-smoke 10510479789808385041\world alpha.sessions.properties
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:89)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsFileCopy.move(WindowsFileCopy.java:317)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.move(WindowsFileSystemProvider.java:293)
+	at java.base/java.nio.file.Files.move(Files.java:1432)
+	at mechanist.RemoteSessionLedgerAuthority.persist(RemoteSessionLedgerAuthority.java:573)
+	at mechanist.RemoteSessionLedgerAuthority.persistOrRollback(RemoteSessionLedgerAuthority.java:414)
+	... 6 more

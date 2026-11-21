@@ -129,7 +129,9 @@ final class VisualLightingAuthority {
         int ambientB = Math.max(6, ambient / 3);
         int ambientPixel = (ambientAlpha << 24) | (ambientR << 16) | (ambientG << 8) | ambientB;
         for (int i = 0; i < lightMapPixels.length; i++) {
-            lightMapPixels[i] = ambientPixel;
+            int local=WorldAmbientLightAuthority.at(game.world,camX+i%gridWidth,camY+i/gridWidth,ambient);
+            lightMapPixels[i] = local==ambient?ambientPixel:
+                    (Math.max(72,Math.min(218,230-local*2))<<24)|(Math.max(3,local/5)<<16)|(Math.max(3,local/5)<<8)|Math.max(6,local/3);
             bloomPixels[i] = 0x00000000;
         }
         long now = System.nanoTime();

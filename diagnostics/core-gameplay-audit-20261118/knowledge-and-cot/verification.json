@@ -1,0 +1,28 @@
+{
+  "full_gate3_passed": true,
+  "knowledge_integration_passed": true,
+  "disk_slot_recheck_passed": true,
+  "classfiles": {
+    "class_count": 2297,
+    "maximum_major_version": 61
+  },
+  "source_hashes": {
+    "LegacyPanelContext.java": "335608ac82151472d58aacfe72a1b3e6d002e5cdc8ebb5c410a840359645400a",
+    "PersistenceFramework.java": "81f1736df587cdcb6147bac2078319349695c6003828fdd0352ca06dab9d4d32",
+    "KnowledgeMenu.java": "8d7b0bbd4596c3f68899be1c96acf0693bf60eacee95af5b16ce4a3917a524a9",
+    "KnowledgeProgressionAuthority.java": "a3d0f80d090ef380f843e70f084851a0bad8b53c98d96f7d110f62209d0147bb",
+    "KnowledgeProgressionIntegrationSmoke.java": "6546f332efe04d945cf22d950719fbfcb16b483ab67705cea64b3770030e9880",
+    "NeedSupplyInteractionAuthority.java": "5e30a8f15901a410830c1fc7875de39135eeb0ec68ca594e45d00697b38be969",
+    "CoreGameplayBoundarySmoke.java": "1289c2438074f6e1323ef268acf562367d351ef80ce1bf82142ae6cdd92712c4",
+    "Gate3PlayerFacingTextSmokeSuite.java": "cde8b0afe09b1fe572d7ed4c9e54f139a1772901b143b1e46d13f23916645a3c"
+  },
+  "restored_historical_paths": [
+    "diagnostics/combat-support-20261026/item-quality-audit.tsv",
+    "diagnostics/combat-support-20261026/summary.json",
+    "diagnostics/cybernetics-20261026/cybernetic-results.txt",
+    "diagnostics/cybernetics-20261026/medical-controls.png",
+    "diagnostics/native-battles-20261026/weapon-audio/pcm-audit.tsv",
+    "diagnostics/native-battles-20261026/weapon-audio/weapon-bindings.tsv"
+  ],
+  "release_certified": false
+}

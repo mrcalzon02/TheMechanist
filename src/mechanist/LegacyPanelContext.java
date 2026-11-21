@@ -71,6 +71,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     final ArrayList<String> baseStorage = new ArrayList<>();
     final ArrayList<Candidate> candidates = new ArrayList<>();
     final ArrayList<RecruitWorker> factionRecruits = new ArrayList<>();
+    // UI-only two-click safety latch. Never serialized or carried into a new run.
+    String pendingUnavailableWorkerKey = "";
+    int pendingUnavailableWorkerTurn = -1;
     final ArrayList<ButtonBox> buttons = new ArrayList<>();
     final EditorEventBus inGameEditorEvents = new EditorEventBus();
     final EditorUndoRedoController inGameEditorHistory = new EditorUndoRedoController(inGameEditorEvents);
@@ -202,6 +205,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     int turn;
     long worldTurn;
     int lastStaffedProductionBackgroundTurn;
+    int lastPlayerNeedsTurn;
     int food;
     int water;
     int sleepNeed;
@@ -213,6 +217,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     int baseStashedScript;
     int xp;
     int knowledgeCredits;
+    int knowledgeXpProgress;
     int runKills;
     int runCrafted;
     int runNpcTalkedTo;
@@ -652,6 +657,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         baseStorage.clear();
         baseObjects.clear();
         factionRecruits.clear();
+        pendingUnavailableWorkerKey = "";
+        pendingUnavailableWorkerTurn = -1;
         itemContainers.clear();
         itemInstances.clear();
         itemProvenance.clear();
@@ -667,6 +674,56 @@ class GamePanel extends LegacyPanelBridgeBase {
         unlockedConstructionBlueprints.clear();
         constructionExpansionReactions.clear();
         roomOwnershipHistory.clear();
+        unlockedSkillNodes.clear();
+        activeSkillTrainers.clear();
+        factionStanding.clear();
+        factionMarketPressure.clear();
+        temporaryHostileTurns.clear();
+        bankBalances.clear();
+        scavengeCooldownUntilTurn.clear();
+        terrainIntegrity.clear();
+        loadedWeaponShots.clear();
+        equippedWearableSlots.clear();
+        installedBodyModifications.clear();
+        equippedLeftHandItem = "LEFT EMPTY";
+        equippedRightHandItem = "RIGHT EMPTY";
+        equippedClothing = Clothing.scavengerRags();
+        activeWeaponHandIndex = 1;
+        baseClaimed = false;
+        claimedRoomId = -1;
+        baseX = baseY = -1;
+        activePortableLightItem = "";
+        activePortableLightExpiresTurn = 0;
+        activePortableLightWorn = false;
+        logisticsRouteIntentHistory.clear();
+        logisticsDeliveryIntentHistory.clear();
+        logisticsSourceReservationHistory.clear();
+        logisticsHaulContractHistory.clear();
+        logisticsRoutePreviewHistory.clear();
+        logisticsContractLifecycleHistory.clear();
+        logisticsHaulPreflightHistory.clear();
+        logisticsHaulExecutionHistory.clear();
+        innDailyIssues.clear();
+        activeQuestGuidance.clear();
+        runKills = runCrafted = runNpcTalkedTo = runUnconsciousEvents = 0;
+        stimulantStrain = 0;
+        authorityFacilityInspectionCooldownUntilTurn = bankHeistAlarmCooldownUntilTurn = 0;
+        arbitesCaptureCooldownUntilTurn = arbitesInspectionCooldownUntilTurn = 0;
+        lastStaffedProductionBackgroundTurn = 0;
+        lastPlayerNeedsTurn = 0;
+        lastPassiveWorldTickMillis = 0L;
+        nextItemInstanceSeq = 1;
+        activeTraderSession = null;
+        activeInteractionNpc = null;
+        activeInteractionObject = null;
+        activeInteractionBaseObject = null;
+        selectedProductionBoardMachine = null;
+        pendingBuildRecipe = null;
+        buildPlacementActive = false;
+        manualMovementPlanActive = false;
+        mouseMovePreviewActive = false;
+        manualMovementPlanPath.clear();
+        mouseMovePreviewPath.clear();
         turn = 0;
         worldTurn = 0L;
         carriedScript = 15;
@@ -675,6 +732,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         machineParts = 0;
         xp = 0;
         knowledgeCredits = 0;
+        knowledgeXpProgress = 0;
         food = MAX_FOOD_WATER;
         water = MAX_FOOD_WATER;
         fatigue = 0;
@@ -1588,6 +1646,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (isWorldCommandSurface()) buttons.clear();
 
         Rectangle map = gameWorldViewportRect(w, h);
+        if(PlannerLevelViewAuthority.inspecting(this)) {
+            drawInspectedPlannerLevel(g,map);
+            return;
+        }
         int baseTile = Math.max(8, Math.min(28, Math.min(map.width / 28, map.height / 20)));
         int tile = MapViewportOptionsSubsystem.scaledTileSize(baseTile, options, 6, 56);
         lastWorldViewTileSize = tile;
@@ -1603,8 +1665,40 @@ class GamePanel extends LegacyPanelBridgeBase {
         visualLighting.render(this, g, lastWorldViewMinX, lastWorldViewMinY, cols, rows, lastWorldViewOriginX, lastWorldViewOriginY, tile, tile);
         drawWorldEntities(g, cols, rows, tile);
         ActorCombatFeedbackAuthority.render2D(g,this,map,tile);
+        ViewportDarknessAuthority.apply(g,map);
         drawWorldHud(g, w, h, map);
+        g.setColor(new java.awt.Color(224,205,144));g.setFont(smallFont);
+        g.drawString("Z: "+PlannerLevelViewAuthority.label(this)+" | PgUp/PgDn browse | Home player",map.x+8,map.y+15);
         if ((screen != Screen.GAME || panelMode != PanelMode.NONE) && !isWorldInlineInteractionPanel()) drawActivePanelOverlay(g, w, h);
+    }
+
+    private void drawInspectedPlannerLevel(java.awt.Graphics2D g,Rectangle map) {
+        World viewed=PlannerLevelViewAuthority.viewedWorld(this);
+        g.setColor(new java.awt.Color(ViewportDarknessAuthority.DARKEST,true));g.fill(map);
+        if(viewed!=null) {
+            int tile=MapViewportOptionsSubsystem.scaledTileSize(Math.max(8,Math.min(28,Math.min(map.width/28,map.height/20))),options,6,56);
+            int cols=map.width/tile,rows=map.height/tile;
+            int minX=Math.max(0,Math.min(Math.max(0,viewed.w-cols),playerX+PlannerLevelViewAuthority.panX(this)-cols/2));
+            int minY=Math.max(0,Math.min(Math.max(0,viewed.h-rows),playerY+PlannerLevelViewAuthority.panY(this)-rows/2));
+            java.awt.Shape clip=g.getClip();g.clip(map);
+            for(int vx=0;vx<cols;vx++)for(int vy=0;vy<rows;vy++) {
+                int x=minX+vx,y=minY+vy;if(!viewed.inBounds(x,y) || !MultiFloorBuildingTransitAuthority.rememberedAt(this,viewed,x,y))continue;
+                if(DeveloperBattleMapAuthority.active(viewed) && (int)Math.floor(DeveloperBattleMapAuthority.height(viewed,x,y)+.001)!=PlannerLevelViewAuthority.level(this))continue;
+                int sx=map.x+vx*tile,sy=map.y+vy*tile;char glyph=viewed.tiles[x][y];
+                drawCompiledTile(g,viewed,x,y,TileDataCompilationAuthority.resolve(viewed,x,y,glyph),glyph,sx,sy,tile);
+                StructureAppearanceAuthority.planner(g,viewed,x,y,sx,sy,tile);
+                if(viewed==world && isVisible(x,y)) {
+                    NpcEntity npc=world.npcAt(x,y);
+                    BufferedImage image=npc==null?null:images.getNpcPortraitFor(npc);if(image!=null)g.drawImage(image,sx,sy,tile,tile,null);
+                }
+                g.setColor(new java.awt.Color(0,0,0,55));g.drawRect(sx,sy,tile,tile);
+            }
+            g.setClip(clip);ViewportDarknessAuthority.apply(g,map);
+        }
+        g.setColor(new java.awt.Color(224,205,144));g.setFont(uiFont);
+        g.drawString("INSPECTING "+PlannerLevelViewAuthority.label(this)+" | player stays on their occupied level",map.x+8,map.y+20);
+        g.setFont(smallFont);g.drawString("PgUp/PgDn: Z level | Arrows/WASD: pan | Home/Esc: return to player",map.x+8,map.y+39);
+        if(viewed==null)g.drawString("This level has not been loaded. Browsing does not generate or enter it.",map.x+8,map.y+62);
     }
 
     private Rectangle gameWorldViewportRect(int w, int h) {
@@ -1671,7 +1765,18 @@ class GamePanel extends LegacyPanelBridgeBase {
                     String s = Character.toString(ch);
                     g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
                 }
+                StructureAppearanceAuthority.planner(g,world,wx,wy,sx,sy,tile);
                 drawWorldLightMask(g, wx, wy, sx, sy, tile);
+                if(DeveloperBattleMapAuthority.active(world) && tile>=14) {
+                    double elevation=DeveloperBattleMapAuthority.height(world,wx,wy);
+                    if(elevation>0) {
+                        g.setColor(new java.awt.Color(10,15,22,210));g.fillRect(sx+tile-14,sy,14,12);
+                        g.setColor(new java.awt.Color(255,217,114));
+                        g.setFont(new Font(Font.MONOSPACED,Font.BOLD,10));
+                        g.drawString(elevation==Math.rint(elevation)?"+"+(int)elevation:"^",sx+tile-14,sy+10);
+                        g.setFont(glyphFont);
+                    }
+                }
                 g.setColor(new java.awt.Color(0, 0, 0, 70));
                 g.drawRect(sx, sy, tile, tile);
             }
@@ -1734,6 +1839,8 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private boolean drawCompiledTile(java.awt.Graphics2D g, World tileWorld, int worldX, int worldY,
                                      CompiledTileDescriptor descriptor, char fallbackGlyph, int x, int y, int tile) {
+        BufferedImage stair=StairTileArtAuthority.image(images,tileWorld,worldX,worldY);
+        if(stair!=null){g.drawImage(stair,x,y,tile,tile,null);return true;}
         if (descriptor == null) {
             BufferedImage img = images.getTile(fallbackGlyph);
             if (img == null) return false;
@@ -1780,6 +1887,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (baseObjects != null) {
             for (BaseObject object : baseObjects) {
+                if(RoofConstructionAuthority.overhead(object))continue;
                 if (object == null || !worldPointInView(object.x, object.y, cols, rows)) continue;
                 if (!isVisible(object.x, object.y)) continue;
                 drawWorldSprite(g, images.getBaseObjectImage(object), object.x, object.y, tile, new java.awt.Color(104, 220, 145), Character.toString(object.symbol));
@@ -2588,6 +2696,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
         statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
+        statLines.add("Freehold crew " + factionRecruits.size() + "/" + PlayerRecruitmentAuthority.capacity(this)
+                + " / sleep debt " + sleepNeed);
         statLines.add("Wounds " + wounds + " / bleeding " + bleeding + " / pain " + pain);
         statLines.add(ActorConsumableAuthority.summary(combatSupport,worldTurn));
         statLines.add("Carried load " + inventoryWeight() + "/" + carryCapacity() + ".");
@@ -2610,8 +2720,24 @@ class GamePanel extends LegacyPanelBridgeBase {
         conditionLines.add("Equipment: " + occupied + "/"
       + CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length + " slots occupied.");
         drawDetailBox(g, condition, "Condition Summary", conditionLines, null);
-        drawDetailBox(g, roster, "Faction Members",
-      FactionRosterReadabilityAuthority.summary(this, Math.max(1, (roster.height - 52) / 18)), null);
+        PlayerRecruitmentAuthority.RecoveryTarget unavailable =
+                PlayerRecruitmentAuthority.unavailableWorker(this);
+        int controlHeight = unavailable == null ? 0 : 34;
+        Rectangle rosterText = new Rectangle(roster.x, roster.y,
+                roster.width, Math.max(60, roster.height - controlHeight));
+        drawDetailBox(g, rosterText, "Faction Members",
+                FactionRosterReadabilityAuthority.summary(this,
+                        Math.max(1, (rosterText.height - 52) / 18)), null);
+        if (unavailable != null) {
+            boolean confirming = unavailable.key().equals(pendingUnavailableWorkerKey)
+                    && pendingUnavailableWorkerTurn == turn;
+            addOverlayButton(confirming ? "Confirm Release" : "Review Lost Crew",
+                    roster.x + 12, roster.y + roster.height - 30,
+                    Math.max(140, roster.width - 24), 28,
+                    unavailable.displayName() + ": " + unavailable.cause()
+                            + ". Release is only authorized from inside your claimed room.",
+                    this::releaseUnavailableWorkerFromRoster);
+        }
     }
 
     private void drawCharacterEquipmentTab(java.awt.Graphics2D g, Rectangle body) {
@@ -3743,6 +3869,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             lines.add("Faction: " + (npc.faction == null ? "No faction" : npc.faction.label) + ".");
             lines.add(npc.rankLine());
             lines.add(NpcHappinessAuthority.statusLine(world, npc, worldTurn));
+            if (PlayerRecruitmentAuthority.dialogueCandidate(npc))
+                lines.add(PlayerRecruitmentAuthority.quote(this, npc).displayLine());
             Faction conversationFaction = npc.faction == null ? Faction.NONE : npc.faction;
             lines.addAll(ConversationReadabilityAuthority.describe(npc,
                     factionStanding.getOrDefault(conversationFaction, 0),
@@ -3805,6 +3933,12 @@ class GamePanel extends LegacyPanelBridgeBase {
                             Math.max(120, actions.width - 24), 28,
                             "Open the Skills tab with this trainer's instruction available.", this::trainWithActiveNpc);
                 }
+            }
+            if (npc != null && PlayerRecruitmentAuthority.dialogueCandidate(npc)) {
+                PlayerRecruitmentAuthority.Quote hiring = PlayerRecruitmentAuthority.quote(this, npc);
+                addOverlayButton(hiring.actionLabel(), actions.x + 12, trainerService ? by - 68 : by - 34,
+                        Math.max(120, actions.width - 24), 28, hiring.explanation(),
+                        this::toggleRecruitmentWithActiveNpc);
             }
             addOverlayButton("Look", actionX, by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
             actionX += 80;
@@ -3937,6 +4071,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             }
             if (base.underConstruction) {
                 lines.addAll(ProgressiveConstructionAuthority.inspectionLines(base));
+                if (!FactionPhysicalConstructionAuthority.isFactionManaged(base))
+                    lines.add(PlayerConstructionCrewAuthority.status(this, base));
             } else {
                 lines.add(base.businessReturnLine(this));
                 lines.addAll(MachineRepairAuthority.detailLines(this, base, machineParts));
@@ -3954,7 +4090,18 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (base != null && base.underConstruction) {
             if (!FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
-                addOverlayButton("Work", x, by, 78, 28, "Contribute one turn of labor to this staged construction site.", this::workActiveConstructionSite);
+                int siteTopButtonW = Math.max(100, (actions.width - 32) / 2);
+                addOverlayButton(base.assignedWorker == null || base.assignedWorker.isBlank()
+                                ? "Assign Crew" : "Release Crew",
+                        actions.x + 12, by - 34, siteTopButtonW, 28,
+                        "Assign a hired NPC to physically reach this site and work with already-staged materials.",
+                        this::toggleActiveConstructionCrew);
+                addOverlayButton("Stage Materials", actions.x + 20 + siteTopButtonW, by - 34,
+                        siteTopButtonW, 28, "Transfer available real construction components without adding player labor.",
+                        this::stageActiveConstructionMaterials);
+                addOverlayButton("Work", x, by, 78, 28,
+                        "Stage available materials and contribute one personal turn of construction labor.",
+                        this::workActiveConstructionSite);
                 x += 86;
                 addOverlayButton("Dismantle", x, by, 104, 28, "Remove this unfinished construction site and recover staged materials.", this::dismantleActiveConstructionSite);
                 x += 112;
@@ -3974,7 +4121,9 @@ class GamePanel extends LegacyPanelBridgeBase {
                     () -> approachActiveInteractionTarget(targetX, targetY, activeInteractionTitleOrDefault()));
             return;
         }
-        if (base != null || (obj != null && isMachineObject(obj))) {
+        if (NeedSupplyInteractionAuthority.isBuiltBed(base)) {
+            addOverlayButton("Rest", x, by, 94, 28, "Rest on this completed cot to recover sleep need and fatigue.", this::operateActiveInteractionObject); x += 102;
+        } else if (base != null || (obj != null && isMachineObject(obj))) {
             addOverlayButton("Operate", x, by, 94, 28, "Operate or inspect this machine.", this::operateActiveInteractionObject); x += 102;
             Runnable craftAction = base == null ? () -> openPanel(PanelMode.CRAFTING) : this::openActiveMachineWorkbench;
             String craftTooltip = base == null ? "Open crafting recipes." : "Open recipes compatible with this machine.";
@@ -4070,6 +4219,44 @@ class GamePanel extends LegacyPanelBridgeBase {
         logEvent("Repaired " + safeLabel(machine.name, "machine") + ". " + preview.summary()
                 + " Machine parts remaining " + machineParts + ".");
         advanceTurn("repairs " + safeLabel(machine.name, "a machine") + ".");
+    }
+
+    void stageActiveConstructionMaterials() {
+        BaseObject site = activeInteractionBaseObject;
+        if (site == null || !site.underConstruction) {
+            logEvent("Material staging blocked: select an unfinished construction site.");
+            repaint();
+            return;
+        }
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            logEvent("Material staging blocked: this construction site uses its NPC faction's reserves.");
+            repaint();
+            return;
+        }
+        if (!constructionInteractionSiteExists(site)) {
+            logEvent("Material staging blocked: the selected site no longer exists.");
+            repaint();
+            return;
+        }
+        if (!constructionInteractionInReach(site)) {
+            logEvent("Material staging blocked: approach the construction site first.");
+            repaint();
+            return;
+        }
+        int laborBefore = site.constructionLaborDone;
+        int moved = ProgressiveConstructionAuthority.contribute(this, site, 0, true);
+        if (site.constructionLaborDone != laborBefore)
+            throw new IllegalStateException("Materials-only staging must not add personal labor.");
+        if (moved > 0) {
+            logEvent("Staged " + moved + " actual material unit(s) at " + site.name
+                    + ". Remaining: " + ProgressiveConstructionAuthority.missingMaterials(site)
+                    + "; personal labor " + site.constructionLaborDone + "/" + site.constructionLaborRequired + ".");
+            advanceTurn("stages construction materials.");
+        } else {
+            logEvent("No missing materials available for " + site.name
+                    + ". Still needed: " + ProgressiveConstructionAuthority.missingMaterials(site) + ".");
+        }
+        repaint();
     }
 
     void workActiveConstructionSite() {
@@ -4584,6 +4771,29 @@ class GamePanel extends LegacyPanelBridgeBase {
         repaint();
     }
 
+    void toggleRecruitmentWithActiveNpc() {
+        PlayerRecruitmentAuthority.Result outcome = PlayerRecruitmentAuthority.toggle(this, activeInteractionNpc);
+        logEvent(outcome.message());
+        if (outcome.success()) advanceTurn(outcome.hired() ? "hires a freehold worker." : "dismisses a freehold worker.");
+        repaint();
+    }
+
+    void releaseUnavailableWorkerFromRoster() {
+        PlayerRecruitmentAuthority.Result result =
+                PlayerRecruitmentAuthority.releaseUnavailableFromBase(this);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("releases an unavailable freehold worker.");
+        repaint();
+    }
+
+    void toggleActiveConstructionCrew() {
+        PlayerConstructionCrewAuthority.Result result =
+                PlayerConstructionCrewAuthority.toggle(this, activeInteractionBaseObject);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("updates a construction crew work order.");
+        repaint();
+    }
+
     void turnInContractWithActiveNpc() {
         ContractTurnInAuthority.TurnInResult result = ContractTurnInAuthority.turnInFirst(this, activeInteractionNpc);
         logEvent(result.message());
@@ -4675,6 +4885,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 repaint();
                 return;
             }
+            if (NeedSupplyInteractionAuthority.tryRest(this, base)) return;
             openActiveMachineWorkbench();
             return;
         }
@@ -4961,6 +5172,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         turn++;
         worldTurn++;
         ActorConsumableAuthority.tick(this);
+        NeedSupplyInteractionAuthority.tickPlayerNeeds(this);
         if (line != null && !line.isBlank()) logEvent(line);
         int staffedElapsed = lastStaffedProductionBackgroundTurn > turn
                 ? 1 : Math.max(1, turn - lastStaffedProductionBackgroundTurn);
@@ -5040,6 +5252,20 @@ class GamePanel extends LegacyPanelBridgeBase {
             return;
         }
         String low = item.toLowerCase(Locale.ROOT);
+        boolean buildSupplies = ItemQuality.namesMatch(item, "Construction supplies");
+        boolean buildPart = ItemQuality.namesMatch(item, "Machine part");
+        if (buildSupplies || buildPart) {
+            int pool = buildSupplies ? supplies : machineParts;
+            if (pool == Integer.MAX_VALUE) { logEvent("Build-material pool is full; the item was not consumed."); return; }
+            inventory.remove(selectedInventoryIndex);
+            takeProvenanceForItem(item);
+            if (buildSupplies) supplies++; else machineParts++;
+            moveInventorySelection(0);
+            rebuildItemContainersFromLegacyLists();
+            logEvent("Packed " + item + " into build materials. Supplies " + supplies + "; machine parts " + machineParts + ".");
+            advanceTurn("packs carried construction material.");
+            return;
+        }
         if(CyberneticLimbAuthority.part(item)!=null) {characterTab=CharacterEquipmentAndMedicalAuthority.CharacterTab.MEDICAL.ordinal();selectedCharacterMedicalLayer=CharacterEquipmentAndMedicalAuthority.MedicalLayer.CYBERNETIC.ordinal();logEvent("Open Character > Medical > Cybernetic; select the compatible left or right mount to fit "+item+".");return;}
         if(ActorConsumableAuthority.supported(item)) {ActorConsumableAuthority.usePlayer(this,item);return;}
         ItemDef selectedDefinition=ItemCatalog.get(item);
@@ -5050,17 +5276,26 @@ class GamePanel extends LegacyPanelBridgeBase {
             selectedCharacterEquipmentSlot=ActorArmorAuthority.slot(item).ordinal();
             equipSelectedInventoryToCharacterSlot();return;
         }
-        if (low.contains("ration") || low.contains("food") || low.contains("loaf") || low.contains("broth") || low.contains("meal")) {
+        String category = selectedDefinition == null ? "" : selectedDefinition.category.toLowerCase(Locale.ROOT);
+        boolean edible = category.equals("food") || category.startsWith("food/")
+                || ItemQuality.namesMatch(item, "Ration pack");
+        boolean drinkable = category.equals("water") || category.startsWith("water/")
+                || ItemQuality.namesMatch(item, "Water flask");
+        if (edible) {
             food = Math.min(MAX_FOOD_WATER, food + 28);
             inventory.remove(selectedInventoryIndex);
+            takeProvenanceForItem(item);
+            rebuildItemContainersFromLegacyLists();
             moveInventorySelection(0);
             logEvent("Consumed " + item + ". Food " + food + "/" + MAX_FOOD_WATER + ".");
             advanceTurn("eats " + item + ".");
             return;
         }
-        if (low.contains("water") || low.contains("canteen") || low.contains("flask") || low.contains("bottle")) {
+        if (drinkable) {
             water = Math.min(MAX_FOOD_WATER, water + 28);
             inventory.remove(selectedInventoryIndex);
+            takeProvenanceForItem(item);
+            rebuildItemContainersFromLegacyLists();
             moveInventorySelection(0);
             logEvent("Drank " + item + ". Water " + water + "/" + MAX_FOOD_WATER + ".");
             advanceTurn("drinks " + item + ".");
@@ -5215,7 +5450,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     private void rebuildLightLevels() {
         int ambient = ambientLightLevelForWorld();
-        for (int x = 0; x < world.w; x++) Arrays.fill(lightLevels[x], ambient);
+        for (int x = 0; x < world.w; x++) for(int y=0;y<world.h;y++)
+            lightLevels[x][y]=WorldAmbientLightAuthority.at(world,x,y,ambient);
         if (world.lightSources != null) {
             for (ZoneLightSourceRecord light : world.lightSources) {
                 if (light == null || !light.on || !light.powered || !world.inBounds(light.x, light.y)) continue;
@@ -5352,6 +5588,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     private boolean blocksLightTile(int x, int y) {
         if (world == null || !world.inBounds(x, y)) return true;
         char ch = world.tiles[x][y];
+        if((ch=='#' || ch=='W') && TileStructureAuthority.at(world,x,y).wall()!=TileStructureAuthority.Wall.SOLID)return false;
+        if(TileStructureAuthority.at(world,x,y).floor()==TileStructureAuthority.Floor.VOID)return false;
         if (isDoorTile(ch)) return true;
         if (ch == '#' || ch == 'D' || ch == 'H' || ch == 'W' || ch == 'X' || ch == '|' || ch == 'L' || ch == 'V') return true;
         if (InterstitialInfrastructureApi.isInterstitialSolid(ch)) return true;
@@ -5393,8 +5631,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         return WorldGenerationSettingsAuthority.playerCarryCapacity(supplies, WorldGenerationSettingsAuthority.forGame(this))
       + CharacterEquipmentAndMedicalAuthority.carryCapacityBonus(equippedWearableSlots);
     }
-    void addInventoryItem(String item, ItemProvenanceRecord provenance) { if (item != null && !item.isBlank()) inventory.add(item); }
-    void gainXp(String skill, int amount, String reason) { xp += Math.max(0, amount); }
+    void addInventoryItem(String item, ItemProvenanceRecord provenance) {
+        if (item == null || item.isBlank()) return;
+        // Reconcile older direct list writers before admitting this new unit.
+        rebuildItemContainersFromLegacyLists();
+        inventory.add(item);
+        rememberItemProvenance(item, provenance);
+        addItemToContainerResult(CONTAINER_PLAYER_INVENTORY, "Player inventory", item, provenance, null, "inventory addition");
+    }
+    void gainXp(String skill, int amount, String reason) { KnowledgeProgressionAuthority.awardXp(this, amount); }
     String facingLabel() {
         if (facingDy < 0) return "N";
         if (facingDy > 0) return "S";
@@ -7022,15 +7267,10 @@ class GamePanel extends LegacyPanelBridgeBase {
             @Override public int availableKnowledgePoints() { return knowledgeCredits; }
             @Override public Set<String> unlockedKnowledgeIds() { return new LinkedHashSet<>(unlockedKnowledges); }
             @Override public boolean unlockKnowledgeNode(KnowledgeTree tree, KnowledgeNode node) {
-                if (tree == null || node == null || !tree.canUnlock(node.id())) return false;
-                KnowledgeTree.UnlockResult result = tree.unlockNode(node.id());
-                if (!result.success()) return false;
-                knowledgeCredits = Math.max(0, result.remainingPoints());
-                unlockedKnowledges.add(node.id());
-                logEvent("Knowledge unlocked: " + node.name() + ".");
-                DebugLog.audit("KNOWLEDGE_MENU", "unlocked=" + node.id() + " remaining=" + knowledgeCredits);
+                if (tree == null || node == null) return false;
+                KnowledgeTree.UnlockResult result = KnowledgeProgressionAuthority.unlock(GamePanel.this, tree.id(), node.id());
                 repaint();
-                return true;
+                return result.success();
             }
             @Override public void menuClosed() {
                 knowledgeMenu = null;
@@ -7125,7 +7365,35 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     void auditItemLedgers(String reason) { lastItemLedgerAuditReport = "Item ledger audit: " + (reason == null ? "unspecified" : reason); }
     void migrateLegacyPhysicalScript(String reason) {}
-    void rebuildItemContainersFromLegacyLists() { ensureContainer(CONTAINER_PLAYER_INVENTORY, "Player inventory"); ensureContainer(CONTAINER_BASE_STORAGE, "Base storage"); }
+    void rebuildItemContainersFromLegacyLists() {
+        reconcileLegacyContainer(CONTAINER_PLAYER_INVENTORY, "Player inventory", inventory);
+        reconcileLegacyContainer(CONTAINER_BASE_STORAGE, "Base storage", baseStorage);
+    }
+    private void reconcileLegacyContainer(String containerId, String label, List<String> items) {
+        ensureContainer(containerId, label);
+        ContainerRecord container = itemContainers.get(containerId);
+        Map<String, ArrayDeque<ItemInstance>> available = new HashMap<>();
+        for (String id : new ArrayList<>(container.itemInstanceIds)) {
+            ItemInstance instance = itemInstances.get(id);
+            if (instance != null && containerId.equals(instance.containerId)) {
+                available.computeIfAbsent(instance.displayName, key -> new ArrayDeque<>()).add(instance);
+            }
+        }
+        container.itemInstanceIds.clear();
+        for (String item : items) {
+            if (item == null || item.isBlank()) continue;
+            ArrayDeque<ItemInstance> matches = available.get(item);
+            ItemInstance instance = matches == null ? null : matches.pollFirst();
+            if (instance == null) {
+                addItemToContainerResult(containerId, label, item, peekProvenanceForItem(item), null, "legacy list reconciliation");
+            } else {
+                container.itemInstanceIds.add(instance.id);
+            }
+        }
+        for (ArrayDeque<ItemInstance> remaining : available.values()) {
+            for (ItemInstance removed : remaining) itemInstances.remove(removed.id);
+        }
+    }
     void repairLegacyListsFromContainersIfNeeded() {}
     void initFactionState() {
         Faction[] core = {
@@ -7411,8 +7679,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     BaseObject firstBaseObject(char symbol) { for (BaseObject b : baseObjects) if (b != null && b.symbol == symbol && !FactionPhysicalConstructionAuthority.isFactionManaged(b)) return b; return null; }
     void recordPlayerNewsEvent(String kind, String siteName, Faction faction, String text, int attention) { logEvent(text == null || text.isBlank() ? "Player news event recorded." : text); }
     Point nearestMedicalFacilityPoint() { return new Point(playerX, playerY); }
-    BaseObject baseObjectAt(int x, int y) { for (BaseObject b : baseObjects) if (b != null && b.x == x && b.y == y) return b; return null; }
-    int recruitCapacity() { return Math.max(4, factionRecruits.size()); }
+    BaseObject baseObjectAt(int x, int y) { for (BaseObject b : baseObjects) if (b != null && !RoofConstructionAuthority.overhead(b) && b.x == x && b.y == y) return b; return null; }
+    int recruitCapacity() { return PlayerRecruitmentAuthority.capacity(this); }
     int securityStaffCount() { return 0; }
     boolean buttonIsModalInteractive(ButtonBox button) { return button != null; }
     void markZoneVisitedAndCheckFirstType() {
@@ -7437,6 +7705,11 @@ class GamePanel extends LegacyPanelBridgeBase {
                 if (inst != null && ItemQuality.namesMatch(inst.displayName, itemName)) {
                     found = inst;
                     it.remove();
+                    if (fromLegacy != null) {
+                        for (int index = 0; index < fromLegacy.size(); index++) {
+                            if (inst.displayName.equals(fromLegacy.get(index))) { fromLegacy.remove(index); break; }
+                        }
+                    }
                     break;
                 }
             }
@@ -7476,6 +7749,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (world.npcAt(x, y) != null) return "tile is occupied by an NPC";
         if (world.mapObjectAt(x, y) != null) return "tile already contains a map object";
         if (baseObjectAt(x, y) != null) return "tile already contains a base object";
+        String roofProblem=RoofConstructionAuthority.placementProblem(this,pendingBuildRecipe,x,y);
+        if(!"ok".equals(roofProblem))return roofProblem;
         String requirementProblem = buildRequirementProblem(pendingBuildRecipe);
         if (requirementProblem != null && !"ok".equalsIgnoreCase(requirementProblem)) return requirementProblem;
         boolean materialShortfall = supplies < pendingBuildRecipe.supplyCost || machineParts < pendingBuildRecipe.partCost;
@@ -7683,7 +7958,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     void addItemToContainerResult(String containerId, String label, String item, ItemProvenanceRecord provenance, Object source, String reason) {
         ensureContainer(containerId, label);
         if (item == null || item.isBlank()) return;
-        String id = "legacy-item-" + (itemInstances.size() + 1);
+        String id;
+        do { id = "legacy-item-" + nextItemInstanceSeq++; } while (itemInstances.containsKey(id));
         ItemInstance inst = new ItemInstance(id, item, containerId, provenance == null ? "legacy" : provenance.unitId, provenance);
         itemInstances.put(id, inst);
         ContainerRecord c = itemContainers.get(containerId);
@@ -7856,6 +8132,8 @@ final class LegacyImageSurface {
     BufferedImage getCompiledTileImage(World world, int worldX, int worldY,
                                        char fallbackGlyph, boolean preferUnderlay) {
         ensureLoaded(lastOptions);
+        BufferedImage stair=StairTileArtAuthority.image(this,world,worldX,worldY);
+        if(stair!=null)return stair;
         CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(
                 world, worldX, worldY, fallbackGlyph);
         if (descriptor == null) return media.tileArt.getRegistry().getTile(fallbackGlyph);

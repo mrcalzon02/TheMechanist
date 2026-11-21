@@ -1,0 +1,12 @@
+{
+  "existingRows": 243975,
+  "hashErrors": 0,
+  "hashedChangedOrNew": 77,
+  "indexedFiles": 244021,
+  "metadataReused": 241562,
+  "rehashedUnchanged": 2382,
+  "stableSelfRow": true,
+  "status": "generated",
+  "target": "ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv",
+  "totalBytes": 22080021248
+}

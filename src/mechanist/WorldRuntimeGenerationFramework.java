@@ -134,7 +134,10 @@ class WorldAtlas {
 }
 
 class World {
-    long seed; int w,h; char[][] tiles; CompiledTileDescriptor[][] compiledTileDescriptors; String compiledTileDescriptorSummary = "Tile descriptor compilation has not run."; int[][] roomIds; Random r; ArrayList<Rectangle> rooms = new ArrayList<>();
+    int architecturalClutterVersion=0;
+    ArchitecturalClutterAuthority.Layout architecturalClutter;
+    final java.util.Map<Long,TileStructureAuthority.Structure> tileStructures=new java.util.LinkedHashMap<>();
+    long seed; int w,h; char[][] tiles; CompiledTileDescriptor[][] compiledTileDescriptors; String compiledTileDescriptorSummary = "Tile descriptor compilation has not run."; GenerationValidationResult finalGenerationValidation; int[][] roomIds; Random r; ArrayList<Rectangle> rooms = new ArrayList<>();
     WorldSetupSettings generationSettings = WorldSetupSettings.standard();
     WorldGenerationScaleProfile generationScaleProfile = WorldGenerationApi.scaleProfileFor(WorldSetupSettings.standard());
     RoadGridIntegrationAuthority.Result roadGridGenerationResult = null;
@@ -226,6 +229,7 @@ class World {
         state.widenedCorridors = 0;
         state.doorwayObjectRepairs = 0;
         resetGenerationState(seed ^ 0x91010ADEL);
+        finalGenerationValidation = null;
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) tiles[x][y]='#';
         SectorGenerationTraceAuthority.record(this, "RESET", "Plaza-first zone substrate filled before central anchor placement.");
         visitedZones[Math.max(0,Math.min(2,zoneX-1))][Math.max(0,Math.min(2,zoneY-1))] = true;
@@ -238,6 +242,7 @@ class World {
         SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza one-tile street apron cut before road placement apronTiles=" + plazaApron + ".", state.centralPlaza, false);
 
         RoadGridIntegrationAuthority.Result roadGridResult = RoadGridIntegrationAuthority.apply(this, r);
+        TileStructureAuthority.authorOpenRoads(this);
         roadGridGenerationResult = roadGridResult;
         int plazaStreetLinks = connectCentralPlazaToStreetGrid(state.centralPlaza);
         SectorGenerationTraceAuthority.record(this, "ROADS", "Core road grid placed after the central plaza anchor: " + roadGridResult.summary() + " plazaStreetLinks=" + plazaStreetLinks);
@@ -340,7 +345,7 @@ class World {
         DebugLog.audit("ECONOMIC_TOPOLOGY_MAP_INTEL_BRIDGE", mapIntelResult.summary());
         RetargetReadinessAuditAuthority.Result retargetResult = RetargetReadinessAuditAuthority.apply(this);
         DebugLog.audit("RETARGET_READINESS_AUDIT", retargetResult.summary());
-        DebugLog.audit("WORLDGEN_ACCEPTANCE", "status=" + (state.repairs>0 ? "REPAIRED" : "ACCEPTED") + " repairs="+state.repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+        DebugLog.audit("WORLDGEN_PRE_POPULATE", "phase=pre-populate repairs="+state.repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
     }
 
     void worldgenPhasePopulationEconomyAndFinalCompile(WorldGenerationPipelineRunState state){
@@ -400,6 +405,8 @@ class World {
         rooms.clear(); npcs.clear(); replacementQueue.clear(); roomPopulationLedgers.clear(); mapObjects.clear(); lightSources.clear(); noiseSources.clear(); hazardWarnings.clear(); trapRecords.clear(); roadGridGenerationResult = null; noiseFieldTurn = -1; dirtyLightRevision++; dirtyNoiseRevision++; dirtyVisionRevision++; dirtyHazardRevision++; hearingFieldSummary = "No cached noise/hearing field generated."; lightNoiseSummary = "No light/noise metadata generated."; hazardVisibilitySummary = "No hazard warning overlays generated."; trapInteractionSummary = "No trap / booby-trap interaction metadata generated."; economicTopologyGenerationSummary = "Economic topology generation bias has not been applied."; economicTopologyGenerationNotes.clear(); localTopologyMetadataSurface = null; localTopologyMetadataSummary = "Local topology metadata surface has not been cached."; localTopologyMetadataNotes.clear(); economicTopologyReportingOverlaySurface = null; economicTopologyReportingOverlaySummary = "Economic topology reporting overlay has not been built."; economicTopologyReportingOverlayNotes.clear(); economicTopologyMapIntelBridgeSurface = null; economicTopologyMapIntelBridgeSummary = "Economic topology map/intel bridge has not been built."; economicTopologyMapIntelBridgeNotes.clear(); roomProfiles.clear(); roomFactions.clear(); roomSpecials.clear();
         buildingRoomIds.clear();
         buildingOpenVolumes.clear();
+        tileStructures.clear();architecturalClutterVersion=0;architecturalClutter=null;
+        StairTileArtAuthority.clear(this);
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) roomIds[x][y] = -1;
     }
 
@@ -407,8 +414,9 @@ class World {
     Rectangle seedCentralPlazaAnchor(){
         Rectangle plaza = centralPlazaRect();
         carve(plaza);
+        if(!sewerLayer)TileStructureAuthority.open(this,plaza);
         rooms.add(plaza);
-        if(!roomProfiles.isEmpty()) roomProfiles.set(0, RoomProfile.centralPlaza(zoneType, sewerLayer, r));
+        if(!roomProfiles.isEmpty()) roomProfiles.set(0, RoomProfile.centralPlaza(zoneType, sewerLayer, r).withRoof(sewerLayer));
         if(!roomFactions.isEmpty()) roomFactions.set(0, plazaFactionForZone());
         if(!roomSpecials.isEmpty()) roomSpecials.set(0, Boolean.TRUE);
         DebugLog.audit("PLAZA_FIRST_ANCHOR", "central plaza room=0 rect="+plaza.x+","+plaza.y+","+plaza.width+"x"+plaza.height+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
@@ -2793,7 +2801,21 @@ class World {
         return best;
     }
 
-    void validateWorldgenSelfReport(String phase){
+    /** Validation result captured after all worldgen placement and visual-structure passes. */
+    record GenerationValidationResult(String phase, int totalProblems, int roomCount,
+                                      int unreachableRooms, boolean spawnReady, int spawnX, int spawnY) {
+        String status() {
+            if (roomCount <= 0 || !spawnReady || unreachableRooms > 0) return "BLOCKED";
+            return totalProblems > 0 ? "DEGRADED" : "ACCEPTED";
+        }
+        String summary() {
+            return "phase=" + phase + " status=" + status() + " problems=" + totalProblems
+                    + " unreachableRooms=" + unreachableRooms + " rooms=" + roomCount
+                    + " spawn=" + spawnX + "," + spawnY + " spawnReady=" + spawnReady;
+        }
+    }
+
+    GenerationValidationResult validateWorldgenSelfReport(String phase){
         // 0.8.28 WORLDGEN VALIDATION PASS:
         // This is a post-build sanity report for the new plaza/corridor/door rules. It is
         // intentionally log-first: generation should remain playable, but every violation
@@ -2850,6 +2872,11 @@ class World {
         String summary = "phase="+phase+" problems="+totalProblems+" rooms="+rooms.size()+" unreachableRooms="+unreachableRooms+" weakDoors="+doorAdjacencyProblems+" smallRoomDoorWallViolations="+smallRoomWallDoorViolations+" largeDoorSpacingViolations="+largeRoomSpacingViolations+" shortCorridors="+shortCorridorComponents+" squatCorridors="+squatCorridorComponents+" edgeDoorProblems="+edgeDoorProblems+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed;
         if(totalProblems > 0) DebugLog.warn("WORLDGEN_VALIDATE", summary);
         else DebugLog.audit("WORLDGEN_VALIDATE", summary);
+        Point spawn = startPoint();
+        boolean spawnReady = inBounds(spawn.x, spawn.y) && walkable(spawn.x, spawn.y)
+                && roomIdAt(spawn.x, spawn.y) >= 0;
+        return new GenerationValidationResult(phase, totalProblems, rooms.size(),
+                unreachableRooms, spawnReady, spawn.x, spawn.y);
     }
 
     String rectText(Rectangle rr){ return rr.x+","+rr.y+","+rr.width+","+rr.height; }
@@ -3759,7 +3786,7 @@ class World {
         }
         return ensurePlayerSpawnPoint();
     }
-    boolean walkable(int x,int y){ if(x<0||y<0||x>=w||y>=h)return false; char t=tiles[x][y]; if(t=='#' || InterstitialInfrastructureApi.isInterstitialSolid(t) || t==InterstitialInfrastructureApi.VOID_SPACE) return false; if(t=='|'||t=='L'||t=='X'||t=='V'||t=='1'||t=='2'||t=='3'||t=='4'||t=='5'||t=='I'||t=='H'||"YJBKOZPFUSRW D".replace(" ","").indexOf(t)>=0) return false; return true; }
+    boolean walkable(int x,int y){ if(!StructureSurfaceAuthority.supported(this,x,y))return false; if(x<0||y<0||x>=w||y>=h)return false; char t=tiles[x][y]; if(t=='#' || InterstitialInfrastructureApi.isInterstitialSolid(t) || t==InterstitialInfrastructureApi.VOID_SPACE) return false; if(t=='|'||t=='L'||t=='X'||t=='V'||t=='1'||t=='2'||t=='3'||t=='4'||t=='5'||t=='I'||t=='H'||"YJBKOZPFUSRW D".replace(" ","").indexOf(t)>=0) return false; return true; }
     int locationKey(){ return (((sectorX*10+sectorY)*10+zoneX)*10+zoneY)*100 + (floor+20)*2 + (sewerLayer?1:0); }
     String zoneCoordText(){ return zoneX + "," + zoneY + " in sector " + sectorX + "," + sectorY; }
     String layerText(){ return "Floor " + floor + (sewerLayer ? "B sewer" : ""); }

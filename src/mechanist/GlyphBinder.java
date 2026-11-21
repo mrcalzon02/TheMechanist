@@ -250,6 +250,7 @@ final class GlyphBinder {
         bindAtlasCell(registry, "sewer_hatch", "stairs_stairs_elevator_platforms_hatches_and_ladders", 1, 4);
         bindAtlasCell(registry, "ladder_drain", "stairs_stairs_elevator_platforms_hatches_and_ladders", 1, 5);
         bindAtlasCell(registry, "elevator", "stairs_stairs_elevator_platforms_hatches_and_ladders", 1, 3);
+        bindAtlasCell(registry, "stair_flight", "stairs_stairs_elevator_platforms_hatches_and_ladders", 1, 1);
         bindAliasToFirstAvailableAlias(registry, "alarm_trap", "danger_marker");
         bindAliasToFirstAvailableAlias(registry, "saint_alcove", "door_archway");
         bindAliasToFirstAvailableAlias(registry, "governor_dais", "floor_noble_room_v4");

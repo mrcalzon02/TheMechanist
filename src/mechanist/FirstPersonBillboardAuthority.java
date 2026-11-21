@@ -18,15 +18,17 @@ final class FirstPersonBillboardAuthority {
         out.clear();
         World world = panel.world;
         if (world == null) return;
-        // A fixture can only occupy one tile; constant-time suppression avoids scanning
-        // every accumulated actor/object for every visible grid cell.
+        // Constant-time fixture deduplication avoids re-scanning every sprite
+        // for each visible tile. Actors are not fixtures and may share tiles.
         Set<Long> occupiedFixtureTiles = new HashSet<>();
         for (NpcEntity npc : world.npcs) {
             if (npc == null || npc.hp <= 0 || !panel.isVisible(npc.x, npc.y)) continue;
             WorldActorSpriteResolver.Sprite body = worldArt == null ? null : worldArt.resolve(npc, camera);
             BufferedImage image = artwork
                     ? (body == null ? panel.images.getNpcPortraitFor(npc) : body.image()) : null;
-            out.add(new RenderableSprite(npc.x + .5, .02, npc.y + .5, npc.symbol,
+            // PR terrain-height anchoring is preserved; approved body art scales
+            // to its manifest dimensions without replacing this floor position.
+            out.add(new RenderableSprite(npc.x + .5, DeveloperBattleMapAuthority.height(world,npc.x,npc.y)+.02, npc.y + .5, npc.symbol,
                     label(npc.name, "Person"), 0xFFE2C46B, true, image,
                     body == null ? 0.0 : body.widthMeters(),
                     body == null ? 0.0 : body.heightMeters()));
@@ -35,14 +37,15 @@ final class FirstPersonBillboardAuthority {
             if (object == null || !panel.isVisible(object.x, object.y)) continue;
             if (object.glyph == '*' && !world.walkable(object.x, object.y)) continue;
             occupiedFixtureTiles.add(tileKey(object.x, object.y));
-            out.add(new RenderableSprite(object.x + .5, .02, object.y + .5,
+            out.add(new RenderableSprite(object.x + .5, DeveloperBattleMapAuthority.height(world,object.x,object.y)+.02, object.y + .5,
                     object.glyph == 0 ? 'o' : object.glyph, label(object.label, "Object"),
                     0xFF8FD0A6, false, artwork ? panel.images.getMapObjectImage(object) : null));
         }
         for (BaseObject object : panel.baseObjects) {
-            if (object == null || !panel.isVisible(object.x, object.y)) continue;
+            if (object == null || RoofConstructionAuthority.overhead(object)
+                    || !panel.isVisible(object.x, object.y)) continue;
             occupiedFixtureTiles.add(tileKey(object.x, object.y));
-            out.add(new RenderableSprite(object.x + .5, .02, object.y + .5,
+            out.add(new RenderableSprite(object.x + .5, DeveloperBattleMapAuthority.height(world,object.x,object.y)+.02, object.y + .5,
                     object.symbol == 0 ? 'o' : object.symbol, label(object.name, "Built object"),
                     0xFF8FD0A6, false, artwork ? panel.images.getBaseObjectImage(object) : null));
         }
@@ -100,6 +103,18 @@ final class FirstPersonBillboardAuthority {
     static RaycastHit target(GamePanel panel, FirstPersonCamera camera, List<RenderableSprite> sprites,
                              ViewportRaycaster raycaster, double maxRange) {
         RaycastHit barrier = raycaster.cast(panel.world,camera.x(),camera.z(),camera.yawRadians(),maxRange,true);
+        if(DeveloperBattleMapAuthority.active(panel.world) || !panel.world.tileStructures.isEmpty() || panel.world.architecturalClutterVersion!=0) {
+            double dx=Math.cos(camera.yawRadians()),dz=Math.sin(camera.yawRadians());
+            var surface=DeveloperBattleMapAuthority.cast(panel.world,camera.x(),camera.y(),camera.z(),dx,Math.tan(camera.pitchRadians()),dz,maxRange);
+            if(surface==null)barrier=RaycastHit.none();
+            else {
+                char glyph=panel.world.tiles[surface.x()][surface.y()];
+                boolean door=surface.axis()!=2 && "|LVXD".indexOf(glyph)>=0;
+                String label=surface.clutter()!=null?surface.clutter().feature().name().toLowerCase(java.util.Locale.ROOT).replace('_',' '):door?"door":surface.axis()==2?(Math.abs(surface.height()-DeveloperBattleMapAuthority.height(panel.world,surface.x(),surface.y()))<.0001?"floor":"roof"):"wall";
+                barrier=new RaycastHit(true,door?RaycastHitKind.DOOR:RaycastHitKind.WALL,surface.x(),surface.y(),glyph,surface.distance(),
+                        camera.x()+dx*surface.distance(),camera.z()+dz*surface.distance(),0,0,surface.axis(),label);
+            }
+        }
         RaycastHit best = barrier;
         double nearest = barrier.hit() ? barrier.distance() : maxRange;
         double sin = Math.sin(camera.yawRadians()), cos = Math.cos(camera.yawRadians());

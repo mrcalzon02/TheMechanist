@@ -1,0 +1,4 @@
+recipe	supplies	machineParts	laborTurns	components
+Roof Panel	3	1	6	{Scrap plate=2, Reinforced fastener set=1, Sealing gasket set=1}
+Glass Roof Panel	4	1	7	{Structural glazing pane=1, Reinforced fastener set=1, Sealing gasket set=2}
+Grating Roof Panel	3	1	6	{Metal grating panel=1, Reinforced fastener set=2}

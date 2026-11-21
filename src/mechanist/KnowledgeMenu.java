@@ -122,7 +122,7 @@ public final class KnowledgeMenu extends JDialog {
         earnText.setLineWrap(true);
         earnText.setWrapStyleWord(true);
         earnText.setOpaque(false);
-        earnText.setText("How to earn more points:\n\nGain XP through survival, work, combat, research, contracts, studying data slates, operating labs, and faction services. Each 25 XP band grants a knowledge credit. Later systems can add branch-specific experience and perk payloads without moving purchases back into the Infopedia.");
+        earnText.setText("How to earn knowledge credits:\n\nEarn XP through work, contracts, conversation and other activities. Every 25 earned XP grants one knowledge credit. Spending XP on skills does not reset this progress.\n\nChoose an available node to learn its doctrine or recipes. Locked nodes show their prerequisites and credit cost.");
         panel.add(new JScrollPane(earnText), BorderLayout.CENTER);
         JButton resetView = new JButton("Center Tree");
         resetView.addActionListener(e -> canvas.resetView());
@@ -198,22 +198,14 @@ public final class KnowledgeMenu extends JDialog {
 
     private void attemptUnlockSelectedNode() {
         if (selectedNode == null || activeTree == null) return;
-        if (!activeTree.canUnlock(selectedNode.id())) {
-            KnowledgeTree.UnlockResult result = activeTree.unlockNode(selectedNode.id());
-            nodeState.setText("State: " + result.message());
-            refreshPanels();
-            return;
-        }
-        boolean committed = bridge.unlockKnowledgeNode(activeTree, selectedNode);
-        if (committed) {
-            String keepId = selectedNode.id();
-            branches = createBranches(bridge.availableKnowledgePoints(), bridge.unlockedKnowledgeIds());
-            activeTree = branches.getOrDefault(activeTree.id(), firstTree());
-            canvas.setKnowledgeTree(activeTree);
-            selectedNode = activeTree.node(keepId);
-            canvas.setSelectedNode(selectedNode);
-            rebuildTabs(new ArrayList<>(branches.values()).indexOf(activeTree));
-        }
+        bridge.unlockKnowledgeNode(activeTree, selectedNode);
+        String keepId = selectedNode.id();
+        branches = createBranches(bridge.availableKnowledgePoints(), bridge.unlockedKnowledgeIds());
+        activeTree = branches.getOrDefault(activeTree.id(), firstTree());
+        canvas.setKnowledgeTree(activeTree);
+        selectedNode = activeTree.node(keepId);
+        canvas.setSelectedNode(selectedNode);
+        rebuildTabs(new ArrayList<>(branches.values()).indexOf(activeTree));
         refreshPanels();
     }
 

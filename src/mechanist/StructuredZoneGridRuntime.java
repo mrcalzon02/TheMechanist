@@ -55,6 +55,14 @@ final class StructuredZoneGridRuntime {
         try {
             tilesField.setAccessible(true);
             tilesField.set(world, grid.toLegacyGlyphs());
+            if(world instanceof World w) {
+                w.tileStructures.clear();
+                for(int x=0;x<Math.min(w.w,grid.width());x++)for(int y=0;y<Math.min(w.h,grid.height());y++) {
+                    var structure=grid.requireTile(x,y).structure();
+                    if(!structure.equals(TileStructureAuthority.DEFAULT))TileStructureAuthority.set(w,x,y,structure);
+                }
+                w.dirtyVisionRevision++;
+            }
             DebugLog.audit("STRUCTURED_ZONE_GRID", "synced structured grid back to legacy tiles for " + world.getClass().getSimpleName());
             return true;
         } catch (Throwable t) {
@@ -81,6 +89,7 @@ final class StructuredZoneGridRuntime {
         if (legacyTiles != null) {
             ZoneTileGrid grid = ZoneTileGrid.fromLegacyTiles(legacyTiles);
             if (world instanceof World w) {
+                for(int x=0;x<w.w;x++)for(int y=0;y<w.h;y++)grid.requireTile(x,y).setStructure(TileStructureAuthority.at(w,x,y));
                 for (Rectangle rect : w.buildingOpenVolumes) {
                     String buildingId = "unknown-building";
                     for (MultiFloorBuildingPlacementAuthority.Site site : w.buildingSites) {

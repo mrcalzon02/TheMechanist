@@ -11,8 +11,13 @@ final class FactionRosterReadabilityAuthority {
     }
 
     static List<String> summary(GamePanel game, int limit) {
-        return summary(game == null ? List.of() : game.factionRecruits,
-                game == null ? List.of() : game.baseObjects, game != null && game.baseClaimed, limit);
+        ArrayList<String> lines = new ArrayList<>(summary(
+                game == null ? List.of() : game.factionRecruits,
+                game == null ? List.of() : game.baseObjects,
+                game != null && game.baseClaimed, limit));
+        if (game != null && PlayerRecruitmentAuthority.unavailableWorker(game) != null)
+            lines.add(PlayerRecruitmentAuthority.recoverySummary(game));
+        return lines;
     }
 
     static List<String> summary(List<RecruitWorker> recruits, List<BaseObject> stations, boolean playerFactionFounded, int limit) {

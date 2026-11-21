@@ -119,6 +119,15 @@ class BuildRecipe {
     static BuildRecipe sandbagLine(){ return new BuildRecipe("Sandbag Line", 'S', 2, 0, 1, 1, 0, 4, 24, false, Faction.IMPERIAL_GUARD, null, "A low-tech ballistic cover line for checkpoints, roadblocks, and PDF/Guard defensive lanes.").withQuality("Common").withComponents("Sandbag fill",2,"Reclaimed textile bundle",1); }
     static BuildRecipe razorWireCoil(){ return new BuildRecipe("Razor Wire Coil", 'R', 3, 1, 2, 2, 1, 5, 30, false, Faction.ARBITES, null, "A visible area-denial coil. Inspectable now; later hooks into hazard and movement injury rules.").withQuality("Common").withComponents("Razor wire coil",2,"Reinforced fastener set",1); }
     static BuildRecipe reinforcedWallPanel(){ return new BuildRecipe("Reinforced Wall Panel", 'W', 5, 2, 2, 4, 1, 9, 34, false, Faction.NONE, null, "A defensive wall segment for fortified rooms, precinct perimeters, and estate hardening.").withQuality("Serviceable").withComponents("Precast defense slab",2,"Scrap plate",2,"Reinforced fastener set",2); }
+    static BuildRecipe roofPanel(){return new BuildRecipe(RoofConstructionAuthority.RECIPE,'.',3,1,1,2,1,6,26,false,Faction.NONE,null,
+            "One tile of supported structural roofing. Cost is per tile; needs a wall within three tiles. Walls and roofing are paid separately.")
+            .withQuality("Common").withComponents("Scrap plate",2,"Reinforced fastener set",1,"Sealing gasket set",1);}
+    static BuildRecipe glassRoofPanel(){return new BuildRecipe(RoofConstructionAuthority.GLASS,'.',4,1,1,2,1,7,28,false,Faction.NONE,null,
+            "Supported translucent glazing; blocks passage while admitting diffuse light and views above.")
+            .withQuality("Common").withComponents("Structural glazing pane",1,"Reinforced fastener set",1,"Sealing gasket set",2);}
+    static BuildRecipe gratingRoofPanel(){return new BuildRecipe(RoofConstructionAuthority.GRATING,'.',3,1,1,2,1,6,26,false,Faction.NONE,null,
+            "Supported metal grating canopy with visible openings. This is overhead roofing, not a traversable upper storey.")
+            .withQuality("Common").withComponents("Metal grating panel",1,"Reinforced fastener set",2);}
     static BuildRecipe securitySensorMast(){ return new BuildRecipe("Security Sensor Mast", 'N', 5, 3, 3, 4, 4, 10, 42, true, Faction.ARBITES, "Security Cogitator Rites", "A sensor mast for alarm routing, checkpoint awareness, and later line-of-sight security logic.").withQuality("Serviceable").withComponents("Sensor lens",1,"Circuit wafer",1,"Wire bundle",2,"Power coupling socket",1); }
     static BuildRecipe arbitesReinforcedDoor(){ return new BuildRecipe("Arbites Reinforced Door", 'Y', 6, 3, 2, 4, 2, 10, 36, false, Faction.ARBITES, "Security Cogitator Rites", "A serialized precinct-grade choke-point door with access-control binding.").withQuality("Serviceable").withComponents("Arbites lock core",1,"Precast defense slab",1,"Reinforced fastener set",2,"Bearing set",1); }
     static BuildRecipe lightStubTurret(){ return new BuildRecipe("Light Stub Turret", 't', 6, 4, 4, 5, 3, 12, 48, true, Faction.NONE, "Security Cogitator Rites", "A short-range turret profile with passive cover and inspection data.").withQuality("Serviceable").withComponents("Turret traverse ring",1,"Turret barrel assembly",1,"Armament components",1,"Circuit wafer",1,"Motor coil pack",1); }
@@ -153,6 +162,8 @@ class BuildRecipe {
         ArrayList<BuildRecipe> r = new ArrayList<>();
         r.add(storage()); r.add(workbench()); r.add(barricade()); r.add(cot()); r.add(water()); r.add(alarm()); r.add(watchPost()); r.add(guardBarracks()); r.add(reinforcedDoor());
         r.add(sandbagLine()); r.add(razorWireCoil()); r.add(reinforcedWallPanel()); r.add(securitySensorMast()); r.add(arbitesReinforcedDoor());
+        r.add(roofPanel());
+        r.add(glassRoofPanel());r.add(gratingRoofPanel());
         r.add(lightStubTurret()); r.add(heavyStubTurret()); r.add(arbitesSuppressionTurret()); r.add(gildedSentryTurret()); r.add(precinctDefensiveFixtureSet());
         r.add(atmosCondenser()); r.add(microForge()); r.add(microLab()); r.add(shopCounter()); r.add(clinicStall()); r.add(securityNode()); r.add(powerTurret()); r.add(shieldRelay());
         r.add(decor()); r.add(businessAddon()); r.add(carryingStation()); r.add(supplyPost()); r.add(logisticsCenter());

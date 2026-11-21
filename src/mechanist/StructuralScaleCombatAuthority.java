@@ -584,6 +584,7 @@ final class StructuralScaleCombatAuthority {
 
     static boolean clearLine(World world, int x0, int y0,
                                      int x1, int y1) {
+        if(DeveloperBattleMapAuthority.active(world) || !world.tileStructures.isEmpty())return DeveloperBattleMapAuthority.clearLine(world,x0,y0,x1,y1);
         int dx = Math.abs(x1 - x0);
         int dy = Math.abs(y1 - y0);
         int sx = x0 < x1 ? 1 : -1;

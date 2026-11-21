@@ -60,7 +60,7 @@ record WorldSnapshot(long version,
                     if (!visible && !remembered) continue;
                     char glyph = w.tiles[x][y];
                     CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(w, x, y, glyph);
-                    tiles.add(TileSnapshot.fromDescriptor(x, y, glyph, visible, remembered, d));
+                    tiles.add(TileSnapshot.fromDescriptor(w, x, y, glyph, visible, remembered, d));
                 }
             }
         }
@@ -167,7 +167,29 @@ record TileSnapshot(int x,
                     String underlayArtKey,
                     String overlayArtKey,
                     String semanticTag,
-                    String composedKey) {
+                    String composedKey,
+                    String roofCoverage,
+                    double roofClearance,
+                    double wallTopElevation,
+                    String wallForm,String wallFinish,String floorSurface,int railingEdges) {
+    TileSnapshot(int x,int y,char glyph,boolean visible,boolean remembered,String baseLayer,String family,String shape,int variant,
+                 String primaryArtKey,String underlayArtKey,String overlayArtKey,String semanticTag,String composedKey,
+                 String roofCoverage,double roofClearance,double wallTopElevation) {
+        this(x,y,glyph,visible,remembered,baseLayer,family,shape,variant,primaryArtKey,underlayArtKey,overlayArtKey,semanticTag,composedKey,
+                roofCoverage,roofClearance,wallTopElevation,"SOLID","PLAIN","SOLID",0);
+    }
+    TileSnapshot(int x,int y,char glyph,boolean visible,boolean remembered,String baseLayer,String family,String shape,int variant,
+                 String primaryArtKey,String underlayArtKey,String overlayArtKey,String semanticTag,String composedKey) {
+        this(x,y,glyph,visible,remembered,baseLayer,family,shape,variant,primaryArtKey,underlayArtKey,overlayArtKey,semanticTag,composedKey,
+                TileStructureAuthority.DEFAULT.roof().name(),TileStructureAuthority.DEFAULT.roofClearance(),TileStructureAuthority.DEFAULT.wallTopElevation());
+    }
+    static TileSnapshot fromDescriptor(World world,int x,int y,char glyph,boolean visible,boolean remembered,CompiledTileDescriptor descriptor) {
+        TileSnapshot base=fromDescriptor(x,y,glyph,visible,remembered,descriptor);
+        var structure=TileStructureAuthority.at(world,x,y);
+        return new TileSnapshot(x,y,glyph,visible,remembered,base.baseLayer(),base.family(),base.shape(),base.variant(),
+                base.primaryArtKey(),base.underlayArtKey(),base.overlayArtKey(),base.semanticTag(),base.composedKey(),
+                structure.roof().name(),structure.roofClearance(),structure.wallTopElevation(),structure.wall().name(),structure.finish().name(),structure.floor().name(),structure.railings());
+    }
     static TileSnapshot fromDescriptor(int x, int y, char glyph, boolean visible, boolean remembered, CompiledTileDescriptor d) {
         if (d == null) return new TileSnapshot(x, y, glyph, visible, remembered, "fallback", "legacy", "", 0, "", "", "", "", "tile.unknown");
         return new TileSnapshot(x, y, glyph, visible, remembered, clean(d.baseLayer), clean(d.family), clean(d.shape), d.variant,

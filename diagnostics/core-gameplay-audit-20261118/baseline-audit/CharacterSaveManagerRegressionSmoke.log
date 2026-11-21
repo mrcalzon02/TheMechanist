@@ -1,0 +1,25 @@
+[13:21:13.381] ERROR/CHARACTER_LOAD Could not load/create character for fallback_uuid-dfc42c25-7d7d-343a-998e-a2fd58f9dd73
+Exception in thread "main" java.util.concurrent.CompletionException: java.io.UncheckedIOException: java.nio.file.AccessDeniedException: C:\Users\Admin\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-character-regression-13638661167759057829\fallback_uuid-dfc42c25-7d7d-343a-998e-a2fd58f9dd73.03a668fc-987a-4386-97e0-d44f6d2f4533.tmp -> C:\Users\Admin\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-character-regression-13638661167759057829\fallback_uuid-dfc42c25-7d7d-343a-998e-a2fd58f9dd73.dat
+	at java.base/java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:315)
+	at java.base/java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:320)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1770)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.io.UncheckedIOException: java.nio.file.AccessDeniedException: C:\Users\Admin\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-character-regression-13638661167759057829\fallback_uuid-dfc42c25-7d7d-343a-998e-a2fd58f9dd73.03a668fc-987a-4386-97e0-d44f6d2f4533.tmp -> C:\Users\Admin\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-character-regression-13638661167759057829\fallback_uuid-dfc42c25-7d7d-343a-998e-a2fd58f9dd73.dat
+	at mechanist.CharacterSaveManager.lambda$loadOrCreate$0(CharacterSaveManager.java:46)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768)
+	... 6 more
+Caused by: java.nio.file.AccessDeniedException: C:\Users\Admin\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-character-regression-13638661167759057829\fallback_uuid-dfc42c25-7d7d-343a-998e-a2fd58f9dd73.03a668fc-987a-4386-97e0-d44f6d2f4533.tmp -> C:\Users\Admin\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\AC\#!sandbox.{e71df90f-e879-4430-a251-52e35de60c90}\Temp\mechanist-character-regression-13638661167759057829\fallback_uuid-dfc42c25-7d7d-343a-998e-a2fd58f9dd73.dat
+	at java.base/sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:89)
+	at java.base/sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103)
+	at java.base/sun.nio.fs.WindowsFileCopy.move(WindowsFileCopy.java:317)
+	at java.base/sun.nio.fs.WindowsFileSystemProvider.move(WindowsFileSystemProvider.java:293)
+	at java.base/java.nio.file.Files.move(Files.java:1432)
+	at mechanist.CharacterSaveManager.atomicSaveSync(CharacterSaveManager.java:137)
+	at mechanist.CharacterSaveManager.loadOrCreateStrict(CharacterSaveManager.java:74)
+	at mechanist.CharacterSaveManager.lambda$loadOrCreate$0(CharacterSaveManager.java:42)
+	... 7 more
