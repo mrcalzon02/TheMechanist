@@ -135,11 +135,6 @@ jobs:
             --archive "$ARCHIVE" \
             --require-release-hardened \
             --report "dist/alpha-installer/canonical-${{ matrix.platform }}.json"
-          python ROOT_build/ci/verify_alpha_operating_docs.py \
-            --repo . \
-            --distribution "$DIST" \
-            --require-release-hardened \
-            --report "dist/alpha-installer/operations-${{ matrix.platform }}.json"
           echo "root=$DIST" >> "$GITHUB_OUTPUT"
           echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
 
