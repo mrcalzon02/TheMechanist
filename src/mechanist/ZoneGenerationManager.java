@@ -63,6 +63,28 @@ final class ZoneGenerationManager {
         }
     }
 
+
+    /**
+     * Subphase checkpoints are opt-in and never change procedural RNG,
+     * world-generation data, or phase ordering.
+     */
+    static long beginDetail(World world, String stage) {
+        if (!Boolean.getBoolean("mechanist.profileWorldgen")) return 0L;
+        long started = System.nanoTime();
+        DebugLog.log("WORLDGEN_DETAIL stage=" + stage + " status=started"
+                + " seed=" + world.seed + " rooms=" + world.rooms.size()
+                + " npcs=" + world.npcs.size());
+        return started;
+    }
+
+    static void endDetail(World world, String stage, long started) {
+        if (started == 0L) return;
+        DebugLog.log("WORLDGEN_DETAIL stage=" + stage + " status=completed"
+                + " elapsedMs=" + elapsedMs(started)
+                + " rooms=" + world.rooms.size()
+                + " npcs=" + world.npcs.size());
+    }
+
     private static long elapsedMs(long start) {
         return Math.max(0L, (System.nanoTime() - start) / 1_000_000L);
     }

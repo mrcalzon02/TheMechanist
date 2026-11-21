@@ -344,10 +344,15 @@ class World {
     }
 
     void worldgenPhasePopulationEconomyAndFinalCompile(WorldGenerationPipelineRunState state){
+        long populatedAt = ZoneGenerationManager.beginDetail(this, "population");
         populate();
+        ZoneGenerationManager.endDetail(this, "population", populatedAt);
         SectorGenerationTraceAuthority.record(this, "POPULATION", "Population, resident amenities, and ordinary entities seeded after road-first terrain/facility layout.");
+        long economyAt = ZoneGenerationManager.beginDetail(this, "economy-initialization");
         WorldEconomyInitializationAuthority.Result economyInit = WorldEconomyInitializationAuthority.apply(this, r);
         DebugLog.audit("WORLD_ECONOMY_INITIALIZATION", economyInit.summary());
+        ZoneGenerationManager.endDetail(this, "economy-initialization", economyAt);
+        long fixtureRepairAt = ZoneGenerationManager.beginDetail(this, "fixture-door-clearance");
         state.doorwayObjectRepairs = 0;
         for(int pass=0; pass<4; pass++){
             int fixed = sanitizeGeneratedObjectDoorAccess();
@@ -355,7 +360,10 @@ class World {
             if(fixed == 0) break;
         }
         if(state.doorwayObjectRepairs > 0) DebugLog.audit("OBJECT_DOORWAY_CLEARANCE_REPAIR", "relocatedOrRemoved="+state.doorwayObjectRepairs+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+        ZoneGenerationManager.endDetail(this, "fixture-door-clearance", fixtureRepairAt);
+        long compileAt = ZoneGenerationManager.beginDetail(this, "tile-descriptor-compile");
         TileDataCompilationAuthority.Result tileCompileResult = TileDataCompilationAuthority.compile(this);
+        ZoneGenerationManager.endDetail(this, "tile-descriptor-compile", compileAt);
         SectorGenerationTraceAuthority.record(this, "TILE-COMPILE", "Tile descriptors compiled for renderer and audit view: " + tileCompileResult.summary());
         DebugLog.audit("TILE_DATA_COMPILE", tileCompileResult.summary());
         DebugLog.log("Generated road-first world seed="+seed+" zone="+zoneType.label+" layer="+layerText()+" rooms="+rooms.size()+" attempts="+state.attempts+" roads=core-first");
@@ -3154,6 +3162,7 @@ class World {
     }
 
     void populate(){
+        long residentsAt = ZoneGenerationManager.beginDetail(this, "populate-residents");
         npcs.clear();
         // Generation reset owns map-object clearing. Road, facility, room-fixture,
         // and explicit room-purpose objects were placed in earlier phases and must
@@ -3177,6 +3186,8 @@ class World {
                 }
             }
         }
+        ZoneGenerationManager.endDetail(this, "populate-residents", residentsAt);
+        long propsAt = ZoneGenerationManager.beginDetail(this, "populate-rooms-props-services");
         addRoomProps();
         if (zoneType == ZoneType.NEUTRAL_RAIL_DEPOT && rooms.size()>2) { Point c=center(rooms.get(1)); tiles[c.x][c.y]='T'; mapObjects.add(MapObjectState.shop(c.x,c.y,zoneType)); }
         if (zoneType == ZoneType.SECTOR_GOVERNORS_MANSION && rooms.size()>0) { Point c=center(rooms.get(0)); tiles[c.x][c.y]='Q'; mapObjects.add(MapObjectState.governor(c.x,c.y,zoneType, seed)); }
@@ -3186,18 +3197,31 @@ class World {
         }
         ImperialNewsNetworkApi.seedNewsObjects(this, r);
         BankingApi.seedBankObjects(this, r);
+        ZoneGenerationManager.endDetail(this, "populate-rooms-props-services", propsAt);
+        long passiveAt = ZoneGenerationManager.beginDetail(this, "populate-passive-npc-count");
         enforcePassiveNpcCount();
+        ZoneGenerationManager.endDetail(this, "populate-passive-npc-count", passiveAt);
+        long amenitiesAt = ZoneGenerationManager.beginDetail(this, "populate-support-amenities");
         ensureResidentSupportRoomsAndAmenities();
+        ZoneGenerationManager.endDetail(this, "populate-support-amenities", amenitiesAt);
+        long staffAt = ZoneGenerationManager.beginDetail(this, "populate-faction-staff");
         seedEcclesiarchyTempleStaff();
         seedFactionContinuityBarStaff();
         seedFactionLeadershipResidency();
+        ZoneGenerationManager.endDetail(this, "populate-faction-staff", staffAt);
+        long wildlifeAt = ZoneGenerationManager.beginDetail(this, "populate-animals");
         AnimalPopulationApi.Result animalResult = AnimalPopulationApi.seedAnimalsAndServants(this, r);
+        ZoneGenerationManager.endDetail(this, "populate-animals", wildlifeAt);
+        long facilityAt = ZoneGenerationManager.beginDetail(this, "populate-facility-staff");
         int factionFacilityStaff = FactionFacilityPlacementAuthority.staffPromotedFacilities(this, r);
         FactionCriticalVendorPlacementAuthority.Result criticalVendorResult = FactionCriticalVendorPlacementAuthority.apply(this, r);
         DebugLog.audit("FACTION_CRITICAL_VENDORS", criticalVendorResult.summary()+" promotedFacilityStaff="+factionFacilityStaff);
         int hivewallThreats = BoundedOuterHiveWallApi.populateDangerRooms(this, r);
         int crecheProviders = ExplicitRoomTypeRequirementAuthority.ensureGeneratedCareProviders(this, r);
+        ZoneGenerationManager.endDetail(this, "populate-facility-staff", facilityAt);
+        long lightingAt = ZoneGenerationManager.beginDetail(this, "populate-light-noise");
         LightingNoiseMetadataApi.Result ln = LightingNoiseMetadataApi.seed(this, r);
+        ZoneGenerationManager.endDetail(this, "populate-light-noise", lightingAt);
         lightNoiseSummary = ln.summary();
         DebugLog.audit("NPC_POPULATE", "zone="+zoneType.label+" layer="+layerText()+" npcs="+npcs.size()+" rooms="+rooms.size()+" target="+targetPassiveEntityCount()+" animals="+animalResult.summary()+" hivewallThreats="+hivewallThreats+" crecheProviders="+crecheProviders+" lighting="+ln.summary());
     }

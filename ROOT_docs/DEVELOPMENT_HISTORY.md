@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06.R profiler subdivides final worldgen phase into live substage checkpoints (2026-11-20)
+
+- Exact-commit Linux and Windows diagnostic output confirmed the same full-save load bottleneck: production-scale 600×600 generation completed room/faction, road/fixture and interwall stages in seconds, then entered the combined population/economy/compile phase without completing within the respective bounded diagnostic windows. No other phase is currently justified as an optimization target.
+- The existing opt-in `mechanist.profileWorldgen` profiler now records the start and completion of population, economy initialization, fixture-door clearance and tile-descriptor compilation. Population itself is split into resident spawning, room props/services, passive entity count, support amenities, faction staff, animals, facility staff and lighting/noise. A diagnostic timeout will expose the innermost unfinished stage in the same output already collected by CI.
+- Stage markers use existing generation entry points without altering RNG calls, NPC allocations, terrain topology, simulation ticks, saved-state formats or gameplay when profiling is off. Next implementation step should be selected from the Linux/Windows timing evidence, with before/after metrics and deterministic scene checks; there is no claim of a speedup from the instrumentation itself.
+
 ### Milestone 06.R optional worldgen and campaign restore profiling now identify the stall phase (2026-11-20)
 
 - Existing bounded Gate 3 diagnostics repeatedly consumed their 120-second Linux and 180-second Windows windows during production-scale physical world generation, but the output did not separate atlas-definition loading, generated slice work, player-ledger reconstruction, or saved-world overlay cost. Tuning blindly could damage terrain topology, deterministic persistence, or interaction readability.
