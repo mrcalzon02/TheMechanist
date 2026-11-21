@@ -41,12 +41,15 @@ final class VehicleManifestAuthority {
                 "vehiclePassengerManifest"));
         List<CargoEntry> cargo = cargoEntries(value(vehicle,
                 "vehicleCargoManifest"));
-        int cargoUnits = 0;
+        // Persisted ledgers may predate capacity checks: never wrap to a negative
+        // count and accidentally make an overfull manifest eligible for loading.
+        long cargoUnits = 0L;
         for (CargoEntry entry : cargo) cargoUnits += entry.units();
         int assignedCrew = (driver.isBlank() ? 0 : 1) + crew.size();
         int occupiedSeats = (driver.isBlank() ? 0 : 1) + passengers.size();
         return new Snapshot(driver, crew, passengers, cargo, assignedCrew,
-                occupiedSeats, definition.seats, cargoUnits,
+                occupiedSeats, definition.seats,
+                (int) Math.min(Integer.MAX_VALUE, cargoUnits),
                 definition.cargoCapacity);
     }
 
@@ -58,7 +61,7 @@ final class VehicleManifestAuthority {
         if (!access.allowed()) {
             return Result.blocked("assign driver", access.summary(), before);
         }
-        String name = clean(driverName, "");
+        String name = safeToken(driverName);
         if (name.isBlank()) {
             return Result.blocked("assign driver",
                     "A readable driver identity is required.", before);
@@ -106,7 +109,7 @@ final class VehicleManifestAuthority {
         if (!access.allowed()) {
             return Result.blocked("assign crew", access.summary(), before);
         }
-        String name = clean(crewName, "");
+        String name = safeToken(crewName);
         if (name.isBlank()) {
             return Result.blocked("assign crew",
                     "A readable crew identity is required.", before);
@@ -133,7 +136,7 @@ final class VehicleManifestAuthority {
         if (!access.allowed()) {
             return Result.blocked("release crew", access.summary(), before);
         }
-        String name = clean(crewName, "");
+        String name = safeToken(crewName);
         if (name.isBlank()) {
             return Result.blocked("release crew",
                     "A readable crew identity is required.", before);
@@ -160,7 +163,7 @@ final class VehicleManifestAuthority {
         if (!access.allowed()) {
             return Result.blocked("board passenger", access.summary(), before);
         }
-        String name = clean(passengerName, "");
+        String name = safeToken(passengerName);
         if (name.isBlank()) {
             return Result.blocked("board passenger",
                     "A readable passenger identity is required.", before);
@@ -190,7 +193,7 @@ final class VehicleManifestAuthority {
         if (!access.allowed()) {
             return Result.blocked("disembark passenger", access.summary(), before);
         }
-        String name = clean(passengerName, "");
+        String name = safeToken(passengerName);
         if (name.isBlank()) {
             return Result.blocked("disembark passenger",
                     "A readable passenger identity is required.", before);
@@ -217,14 +220,14 @@ final class VehicleManifestAuthority {
         if (!access.allowed()) {
             return Result.blocked("register cargo", access.summary(), before);
         }
-        String cargoLabel = clean(label, "");
-        String cargoOwner = clean(owner, "unrecorded owner");
+        String cargoLabel = safeToken(label);
+        String cargoOwner = clean(safeToken(owner), "unrecorded owner");
         int amount = Math.max(0, units);
         if (cargoLabel.isBlank() || amount <= 0) {
             return Result.blocked("register cargo",
                     "Cargo requires a readable label and positive unit count.", before);
         }
-        if (before.cargoUnits() + amount > before.cargoCapacity()) {
+        if ((long) before.cargoUnits() + amount > before.cargoCapacity()) {
             return Result.blocked("register cargo",
                     "Cargo capacity " + before.cargoCapacity()
                             + " would be exceeded by " + amount + " unit(s).",
@@ -259,15 +262,15 @@ final class VehicleManifestAuthority {
         if (!access.allowed()) {
             return Result.blocked("unload cargo", access.summary(), before);
         }
-        String cargoLabel = clean(label, "");
-        String cargoOwner = clean(owner, "");
+        String cargoLabel = safeToken(label);
+        String cargoOwner = safeToken(owner);
         int amount = Math.max(0, units);
         if (cargoLabel.isBlank() || cargoOwner.isBlank() || amount <= 0) {
             return Result.blocked("unload cargo",
                     "Cargo unloading requires a readable label, owner, and positive unit count.",
                     before);
         }
-        int available = 0;
+        long available = 0L;
         for (CargoEntry entry : before.cargo()) {
             if (sameCargo(entry, cargoLabel, cargoOwner)) available += entry.units();
         }
@@ -399,7 +402,11 @@ final class VehicleManifestAuthority {
     }
 
     private static String safeToken(String value) {
-        return clean(value, "").replace('~', '-').replace('^', '-');
+        // The stock codec uses ~ for rows, ^ for cargo fields, and ;/| as
+        // metadata separators. Canonicalize on input as well as output, so
+        // one supplied name can never forge extra crew, passengers or cargo.
+        return clean(value, "").replace('~', '-').replace('^', '-')
+                .replace(';', ',').replace('|', '/');
     }
 
     private static List<String> tokens(String text) {
@@ -436,7 +443,7 @@ final class VehicleManifestAuthority {
     private static void append(MapObjectState vehicle, String key,
                                String entry) {
         ArrayList<String> entries = new ArrayList<>(tokens(value(vehicle, key)));
-        String cleanedEntry = clean(entry, "");
+        String cleanedEntry = safeToken(entry);
         if (!cleanedEntry.isBlank()) entries.add(cleanedEntry);
         while (entries.size() > HISTORY_LIMIT) entries.remove(0);
         set(vehicle, key, String.join("~", entries));

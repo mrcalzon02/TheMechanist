@@ -94,6 +94,11 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone06VehicleTransitSmoke
+          # Vehicle manifests must preserve row identity and capacity even for
+          # delimiter-bearing names and malformed legacy stock ledgers.
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone06VehicleManifestSmoke
           # Strategic booking terms and replay safety must be checked before
           # optional full-world diagnostics consume their bounded time window.
           java -Djava.awt.headless=true \

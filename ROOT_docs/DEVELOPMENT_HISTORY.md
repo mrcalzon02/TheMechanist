@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 vehicle manifest rejects delimiter injection and overfull legacy arithmetic (2026-11-21)
+
+- The persistent vehicle manifest encoded named crew/passengers as `~`-separated rows and cargo as `~`-separated, `^`-field records, but assignment entry points previously stored unsanitized names. A single input containing delimiters could therefore create phantom crew or passengers; cargo labels and owners were sanitized only on write, causing accepted cargo to become unfindable during unload. Manifest history reasons could also split into multiple saved entries.
+- Canonicalized individual driver/crew/passenger names and cargo label/owner values at ingress, matching the existing stock serialization contract; one accepted value now maps to one persisted token and the same input can release or unload it. Bounded history entries use the same delimiter-safe tokens.
+- Saved cargo may contain multiple valid positive integer entries exceeding any current capacity. Snapshot accumulation and the load/unload capacity boundaries now use overflow-safe arithmetic; an overfull legacy manifest cannot wrap negative to admit new stock, while an authorized unload still repairs its ledger. The snapshot's public integer count saturates at `Integer.MAX_VALUE` instead of inventing a negative value.
+- Extended the existing Milestone 06 manifest smoke with delimiter-bearing driver, crew, passenger, cargo, history and maximal legacy cargo cases, and promoted that smoke into both Linux and Windows focused Java 17 gates ahead of optional long-running diagnostics. This is a manifest identity and persistence-data repair, not a change to vehicle seat accounting, energy balance, remote hosting, native installers, or release acceptance. Full integration requires exact-commit gate readback.
+
 ### Main-only reconciliation of core gameplay PR #51 (2026-11-20)
 
 - Reconciled all 18 previously open core-gameplay PR commits directly into the single authoritative `main` commit lineage using a two-parent merge, without force-pushing, rewriting the PR, or creating a new development branch.

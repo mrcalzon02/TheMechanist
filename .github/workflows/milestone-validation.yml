@@ -69,6 +69,7 @@ jobs:
             "mechanist.TileSemanticRuntimeRegistrySmoke",
             "mechanist.Milestone06VehicleMaintenanceSmoke",
             "mechanist.Milestone06VehicleTransitSmoke",
+            "mechanist.Milestone06VehicleManifestSmoke",
             "mechanist.Milestone06VehicleStrategicTransitSmoke",
             "mechanist.Milestone06FactionVehicleRouteControlSmoke",
             "mechanist.Milestone06FactionVehicleStrategicRouteControlSmoke",

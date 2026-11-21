@@ -246,6 +246,83 @@ final class Milestone06VehicleManifestSmoke {
             requireContains(unstaffed.blockers(), "assign 7 crew",
                     "cleared crew blocker");
 
+
+            // Persisted manifests use ~ as row and ^ as cargo field separators.
+            // User-entered values must remain one identity/ledger item on disk.
+            VehicleManifestAuthority.Result normalizedDriver =
+                    VehicleManifestAuthority.assignDriver(game, truck,
+                            "Driver~Second");
+            require(normalizedDriver.success()
+                            && "Driver-Second".equals(
+                            normalizedDriver.snapshot().driver()),
+                    "driver name must not retain a manifest delimiter");
+            VehicleManifestAuthority.Result normalizedCrew =
+                    VehicleManifestAuthority.addCrew(game, truck,
+                            "Haul~Smuggled");
+            require(normalizedCrew.success()
+                            && normalizedCrew.snapshot().crew().equals(
+                            List.of("Haul-Smuggled")),
+                    "one crew input must not forge two operational crew identities");
+            VehicleManifestAuthority.Result normalizedPassenger =
+                    VehicleManifestAuthority.boardPassenger(game, truck,
+                            "Guest^Shadow~Second");
+            require(normalizedPassenger.success()
+                            && normalizedPassenger.snapshot().passengers().equals(
+                            List.of("Guest-Shadow-Second")),
+                    "one passenger input must not forge extra seat occupants");
+            VehicleManifestAuthority.Result normalizedCargo =
+                    VehicleManifestAuthority.registerCargo(game, truck,
+                            "Crates^spare~box", "Factory;A|B", 2);
+            require(normalizedCargo.success()
+                            && normalizedCargo.snapshot().cargoUnits() == 2
+                            && normalizedCargo.snapshot().cargo().size() == 1
+                            && "Crates-spare-box".equals(
+                            normalizedCargo.snapshot().cargo().get(0).label())
+                            && "Factory,A/B".equals(
+                            normalizedCargo.snapshot().cargo().get(0).owner()),
+                    "cargo labels and owners must be stable through stock serialization");
+            VehicleManifestAuthority.Result normalizedUnload =
+                    VehicleManifestAuthority.unloadCargo(game, truck,
+                            "Crates^spare~box", "Factory;A|B", 1,
+                            "handoff~tamper");
+            require(normalizedUnload.success()
+                            && normalizedUnload.snapshot().cargoUnits() == 1
+                            && MapObjectState.stockValue(truck.stockState,
+                            "cargoHistory").contains("handoff-tamper"),
+                    "original cargo identity must unload and history must not split");
+            require(VehicleManifestAuthority.releaseCrew(game, truck,
+                            "Haul~Smuggled", "shift ended").snapshot().crew().isEmpty(),
+                    "original crew identity must release the canonical saved name");
+            require(VehicleManifestAuthority.disembarkPassenger(game, truck,
+                            "Guest^Shadow~Second", "arrived").snapshot()
+                            .passengers().isEmpty(),
+                    "original passenger identity must release the canonical saved name");
+
+            // A legacy or altered save can contain multiple maximal integer
+            // cargo entries. Reject further loading without arithmetic wrap;
+            // authorized unloading must remain possible to repair that stock.
+            truck.stockState = MapObjectState.setStockFlag(truck.stockState,
+                    "vehicleCargoManifest",
+                    "Bulk^Custodian^2147483647~Bulk^Custodian^2147483647");
+            VehicleManifestAuthority.Snapshot overfull =
+                    VehicleManifestAuthority.inspect(game.world, truck);
+            require(overfull.cargoUnits() == Integer.MAX_VALUE
+                            && overfull.cargo().size() == 2,
+                    "old excessive cargo ledgers must saturate rather than wrap");
+            String savedOverfull = truck.stockState;
+            VehicleManifestAuthority.Result refusedOverfull =
+                    VehicleManifestAuthority.registerCargo(game, truck,
+                            "Extra cargo", "Custodian", 1);
+            require(!refusedOverfull.success()
+                            && savedOverfull.equals(truck.stockState),
+                    "overfull legacy cargo must reject new loads without mutation");
+            VehicleManifestAuthority.Result recoveryUnload =
+                    VehicleManifestAuthority.unloadCargo(game, truck,
+                            "Bulk", "Custodian", 1, "legacy custody correction");
+            require(recoveryUnload.success() && recoveryUnload.changed()
+                            && recoveryUnload.snapshot().cargo().size() == 2,
+                    "overfull legacy cargo must allow lawful unloading without integer overflow");
+
             MapObjectState privateTruck = vehicle(game.world, 8, 5,
                     AssetIntegrationDisciplineAuthority.PARKED_CARGO_TRUCK,
                     VehicleRuntimeAuthority.OwnerType.PRIVATE,
