@@ -20,6 +20,13 @@ final class TileDataCompilationAuthority {
     static final char SIDEWALK = RoadGridIntegrationAuthority.SIDEWALK;
     static final char PARKING_SPACE = RoadGridIntegrationAuthority.PARKING_SPACE;
 
+    // A fallback semantic floor intent can be shared by tens of thousands
+    // of tiles. Resolve it once within a compile, never across worlds or
+    // active-registry lifetimes. Thread-local scope prevents concurrent world
+    // compilations from publishing each other's semantic choices.
+    private static final ThreadLocal<EnumMap<SemanticRenderAssetResolver.RenderIntent, String>>
+            COMPILE_FLOOR_FALLBACKS = new ThreadLocal<>();
+
     static final class Result {
         int total;
         int roads;
@@ -52,16 +59,30 @@ final class TileDataCompilationAuthority {
     static Result compile(World w) {
         Result out = new Result();
         if (w == null || w.tiles == null || w.w <= 0 || w.h <= 0) return out;
-        w.compiledTileDescriptors = new CompiledTileDescriptor[w.w][w.h];
-        for (int x = 0; x < w.w; x++) {
-            for (int y = 0; y < w.h; y++) {
-                CompiledTileDescriptor d = resolveFresh(w, x, y, w.tiles[x][y]);
-                w.compiledTileDescriptors[x][y] = d;
-                tally(out, d);
+        EnumMap<SemanticRenderAssetResolver.RenderIntent, String> previous =
+                COMPILE_FLOOR_FALLBACKS.get();
+        EnumMap<SemanticRenderAssetResolver.RenderIntent, String> scoped =
+                new EnumMap<>(SemanticRenderAssetResolver.RenderIntent.class);
+        COMPILE_FLOOR_FALLBACKS.set(scoped);
+        try {
+            w.compiledTileDescriptors = new CompiledTileDescriptor[w.w][w.h];
+            for (int x = 0; x < w.w; x++) {
+                for (int y = 0; y < w.h; y++) {
+                    CompiledTileDescriptor d = resolveFresh(w, x, y, w.tiles[x][y]);
+                    w.compiledTileDescriptors[x][y] = d;
+                    tally(out, d);
+                }
             }
+            w.compiledTileDescriptorSummary = out.summary();
+            if (Boolean.getBoolean("mechanist.profileWorldgen")) {
+                DebugLog.log("WORLDGEN_TILE_ASSETS floorFallbackIntents="
+                        + scoped.size() + " tiles=" + out.total);
+            }
+            return out;
+        } finally {
+            if (previous == null) COMPILE_FLOOR_FALLBACKS.remove();
+            else COMPILE_FLOOR_FALLBACKS.set(previous);
         }
-        w.compiledTileDescriptorSummary = out.summary();
-        return out;
     }
 
     static CompiledTileDescriptor resolve(World w, int x, int y, char glyph) {
@@ -423,9 +444,18 @@ final class TileDataCompilationAuthority {
         if (direct != null || !"floor".equals(baseLayer)) return direct;
         SemanticRenderAssetResolver.RenderIntent intent = floorIntentForFamily(family);
         if (intent == null) return null;
+        EnumMap<SemanticRenderAssetResolver.RenderIntent, String> scoped =
+                COMPILE_FLOOR_FALLBACKS.get();
+        if (scoped != null) {
+            String known = scoped.get(intent);
+            if (known != null) return known;
+        }
         SemanticRenderAssetResolver.Resolution resolution =
                 SemanticRenderAssetResolver.resolve(AssetManager.registry(), intent);
-        return resolution.found() ? resolution.asset.id() : MISSING_RECOGNIZED_TILE_ID;
+        String matched = resolution.found() ? resolution.asset.id()
+                : MISSING_RECOGNIZED_TILE_ID;
+        if (scoped != null) scoped.put(intent, matched);
+        return matched;
     }
 
     static String corridorOrientation(World w, int x, int y, char glyph) {

@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06.R tile compilation now caches fallback floor semantic resolution per pass (2026-11-20)
+
+- Real Linux/Windows 600×600 Gate 3 profiles isolated the full campaign restore stall to the tile descriptor compiler: ordinary NPC population completed in 922/456 ms, economy initialization in 18/11 ms, and fixture-door clearance in 162/60 ms, while the tile compiler did not complete within the remaining 120/180-second diagnostic windows.
+- The tile compiler previously called the full semantic registry resolver each time a floor alias had no direct mapping, potentially scanning and ranking runtime assets for tens of thousands of tiles in the same semantic family. Descriptor compilation now memoizes the fallback **by exact render intent only within one compile**, with a thread-local scoped EnumMap removed in `finally`. Normal direct tile aliases, runtime registry selection, Perlin variants, descriptor contents, and fresh out-of-compile resolution retain their existing behavior; nested/concurrent compilations cannot share cached decisions.
+- Extended the existing Java 17 semantic runtime intent smoke to compare compiled primary/underlay/overlay asset IDs, family, composed key and variants against uncached fresh resolution for several coordinates across habitation, market and industrial zones. The smoke already runs in Linux's focused gate and is now also in the Windows focused lane. Opt-in worldgen diagnostics report how many fallback intent categories were resolved in each compilation.
+- Verified timing claims must be made from new exact-commit CI measurements; this implementation is intended to eliminate repeated fallback registry searches, not to reduce terrain richness, NPC work, lighting, or simulation ticks.
+
 ### Milestone 06.R profiler subdivides final worldgen phase into live substage checkpoints (2026-11-20)
 
 - Exact-commit Linux and Windows diagnostic output confirmed the same full-save load bottleneck: production-scale 600×600 generation completed room/faction, road/fixture and interwall stages in seconds, then entered the combined population/economy/compile phase without completing within the respective bounded diagnostic windows. No other phase is currently justified as an optimization target.

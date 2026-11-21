@@ -116,8 +116,49 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
         requireContains(SemanticRenderIntentAuthority.auditSummary(), "strictFamilyFallback=true",
                 "strict family boundary");
 
+        assertCompiledTileParity();
         System.out.println("Milestone02SemanticRuntimeIntentBridgeSmoke PASS "
                 + SemanticRenderIntentAuthority.VERSION);
+    }
+
+    /**
+     * Per-compilation memoization must yield precisely the same live semantic
+     * IDs and per-cell variants as uncached fresh resolution. A second zone
+     * compile exercises a different floor category with a fresh cache scope.
+     */
+    private static void assertCompiledTileParity() {
+        World world = new World(61077L, 20, 16);
+        for (int x = 0; x < world.w; x++) {
+            for (int y = 0; y < world.h; y++) world.tiles[x][y] = '.';
+        }
+        int[][] samples = {{1, 1}, {4, 3}, {6, 7}, {12, 5}, {17, 13}};
+        for (ZoneType zone : new ZoneType[]{
+                ZoneType.NEUTRAL_CIVILIAN_FLOOR,
+                ZoneType.SUMP_MARKET,
+                ZoneType.MECHANICUS_FORGE_CLOISTER}) {
+            world.zoneType = zone;
+            TileDataCompilationAuthority.Result compiled =
+                    TileDataCompilationAuthority.compile(world);
+            if (compiled.total != world.w * world.h) {
+                throw new AssertionError("tile compilation lost cells for " + zone);
+            }
+            for (int[] point : samples) {
+                int x = point[0], y = point[1];
+                CompiledTileDescriptor cached = world.compiledTileDescriptors[x][y];
+                CompiledTileDescriptor fresh = TileDataCompilationAuthority.resolveFresh(
+                        world, x, y, world.tiles[x][y]);
+                if (cached.sourceGlyph != fresh.sourceGlyph
+                        || cached.variant != fresh.variant
+                        || !java.util.Objects.equals(cached.family, fresh.family)
+                        || !java.util.Objects.equals(cached.composedKey, fresh.composedKey)
+                        || !java.util.Objects.equals(cached.primaryAssetId, fresh.primaryAssetId)
+                        || !java.util.Objects.equals(cached.underlayAssetId, fresh.underlayAssetId)
+                        || !java.util.Objects.equals(cached.overlayAssetId, fresh.overlayAssetId)) {
+                    throw new AssertionError("scoped tile lookup changed semantic output at "
+                            + zone + " / " + x + "," + y);
+                }
+            }
+        }
     }
 
     private static AssetRegistry registry() throws Exception {
