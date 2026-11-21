@@ -66,6 +66,7 @@ jobs:
           $smokes = @(
             "mechanist.WorldActorSpriteResolverSmoke",
             "mechanist.Milestone02SemanticRuntimeIntentBridgeSmoke",
+            "mechanist.TileSemanticRuntimeRegistrySmoke",
             "mechanist.Milestone06VehicleMaintenanceSmoke",
             "mechanist.Milestone06VehicleTransitSmoke",
             "mechanist.Milestone06VehicleStrategicTransitSmoke",

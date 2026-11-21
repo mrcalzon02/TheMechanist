@@ -60,6 +60,11 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone02SemanticRuntimeIntentBridgeSmoke
+          # Asset IDs for tile types are immutable for one installed registry;
+          # explicitly swapping art must rebuild precisely one new catalog.
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.TileSemanticRuntimeRegistrySmoke
 
       - name: Run semantic coverage smoke
         shell: bash
