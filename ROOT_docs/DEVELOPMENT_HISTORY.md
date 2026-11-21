@@ -4,7 +4,7 @@
 
 - Reconciled all 18 previously open core-gameplay PR commits directly into the single authoritative `main` commit lineage using a two-parent merge, without force-pushing, rewriting the PR, or creating a new development branch.
 - Preserved 460 nonconflicting PR file changes and combined five same-file conflicts by retaining current-main Milestone 06 vehicle, persistence, semantic tile, benchmarking, and CI behavior alongside PR survival, recruitment, construction, architecture, worldgen acceptance, saved structure, and knowledge additions. The Gate 3 registry and gameplay smoke registrations remain active.
-- The PR's 201k-line generated repository manifest adjustment and diagnostic evidence are carried with the source as ordinary changed files, not silently discarded. Exact merge-commit CI and remote PR/readback evidence are the release verification boundary; no prerelease is published by this merge.
+- The PR's 201k-line generated repository manifest adjustment and diagnostic evidence are carried with the source as ordinary changed files, not silently discarded. The post-merge inventory audit reports a stale committed manifest and 17 outstanding release-clearance blockers; neither has been bypassed or misrepresented as approval. The permanent owner rule requiring only `main` unless explicitly authorized is now spelled out in `STANDARDS_AND_PRACTICES.md`. Exact merge-commit CI and remote PR/readback evidence are the release verification boundary; no prerelease is published by this merge.
 
 ### Milestone 06.R tile type graphics are immutable for an installed asset registry (2026-11-20)
 

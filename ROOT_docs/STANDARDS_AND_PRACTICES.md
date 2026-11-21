@@ -4,6 +4,13 @@ TOP-LINE MERMAID POSITION COMMAND: Every code module, generated code error, comp
 
 This document contains durable rules. It is not a changelog. When a pass completes, record what happened in `DEVELOPMENT_HISTORY.md`. When a roadmap changes, update `MASTER_DEVELOPMENT_PLAN.md`. When doctrine changes, update `MASTER_GOVERNANCE_REVISION_II.md`.
 
+## Main-only repository authority — standing owner rule
+
+- **`main` is the sole default development, integration, and remote-push branch.** Make implementation, repair, asset, automation, and test changes directly on `main` with exact commit readback. No agent, runner, or contributor may create, switch to, commit on, push to, or open a pull request from another branch unless the owner explicitly directs a named exception for that work.
+- At the start of each development pass, check `main`, existing open pull requests, and outstanding branch divergence. Notify the owner of unexpected unmerged work instead of silently continuing around it. Reconcile authorized existing work into `main`, preserving existing commit history; verify the PR is actually marked merged and not merely closed.
+- Never force-push or rewrite published history. Before any merge, examine the merge base, incoming changes, changed file inventory, and conflicts; preserve later `main` work and the incoming verified changes. Run Java 17 build, gameplay, packaged-boot, and multiplayer gates, report the exact result, and distinguish release-clearance failures from ordinary compilation/test success.
+- Existing non-main refs are read-only legacy references, not permission to resume development there. Delete or retarget such refs only with explicit owner authorization. An explicitly authorized temporary branch does not amend the default `main`-only rule for later tasks.
+
 ## Documentation containment standard
 
 - `ROOT_docs/` is the durable development-document root. The active authority set is:
