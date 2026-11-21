@@ -74,11 +74,45 @@ public final class TileSemanticRuntimeRegistrySmoke {
         assertDoorResolverAgreement(SemanticRenderAssetResolver.RenderIntent.DOOR_OPEN, openDoor);
         assertStreetlightResolution();
         assertAssetAuditDevRoomCycling();
+        assertGraphicalIdentityImmutability();
 
         System.out.println("TileSemanticRuntimeRegistrySmoke PASS registry="
                 + AssetManager.registry().size()
                 + " aliases=" + TileSemanticAssetAuthority.mappingCount()
                 + " resolved=" + TileSemanticAssetAuthority.resolvedMappingCount());
+    }
+
+    private static void assertGraphicalIdentityImmutability() {
+        String type = "floor_bare_underhive_v1";
+        String expectedId = TileSemanticAssetAuthority.assetIdOrMissing(type);
+        long afterBind = TileSemanticAssetAuthority.installedCatalogCount();
+        for (int i = 0; i < 250; i++) {
+            if (!java.util.Objects.equals(expectedId,
+                    TileSemanticAssetAuthority.assetIdOrMissing(type))) {
+                throw new AssertionError("immutable tile type changed its graphical asset ID");
+            }
+            TileSemanticAssetAuthority.floorFallbackId(
+                    SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR);
+        }
+        if (TileSemanticAssetAuthority.installedCatalogCount() != afterBind) {
+            throw new AssertionError("repeated tile and world lookups rebuilt graphical identity");
+        }
+        // Installing new art is an explicit graphics change, not a world tick.
+        mechanist.assets.AssetRegistry previous = AssetManager.registry();
+        try {
+            AssetManager.installRegistry(mechanist.assets.AssetRegistry.empty());
+            if (TileSemanticAssetAuthority.assetIdOrMissing(type) != null
+                    || TileSemanticAssetAuthority.installedCatalogCount() != afterBind + 1) {
+                throw new AssertionError("graphics registry replacement did not rebuild the catalog once");
+            }
+        } finally {
+            AssetManager.installRegistry(previous);
+        }
+        if (!java.util.Objects.equals(expectedId,
+                TileSemanticAssetAuthority.assetIdOrMissing(type))
+                || TileSemanticAssetAuthority.installedCatalogCount() != afterBind + 2) {
+            throw new AssertionError("original fixed graphical tile identity was not restored");
+        }
     }
 
     private static Expectation expected(String alias, Set<AssetType> types,

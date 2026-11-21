@@ -2,6 +2,7 @@ package mechanist;
 
 import mechanist.assets.AssetManager;
 import mechanist.assets.AssetMetadata;
+import mechanist.assets.AssetRegistry;
 import mechanist.assets.AssetType;
 
 import java.util.ArrayList;
@@ -25,8 +26,18 @@ import java.util.Set;
  */
 final class TileSemanticAssetAuthority {
     static final String VERSION = "0.9.10kc-door-state-registry";
-    private static final LinkedHashMap<String, String> ALIAS_TO_ID = new LinkedHashMap<>();
-    private static final LinkedHashMap<String, Optional<String>> RUNTIME_ID_CACHE = new LinkedHashMap<>();
+    // Tile-type identity is authored, not generated from the state of a map
+    // cell. Mutable builder exists only during class initialization.
+    private static LinkedHashMap<String, String> authoredBindings = new LinkedHashMap<>();
+    private static final Map<String, String> ALIAS_TO_ID;
+
+    private static final Object CATALOG_LOCK = new Object();
+    private static volatile IdentityCatalog installedCatalog;
+    private static long installedCatalogCount;
+
+    private record IdentityCatalog(AssetRegistry registry,
+                                   Map<String, Optional<String>> aliasAssetIds,
+                                   Map<SemanticRenderAssetResolver.RenderIntent, String> floorFallbacks) { }
     private static final Set<String> TOKEN_STOPWORDS = Set.of(
             "tile", "floor", "wall", "road", "room", "prop", "object",
             "generic", "standard", "alt", "or", "the", "of",
@@ -41,6 +52,8 @@ final class TileSemanticAssetAuthority {
         bindWalls();
         bindDoors();
         bindFixturesAndOverlays();
+        ALIAS_TO_ID = Map.copyOf(authoredBindings);
+        authoredBindings = null;
     }
 
     private TileSemanticAssetAuthority() {}
@@ -48,9 +61,69 @@ final class TileSemanticAssetAuthority {
     static Optional<String> assetIdForAlias(String alias) {
         if (alias == null || alias.isBlank()) return Optional.empty();
         String key = normalizeAlias(alias);
-        String mapped = mappedIdForKey(key);
-        if (mapped == null) return Optional.empty();
-        return runtimeAssetId(key, mapped);
+        IdentityCatalog catalog = identityCatalog();
+        Optional<String> exact = catalog.aliasAssetIds().get(key);
+        if (exact != null) return exact;
+        // Compatibility with earlier unsuffixed authored tile types. This
+        // only selects a prebound type; it does not search or rank graphics.
+        if (key.matches("(road|wall|floor)_.*_v[1-5]")) {
+            return catalog.aliasAssetIds().getOrDefault(
+                    key.replaceAll("_v[1-5]$", ""), Optional.empty());
+        }
+        return Optional.empty();
+    }
+
+    /** A tile type always resolves through this fixed, installed catalog. */
+    static String floorFallbackId(SemanticRenderAssetResolver.RenderIntent intent) {
+        if (intent == null) return null;
+        return identityCatalog().floorFallbacks().get(intent);
+    }
+
+    static long installedCatalogCount() {
+        identityCatalog();
+        synchronized (CATALOG_LOCK) { return installedCatalogCount; }
+    }
+
+    private static IdentityCatalog identityCatalog() {
+        AssetRegistry registry = AssetManager.registry();
+        IdentityCatalog current = installedCatalog;
+        if (current != null && current.registry() == registry) return current;
+        synchronized (CATALOG_LOCK) {
+            current = installedCatalog;
+            if (current != null && current.registry() == registry) return current;
+            LinkedHashMap<String, Optional<String>> authored = new LinkedHashMap<>();
+            for (Map.Entry<String, String> binding : ALIAS_TO_ID.entrySet()) {
+                authored.put(binding.getKey(), resolveAuthoredBinding(
+                        registry, binding.getKey(), binding.getValue()));
+            }
+            EnumMap<SemanticRenderAssetResolver.RenderIntent, String> floors =
+                    new EnumMap<>(SemanticRenderAssetResolver.RenderIntent.class);
+            for (SemanticRenderAssetResolver.RenderIntent intent :
+                    new SemanticRenderAssetResolver.RenderIntent[]{
+                            SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.SLUM_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.NOBLE_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.SECURITY_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.ADMINISTRATIVE_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.TRANSIT_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_FLOOR,
+                            SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR}) {
+                SemanticRenderAssetResolver.Resolution result =
+                        SemanticRenderAssetResolver.resolve(registry, intent);
+                floors.put(intent, result.found() ? result.asset.id()
+                        : TileDataCompilationAuthority.MISSING_RECOGNIZED_TILE_ID);
+            }
+            // A complete snapshot is published atomically: game worlds only
+            // read immutable IDs, never partial or mutable resolver output.
+            current = new IdentityCatalog(registry,
+                    Map.copyOf(authored), Map.copyOf(floors));
+            installedCatalog = current;
+            installedCatalogCount++;
+            return current;
+        }
     }
 
     static String assetIdOrMissing(String alias) {
@@ -90,38 +163,31 @@ final class TileSemanticAssetAuthority {
         return auditResolvedAliasMap().size();
     }
 
-    private static String mappedIdForKey(String key) {
-        String direct = ALIAS_TO_ID.get(key);
-        if (direct != null) return direct;
-        if (key.matches("(road|wall|floor)_.*_v[1-5]")) {
-            return ALIAS_TO_ID.get(key.replaceAll("_v[1-5]$", ""));
-        }
-        return null;
-    }
-
-    private static Optional<String> runtimeAssetId(String key, String mappedId) {
-        synchronized (RUNTIME_ID_CACHE) {
-            if (RUNTIME_ID_CACHE.containsKey(key)) return RUNTIME_ID_CACHE.get(key);
-        }
-
-        Optional<String> resolved = compatibleMetadata(mappedId, key).map(AssetMetadata::id);
+    /**
+     * Legacy compiled indexes may still need a one-time compatibility
+     * binding when the graphics registry is installed. Never run this from
+     * individual tiles, world generation, renders, or save restoration.
+     */
+    private static Optional<String> resolveAuthoredBinding(
+            AssetRegistry registry, String key, String mappedId) {
+        Optional<String> resolved = compatibleMetadata(
+                registry, mappedId, key).map(AssetMetadata::id);
         if (resolved.isEmpty()) {
             for (String translated : translatedIdCandidates(mappedId)) {
-                resolved = compatibleMetadata(translated, key).map(AssetMetadata::id);
+                resolved = compatibleMetadata(
+                        registry, translated, key).map(AssetMetadata::id);
                 if (resolved.isPresent()) break;
             }
         }
-        if (resolved.isEmpty()) resolved = findRuntimeRegistryMatch(key);
-
-        synchronized (RUNTIME_ID_CACHE) {
-            RUNTIME_ID_CACHE.put(key, resolved);
-        }
+        if (resolved.isEmpty()) resolved = findRuntimeRegistryMatch(registry, key);
         return resolved;
     }
 
-    private static Optional<AssetMetadata> compatibleMetadata(String assetId, String key) {
-        if (assetId == null || assetId.isBlank()) return Optional.empty();
-        return AssetManager.metadata(assetId).filter(asset -> compatible(asset, key));
+    private static Optional<AssetMetadata> compatibleMetadata(
+            AssetRegistry registry, String assetId, String key) {
+        if (registry == null || assetId == null || assetId.isBlank())
+            return Optional.empty();
+        return registry.find(assetId).filter(asset -> compatible(asset, key));
     }
 
     private static List<String> translatedIdCandidates(String mappedId) {
@@ -142,9 +208,9 @@ final class TileSemanticAssetAuthority {
         if (value.startsWith(oldPrefix)) out.add(newPrefix + value.substring(oldPrefix.length()));
     }
 
-    private static Optional<String> findRuntimeRegistryMatch(String key) {
+    private static Optional<String> findRuntimeRegistryMatch(AssetRegistry registry, String key) {
         ArrayList<Candidate> candidates = new ArrayList<>();
-        for (AssetMetadata asset : AssetManager.registry().all()) {
+        for (AssetMetadata asset : registry.all()) {
             if (!compatible(asset, key)) continue;
             int score = semanticScore(asset, key);
             if (score >= 12) candidates.add(new Candidate(asset, score));
@@ -500,7 +566,7 @@ final class TileSemanticAssetAuthority {
 
     private static void bind(String alias, String assetId) {
         if (alias == null || alias.isBlank() || assetId == null || assetId.isBlank()) return;
-        ALIAS_TO_ID.put(normalizeAlias(alias), assetId.trim().toUpperCase(Locale.ROOT));
+        authoredBindings.put(normalizeAlias(alias), assetId.trim().toUpperCase(Locale.ROOT));
     }
 
     private static String normalizeAlias(String alias) {

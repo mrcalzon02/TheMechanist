@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06.R tile type graphics are immutable for an installed asset registry (2026-11-20)
+
+- Tile identity and map-cell state are separate. Player actions may alter a cell's terrain, overlay, occupancy, door state, or construction without changing the fixed tile type → graphical asset binding. Previously the tile resolver lazily cached aliases and performed registry compatibility/ranking while constructing map-cell descriptors, and kept a mutable cache even if the graphics registry was explicitly replaced.
+- Authored tile-type bindings are now copied into an immutable map at class initialization. The active registry is bound into one immutable catalog snapshot (exact/legacy compatibility bindings plus floor-family fallbacks), published atomically on first use. World generation, tile compilation, rendering and save loading read only this catalog; no per-world/per-cell asset reranking or mutable floor fallback cache remains. A new snapshot can be installed only when the actual graphics registry object changes, such as an explicit asset-pack installation.
+- Graphical binding decisions are fixed across multiple world compilations and cell-state changes. Existing authored art and legacy compiled-index compatibility remain intact, so the change does not silently drop graphic assets. Extended the existing semantic bridge and tile-registry smokes to check repeated cell compilations, immutable type bindings, and deliberate graphics-registry replacement/restoration. This is type binding reuse, not a claim that terrain generation, tile descriptors or sprite files can never change when the player modifies the map.
+
 ### Milestone 06.R tile compilation now caches fallback floor semantic resolution per pass (2026-11-20)
 
 - Real Linux/Windows 600×600 Gate 3 profiles isolated the full campaign restore stall to the tile descriptor compiler: ordinary NPC population completed in 922/456 ms, economy initialization in 18/11 ms, and fixture-door clearance in 162/60 ms, while the tile compiler did not complete within the remaining 120/180-second diagnostic windows.

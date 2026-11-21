@@ -128,6 +128,7 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
      */
     private static void assertCompiledTileParity() {
         World world = new World(61077L, 20, 16);
+        long installedBefore = TileSemanticAssetAuthority.installedCatalogCount();
         for (int x = 0; x < world.w; x++) {
             for (int y = 0; y < world.h; y++) world.tiles[x][y] = '.';
         }
@@ -158,6 +159,9 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
                             + zone + " / " + x + "," + y);
                 }
             }
+        }
+        if (TileSemanticAssetAuthority.installedCatalogCount() != installedBefore) {
+            throw new AssertionError("map-cell recompilation must not rebind immutable graphical tile types");
         }
     }
 
