@@ -58,7 +58,7 @@ jobs:
             @ROOT_build/main-java17-gate/launcher-sources.txt
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
-            mechanist.ReleaseBuildIdentitySmoke
+            mechanist.BuildIdentityDisplaySmoke
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/launcher-classes \
             mechanist.launcher.LauncherBuildIdentitySmoke
