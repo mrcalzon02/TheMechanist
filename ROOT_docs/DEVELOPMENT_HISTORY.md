@@ -1,5 +1,11 @@
 # Development History
 
+### Installed release identity clarity in client and launcher (2026-11-22)
+
+- The native alpha launcher previously verified the installed version and source commit but omitted both from its visible status panel. It now shows a compact installed release fingerprint and presents the full version, commit, platform, and manifest path in Runtime Info, without network access or repeated content hashing.
+- The running client now shows its 12-character source commit in the window title when a bounded installed manifest matches the actual running JAR version; unmatched, missing, or invalid install metadata is never presented as an installed commit. The exact full commit is included in the existing build audit line.
+- Added deterministic stale-manifest, invalid-commit, absent-metadata, and exact-commit smoke assertions. Expanded the main Java 17 gate to compile the desktop launcher source alongside the client and exercise the identity smoke before its ordinary package/boot checks. No source branch, asset, updater selection rule, installer packaging path, or release publication workflow was changed.
+
 ### Milestone 06 cross-role vehicle personnel identity and legacy staffing repair (2026-11-22)
 
 - Vehicle assignment guards formerly allowed a named passenger to be assigned as crew or driver, and a crew member or driver to board as a passenger. Such duplicates misrepresented staffing and seating, while saved case-only or cross-role legacy duplicates could inflate strategic route crew readiness.

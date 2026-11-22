@@ -24,6 +24,15 @@ final class RuntimeInfoDialog {
         add(model, "Launcher", "The Mechanist Launcher");
         add(model, "Studio", LauncherConfig.STUDIO_NAME);
         add(model, "Channel", channel);
+        try {
+            LauncherBuildIdentity.Identity identity = LauncherBuildIdentity.read(config);
+            add(model, "Installed version", identity.version());
+            add(model, "Installed commit", identity.commit());
+            add(model, "Installed platform", identity.platform());
+            add(model, "Identity manifest", identity.manifest().toString());
+        } catch (java.io.IOException unavailable) {
+            add(model, "Installed build", "not detected");
+        }
         add(model, "Java version", System.getProperty("java.version", "<unknown>"));
         add(model, "Java vendor", System.getProperty("java.vendor", "<unknown>"));
         add(model, "Java home", System.getProperty("java.home", "<unknown>"));

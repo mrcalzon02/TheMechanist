@@ -42,6 +42,7 @@ public final class MechanistLauncherApp {
     private JComboBox<PackageTier> audioTier;
     private JLabel effectiveGraphics;
     private JLabel effectiveAudio;
+    private JLabel installedBuild;
     private JButton installUpdate;
     private JButton updateButton;
     private boolean launcherTaskBusy;
@@ -140,6 +141,8 @@ public final class MechanistLauncherApp {
         addRow(rows, constraints, "Package source", channel);
         effectiveGraphics = LauncherTheme.value("pending verification");
         effectiveAudio = LauncherTheme.value("pending verification");
+        installedBuild = LauncherTheme.value("not detected");
+        addRow(rows, constraints, "Installed build", installedBuild);
         addRow(rows, constraints, "Graphics used", effectiveGraphics);
         addRow(rows, constraints, "Audio used", effectiveAudio);
         panel.add(rows, BorderLayout.CENTER);
@@ -596,6 +599,18 @@ public final class MechanistLauncherApp {
         }
         if (effectiveAudio != null) {
             effectiveAudio.setText(audio == null ? "silence fallback" : audio.toString());
+        }
+        if (installedBuild != null) {
+            try {
+                LauncherBuildIdentity.Identity identity = LauncherBuildIdentity.read(config);
+                installedBuild.setText(identity.compactLabel());
+                installedBuild.setToolTipText(identity.compactLine());
+                frame.setTitle(LauncherConfig.APP_NAME + " Launcher - " + identity.compactLabel());
+            } catch (java.io.IOException unavailable) {
+                installedBuild.setText("not detected");
+                installedBuild.setToolTipText("No installed version and commit manifest could be read.");
+                frame.setTitle(LauncherConfig.APP_NAME + " Launcher");
+            }
         }
         boolean ready = packages.gameLauncherPresent();
         launch.setEnabled(ready);

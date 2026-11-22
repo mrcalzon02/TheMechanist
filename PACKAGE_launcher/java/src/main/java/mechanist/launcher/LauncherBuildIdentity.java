@@ -93,6 +93,14 @@ final class LauncherBuildIdentity {
             Path manifest,
             boolean canonical
     ) {
+        String compactLabel() {
+            String release = version == null || version.isBlank() ? "unknown" : version;
+            String fingerprint = commit != null && commit.matches("[a-fA-F0-9]{40}")
+                    ? commit.substring(0, 12).toLowerCase(java.util.Locale.ROOT)
+                    : "commit unknown";
+            return "v" + release + " / " + fingerprint;
+        }
+
         String compactLine() {
             return "version=" + version
                     + " commit=" + commit

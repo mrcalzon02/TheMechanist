@@ -26,9 +26,38 @@ final class ReleaseBuildIdentitySmoke {
                 BuildIdentityAuthority.resolve(null, null, new Properties());
         require("development".equals(fallback.version()), "development fallback should be honest");
 
+        String commit = "b8758b49e7d04a1cb86c01ff1df8e7b0f3b41c08";
+        String manifest = "{\"version\":\"0.9.54\",\"commit\":\"" + commit + "\"}";
+        require(commit.equals(BuildIdentityAuthority.parseManifestCommit(manifest, "0.9.54")),
+                "installed manifest should expose its exact source SHA");
+        require(BuildIdentityAuthority.parseManifestCommit(manifest, "0.9.53").isEmpty(),
+                "stale installed manifest must not label a different binary");
+        require(BuildIdentityAuthority.parseManifestCommit(
+                "{\"version\":\"0.9.54\",\"commit\":\"not-a-sha\"}", "0.9.54").isEmpty(),
+                "invalid source commit must not appear as a release fingerprint");
+        require(BuildIdentityAuthority.parseManifestCommit("{}", "0.9.54").isEmpty(),
+                "missing release identity must remain explicitly unknown");
+
+        java.nio.file.Path tempRoot = java.nio.file.Files.createTempDirectory("mechanist-build-identity-");
+        try {
+            java.nio.file.Path manifestDir = java.nio.file.Files.createDirectories(tempRoot.resolve("manifests"));
+            java.nio.file.Files.writeString(manifestDir.resolve("runtime-manifest.json"), manifest);
+            require(commit.equals(BuildIdentityAuthority.readInstalledCommit(tempRoot, "0.9.54")),
+                    "installed manifest should read from the selected install root");
+            require(BuildIdentityAuthority.readInstalledCommit(tempRoot, "0.9.53").isEmpty(),
+                    "a different client version must not inherit the install SHA");
+        } finally {
+            java.nio.file.Files.deleteIfExists(tempRoot.resolve("manifests/runtime-manifest.json"));
+            java.nio.file.Files.deleteIfExists(tempRoot.resolve("manifests"));
+            java.nio.file.Files.deleteIfExists(tempRoot);
+        }
+
         require(!BuildIdentityAuthority.version().isBlank(), "runtime build version must not be blank");
         require(BuildIdentityAuthority.clientWindowTitle().contains(BuildIdentityAuthority.version()),
                 "window title must use the shared build version");
+        require(BuildIdentityAuthority.shortCommit().isEmpty()
+                        || BuildIdentityAuthority.clientWindowTitle().contains(BuildIdentityAuthority.shortCommit()),
+                "installed window title must identify the exact release commit");
         require(BuildIdentityAuthority.componentVersion("server").contains(BuildIdentityAuthority.version()),
                 "server identity must use the shared build version");
 

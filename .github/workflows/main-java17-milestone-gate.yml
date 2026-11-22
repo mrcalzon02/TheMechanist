@@ -45,6 +45,24 @@ jobs:
             -d ROOT_build/main-java17-gate/classes \
             @ROOT_build/main-java17-gate/sources.txt
 
+      - name: Verify desktop launcher compiles and installed build identity is honest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ROOT_build/main-java17-gate/launcher-classes
+          find PACKAGE_launcher/java/src/main/java -name '*.java' -print | sort \
+            > ROOT_build/main-java17-gate/launcher-sources.txt
+          test -s ROOT_build/main-java17-gate/launcher-sources.txt
+          javac -encoding UTF-8 --release 17 \
+            -d ROOT_build/main-java17-gate/launcher-classes \
+            @ROOT_build/main-java17-gate/launcher-sources.txt
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.ReleaseBuildIdentitySmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/launcher-classes \
+            mechanist.launcher.LauncherBuildIdentitySmoke
+
       - name: Run focused semantic resolver smoke
         shell: bash
         run: |
