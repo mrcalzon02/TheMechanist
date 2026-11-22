@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06 cross-role vehicle personnel identity and legacy staffing repair (2026-11-22)
+
+- Vehicle assignment guards formerly allowed a named passenger to be assigned as crew or driver, and a crew member or driver to board as a passenger. Such duplicates misrepresented staffing and seating, while saved case-only or cross-role legacy duplicates could inflate strategic route crew readiness.
+- Retained the existing vehicle manifest, access checks, stock-state codec, history, and strategic request authority. New role assignments now refuse cross-role overlap (case-insensitively) without changing stock state or history; explicit release/disembark is required before a role transfer.
+- Manifest inspection now presents one effective role per distinct person, in driver → crew → passenger precedence, and derives strategic crew and seat counts from that view. Reads do not rewrite older saves. Role-specific release/disembark operates on raw saved lists so hidden legacy duplicates can still be removed, including case variants.
+- Extended the existing Milestone 06 manifest smoke to cover refused role collisions, non-mutation, explicit reassignment, duplicate persisted identities, strategic route readiness and legacy cleanup. Integrated Java 17, packaged runtime, native installer, and limited-alpha certification remain separate evidence gates.
+
 ### Milestone 06 vehicle manifest rejects delimiter injection and overfull legacy arithmetic (2026-11-21)
 
 - The persistent vehicle manifest encoded named crew/passengers as `~`-separated rows and cargo as `~`-separated, `^`-field records, but assignment entry points previously stored unsanitized names. A single input containing delimiters could therefore create phantom crew or passengers; cargo labels and owners were sanitized only on write, causing accepted cargo to become unfindable during unload. Manifest history reasons could also split into multiple saved entries.

@@ -36,9 +36,15 @@ final class VehicleManifestAuthority {
         VehicleRuntimeAuthority.VehicleClass definition =
                 VehicleRuntimeAuthority.vehicleClass(vehicle.type);
         String driver = value(vehicle, "vehicleDriver");
-        List<String> crew = split(value(vehicle, "vehicleCrewManifest"));
-        List<String> passengers = split(value(vehicle,
-                "vehiclePassengerManifest"));
+        // A legacy save can list the same person in multiple roles (or with
+        // different capitalization). Count each distinct person only once:
+        // driver takes precedence over crew, and crew over passengers.
+        List<String> crew = distinctPeople(value(vehicle,
+                "vehicleCrewManifest"), List.of(driver));
+        ArrayList<String> staffed = new ArrayList<>(crew);
+        if (!driver.isBlank()) staffed.add(driver);
+        List<String> passengers = distinctPeople(value(vehicle,
+                "vehiclePassengerManifest"), staffed);
         List<CargoEntry> cargo = cargoEntries(value(vehicle,
                 "vehicleCargoManifest"));
         // Persisted ledgers may predate capacity checks: never wrap to a negative
@@ -69,6 +75,13 @@ final class VehicleManifestAuthority {
         if (name.equalsIgnoreCase(before.driver())) {
             return new Result(true, false, "assign driver",
                     "The same driver is already assigned.", before);
+        }
+        if (containsIgnoreCase(split(value(vehicle, "vehicleCrewManifest")), name)
+                || containsIgnoreCase(split(value(vehicle,
+                "vehiclePassengerManifest")), name)) {
+            return Result.blocked("assign driver",
+                    "Release that person's crew or passenger assignment before assigning them as driver.",
+                    before);
         }
         if (before.driver().isBlank() && before.occupiedSeats() >= before.seatCapacity()) {
             return Result.blocked("assign driver",
@@ -114,10 +127,16 @@ final class VehicleManifestAuthority {
             return Result.blocked("assign crew",
                     "A readable crew identity is required.", before);
         }
-        if (containsIgnoreCase(before.crew(), name)
+        if (containsIgnoreCase(split(value(vehicle, "vehicleCrewManifest")), name)
                 || name.equalsIgnoreCase(before.driver())) {
             return new Result(true, false, "assign crew",
                     "That person is already assigned to the vehicle.", before);
+        }
+        if (containsIgnoreCase(split(value(vehicle,
+                "vehiclePassengerManifest")), name)) {
+            return Result.blocked("assign crew",
+                    "Disembark that passenger before assigning them to operational crew.",
+                    before);
         }
         ArrayList<String> crew = new ArrayList<>(before.crew());
         crew.add(name);
@@ -141,13 +160,17 @@ final class VehicleManifestAuthority {
             return Result.blocked("release crew",
                     "A readable crew identity is required.", before);
         }
-        int index = indexOfIgnoreCase(before.crew(), name);
+        // Use the raw saved role for removal: a legacy duplicate concealed by
+        // the canonical inspection snapshot must still be releasable.
+        ArrayList<String> crew = new ArrayList<>(split(value(vehicle,
+                "vehicleCrewManifest")));
+        int index = indexOfIgnoreCase(crew, name);
         if (index < 0) {
             return new Result(true, false, "release crew",
                     "That crew member is not assigned to the vehicle.", before);
         }
-        ArrayList<String> crew = new ArrayList<>(before.crew());
-        String released = crew.remove(index);
+        String released = crew.get(index);
+        crew.removeIf(member -> member.equalsIgnoreCase(name));
         set(vehicle, "vehicleCrewManifest", String.join("~", crew));
         append(vehicle, "crewHistory", "Crew released: " + released
                 + " / " + clean(reason, "assignment ended") + turn(game));
@@ -168,9 +191,17 @@ final class VehicleManifestAuthority {
             return Result.blocked("board passenger",
                     "A readable passenger identity is required.", before);
         }
-        if (containsIgnoreCase(before.passengers(), name)) {
+        if (containsIgnoreCase(split(value(vehicle,
+                "vehiclePassengerManifest")), name)) {
             return new Result(true, false, "board passenger",
                     "That passenger is already aboard.", before);
+        }
+        if (name.equalsIgnoreCase(before.driver())
+                || containsIgnoreCase(split(value(vehicle,
+                "vehicleCrewManifest")), name)) {
+            return Result.blocked("board passenger",
+                    "Release that person's driver or crew assignment before boarding them as a passenger.",
+                    before);
         }
         if (before.occupiedSeats() >= before.seatCapacity()) {
             return Result.blocked("board passenger",
@@ -198,13 +229,15 @@ final class VehicleManifestAuthority {
             return Result.blocked("disembark passenger",
                     "A readable passenger identity is required.", before);
         }
-        int index = indexOfIgnoreCase(before.passengers(), name);
+        ArrayList<String> passengers = new ArrayList<>(split(value(vehicle,
+                "vehiclePassengerManifest")));
+        int index = indexOfIgnoreCase(passengers, name);
         if (index < 0) {
             return new Result(true, false, "disembark passenger",
                     "That passenger is not aboard the vehicle.", before);
         }
-        ArrayList<String> passengers = new ArrayList<>(before.passengers());
-        String released = passengers.remove(index);
+        String released = passengers.get(index);
+        passengers.removeIf(member -> member.equalsIgnoreCase(name));
         set(vehicle, "vehiclePassengerManifest", String.join("~", passengers));
         append(vehicle, "passengerHistory", "Passenger disembarked: " + released
                 + " / " + clean(reason, "journey ended") + turn(game));
@@ -421,6 +454,18 @@ final class VehicleManifestAuthority {
     private static List<String> split(String text) {
         LinkedHashSet<String> values = new LinkedHashSet<>(tokens(text));
         return List.copyOf(values);
+    }
+
+    private static List<String> distinctPeople(String text,
+                                               List<String> alreadyAssigned) {
+        ArrayList<String> people = new ArrayList<>();
+        for (String person : tokens(text)) {
+            if (!containsIgnoreCase(alreadyAssigned, person)
+                    && !containsIgnoreCase(people, person)) {
+                people.add(person);
+            }
+        }
+        return List.copyOf(people);
     }
 
     private static int indexOfIgnoreCase(List<String> values,

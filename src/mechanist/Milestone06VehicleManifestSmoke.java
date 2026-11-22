@@ -247,6 +247,93 @@ final class Milestone06VehicleManifestSmoke {
                     "cleared crew blocker");
 
 
+            // Personnel identities are exclusive across driver, crew, and
+            // passenger roles. A rejected role transfer never changes saved
+            // manifest or history; a genuine transfer requires a release.
+            require(VehicleManifestAuthority.assignDriver(game, truck,
+                    "Shift Lead").success(), "role guard driver setup");
+            require(VehicleManifestAuthority.addCrew(game, truck,
+                    "Transit Tech").success(), "role guard crew setup");
+            require(VehicleManifestAuthority.boardPassenger(game, truck,
+                    "Observer").success(), "role guard passenger setup");
+            String exclusiveStock = truck.stockState;
+            require(!VehicleManifestAuthority.assignDriver(game, truck,
+                    "transit tech").success(), "crew cannot become driver while assigned");
+            require(!VehicleManifestAuthority.assignDriver(game, truck,
+                    "OBSERVER").success(), "passenger cannot become driver while aboard");
+            require(!VehicleManifestAuthority.addCrew(game, truck,
+                    "observer").success(), "passenger cannot double as crew");
+            require(!VehicleManifestAuthority.boardPassenger(game, truck,
+                    "SHIFT LEAD").success(), "driver cannot double as passenger");
+            require(!VehicleManifestAuthority.boardPassenger(game, truck,
+                    "transit tech").success(), "crew cannot double as passenger");
+            require(exclusiveStock.equals(truck.stockState),
+                    "refused cross-role assignments must not mutate saved roles or history");
+            require(VehicleManifestAuthority.disembarkPassenger(game, truck,
+                    "Observer", "shift reassignment").success(),
+                    "passenger must be removable before a role transfer");
+            require(VehicleManifestAuthority.addCrew(game, truck,
+                    "observer").success(),
+                    "released passenger should now be assignable as crew");
+            require(!VehicleManifestAuthority.boardPassenger(game, truck,
+                    "OBSERVER").success(),
+                    "transferred crew member must not silently board again");
+            require(VehicleManifestAuthority.releaseCrew(game, truck,
+                    "observer", "shift ended").success(),
+                    "crew must be releasable before boarding");
+            require(VehicleManifestAuthority.boardPassenger(game, truck,
+                    "OBSERVER").success(),
+                    "released crew member should be able to board");
+            require(VehicleManifestAuthority.clearManifest(game, truck,
+                    "role-guard smoke complete").success(),
+                    "role guard smoke should restore an empty active manifest");
+
+            // Older persisted data may contain cross-role or case-only
+            // duplicates. Inspection and strategic readiness must count
+            // distinct persons, without mutating persisted state on read.
+            truck.stockState = MapObjectState.setStockFlag(truck.stockState,
+                    "vehicleDriver", "Legacy Lead");
+            truck.stockState = MapObjectState.setStockFlag(truck.stockState,
+                    "vehicleCrewManifest",
+                    "legacy lead~LEGACY LEAD~Tech One~TECH ONE");
+            truck.stockState = MapObjectState.setStockFlag(truck.stockState,
+                    "vehiclePassengerManifest",
+                    "LEGACY LEAD~Tech One~Guest~GUEST");
+            String legacyStock = truck.stockState;
+            VehicleManifestAuthority.Snapshot legacy =
+                    VehicleManifestAuthority.inspect(game.world, truck);
+            require("Legacy Lead".equals(legacy.driver())
+                            && legacy.crew().equals(List.of("Tech One"))
+                            && legacy.passengers().equals(List.of("Guest"))
+                            && legacy.assignedCrew() == 2
+                            && legacy.occupiedSeats() == 2,
+                    "legacy duplicate identities must not inflate crew or seating");
+            VehicleStrategicTransitAuthority.Request legacyRequest =
+                    VehicleManifestAuthority.strategicRequest(game, truck,
+                            "sector-3/zone-2/floor-0", request.infrastructure(),
+                            12, 3, 3, true, true, false, Faction.NONE,
+                            "legacy duplicate staffing should not authorize departure");
+            require(legacyRequest.assignedCrew() == 2
+                            && !VehicleStrategicTransitAuthority.evaluate(
+                            game, truck, legacyRequest).allowed()
+                            && legacyStock.equals(truck.stockState),
+                    "legacy duplicates must not satisfy strategic crew requirements or mutate on read");
+            require(VehicleManifestAuthority.releaseCrew(game, truck,
+                    "legacy lead", "remove old duplicate").changed()
+                            && !MapObjectState.stockValue(truck.stockState,
+                            "vehicleCrewManifest").toLowerCase().contains(
+                            "legacy lead"),
+                    "hidden legacy crew records must remain explicitly releasable");
+            require(VehicleManifestAuthority.disembarkPassenger(game, truck,
+                    "tech one", "remove old duplicate").changed()
+                            && !MapObjectState.stockValue(truck.stockState,
+                            "vehiclePassengerManifest").toLowerCase().contains(
+                            "tech one"),
+                    "hidden legacy passenger records must remain explicitly removable");
+            require(VehicleManifestAuthority.clearManifest(game, truck,
+                    "legacy-role recovery complete").success(),
+                    "legacy role recovery should restore an empty active manifest");
+
             // Persisted manifests use ~ as row and ^ as cargo field separators.
             // User-entered values must remain one identity/ledger item on disk.
             VehicleManifestAuthority.Result normalizedDriver =
