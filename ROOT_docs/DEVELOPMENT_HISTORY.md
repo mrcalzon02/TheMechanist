@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06.R installed client process handoff and launch failure reporting (2026-11-23)
+
+- The startup portrait/music delivery repair on `1e8700c8` deliberately prevents the classpath thin launcher from relaunching the client as a legacy direct JAR. The desktop launcher nevertheless started that in-process client with the installation root as its working directory, and the generated direct-client scripts inherited the caller's directory. Package-relative legacy asset lookups therefore still depended on the invocation path even when the required files were shipped. The desktop launcher now starts the existing thin-launcher entry point from the verified client JAR's parent with an absolute support classpath; the thin launcher retains its existing ancestor-based discovery of the installed profile portrait root. Both generated direct-client scripts likewise enter the package directory before executing the existing client entry point.
+- The desktop launch worker previously discarded the actual child exit code and reported a normal game end even on client failure. Nonzero exits now surface through the existing launch-failure UI and log, with the actual code, rather than being presented as successful termination.
+- Extended the existing bounded launcher smoke with a child JVM in a spaced-path package fixture, a separate support JAR and a controlled nonzero exit; extended startup-asset tests with both generated direct-launch scripts and an executable shell probe. An isolated Java 17-target compilation and real child JVM probe passed directory, support-classpath and exit propagation, and an isolated Linux shell probe passed working directory, spaced arguments and exit propagation. Full integrated smoke, native installer and real player-session acceptance remain exact-commit evidence gates. No updater or release publication policy is changed.
+
 ### Installed release identity clarity in client and launcher (2026-11-22)
 
 - The native alpha launcher previously verified the installed version and source commit but omitted both from its visible status panel. It now shows a compact installed release fingerprint and presents the full version, commit, platform, and manifest path in Runtime Info, without network access or repeated content hashing.

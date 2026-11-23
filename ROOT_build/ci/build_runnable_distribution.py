@@ -248,6 +248,7 @@ def write_launchers(root: pathlib.Path, platform_name: str) -> None:
             ),
             "Run-Client-Direct.cmd": (
                 "@echo off\r\nsetlocal\r\nset ROOT=%~dp0\r\n"
+                'cd /d "%ROOT%packages\\client" || exit /b 1\r\n'
                 '"%ROOT%runtime\\bin\\java.exe" -cp '
                 '"%ROOT%packages\\client\\TheMechanist.jar;%ROOT%packages\\support\\lib\\*" '
                 "mechanist.TheMechanist %*\r\n"
@@ -273,6 +274,7 @@ def write_launchers(root: pathlib.Path, platform_name: str) -> None:
             ),
             "run-client-direct.sh": (
                 '#!/usr/bin/env sh\nset -eu\nROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n'
+                'cd "$ROOT/packages/client"\n'
                 'exec "$ROOT/runtime/bin/java" -cp '
                 '"$ROOT/packages/client/TheMechanist.jar:$ROOT/packages/support/lib/*" '
                 'mechanist.TheMechanist "$@"\n'

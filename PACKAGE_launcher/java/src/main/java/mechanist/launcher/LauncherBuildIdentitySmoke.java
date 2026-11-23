@@ -35,8 +35,66 @@ final class LauncherBuildIdentitySmoke {
             Files.deleteIfExists(install.resolve("manifests"));
             Files.deleteIfExists(install);
         }
+        verifyClientProcessHandoff();
         System.out.println("LauncherBuildIdentitySmoke PASS");
     }
+
+    private static void verifyClientProcessHandoff() throws Exception {
+        Path root = Files.createTempDirectory("Mechanist client launch with spaces ");
+        try {
+            Path client = Files.createDirectories(root.resolve("packages/client"));
+            Path jar = client.resolve("TheMechanist.jar");
+            Path support = Files.createDirectories(root.resolve("packages/support/lib")).resolve("support.jar");
+            writeProbeJar(jar, ClientProbe.class);
+            writeProbeJar(support, SupportProbe.class);
+            String executable = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT)
+                    .contains("win") ? "java.exe" : "java";
+            String javaCommand = Path.of(System.getProperty("java.home"), "bin", executable).toString();
+            java.util.ArrayList<String> output = new java.util.ArrayList<>();
+            ProcessRunner.runClient(jar, java.util.List.of(support), javaCommand,
+                    ClientProbe.class.getName(), output::add);
+            javax.swing.SwingUtilities.invokeAndWait(() -> {});
+            require(output.contains("cwd=" + client.toRealPath()), "client working directory is not the package directory");
+            require(output.contains("support=present"), "client lost its support classpath");
+            Files.createFile(client.resolve("fail"));
+            try {
+                ProcessRunner.runClient(jar, java.util.List.of(support), javaCommand,
+                        ClientProbe.class.getName(), output::add);
+                throw new AssertionError("client nonzero exit was silently accepted");
+            } catch (java.io.IOException expected) {
+                require(expected.getMessage().contains("code 23"), "wrong client failure: " + expected);
+            }
+            javax.swing.SwingUtilities.invokeAndWait(() -> {});
+        } finally {
+            try (var files = Files.walk(root)) {
+                for (Path path : files.sorted(java.util.Comparator.reverseOrder()).toList()) {
+                    Files.deleteIfExists(path);
+                }
+            }
+        }
+    }
+
+    private static void writeProbeJar(Path jar, Class<?> probe) throws Exception {
+        String entry = probe.getName().replace('.', '/') + ".class";
+        try (var out = new java.util.jar.JarOutputStream(Files.newOutputStream(jar));
+             var in = probe.getResourceAsStream("/" + entry)) {
+            if (in == null) throw new java.io.IOException("missing launch probe class: " + entry);
+            out.putNextEntry(new java.util.jar.JarEntry(entry));
+            in.transferTo(out);
+            out.closeEntry();
+        }
+    }
+
+    public static final class ClientProbe {
+        public static void main(String[] args) throws Exception {
+            System.out.println("cwd=" + Path.of(".").toRealPath());
+            Class.forName("mechanist.launcher.LauncherBuildIdentitySmoke$SupportProbe");
+            System.out.println("support=present");
+            if (Files.exists(Path.of("fail"))) System.exit(23);
+        }
+    }
+
+    public static final class SupportProbe {}
 
     private static void requireNotInstalled(LauncherConfig config) throws Exception {
         try {

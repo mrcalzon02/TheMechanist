@@ -543,16 +543,8 @@ public final class MechanistLauncherApp {
                         PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
                         PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()));
                 Path clientJar = packages.clientJar();
-                ArrayList<String> classpath = new ArrayList<>();
-                classpath.add(clientJar.toString());
-                for (Path support : packages.supportJars()) classpath.add(support.toString());
-                ProcessRunner.run(
-                        config.installRoot,
-                        MechanistLauncherApp.this::appendLog,
-                        javaCommand(),
-                        "-cp",
-                        String.join(System.getProperty("path.separator"), classpath),
-                        "mechanist.launcher.ThinLauncherMain");
+                ProcessRunner.runClient(clientJar, packages.supportJars(), javaCommand(),
+                        "mechanist.launcher.ThinLauncherMain", MechanistLauncherApp.this::appendLog);
                 return null;
             }
 

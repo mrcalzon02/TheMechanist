@@ -13,6 +13,17 @@ import java.util.function.Consumer;
 final class ProcessRunner {
     private ProcessRunner() {}
 
+    static void runClient(Path clientJar, List<Path> supportJars, String javaCommand,
+                          String mainClass, Consumer<String> output) throws IOException, InterruptedException {
+        Path jar = clientJar.toAbsolutePath().normalize();
+        ArrayList<String> classpath = new ArrayList<>();
+        classpath.add(jar.toString());
+        for (Path support : supportJars) classpath.add(support.toAbsolutePath().normalize().toString());
+        int exit = run(jar.getParent(), output, javaCommand, "-cp",
+                String.join(System.getProperty("path.separator"), classpath), mainClass);
+        if (exit != 0) throw new IOException("Client process exited with code " + exit + ". See launch log.");
+    }
+
     static int run(Path workingDirectory, Consumer<String> output, String... command) throws IOException, InterruptedException {
         List<String> args = new ArrayList<>(List.of(command));
         ProcessBuilder pb = new ProcessBuilder(args);
