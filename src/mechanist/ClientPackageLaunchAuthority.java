@@ -25,7 +25,7 @@ final class ClientPackageLaunchAuthority {
     private ClientPackageLaunchAuthority() {}
 
     static boolean relaunchFromPackageRootIfRequired(String[] args) {
-        if (Boolean.getBoolean(RELAUNCHED_PROPERTY)) return false;
+        if (Boolean.getBoolean(RELAUNCHED_PROPERTY) || !directJarEntryPoint()) return false;
         Path jarPath = currentJarPath();
         if (jarPath == null) return false;
         if (!jarPath.toString().toLowerCase(java.util.Locale.ROOT).endsWith(".jar")) return false;
@@ -48,6 +48,17 @@ final class ClientPackageLaunchAuthority {
             System.exit(90);
             return true;
         }
+    }
+
+    /** Only direct 'java -jar' invocations may relaunch. The thin-launcher
+     * classpath entry must retain its profile context and support libraries. */
+    private static boolean directJarEntryPoint() {
+        String command = System.getProperty("sun.java.command", "").toLowerCase(java.util.Locale.ROOT);
+        int end = command.indexOf(".jar");
+        if (end < 0) return false;
+        String jar = command.substring(0, end + 4).replace('\\', '/');
+        if (!jar.equals("themechanist.jar") && !jar.endsWith("/themechanist.jar")) return false;
+        return command.length() == end + 4 || Character.isWhitespace(command.charAt(end + 4));
     }
 
     private static boolean isClientRuntimeRoot(Path runtimeRoot) {

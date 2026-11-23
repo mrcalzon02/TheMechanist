@@ -104,6 +104,12 @@ jobs:
           set -euo pipefail
           python -m compileall -q ROOT_build/ci
 
+      - name: Regression-test installed startup portrait and audio contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s ROOT_build/ci -p 'test_startup_assets.py' -v
+
       - name: Test mutable-profile preservation verifier
         shell: bash
         run: |

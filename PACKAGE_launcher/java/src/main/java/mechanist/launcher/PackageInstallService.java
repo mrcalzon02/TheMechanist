@@ -1,6 +1,8 @@
 package mechanist.launcher;
 
 import java.io.IOException;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -100,7 +102,104 @@ final class PackageInstallService {
         if (!supportLibraries.isEmpty() && !Files.isDirectory(config.supportLibraryDir)) {
             problems.add("Support library directory is missing: " + config.supportLibraryDir);
         }
+        verifyStartupAssets(config.installRoot, problems);
         return new PackageIdentity(manifest, metadata, client, server, supportLibraries, List.copyOf(problems));
+    }
+
+    /**
+     * The startup portrait chooser must never be reported "ready" when its
+     * authored 64-image package is absent. Verify client portraits and the
+     * bundled audio manifest too; the JAR-only checks previously missed them.
+     */
+    private static void verifyStartupAssets(Path root, ArrayList<String> problems) {
+        Path launcher = root.resolve("profile-packages/human-8x8/assets");
+        Path client = root.resolve("packages/client/assets/graphics/packages/default_32/Protraits");
+        for (int row = 1; row <= 8; row++) {
+            for (int column = 1; column <= 8; column++) {
+                String filename = String.format(java.util.Locale.ROOT,
+                        "Humans8x8_r%02dc%02d_32px.png", row, column);
+                verifyPortrait(launcher.resolve(filename), problems);
+                verifyPortrait(client.resolve(filename), problems);
+            }
+        }
+        Path music = root.resolve("packages/client/assets/music");
+        Path manifest = music.resolve("music_manifest.tsv");
+        if (!Files.isRegularFile(manifest)) {
+            problems.add("Client music manifest is missing: " + manifest);
+        } else {
+            try {
+                int tracks = 0;
+                for (String line : Files.readAllLines(manifest, StandardCharsets.UTF_8)) {
+                    if (line.isBlank() || line.stripLeading().startsWith("#")) continue;
+                    String[] fields = line.split("\t");
+                    if (fields.length < 2 || fields[0].isBlank()) {
+                        problems.add("Invalid client music manifest row: " + line);
+                        continue;
+                    }
+                    String filename = fields[1].trim();
+                    if (!filename.endsWith(".wav") || filename.startsWith(".")
+                            || filename.contains("/") || filename.contains("\\")) {
+                        problems.add("Unsafe client music filename: " + filename);
+                        continue;
+                    }
+                    Path track = music.resolve("wav").resolve(filename);
+                    if (!Files.isRegularFile(track)) {
+                        problems.add("Client music track is missing: " + filename);
+                    }
+                    tracks++;
+                }
+                if (tracks == 0) problems.add("Client music manifest contains no tracks");
+            } catch (IOException exception) {
+                problems.add("Client music manifest unreadable: " + exception.getMessage());
+            }
+        }
+        Path core = root.resolve("packages/client/assets/sound/core/footstep_metal_01.wav");
+        if (!Files.isRegularFile(core)) {
+            problems.add("Client core audio is missing: " + core);
+        }
+    }
+
+    private static void verifyPortrait(Path portrait, ArrayList<String> problems) {
+        if (!Files.isRegularFile(portrait)) {
+            problems.add("Required character portrait is missing: " + portrait);
+            return;
+        }
+        try {
+            BufferedImage image = ImageIO.read(portrait.toFile());
+            if (image == null || image.getWidth() != 32 || image.getHeight() != 32) {
+                problems.add("Character portrait is not a usable 32x32 image: " + portrait);
+            }
+        } catch (IOException exception) {
+            problems.add("Character portrait cannot be decoded: " + portrait);
+        }
+    }
+
+    private void copyStartupAssetsFromSeed(Path seedRoot, Path rollback) throws IOException {
+        for (String relative : List.of(
+                "profile-packages/human-8x8",
+                "packages/client/assets/graphics/packages/default_32/Protraits",
+                "packages/client/assets/music",
+                "packages/client/assets/sound/core")) {
+            Path source = seedRoot.resolve(relative).toAbsolutePath().normalize();
+            if (!source.startsWith(seedRoot.toAbsolutePath().normalize()) || !Files.isDirectory(source)) {
+                throw new IOException("Startup package seed path missing or unsafe: " + relative);
+            }
+            try (Stream<Path> walk = Files.walk(source)) {
+                for (Path file : walk.filter(Files::isRegularFile).toList()) {
+                    if (Files.isSymbolicLink(file)) throw new IOException("Linked startup seed asset: " + file);
+                    Path destination = config.installRoot.resolve(relative)
+                            .resolve(source.relativize(file)).normalize();
+                    if (!destination.toAbsolutePath().normalize()
+                            .startsWith(config.installRoot.toAbsolutePath().normalize())) {
+                        throw new IOException("Startup seed asset escapes install root: " + file);
+                    }
+                    backupPath(destination, rollback);
+                    Files.createDirectories(destination.getParent());
+                    Files.copy(file, destination, StandardCopyOption.REPLACE_EXISTING,
+                            StandardCopyOption.COPY_ATTRIBUTES);
+                }
+            }
+        }
     }
 
     private void acquireFromSeed(Path seedRoot, String channel) throws IOException {
@@ -118,12 +217,14 @@ final class PackageInstallService {
         verifySeedArtifact(seedRoot, seedManifest, client, problems);
         verifySeedArtifact(seedRoot, seedManifest, server, problems);
         for (Artifact artifact : support) verifySeedArtifact(seedRoot, seedManifest, artifact, problems);
+        verifyStartupAssets(seedRoot, problems);
         if (!problems.isEmpty()) throw new IOException("Package seed failed verification: " + String.join("; ", problems));
 
         Path rollback = createRollbackDirectory();
         copyArtifactFromSeed(seedRoot, client, rollback);
         copyArtifactFromSeed(seedRoot, server, rollback);
         for (Artifact artifact : support) copyArtifactFromSeed(seedRoot, artifact, rollback);
+        copyStartupAssetsFromSeed(seedRoot, rollback);
         Files.createDirectories(config.manifestDir);
         backupPath(config.manifestDir.resolve(seedManifest.getFileName()), rollback);
         Files.copy(seedManifest, config.manifestDir.resolve(seedManifest.getFileName()), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);

@@ -30,7 +30,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 LAUNCHER_MANIFEST = pathlib.PurePosixPath(
     "manifests/launcher-runtime-manifest.json"
 )
-COPY_ROOTS = ("launcher", "packages", "docs")
+COPY_ROOTS = ("launcher", "packages", "profile-packages", "docs")
 COPY_FILES = (
     "Run-The-Mechanist.cmd",
     "Run-Client-Direct.cmd",

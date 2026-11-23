@@ -23,6 +23,8 @@ import sys
 import tempfile
 import zipfile
 
+from startup_assets import stage_startup_assets
+
 RUNTIME_MODULES = (
     "java.base,java.desktop,java.logging,java.management,java.naming,"
     "java.net.http,java.prefs,java.sql,java.xml,jdk.crypto.ec,jdk.unsupported"
@@ -551,6 +553,7 @@ def main() -> int:
 
     runtime_links_materialized = normalize_jlink_runtime_links(distribution / "runtime")
     playtest_documents = stage_playtest_documents(repo, distribution)
+    startup_assets = stage_startup_assets(repo, distribution)
     write_launchers(distribution, current_platform)
     write_launcher_compatibility_manifest(
         distribution,
@@ -580,6 +583,7 @@ def main() -> int:
         "playtestOperationsVerifiedAtBuild": True,
         "playtestDocumentCount": len(playtest_documents),
         "playtestDocuments": playtest_documents,
+        "startupAssets": startup_assets,
     }
     print(json.dumps(result, indent=2))
     if os.environ.get("GITHUB_OUTPUT"):

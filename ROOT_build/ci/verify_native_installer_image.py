@@ -16,6 +16,7 @@ from verify_runnable_distribution import (
     REMOTE_CLIENT_MAIN,
     scan_jar,
 )
+from startup_assets import verify_startup_assets
 
 LAUNCHER_MANIFEST = pathlib.PurePosixPath(
     "manifests/launcher-runtime-manifest.json"
@@ -384,6 +385,7 @@ def verify_image(
         fail("canonical source artifact count differs from source certificate")
 
     playtest_documents = verify_playtest_documents(payload, source, canonical)
+    startup_assets = verify_startup_assets(payload, canonical_artifacts(canonical))
 
     return {
         "status": "verified",
@@ -403,6 +405,7 @@ def verify_image(
         "remoteLobbyNativeExecutable": True,
         "playtestOperationsVerified": True,
         "playtestDocumentCount": len(playtest_documents),
+        "startupAssets": startup_assets,
         "playtestDocuments": playtest_documents,
         "authenticatedWaitAuthority": True,
         "waitCommand": "WAIT",

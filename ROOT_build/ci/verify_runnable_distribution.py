@@ -12,6 +12,8 @@ import stat
 import sys
 import zipfile
 
+from startup_assets import verify_startup_assets
+
 JAVA_17_MAJOR = 61
 REMOTE_CLIENT_MAIN = "mechanist.RemoteClientMain"
 REMOTE_CLIENT_CLASS = "mechanist/RemoteClientMain.class"
@@ -451,6 +453,8 @@ def verify_distribution(
     if missing_files:
         fail(f"manifest declares missing files: {sorted(missing_files)[:12]}")
 
+    startup_assets = verify_startup_assets(root, canonical_entries)
+
     launcher_compatibility = verify_launcher_compatibility_manifest(
         root,
         manifest,
@@ -497,6 +501,7 @@ def verify_distribution(
         "remoteClientLauncher": remote_launcher,
         "artifactCount": len(artifacts),
         "supportJarCount": len(support_jars),
+        "startupAssets": startup_assets,
         "requiredNativeFragment": native_fragment(str(manifest["platform"])),
         "launcherCompatibility": launcher_compatibility,
         "jars": jar_summary,
