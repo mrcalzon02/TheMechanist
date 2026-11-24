@@ -1,5 +1,11 @@
 # Development History
 
+### Milestone 06.R lower loading medallion and generated public-bin art (2026-11-24)
+
+- Reviewed the actual Linux packaged-runtime screenshots without Computer Use. The cog preset retained a square atlas edge, and its previous vertical position overlapped the second title panel. Paint its circular medallion through an isolated graphics context and place it below that subtitle, as explicitly requested by the owner. Pixel-level tests at 640x480, 960x600, 1280x800 and 1920x1080 require a gap below the authored second title and above the status text, transparent square corners, and unchanged parent clip/transform. The offscreen preview was visually reviewed.
+- The graphical run now reached gameplay with 1,536/1,536 terrain samples and all 54 visible tiles bound, but found one unbound `public-trash-bin` carrying the newspaper recovery hook. Added exact authored Service_items atlas bindings for public trash bins, public waste receptacles and small-bin clusters, retaining canonical legacy type aliases. Eleven civic fixture/alias cases decode real images; road-transport, semantic-render, loading and startup regressions passed. No asset was substituted with generic missing art.
+- Main Java 17, multiplayer and milestone CI passed on `fd08feb3`; the source-owned structural inventory blocker count fell from 17 to zero. Reviewed the clean-checkout inventory against every tracked path and 1,009 Java/workflow blobs, then used the existing explicit manifest-update workflow. It passed and produced inventory-only main commit `798d9b75aaa029dee50ee623242ffd847c9df383`, synchronized locally by fast-forward. Asset clearance remains pending for 6,096 exact release entries; this is not release certification. Follow-up source/test evidence is appended to `diagnostics/installer-ui-20261124/fixture-followup.json`.
+
 ### Milestone 06.R exact-commit graphical gate follow-up and generated launcher cleanup (2026-11-24)
 
 - GitHub confirmed `34a5becd576982c7c75ac2a78fa7afcc7e850ab5` on main. Its Main Java 17 Milestone Gate, Milestone Validation and Smoke, and Multiplayer Loopback Integration passed. Runtime Visual Verification stopped before screenshots at `Missing compiled fixture art: Roadside park`; the inventory release gate remained blocked by existing clearance/source-vault duplication findings and generated launcher artifacts.

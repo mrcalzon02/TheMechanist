@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-11-24 14:20:08`
+Generated/evaluated: `2026-11-24 14:36:35`
 
 ## Top-Line Rule
 
@@ -162,7 +162,7 @@ flowchart TD
     Z_ASSET_REGISTRY --> M_src_mechanist_assets_AssetRegistry_java["src/mechanist/assets/AssetRegistry.java<br/>36 funcs / 606 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_TileSemanticAssetAuthority_java["src/mechanist/TileSemanticAssetAuthority.java<br/>38 funcs / 592 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_SemanticRenderAssetResolver_java["src/mechanist/SemanticRenderAssetResolver.java<br/>40 funcs / 577 lines"]
-    Z_ASSET_REGISTRY --> M_src_mechanist_ObjectSemanticAssetAuthority_java["src/mechanist/ObjectSemanticAssetAuthority.java<br/>37 funcs / 566 lines"]
+    Z_ASSET_REGISTRY --> M_src_mechanist_ObjectSemanticAssetAuthority_java["src/mechanist/ObjectSemanticAssetAuthority.java<br/>37 funcs / 572 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_AssetIntegrationDisciplineAuthority_java["src/mechanist/AssetIntegrationDisciplineAuthority.java<br/>8 funcs / 533 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_PortraitSemanticAssetAuthority_java["src/mechanist/PortraitSemanticAssetAuthority.java<br/>37 funcs / 522 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_FactionStrategicAssetAuthority_java["src/mechanist/FactionStrategicAssetAuthority.java<br/>21 funcs / 488 lines"]

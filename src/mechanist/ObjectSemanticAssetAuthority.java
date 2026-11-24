@@ -261,6 +261,12 @@ final class ObjectSemanticAssetAuthority {
             imageStem = label.contains("pocket park") ? "parks-things_r03c02_"
                     : label.contains("civic breathing") ? "parks-things_r04c03_"
                     : "parks-things_r03c01_";
+        } else if (AssetIntegrationDisciplineAuthority.PUBLIC_TRASH_BIN.equals(type)) {
+            imageStem = "service_items_r02c05_";
+        } else if (AssetIntegrationDisciplineAuthority.PUBLIC_WASTE_RECEPTACLE.equals(type)) {
+            imageStem = "service_items_r03c04_";
+        } else if (AssetIntegrationDisciplineAuthority.PUBLIC_SMALL_BIN_CLUSTER.equals(type)) {
+            imageStem = "service_items_r04c05_";
         } else if ("broadcast-device".equals(type)
                 || AssetIntegrationDisciplineAuthority.CHEAP_RADIO.equals(type)
                 || AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN.equals(type)) {

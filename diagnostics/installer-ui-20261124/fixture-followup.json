@@ -65,5 +65,74 @@
     "Repository Inventory Alpha Gate": "blocked: clearance, source-vault duplicates, generated launcher output; generated output tracking repaired in this follow-up"
   },
   "computerUse": false,
-  "releaseCertified": false
+  "releaseCertified": false,
+  "binAndLoadingFollowup": {
+    "baseCommit": "798d9b75aaa029dee50ee623242ffd847c9df383",
+    "sourceSha256": {
+      "src/mechanist/BootSurfacePainter.java": "69d5f3d8aac96c6375478807b847b83338b84c2ef77d4ab6a1f3afdf4fc7bf79",
+      "src/mechanist/EarlyScreenTextAuthoritySmoke.java": "2d6108923d5b137d2a9cff91b333c9a6fada79c2b1e1aa75c39045c70a2ae783",
+      "src/mechanist/ObjectSemanticAssetAuthority.java": "3e3a8d26166580b93b5ff95db4fcd9c7944560750a681107f68d93d5500a176d",
+      "src/mechanist/PublicFixtureGraphicalBindingSmoke.java": "2e08e1d2d6daea8bcd83bb5ac3c727aadd9d44804fde5d637f72734e7bf7aa40"
+    },
+    "checks": [
+      {
+        "name": "PublicFixtureGraphicalBindingSmoke",
+        "status": "passed",
+        "logSha256": "d7897a3d363f9fb329c284e5e7736ab15ddfb8ccb0e8eab5510c063307da4c1b"
+      },
+      {
+        "name": "RoadTransportGraphicalBindingSmoke",
+        "status": "passed",
+        "logSha256": "218a5437f66f6eede9c2bb38cef0ada1e5f6fa64567df3582eb745e18fdba659"
+      },
+      {
+        "name": "Milestone02SemanticRenderAssetResolverSmoke",
+        "status": "passed",
+        "logSha256": "4be9162bd4cf8cca725d3e916786d869d77509d062b9a0db7728ff42980dfa63"
+      },
+      {
+        "name": "EarlyScreenTextAuthoritySmoke",
+        "status": "passed",
+        "logSha256": "5a3378b0a0b36a359b902a65e8646c713108ff676238e17f1cb221eebe38151f"
+      },
+      {
+        "name": "BootStartupAudioSilenceSmoke",
+        "status": "passed",
+        "logSha256": "edeb3d485ef6a2148d3158cd35395d260f87e6948c10aedb5a631093c24f39c3"
+      }
+    ],
+    "publicFixtureCases": 11,
+    "loadingViewports": [
+      [
+        640,
+        480
+      ],
+      [
+        960,
+        600
+      ],
+      [
+        1280,
+        800
+      ],
+      [
+        1920,
+        1080
+      ]
+    ],
+    "loadingPreviewSha256": "c210fc2bd5fb05723e12f45c532eaa27537016adb6ebb4717dd08a2e4260f004",
+    "priorGraphicalRun": {
+      "commit": "fd08feb3f6dc6167ccef84e8d9cdc45a4abd65da",
+      "terrainBindings": 1536,
+      "visibleTileBindings": 54,
+      "unresolvedObject": "public-trash-bin"
+    },
+    "canonicalInventoryWorkflow": {
+      "run": 45510246859,
+      "status": "success",
+      "structuralBlockers": 0,
+      "clearancePending": 6096,
+      "releaseCertified": false
+    }
+  }
 }

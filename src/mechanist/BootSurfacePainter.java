@@ -101,16 +101,22 @@ final class BootSurfacePainter implements ScreenPainter {
         boolean rotateSystemArt = frame != null && !panel.images.hasBootSpinnerFrames();
         int size = Math.max(32, Math.min(180, Math.min(w, h) / 4));
         int x = w / 2 - size / 2;
-        int y = Math.max(8, Math.min(h / 2 - size / 2, h - size - 126));
+        int y = Math.max(8, Math.min(h * 13 / 20 - size / 2, h - size - 110));
         if (frame != null) {
             if (rotateSystemArt) {
-                java.awt.geom.AffineTransform before = g.getTransform();
+                Graphics2D rotating = (Graphics2D) g.create();
                 try {
-                    g.rotate((elapsed % 4600L) * (2.0 * Math.PI / 4600.0),
+                    rotating.rotate((elapsed % 4600L) * (2.0 * Math.PI / 4600.0),
                             x + size / 2.0, y + size / 2.0);
-                    g.drawImage(frame, x, y, size, size, null);
+                    // The compiled preset retains its atlas cell's square edge.
+                    // Show only the circular cog medallion, so no control-shaped
+                    // tile or bezel rotates over the loading backdrop.
+                    double inset = size / 16.0;
+                    rotating.clip(new java.awt.geom.Ellipse2D.Double(x + inset, y + inset,
+                            size - 2 * inset, size - 2 * inset));
+                    rotating.drawImage(frame, x, y, size, size, null);
                 } finally {
-                    g.setTransform(before);
+                    rotating.dispose();
                 }
             } else {
                 g.drawImage(frame, x, y, size, size, null);

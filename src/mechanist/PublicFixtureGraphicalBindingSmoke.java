@@ -10,6 +10,10 @@ public final class PublicFixtureGraphicalBindingSmoke {
 
     public static void main(String[] args) {
         String[][] fixtures = {
+                {AssetIntegrationDisciplineAuthority.PUBLIC_TRASH_BIN, "Public trash bin / INN newspaper recovery hook", "", "service_items_r02c05_"},
+                {"public-trash-bin-placeholder", "Legacy public bin", "", "service_items_r02c05_"},
+                {AssetIntegrationDisciplineAuthority.PUBLIC_WASTE_RECEPTACLE, "Public waste receptacle", "", "service_items_r03c04_"},
+                {AssetIntegrationDisciplineAuthority.PUBLIC_SMALL_BIN_CLUSTER, "Small public bin cluster", "", "service_items_r04c05_"},
                 {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Roadside park", "", "parks-things_r03c01_"},
                 {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Pocket park", "", "parks-things_r03c02_"},
                 {AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE, "Civic breathing space", "", "parks-things_r04c03_"},

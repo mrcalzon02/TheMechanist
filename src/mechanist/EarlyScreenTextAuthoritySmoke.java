@@ -72,9 +72,36 @@ final class EarlyScreenTextAuthoritySmoke {
             Graphics2D graphics = image.createGraphics();
             try {
                 var transform = graphics.getTransform();
+                var clip = graphics.getClip();
+                new BootSurfacePainter().drawSpinner(graphics, panel, 640, 480, 0L);
+                check((image.getRGB(262, 252) >>> 24) == 0 && (image.getRGB(377, 367) >>> 24) == 0,
+                        "Loading cog must not draw a rotating square atlas border");
                 new BootSurfacePainter().drawSpinner(graphics, panel, 640, 480, 575L);
                 check(transform.equals(graphics.getTransform()), "Loading rotation leaked its transform");
+                check(java.util.Objects.equals(clip, graphics.getClip()), "Loading medallion leaked its clip");
             } finally { graphics.dispose(); }
+            for (int[] viewport : new int[][] {{640, 480}, {960, 600}, {1280, 800}, {1920, 1080}}) {
+                int width = viewport[0], height = viewport[1];
+                BufferedImage scene = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D context = scene.createGraphics();
+                try { new BootSurfacePainter().drawSpinner(context, panel, width, height, 0L); }
+                finally { context.dispose(); }
+                int firstPixel = height, lastPixel = -1;
+                for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) {
+                    if ((scene.getRGB(x, y) >>> 24) != 0) {
+                        firstPixel = Math.min(firstPixel, y); lastPixel = Math.max(lastPixel, y);
+                    }
+                }
+                var title = panel.images.get("title_mechanist_rebase");
+                var subtitle = panel.images.get("subtitle_rebase");
+                check(title != null && subtitle != null, "Loading layout requires the authored title panels");
+                int subtitleBottom = Math.max(42, height / 8)
+                        + panel.mainMenuTitleDrawSize(title, width, height).height + 18
+                        + panel.mainMenuSubtitleDrawSize(subtitle, width, height).height;
+                check(firstPixel >= subtitleBottom + 10 && lastPixel >= firstPixel,
+                        "Loading cog covered the second title panel at " + width + "x" + height);
+                check(lastPixel < height - 100, "Loading cog covered the status text at " + width + "x" + height);
+            }
         } finally { panel.shutdownRuntime(); }
     }
 }
