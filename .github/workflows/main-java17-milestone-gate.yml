@@ -65,12 +65,22 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/launcher-classes:ROOT_build/main-java17-gate/classes \
             mechanist.launcher.LauncherPresentationSmoke --client-integration
+
+      - name: Verify loading, fixture and world rendering
+        shell: bash
+        run: |
+          set -euo pipefail
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.EarlyScreenTextAuthoritySmoke
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.PublicFixtureGraphicalBindingSmoke
+          java -Djava.awt.headless=true \
+            -Dmechanist.storage.root=ROOT_build/main-java17-gate/render-user \
+            -Dmechanist.client.storage.root=ROOT_build/main-java17-gate/render-profile \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.DeveloperBattleMapSmoke ROOT_build/main-java17-gate/render-captures
 
       - name: Run focused semantic resolver smoke
         shell: bash

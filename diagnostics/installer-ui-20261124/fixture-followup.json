@@ -134,5 +134,50 @@
       "clearancePending": 6096,
       "releaseCertified": false
     }
+  },
+  "renderAndOpacityFollowup": {
+    "baseCommit": "9a0f8d7306a049525857a4d0b854394779acf19f",
+    "sourceSha256": {
+      ".github/workflows/main-java17-milestone-gate.yml": "b50d758ec36cb4683cb65082286b9e7de751da0670824691937357067bbf3831",
+      "ROOT_tools/verification/RuntimeVisualVerification.java": "3eac0825fd0b68ec999a7e77e6a0c5af312113d9138802276458799d99243e12",
+      "src/mechanist/BootSurfacePainter.java": "33c0f4b310f897a7fa87739845c5a37e4c53f530f13e8c9cd33e59f2f5564dad",
+      "src/mechanist/DeveloperBattleMapSmoke.java": "0515209715ae50cc0057dfef77fe70ea466a9409f98d8f20773c7cc55b2974d7",
+      "src/mechanist/EarlyScreenTextAuthoritySmoke.java": "ac91bdc6f9052719a15be6d4a298956b16e8f93bd057a520f5752aa00be1763b",
+      "src/mechanist/LegacyPanelContext.java": "ead44a2273afc0c6c5a6bdad2504b303fbc035c5225482254f7478af179c8905",
+      "src/mechanist/ViewportDarknessAuthority.java": "fb8be4f247525c0b3f7d7aa39e286290815cb2ddcc08e5ae0e6a9c12ef6bc33e"
+    },
+    "loadingOpacity": 0.82,
+    "checks": [
+      {
+        "name": "render-EarlyScreenTextAuthoritySmoke",
+        "status": "passed",
+        "logSha256": "603561b1b96dd01e52141e476530eed68659ed424a19895b05cba06dd91efdda"
+      },
+      {
+        "name": "render-BootStartupAudioSilenceSmoke",
+        "status": "passed",
+        "logSha256": "e7fd772d9d2136aa9c5bc71d812ef185f5d61c592a9a66d930cb04774156d684"
+      },
+      {
+        "name": "render-PublicFixtureGraphicalBindingSmoke",
+        "status": "passed",
+        "logSha256": "d7897a3d363f9fb329c284e5e7736ab15ddfb8ccb0e8eab5510c063307da4c1b"
+      },
+      {
+        "name": "render-battle",
+        "status": "passed",
+        "logSha256": "d0b80451d73521917eff08d1e6ce317db95d43a361ebe5799d91cc9c533b465c"
+      }
+    ],
+    "syntheticRenderFailureExpectedInBattleLog": true,
+    "priorAutomatedVisualPassRejectedAfterScreenshotReview": {
+      "commit": "910076cdd89132823eb452c7251fcd24f5db6ab5",
+      "run": 45511552008,
+      "screenshot": "08-gameplay-960x600.png",
+      "error": "java.lang.InternalError: not implemented yet at sun.java2d.xr.XRSurfaceData.getRaster during ViewportDarknessAuthority.apply"
+    },
+    "replacement": "reused software viewport; exact exposure before ordinary accelerated-target image blit",
+    "freshAcceleratedWindowCheck": "pending CI",
+    "releaseCertified": false
   }
 }

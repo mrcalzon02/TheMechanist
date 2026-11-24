@@ -265,12 +265,16 @@ public final class RuntimeVisualVerification {
         BufferedImage image = robot.createScreenCapture(area);
         require(ImageIO.write(image, "png", output.resolve(name + ".png").toFile()), "PNG writer missing");
         note("snapshot=" + name + " size=" + area.width + "x" + area.height);
+        edt(() -> { require(panel.getClientProperty("mechanist.render.failure") == null,
+                "A captured screen contains a bridge-renderer failure: " + panel.getClientProperty("mechanist.render.failure")); return null; });
     }
 
     private static BufferedImage paint() {
         BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
         try { panel.paint(graphics); } finally { graphics.dispose(); }
+        require(panel.getClientProperty("mechanist.render.failure") == null,
+                "Offscreen painting caught a bridge-renderer failure: " + panel.getClientProperty("mechanist.render.failure"));
         return image;
     }
 

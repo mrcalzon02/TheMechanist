@@ -106,6 +106,7 @@ final class BootSurfacePainter implements ScreenPainter {
             if (rotateSystemArt) {
                 Graphics2D rotating = (Graphics2D) g.create();
                 try {
+                    rotating.setComposite(AlphaComposite.SrcOver.derive(0.82f));
                     rotating.rotate((elapsed % 4600L) * (2.0 * Math.PI / 4600.0),
                             x + size / 2.0, y + size / 2.0);
                     // The compiled preset retains its atlas cell's square edge.

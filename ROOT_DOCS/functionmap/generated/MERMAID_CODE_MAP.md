@@ -1,6 +1,6 @@
 # Generated Mermaid Code Map
 
-Generated: `2026-11-24 14:36:35`
+Generated: `2026-11-24 14:51:48`
 
 ```mermaid
 flowchart TD
@@ -22,7 +22,7 @@ flowchart TD
     Z_LOCALIZATION_TEXT --> M_src_mechanist_SecuritySupplyProvenanceAuthority_java["src/mechanist/SecuritySupplyProvenanceAuthority.java<br/>32 funcs / 436 lines"]
     Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 114 smaller modules"]
     ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>163 modules"]
-    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>617 funcs / 8361 lines"]
+    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>618 funcs / 8370 lines"]
     Z_UI_RENDER --> M_src_mechanist_SimulationEditorSuite_java["src/mechanist/SimulationEditorSuite.java<br/>117 funcs / 1699 lines"]
     Z_UI_RENDER --> M_src_mechanist_FirstPerson3DFramework_java["src/mechanist/FirstPerson3DFramework.java<br/>114 funcs / 1359 lines"]
     Z_UI_RENDER --> M_src_mechanist_WorldStartFlowAuthority_java["src/mechanist/WorldStartFlowAuthority.java<br/>114 funcs / 1289 lines"]
@@ -149,7 +149,7 @@ flowchart TD
     Z_SERVER_AUTH --> Z_SERVER_AUTH_OTHER["+ 46 smaller modules"]
     ROOT --> Z_DIAGNOSTIC_DOC["Diagnostics Smoke Audit<br/>255 modules"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone06FactionVehicleBalanceSmoke_java["src/mechanist/Milestone06FactionVehicleBalanceSmoke.java<br/>8 funcs / 868 lines"]
-    Z_DIAGNOSTIC_DOC --> M_ROOT_tools_verification_RuntimeVisualVerification_java["ROOT_tools/verification/RuntimeVisualVerification.java<br/>19 funcs / 777 lines"]
+    Z_DIAGNOSTIC_DOC --> M_ROOT_tools_verification_RuntimeVisualVerification_java["ROOT_tools/verification/RuntimeVisualVerification.java<br/>19 funcs / 781 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_IndependentHostTransportSessionSmoke_java["src/mechanist/IndependentHostTransportSessionSmoke.java<br/>19 funcs / 769 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone06VehicleTransitSmoke_java["src/mechanist/Milestone06VehicleTransitSmoke.java<br/>7 funcs / 726 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone05FactionPhysicalConstructionSmoke_java["src/mechanist/Milestone05FactionPhysicalConstructionSmoke.java<br/>20 funcs / 725 lines"]

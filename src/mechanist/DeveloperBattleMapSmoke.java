@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 /** Real facility, commands, NPC turns, assets and GamePanel paint; no demonstration renderer. */
 final class DeveloperBattleMapSmoke {
     public static void main(String[] args)throws Exception {
+        verifyExposureBuffer();
         Path output=Path.of(args.length==0?"diagnostics/multilevel-battle-20261028/captures":args[0]);Files.createDirectories(output);
         GamePanel campaign=new GamePanel();campaign.timer.stop();campaign.world=new World(19191,32,24);
         for(char[] c:campaign.world.tiles)Arrays.fill(c,'.');campaign.active=Candidate.random(new Random(3));campaign.seed=19191;
@@ -38,7 +39,8 @@ final class DeveloperBattleMapSmoke {
             require(ViewportDarknessAuthority.expose(0xFF000000)==ViewportDarknessAuthority.DARKEST,"Darkest exposure must be #001a33");
             require(ViewportDarknessAuthority.expose(0xFF080808)!=ViewportDarknessAuthority.expose(0xFF000000),"Low-light detail must survive exposure");
             BufferedImage black=new BufferedImage(2,2,BufferedImage.TYPE_INT_RGB);Graphics2D blackPainter=black.createGraphics();
-            try{ViewportDarknessAuthority.apply(blackPainter,new Rectangle(0,0,2,2));}finally{blackPainter.dispose();}
+            try{new ViewportDarknessAuthority.SceneBuffer().paint(blackPainter,new Rectangle(0,0,2,2),
+                    layer -> { layer.setColor(Color.BLACK); layer.fillRect(0,0,2,2); });}finally{blackPainter.dispose();}
             require(black.getRGB(0,0)==ViewportDarknessAuthority.DARKEST,"2D compositing must produce the exact blue darkness floor");
             var layout=DeveloperFacilityAuthority.layout(game);layout.cyberneticPercent=0;
             DeveloperCombatScenarioAuthority.prepare(game,10,"rifles",71000);
@@ -80,6 +82,7 @@ final class DeveloperBattleMapSmoke {
             capture(game,output,"07-planner-z-plus-1");
             PlannerLevelViewAuthority.handleKey(game,java.awt.event.KeyEvent.VK_PAGE_UP);capture(game,output,"08-planner-z-plus-2");
             PlannerLevelViewAuthority.handleKey(game,java.awt.event.KeyEvent.VK_HOME);
+            verifyRenderErrorReporting(campaign);
             require(!PlannerLevelViewAuthority.inspecting(game),"Home must return to occupied level");
             for(int turn=0;turn<20;turn++)game.advanceTurnBody("");
             require(ActorCombatAuthority.diagnostics(game).damage>0,"Normal NPC combat must execute on raised terrain");
@@ -105,7 +108,49 @@ final class DeveloperBattleMapSmoke {
     }
     private static void capture(GamePanel game,Path output,String name)throws Exception {
         BufferedImage image=new BufferedImage(1280,800,BufferedImage.TYPE_INT_RGB);Graphics2D g=image.createGraphics();
-        try{game.paint(g);}finally{g.dispose();}ImageIO.write(image,"png",output.resolve(name+".png").toFile());
+        try{game.paint(g);}finally{g.dispose();}
+        require(game.getClientProperty("mechanist.render.failure")==null,"GamePanel caught a rendering failure");
+        ImageIO.write(image,"png",output.resolve(name+".png").toFile());
+    }
+
+    private static void verifyExposureBuffer() {
+        BufferedImage target = new BufferedImage(12, 10, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = target.createGraphics();
+        try {
+            graphics.setColor(Color.MAGENTA); graphics.fillRect(0, 0, 12, 10);
+            var transform = graphics.getTransform(); var composite = graphics.getComposite();
+            var clip = graphics.getClip();
+            var buffer = new ViewportDarknessAuthority.SceneBuffer();
+            Rectangle area = new Rectangle(2, 3, 4, 3);
+            Color authored = new Color(173, 23, 43);
+            buffer.paint(graphics, area, layer -> { layer.setColor(authored); layer.fill(area); });
+            require(target.getRGB(2,3)==ViewportDarknessAuthority.expose(authored.getRGB()),
+                    "Software viewport must retain exact channel exposure at translated coordinates");
+            require(target.getRGB(1,3)==Color.MAGENTA.getRGB() && target.getRGB(6,3)==Color.MAGENTA.getRGB(),
+                    "Exposure escaped its viewport");
+            buffer.paint(graphics, area, layer -> {});
+            require(target.getRGB(2,3)==ViewportDarknessAuthority.expose(new Color(10,11,10).getRGB()),
+                    "Reused viewport retained stale pixels");
+            buffer.paint(graphics, new Rectangle(1,1,6,4), layer -> {
+                layer.setColor(Color.BLACK); layer.fillRect(1,1,6,4);
+            });
+            require(target.getRGB(1,1)==ViewportDarknessAuthority.DARKEST, "Resized viewport lost the darkness floor");
+            require(transform.equals(graphics.getTransform()) && composite.equals(graphics.getComposite())
+                            && Objects.equals(clip, graphics.getClip()), "Exposure changed target graphics state");
+        } finally { graphics.dispose(); }
+    }
+
+    private static void verifyRenderErrorReporting(GamePanel panel) throws Exception {
+        var draw = GamePanel.class.getDeclaredMethod("drawBridgeException", Graphics2D.class,
+                int.class, int.class, Throwable.class);
+        draw.setAccessible(true);
+        var expected = new IllegalStateException("synthetic render-error reporting regression");
+        BufferedImage image = new BufferedImage(32,32,BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        try { draw.invoke(panel,g,32,32,expected); } finally { g.dispose(); }
+        require(panel.getClientProperty("mechanist.render.failure")==expected,
+                "Error-frame rendering must publish the failure for graphical acceptance checks");
+        panel.putClientProperty("mechanist.render.failure",null);
     }
     private static void require(boolean okay,String message){if(!okay)throw new AssertionError(message);}
 }

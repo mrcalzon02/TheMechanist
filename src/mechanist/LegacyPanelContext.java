@@ -17,6 +17,7 @@ import javax.swing.JPanel;
  */
 @SuppressWarnings({"serial", "unused"})
 class GamePanel extends LegacyPanelBridgeBase {
+    private final ViewportDarknessAuthority.SceneBuffer exposedViewport = new ViewportDarknessAuthority.SceneBuffer();
     static final int MOTION_STATIONARY = 0;
     static final int MOTION_SNEAK = 1;
     static final int MOTION_WALK = 2;
@@ -1661,11 +1662,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         lastWorldViewOriginY = map.y + Math.max(0, (map.height - rows * tile) / 2);
 
         ensureSensoryModelCurrent("world render");
-        drawWorldTiles(g, cols, rows, tile);
-        visualLighting.render(this, g, lastWorldViewMinX, lastWorldViewMinY, cols, rows, lastWorldViewOriginX, lastWorldViewOriginY, tile, tile);
-        drawWorldEntities(g, cols, rows, tile);
-        ActorCombatFeedbackAuthority.render2D(g,this,map,tile);
-        ViewportDarknessAuthority.apply(g,map);
+        exposedViewport.paint(g, map, layer -> {
+            drawWorldTiles(layer, cols, rows, tile);
+            visualLighting.render(this, layer, lastWorldViewMinX, lastWorldViewMinY, cols, rows, lastWorldViewOriginX, lastWorldViewOriginY, tile, tile);
+            drawWorldEntities(layer, cols, rows, tile);
+            ActorCombatFeedbackAuthority.render2D(layer,this,map,tile);
+        });
         drawWorldHud(g, w, h, map);
         g.setColor(new java.awt.Color(224,205,144));g.setFont(smallFont);
         g.drawString("Z: "+PlannerLevelViewAuthority.label(this)+" | PgUp/PgDn browse | Home player",map.x+8,map.y+15);
@@ -1675,30 +1677,33 @@ class GamePanel extends LegacyPanelBridgeBase {
     private void drawInspectedPlannerLevel(java.awt.Graphics2D g,Rectangle map) {
         World viewed=PlannerLevelViewAuthority.viewedWorld(this);
         g.setColor(new java.awt.Color(ViewportDarknessAuthority.DARKEST,true));g.fill(map);
-        if(viewed!=null) {
-            int tile=MapViewportOptionsSubsystem.scaledTileSize(Math.max(8,Math.min(28,Math.min(map.width/28,map.height/20))),options,6,56);
-            int cols=map.width/tile,rows=map.height/tile;
-            int minX=Math.max(0,Math.min(Math.max(0,viewed.w-cols),playerX+PlannerLevelViewAuthority.panX(this)-cols/2));
-            int minY=Math.max(0,Math.min(Math.max(0,viewed.h-rows),playerY+PlannerLevelViewAuthority.panY(this)-rows/2));
-            java.awt.Shape clip=g.getClip();g.clip(map);
-            for(int vx=0;vx<cols;vx++)for(int vy=0;vy<rows;vy++) {
-                int x=minX+vx,y=minY+vy;if(!viewed.inBounds(x,y) || !MultiFloorBuildingTransitAuthority.rememberedAt(this,viewed,x,y))continue;
-                if(DeveloperBattleMapAuthority.active(viewed) && (int)Math.floor(DeveloperBattleMapAuthority.height(viewed,x,y)+.001)!=PlannerLevelViewAuthority.level(this))continue;
-                int sx=map.x+vx*tile,sy=map.y+vy*tile;char glyph=viewed.tiles[x][y];
-                drawCompiledTile(g,viewed,x,y,TileDataCompilationAuthority.resolve(viewed,x,y,glyph),glyph,sx,sy,tile);
-                StructureAppearanceAuthority.planner(g,viewed,x,y,sx,sy,tile);
-                if(viewed==world && isVisible(x,y)) {
-                    NpcEntity npc=world.npcAt(x,y);
-                    BufferedImage image=npc==null?null:images.getNpcPortraitFor(npc);if(image!=null)g.drawImage(image,sx,sy,tile,tile,null);
-                }
-                g.setColor(new java.awt.Color(0,0,0,55));g.drawRect(sx,sy,tile,tile);
-            }
-            g.setClip(clip);ViewportDarknessAuthority.apply(g,map);
-        }
+        if(viewed!=null) exposedViewport.paint(g, map, layer -> drawInspectedPlannerTiles(layer, map, viewed));
         g.setColor(new java.awt.Color(224,205,144));g.setFont(uiFont);
         g.drawString("INSPECTING "+PlannerLevelViewAuthority.label(this)+" | player stays on their occupied level",map.x+8,map.y+20);
         g.setFont(smallFont);g.drawString("PgUp/PgDn: Z level | Arrows/WASD: pan | Home/Esc: return to player",map.x+8,map.y+39);
         if(viewed==null)g.drawString("This level has not been loaded. Browsing does not generate or enter it.",map.x+8,map.y+62);
+    }
+
+    private void drawInspectedPlannerTiles(java.awt.Graphics2D g, Rectangle map, World viewed) {
+        g.setColor(new java.awt.Color(ViewportDarknessAuthority.DARKEST,true));g.fill(map);
+        int tile=MapViewportOptionsSubsystem.scaledTileSize(Math.max(8,Math.min(28,Math.min(map.width/28,map.height/20))),options,6,56);
+        int cols=map.width/tile,rows=map.height/tile;
+        int minX=Math.max(0,Math.min(Math.max(0,viewed.w-cols),playerX+PlannerLevelViewAuthority.panX(this)-cols/2));
+        int minY=Math.max(0,Math.min(Math.max(0,viewed.h-rows),playerY+PlannerLevelViewAuthority.panY(this)-rows/2));
+        java.awt.Shape clip=g.getClip();g.clip(map);
+        for(int vx=0;vx<cols;vx++)for(int vy=0;vy<rows;vy++) {
+            int x=minX+vx,y=minY+vy;if(!viewed.inBounds(x,y) || !MultiFloorBuildingTransitAuthority.rememberedAt(this,viewed,x,y))continue;
+            if(DeveloperBattleMapAuthority.active(viewed) && (int)Math.floor(DeveloperBattleMapAuthority.height(viewed,x,y)+.001)!=PlannerLevelViewAuthority.level(this))continue;
+            int sx=map.x+vx*tile,sy=map.y+vy*tile;char glyph=viewed.tiles[x][y];
+            drawCompiledTile(g,viewed,x,y,TileDataCompilationAuthority.resolve(viewed,x,y,glyph),glyph,sx,sy,tile);
+            StructureAppearanceAuthority.planner(g,viewed,x,y,sx,sy,tile);
+            if(viewed==world && isVisible(x,y)) {
+                NpcEntity npc=world.npcAt(x,y);
+                BufferedImage image=npc==null?null:images.getNpcPortraitFor(npc);if(image!=null)g.drawImage(image,sx,sy,tile,tile,null);
+            }
+            g.setColor(new java.awt.Color(0,0,0,55));g.drawRect(sx,sy,tile,tile);
+        }
+        g.setClip(clip);
     }
 
     private Rectangle gameWorldViewportRect(int w, int h) {
@@ -5148,6 +5153,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void drawBridgeException(java.awt.Graphics2D g, int w, int h, Throwable t) {
+        if (getClientProperty("mechanist.render.failure") == null) {
+            putClientProperty("mechanist.render.failure", t);
+            DebugLog.error("RENDER_FAILURE", "Bridge renderer failed while painting " + screen, t);
+        }
         g.setColor(new java.awt.Color(36, 8, 8));
         g.fillRect(0, 0, w, h);
         g.setFont(uiFont);

@@ -73,12 +73,18 @@ final class EarlyScreenTextAuthoritySmoke {
             try {
                 var transform = graphics.getTransform();
                 var clip = graphics.getClip();
+                var composite = graphics.getComposite();
                 new BootSurfacePainter().drawSpinner(graphics, panel, 640, 480, 0L);
+                int maximumAlpha = 0;
+                for (int pixel : image.getRGB(0, 0, 640, 480, null, 0, 640))
+                    maximumAlpha = Math.max(maximumAlpha, pixel >>> 24);
+                check(maximumAlpha >= 200 && maximumAlpha <= 210, "Loading cog must be slightly translucent");
                 check((image.getRGB(262, 252) >>> 24) == 0 && (image.getRGB(377, 367) >>> 24) == 0,
                         "Loading cog must not draw a rotating square atlas border");
                 new BootSurfacePainter().drawSpinner(graphics, panel, 640, 480, 575L);
                 check(transform.equals(graphics.getTransform()), "Loading rotation leaked its transform");
                 check(java.util.Objects.equals(clip, graphics.getClip()), "Loading medallion leaked its clip");
+                check(composite.equals(graphics.getComposite()), "Loading opacity leaked its composite");
             } finally { graphics.dispose(); }
             for (int[] viewport : new int[][] {{640, 480}, {960, 600}, {1280, 800}, {1920, 1080}}) {
                 int width = viewport[0], height = viewport[1];
