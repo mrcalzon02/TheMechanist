@@ -68,6 +68,9 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.EarlyScreenTextAuthoritySmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.PublicFixtureGraphicalBindingSmoke
 
       - name: Run focused semantic resolver smoke
         shell: bash

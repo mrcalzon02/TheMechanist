@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06.R exact-commit graphical gate follow-up and generated launcher cleanup (2026-11-24)
+
+- GitHub confirmed `34a5becd576982c7c75ac2a78fa7afcc7e850ab5` on main. Its Main Java 17 Milestone Gate, Milestone Validation and Smoke, and Multiplayer Loopback Integration passed. Runtime Visual Verification stopped before screenshots at `Missing compiled fixture art: Roadside park`; the inventory release gate remained blocked by existing clearance/source-vault duplication findings and generated launcher artifacts.
+- The civic fixture resolver searched only OBJECT metadata even though the compiled index authoritatively labels the exact authored park/radio/pict cells as FIXTURE. Resolve FIXTURE first, retain legacy OBJECT compatibility, and require the canonical fixture type in the smoke. All seven fixture cases now decode their intended atlas cells, while an empty registry still returns the explicit missing binding. Related road transport, semantic resolver and startup rendering regressions passed; a fresh development JAR also passed the fixture check from its own package directory.
+- Added this fixture regression to the Java 17 gate and made graphical CI observe production-source, asset and Maven changes as well as harness changes. The graphical runner explicitly isolates GameStorageManager alongside client-profile storage. No Computer Use was used.
+- Removed 17 stale generated launcher resources, metadata and old JARs from Git tracking and ignored the launcher target directory. A clean Java 17 launcher rebuild from source resources passed both process/storage handoff and headless layout/options integration. Authoritative source resources and published Git history are preserved. Architecture positions and repository discovery are regenerated; evidence for this follow-up is in `diagnostics/installer-ui-20261124/fixture-followup.json`. Native installer and release-clearance limitations from the preceding entry remain open.
+
 ### Milestone 06.R loading preset, responsive launcher and client storage handoff (2026-11-24)
 
 - Removed the boot/loading painter's explicit fallback to the toolbar refresh button. Both surfaces now use the existing unframed cog preset `UIX-0189` through the semantic registry when authored animation frames are absent. The image bridge exposes frame access directly, preserving authored frame order and priority without reflection. The packaged graphical-verification harness follows that same binding.

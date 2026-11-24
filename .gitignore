@@ -1,5 +1,6 @@
 ﻿# Java build outputs
 /target/
+/PACKAGE_launcher/java/target/
 /build/
 /out/
 *.class

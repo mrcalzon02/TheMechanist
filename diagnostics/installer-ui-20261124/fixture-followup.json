@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-24",
+  "baseCommit": "34a5becd576982c7c75ac2a78fa7afcc7e850ab5",
+  "sourceSha256": {
+    ".github/workflows/main-java17-milestone-gate.yml": "2a8ed73f733ae167c15f6a8118b073016ab4cf0f3f68c05927d850f64dfdc501",
+    ".github/workflows/runtime-visual-verification.yml": "4e11752b9ced31c2802e3e4139e995b67f0617ee09e56b9881593077be4f4028",
+    "ROOT_tools/verification/run_runtime_visual_verification.py": "871b3a2c3824aca8748bebc61b79e89ff897c0b7a50306220106b66ee904b25b",
+    "src/mechanist/ObjectSemanticAssetAuthority.java": "3b4eb65994bdab28e0f8d0df5aad9c6026943949f11e6bc61f998510d1d2668c",
+    "src/mechanist/PublicFixtureGraphicalBindingSmoke.java": "9d7258c399c024f323e09b0c994acb48be0d2bedcf5570507b77b142dfad5edb"
+  },
+  "fixtureCases": 7,
+  "smokeExecutions": [
+    {
+      "name": "fixture-PublicFixtureGraphicalBindingSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/fixture-PublicFixtureGraphicalBindingSmoke.log",
+      "logSha256": "861c2b78cd9fb123cefb8a3ce5798a2fd22a3caccff9efa27c05fc78c25cec1e"
+    },
+    {
+      "name": "fixture-RoadTransportGraphicalBindingSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/fixture-RoadTransportGraphicalBindingSmoke.log",
+      "logSha256": "218a5437f66f6eede9c2bb38cef0ada1e5f6fa64567df3582eb745e18fdba659"
+    },
+    {
+      "name": "fixture-Milestone02SemanticRenderAssetResolverSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/fixture-Milestone02SemanticRenderAssetResolverSmoke.log",
+      "logSha256": "4be9162bd4cf8cca725d3e916786d869d77509d062b9a0db7728ff42980dfa63"
+    },
+    {
+      "name": "fixture-EarlyScreenTextAuthoritySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/fixture-EarlyScreenTextAuthoritySmoke.log",
+      "logSha256": "d5125f6cb84a9c233f0ccf728e17121e71a7754986b78bc72b6c3447eb3cdbda"
+    },
+    {
+      "name": "packaged-public-fixtures",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/packaged-public-fixtures.log",
+      "logSha256": "861c2b78cd9fb123cefb8a3ce5798a2fd22a3caccff9efa27c05fc78c25cec1e"
+    },
+    {
+      "name": "clean-LauncherBuildIdentitySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/clean-LauncherBuildIdentitySmoke.log",
+      "logSha256": "143327c6000b037a32b358da7857b30ef104f9c868157b91af2598cf2d008de7"
+    },
+    {
+      "name": "clean-LauncherPresentationSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/clean-LauncherPresentationSmoke.log",
+      "logSha256": "6111869b8f1bb09b24c7238f5535b85d60b578fc71b16e9eef7ec6996625e31e"
+    }
+  ],
+  "cleanLauncherBuild": "passed Java 17",
+  "developmentPackage": "fresh canonical package and out-of-checkout fixture decode passed",
+  "legacyGeneratedFilesUntracked": 17,
+  "legacyGeneratedFilesArchivedLocally": "build/installer-ui-20261124/legacy-launcher-output",
+  "priorCommitCI": {
+    "Main Java 17 Milestone Gate": "success",
+    "Multiplayer Loopback Integration": "success",
+    "Milestone Validation and Smoke": "success",
+    "Runtime Visual Verification": "failed before screenshots: fixture type mismatch repaired in this follow-up",
+    "Repository Inventory Alpha Gate": "blocked: clearance, source-vault duplicates, generated launcher output; generated output tracking repaired in this follow-up"
+  },
+  "computerUse": false,
+  "releaseCertified": false
+}

@@ -29,7 +29,7 @@ public final class PublicFixtureGraphicalBindingSmoke {
                     "Missing compiled fixture art: " + object.label);
             AssetMetadata meta = AssetManager.metadata(id)
                     .orElseThrow(() -> new AssertionError("Escaped image registry: " + object.label));
-            require(meta.type() == AssetType.OBJECT
+            require(meta.type() == AssetType.FIXTURE
                             && meta.pathOrUri().toLowerCase(java.util.Locale.ROOT).contains(fixture[3]),
                     "Incorrect authored atlas image for " + object.label + ": " + meta.pathOrUri());
             javax.swing.ImageIcon image = AssetManager.getAsset(id);
@@ -41,6 +41,16 @@ public final class PublicFixtureGraphicalBindingSmoke {
         unrelated.type = "unrelated-machine";
         require(ObjectSemanticAssetAuthority.runtimePublicFixtureAssetId(unrelated).isEmpty(),
                 "Civic image mapping hijacked unrelated objects");
+        var registry = AssetManager.registry();
+        try {
+            AssetManager.installRegistry(mechanist.assets.AssetRegistry.empty());
+            MapObjectState missing = new MapObjectState();
+            missing.type = AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE;
+            missing.label = "Roadside park";
+            require(ObjectSemanticAssetAuthority.runtimePublicFixtureAssetId(missing)
+                            .orElseThrow().equals(ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID),
+                    "Missing park art must remain an explicit missing binding");
+        } finally { AssetManager.installRegistry(registry); }
         System.out.println("PublicFixtureGraphicalBindingSmoke PASS fixtures=" + fixtures.length);
     }
 

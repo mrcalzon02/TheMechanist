@@ -274,11 +274,16 @@ final class ObjectSemanticAssetAuthority {
         } else {
             return Optional.empty();
         }
-        for (AssetMetadata asset : AssetManager.registry().byType(AssetType.OBJECT)) {
-            String path = asset.pathOrUri().replace('\\', '/').toLowerCase(Locale.ROOT);
-            for (int resolution : new int[]{32, 64, 128, 256}) {
-                if (path.endsWith("/objects/" + imageStem + resolution + "px.png")) {
-                    return Optional.of(asset.id());
+        // The compiled index classifies these authored atlas cells as FIXTURE.
+        // Retain OBJECT compatibility for older semantic registries, but do not
+        // mistake their Objects directory for their current semantic category.
+        for (AssetType assetType : new AssetType[]{AssetType.FIXTURE, AssetType.OBJECT}) {
+            for (AssetMetadata asset : AssetManager.registry().byType(assetType)) {
+                String path = asset.pathOrUri().replace('\\', '/').toLowerCase(Locale.ROOT);
+                for (int resolution : new int[]{32, 64, 128, 256}) {
+                    if (path.endsWith("/objects/" + imageStem + resolution + "px.png")) {
+                        return Optional.of(asset.id());
+                    }
                 }
             }
         }

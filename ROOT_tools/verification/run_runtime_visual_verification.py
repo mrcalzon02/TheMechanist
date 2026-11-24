@@ -52,6 +52,7 @@ def main():
             user.mkdir()
             run(["java", "-Xmx4g", "-Djava.awt.headless=false", "-Dsun.java2d.opengl=false",
                  "-Duser.home=" + str(user), "-Dmechanist.client.storage.root=" + str(user / "data"),
+                 "-Dmechanist.storage.root=" + str(user / "game"),
                  "-cp", os.pathsep.join([str(harness), str(runtime / "TheMechanist.jar")]),
                  "mechanist.RuntimeVisualVerification", output], runtime, "client.log", timeout=1200)
         report["status"] = "passed-automated-checks"
