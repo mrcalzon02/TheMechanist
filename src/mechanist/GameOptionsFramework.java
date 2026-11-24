@@ -176,11 +176,12 @@ class GameOptions {
     boolean passiveSinglePlayerTicking() { return singlePlayerTickModeIndex == 1; }
     String doomFogModeLabel() { return DOOM_FOG_MODE_LABELS[Math.max(0, Math.min(DOOM_FOG_MODE_LABELS.length-1, doomFogModeIndex))]; }
 
-    static Path settingsPath() { return Paths.get("settings", "options.properties"); }
+    static Path settingsPath() { return GameStorageManager.optionsPath(); }
+    static Path settingsReadPath() { return GameStorageManager.optionsReadPath(); }
     static GameOptions load() {
         GameOptions o = new GameOptions();
         try {
-            Path p = settingsPath();
+            Path p = settingsReadPath();
             if (Files.exists(p)) {
                 Properties pr = new Properties();
                 try (InputStream in = Files.newInputStream(p)) { pr.load(in); }
@@ -269,7 +270,7 @@ class GameOptions {
             }
         } catch (Throwable t) { DebugLog.error("OPTIONS_LOAD", "Failed to load settings/options.properties", t); }
         try {
-            if (!Files.exists(settingsPath())) { o.resolutionIndex = DisplayResolutionAuthority.highestSupportedChoiceIndex(); o.resolutionUserSelected = false; }
+            if (!Files.exists(settingsReadPath())) { o.resolutionIndex = DisplayResolutionAuthority.highestSupportedChoiceIndex(); o.resolutionUserSelected = false; }
             DisplayResolutionAuthority.reconcileSelectedMode(o);
         } catch (Throwable ignored) {}
         o.applyGeneratedAssetRuntimeProperties();
@@ -277,8 +278,22 @@ class GameOptions {
     }
     void save() {
         try {
-            Files.createDirectories(settingsPath().getParent());
             Properties pr = new Properties();
+            // These optional audio overrides are read by SoundManager, not fields in GameOptions.
+            // Carry them into the user-owned file on the first save and subsequent edits.
+            Path previous = settingsReadPath();
+            if (Files.isRegularFile(previous)) {
+                try (InputStream in = Files.newInputStream(previous)) {
+                    Properties existing = new Properties();
+                    existing.load(in);
+                    for (String key : List.of("mechanist.musicRoot", "mechanist.musicManifest")) {
+                        String value = existing.getProperty(key);
+                        if (value != null) pr.setProperty(key, value);
+                    }
+                } catch (IOException | IllegalArgumentException ex) {
+                    DebugLog.warn("OPTIONS_SAVE", "Could not preserve optional audio overrides: " + ex.getMessage());
+                }
+            }
             pr.setProperty("fontScale", String.valueOf(fontScale));
             pr.setProperty("uiScale", String.valueOf(uiScale));
             pr.setProperty("textDensityPolicyVersion", TEXT_DENSITY_POLICY_VERSION);
@@ -349,7 +364,7 @@ class GameOptions {
             pr.setProperty("colorPreset", String.valueOf(colorPreset));
             pr.setProperty("colorTarget", String.valueOf(colorTarget));
             for (int i=0;i<colors.length;i++) pr.setProperty("color"+i, String.valueOf(colors[i]));
-            try (OutputStream out = Files.newOutputStream(settingsPath())) { pr.store(out, "The Mechanist persistent options"); }
+            GameStorageManager.writeOptions(pr);
             applyGeneratedAssetRuntimeProperties();
         } catch (Throwable t) { DebugLog.error("OPTIONS_SAVE", "Failed to save settings/options.properties", t); }
     }

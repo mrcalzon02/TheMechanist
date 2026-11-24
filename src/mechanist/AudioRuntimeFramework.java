@@ -107,7 +107,7 @@ class SoundManager {
         return f.exists() ? f : null;
     }
     String readOption(String key) {
-        File f = new File("settings/options.properties");
+        File f = GameOptions.settingsReadPath().toFile();
         if (!f.exists()) return null;
         Properties p = new Properties();
         try (FileInputStream in = new FileInputStream(f)) { p.load(in); return p.getProperty(key); }

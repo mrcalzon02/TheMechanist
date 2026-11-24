@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
@@ -19,6 +20,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -167,6 +169,39 @@ final class GameStorageManager {
         verifyInside(rootDir, exportDir, "export");
         verifyInside(rootDir, modsDir, "mods");
         verifyInside(rootDir, modsArchivedDir, "modsarchived");
+    }
+
+    /** Options are user data, never installer-owned files. */
+    static Path optionsPath() {
+        return normalizeAbsolute(resolveUserRoot()).resolve("settings").resolve("options.properties");
+    }
+
+    static Path optionsReadPath() {
+        return optionsReadPath(optionsPath(), Path.of("."));
+    }
+
+    static Path optionsReadPath(Path target, Path workingDirectory) {
+        if (Files.exists(target)) return target;
+        Path cwd = normalizeAbsolute(workingDirectory);
+        Path legacy = cwd.resolve("settings/options.properties");
+        if (Files.isRegularFile(legacy)) return legacy;
+        // Older installed launchers ran from the distribution root, rather than packages/client.
+        Path packages = cwd.getParent();
+        if (cwd.endsWith("client") && packages != null && packages.endsWith("packages")
+                && packages.getParent() != null) {
+            Path oldInstallOptions = packages.getParent().resolve("settings/options.properties");
+            if (Files.isRegularFile(oldInstallOptions)) return oldInstallOptions;
+        }
+        return target;
+    }
+
+    static void writeOptions(Properties properties) throws IOException {
+        Path target = optionsPath();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        properties.store(bytes, "The Mechanist persistent options");
+        Files.createDirectories(target.getParent());
+        Path temporary = Files.createTempFile(target.getParent(), "options-", ".tmp");
+        writeAtomic(temporary, target, bytes.toByteArray());
     }
 
     private static Path resolveUserRoot() {
