@@ -611,9 +611,9 @@ public final class RuntimeVisualVerification {
                         "Missing authored early-screen artwork: " + key);
                 note("uiArt." + key + "=" + art.getWidth() + "x" + art.getHeight());
             }
-            BufferedImage spinnerArt = panel.images.getCompiledSystemIcon(4, 2, 2);
+            BufferedImage spinnerArt = panel.images.getBootSpinnerFrame(0);
             require(spinnerArt != null && spinnerArt.getWidth() > 0,
-                    "Packaged boot/loading spinner system image missing");
+                    "Packaged boot/loading cog preset missing");
             note("uiArt.bootLoadingSpinner=" + spinnerArt.getWidth() + "x" + spinnerArt.getHeight());
             int menuIcons = 0;
             for (String label : panel.mainMenuRouteLabels()) {

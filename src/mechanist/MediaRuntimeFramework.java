@@ -877,6 +877,7 @@ class ImageCache {
     boolean corridorArtUsesNorthSouth(char ch) { return tileArt.getRegistry().corridorArtUsesNorthSouth(ch); }
     BufferedImage getBootSpinnerFrame(long tick) {
         if (!bootFrames.isEmpty()) return bootFrames.get((int)(Math.floorMod(tick, bootFrames.size())));
-        return cache.get("mechanical_skull_gear_emblem");
+        // Frameless system preset r1c3: loading cog, without toolbar framing.
+        return getSemanticAssetImage("UIX-0189");
     }
 }

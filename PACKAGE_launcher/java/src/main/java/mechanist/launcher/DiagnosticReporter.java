@@ -148,7 +148,8 @@ final class DiagnosticReporter {
         sb.append("- Install root: `").append(redactHome(config.installRoot)).append("`\n");
         sb.append("- Package root: `").append(redactHome(config.packageRoot)).append("`\n");
         sb.append("- Saves: `").append(redactHome(config.saveDir)).append("`\n");
-        sb.append("- Settings: `").append(redactHome(config.settingsDir)).append("`\n");
+        sb.append("- Game settings: `").append(redactHome(config.clientSettingsDir)).append("`\n");
+        sb.append("- Launcher settings: `").append(redactHome(config.settingsDir)).append("`\n");
         sb.append("- Logs: `").append(redactHome(config.logsDir)).append("`\n");
         sb.append("- Cache: `").append(redactHome(config.cacheDir)).append("`\n");
         sb.append("- Package seed: `").append(redactHome(config.packageSeedRoot)).append("`\n\n");

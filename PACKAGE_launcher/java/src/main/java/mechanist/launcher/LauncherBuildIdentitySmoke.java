@@ -52,10 +52,12 @@ final class LauncherBuildIdentitySmoke {
             String javaCommand = Path.of(System.getProperty("java.home"), "bin", executable).toString();
             java.util.ArrayList<String> output = new java.util.ArrayList<>();
             ProcessRunner.runClient(jar, java.util.List.of(support), javaCommand,
-                    ClientProbe.class.getName(), output::add);
+                    ClientProbe.class.getName(), root.resolve("user data"), output::add);
             javax.swing.SwingUtilities.invokeAndWait(() -> {});
             require(output.contains("cwd=" + client.toRealPath()), "client working directory is not the package directory");
             require(output.contains("support=present"), "client lost its support classpath");
+            require(output.contains("storage=" + root.resolve("user data").toAbsolutePath().normalize()),
+                    "client storage override did not cross the process boundary");
             Files.createFile(client.resolve("fail"));
             try {
                 ProcessRunner.runClient(jar, java.util.List.of(support), javaCommand,
@@ -90,6 +92,7 @@ final class LauncherBuildIdentitySmoke {
             System.out.println("cwd=" + Path.of(".").toRealPath());
             Class.forName("mechanist.launcher.LauncherBuildIdentitySmoke$SupportProbe");
             System.out.println("support=present");
+            System.out.println("storage=" + System.getProperty("mechanist.storage.root"));
             if (Files.exists(Path.of("fail"))) System.exit(23);
         }
     }

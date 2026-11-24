@@ -70,4 +70,8 @@ mechanist.launcher.localStateRoot
 
 The seed manifest is verified before copy. Existing installed package files are backed up under the launcher cache before replacement, and the repair path can restore the latest rollback if verification later fails.
 
+The displayed save folder follows the client's existing user-data location: `Documents/TheMechanist/saves` on Windows, `$XDG_DATA_HOME/TheMechanist/saves` (or `~/.local/share/TheMechanist/saves`) on Linux, and `~/Library/Application Support/TheMechanist/saves` on macOS. The launcher also honors the client's `mechanist.storage.root` / `THE_MECHANIST_HOME` override. An explicit launcher user-data override takes priority and is passed to the client process.
+
+Package selections are saved atomically in that same user-data root under `settings/options.properties`. Existing client preferences are retained, and older installation-relative options are read without modifying the installed files. Roaming launcher settings and profiles retain their separate roots. Package verification runs in the background; Launch Game and Apply Package Settings remain disabled until verification succeeds.
+
 Runtime manifests must use schema `2`, distribution model `installer-thin-launcher-client-server`, and the current platform identifier such as `windows-x64` or `linux-x64`. Wrong-schema, wrong-model, and wrong-platform seeds are rejected before package files are trusted.

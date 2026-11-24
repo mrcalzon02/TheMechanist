@@ -1,0 +1,171 @@
+{
+  "date": "2026-11-24",
+  "branch": "main",
+  "baseCommit": "0bfcddbe0054f3160562e4b1e4bb79272e29d6af",
+  "sourceState": "working source repair; digests below bind tested Java/Python/workflow files",
+  "sourceSha256": {
+    ".github/workflows/main-java17-milestone-gate.yml": "050ab1771efb47605be367db6d8e09c766b76d28fb3f6fdebbce757a91e6b382",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/DiagnosticReporter.java": "2c8a02a6b44721726baf3c752e961bcb8a78a170f3edd9285c7f2f845561360f",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/LauncherBuildIdentitySmoke.java": "69c7d4e54f7492046e138f7f54573aa16862ae4418b258af35a29815d87bec2b",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/LauncherConfig.java": "23cd270bcf8a7444ed1e1ee743a9fcb31b22f81fe5fd9dbc25c91f4ec7526a93",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/LauncherPresentationSmoke.java": "99a8ff5d1819006931b098e254de73d6c6f0eecdd3b0b53acb52ce7c138caee7",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/LauncherTheme.java": "4dd38cdde5cf67c6f1c29ce94c43f362386e2edf4f0b88cd19cb1c52c73e6dce",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/MechanistLauncherApp.java": "4d1f1d8a27a1ffbf3ae1b073695155514916af4dc1fa09797488a637fd3bb8a8",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/ProcessRunner.java": "9292b46cf22a43c2549e1f7551f3a63e251a3d160e2e2a823b8af9789671bc67",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/RuntimeInfoDialog.java": "2136817e762cf1bae83c40e0600662b115bfc3991cd9fec43f9bd92274be2b3c",
+    "PACKAGE_launcher/java/src/main/java/mechanist/launcher/RuntimeSelectionWriter.java": "604c715dfd13b81a6babfa28225d6772b733d5e2d55e010b18d1eb861d1ffda2",
+    "ROOT_tools/verification/RuntimeVisualVerification.java": "7fa546a5a78dac74c4a65421bab03086b3bdfa3a46bcd4b9a5561f0853bf4556",
+    "scripts/BUILD_MERMAID_CODE_MAP.py": "98b0955bec424eb50dcd5e5f8312abb4b17e71174b6388ffe6a94ce888ca60a9",
+    "src/mechanist/BootSurfacePainter.java": "b6fa9eb130d8f1174c2d59b5a8c190931fc5313765a6dc82f90e88e60e2a30d7",
+    "src/mechanist/EarlyScreenTextAuthoritySmoke.java": "64043e2548ae8690ac1480eb6ec8d01da2f0cd79886ef593f7ac55059d55ca1e",
+    "src/mechanist/LegacyPanelContext.java": "06187f083113b613080b82dad81272fbd6581321af6f1cde3e76350efc114693",
+    "src/mechanist/MediaRuntimeFramework.java": "b231c527463ca65ec27ee53a61f14f15afdc32f9d00798765093dd5612ec006c"
+  },
+  "smokeExecutions": [
+    {
+      "name": "EarlyScreenTextAuthoritySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/EarlyScreenTextAuthoritySmoke.log",
+      "logSha256": "ac1c142ddaf53d527481ede99977ef5e88299880d0b6c1b3b24d901d48297fec"
+    },
+    {
+      "name": "BootStartupAudioSilenceSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/BootStartupAudioSilenceSmoke.log",
+      "logSha256": "d8f98aec01d2a22c9fb67220f868154c705d30b6e7cb9cec3b13fc5a29ebc915"
+    },
+    {
+      "name": "CoreGameplayBoundarySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/CoreGameplayBoundarySmoke.log",
+      "logSha256": "8f07a75c466841889b897282ba9ad35f9364de4fe9f1efcdb0f00869a6b48aa4"
+    },
+    {
+      "name": "KnowledgeProgressionIntegrationSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/KnowledgeProgressionIntegrationSmoke.log",
+      "logSha256": "aada142f3120fb90ae4ef48ec8ae53bcf9a4761ec5e69c6bb475e7f16ccfb928"
+    },
+    {
+      "name": "CharacterSaveManagerRegressionSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/CharacterSaveManagerRegressionSmoke.log",
+      "logSha256": "2aba4561603f99e1d72a7058e21be2b86d00ea7d72d98bcdd51eb2c624feb6ba"
+    },
+    {
+      "name": "SaveLoadLayoutAuthoritySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/SaveLoadLayoutAuthoritySmoke.log",
+      "logSha256": "3ba024e3e9ba40f7249af0d6cceb4e76bab04c06cc9d9d1779966e901e573fd9"
+    },
+    {
+      "name": "launcher-presentation",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/launcher-presentation.log",
+      "logSha256": "cc46939f77769dcff7697f069198ad9f3c430d600d8383985d33d0d74ecee7fa"
+    },
+    {
+      "name": "launcher-identity",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/launcher-identity.log",
+      "logSha256": "143327c6000b037a32b358da7857b30ef104f9c868157b91af2598cf2d008de7"
+    },
+    {
+      "name": "disk-save-journey",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/disk-save-journey.log",
+      "logSha256": "8e12063f7bbc99fff5ffe0ef44d68da80ac0d9070fabd142bb028aceac851616"
+    },
+    {
+      "name": "IndependentHostTransportSessionSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/IndependentHostTransportSessionSmoke.log",
+      "logSha256": "0e6bb2c5fc482f78d8e68ef2d8c101022b34f3ac59b7e315934a234667207d11"
+    },
+    {
+      "name": "IndependentHostHostedSessionWireSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/IndependentHostHostedSessionWireSmoke.log",
+      "logSha256": "ec9d18a9b323580bf17770a77f35375ca63390a1107cee4fa1418b7f51dc5676"
+    },
+    {
+      "name": "IndependentHostWorldWaitWireSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/IndependentHostWorldWaitWireSmoke.log",
+      "logSha256": "2cd9c002476d737ec5effa696d9044574281d89eeccb2eff6a02ad5b78f4c2d4"
+    },
+    {
+      "name": "IndependentHostTurnAuthoritySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/IndependentHostTurnAuthoritySmoke.log",
+      "logSha256": "110015d81dfdf91d151ae5ba258ae1761c7213ba014cf3461f0a8d0b9c5f0734"
+    },
+    {
+      "name": "IndependentHostTurnRollbackSnapshotSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/IndependentHostTurnRollbackSnapshotSmoke.log",
+      "logSha256": "2d60b83c552a2aad65a44edec430e427a008aa7457efcfbc67ed13b19222e6ce"
+    },
+    {
+      "name": "IndependentHostPersistentSessionRestartSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/IndependentHostPersistentSessionRestartSmoke.log",
+      "logSha256": "28aa97b5310b297347d8dbddf5e8b46d01f897a24a4c9e55bcc30e49c41e398b"
+    },
+    {
+      "name": "IndependentHostTurnPersistenceIntegritySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/IndependentHostTurnPersistenceIntegritySmoke.log",
+      "logSha256": "26ccdfb6e5d33e06de04a7afd4905bcc0ac9693368960a991db6d2c152bf44e7"
+    },
+    {
+      "name": "packaged-EarlyScreenTextAuthoritySmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/packaged-EarlyScreenTextAuthoritySmoke.log",
+      "logSha256": "d15f3d1f81ff81a760dfd84151599ad2ff9d592d1c329d347ba36ed88fe2f697"
+    },
+    {
+      "name": "packaged-BootStartupAudioSilenceSmoke",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/packaged-BootStartupAudioSilenceSmoke.log",
+      "logSha256": "336c0d75a29022da62cf5550f2189d938c84b1c423a80cde2e304a938d592e7a"
+    },
+    {
+      "name": "construction-expansion",
+      "status": "passed",
+      "log": "build/installer-ui-20261124/construction-expansion.log",
+      "logSha256": "2f0dc396aa3af25915a6528f61ba02726b226d47629a248fb32cd78e82748fe4"
+    }
+  ],
+  "pythonUnitTests": {
+    "startupAssets": 8,
+    "installerProfilePreservation": 16,
+    "status": "passed"
+  },
+  "developmentPackage": {
+    "status": "passed",
+    "classFiles": 2319,
+    "highestClassMajor": 61,
+    "jarSha256": "b614168f48940d106e2f0ef41067bc24008aa30452dfc74af07d37617d1dfd62",
+    "releaseHardened": false,
+    "interactiveBootTested": false
+  },
+  "gate3": {
+    "exitCode": 124,
+    "elapsedSeconds": 120.2,
+    "limitSeconds": 120,
+    "status": "timeout"
+  },
+  "remainingFindings": [
+    "World generation fixtures report DEGRADED final validation with reachable rooms and ready spawn.",
+    "Broad Gate 3 did not complete within its 120-second diagnostic bound; the last-started construction expansion reaction smoke passed independently.",
+    "Official MSI download failed with an out-of-space error; incomplete file removed. Native installer lifecycle and clean-machine acceptance were not tested.",
+    "No hardened release certification or release publication was performed."
+  ],
+  "computerUse": false,
+  "moduleMap": {
+    "javaModules": 1004,
+    "unpositioned": 0
+  },
+  "localDetailRoot": "build/installer-ui-20261124"
+}

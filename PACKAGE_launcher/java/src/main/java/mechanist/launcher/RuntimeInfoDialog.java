@@ -48,7 +48,8 @@ final class RuntimeInfoDialog {
         add(model, "Support libraries", config.supportLibraryDir.toString());
         add(model, "Runtime dir", config.runtimeDir.toString());
         add(model, "Saves", config.saveDir.toString());
-        add(model, "Settings", config.settingsDir.toString());
+        add(model, "Game settings", config.clientSettingsDir.toString());
+        add(model, "Launcher settings", config.settingsDir.toString());
         add(model, "Profiles", config.profilesDir.toString());
         add(model, "Logs", config.logsDir.toString());
         add(model, "Cache", config.cacheDir.toString());

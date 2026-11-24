@@ -6,10 +6,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Dimension;
 
 final class LauncherTheme {
     static final Color VOID = new Color(18, 18, 20);
@@ -41,6 +43,7 @@ final class LauncherTheme {
         p.setOpaque(true);
         p.setBackground(PANEL);
         p.setBorder(frameBorder());
+        p.setMinimumSize(new Dimension(0, 0));
         return p;
     }
 
@@ -75,7 +78,34 @@ final class LauncherTheme {
         JLabel l = new JLabel(text);
         l.setForeground(TEXT);
         l.setFont(MONO);
+        l.setMinimumSize(new Dimension(0, l.getPreferredSize().height));
+        l.setToolTipText(text);
         return l;
+    }
+
+    static JTextField path(String text) {
+        JTextField field = new JTextField(text, 12);
+        field.setEditable(false);
+        field.setBorder(BorderFactory.createEmptyBorder());
+        field.setBackground(PANEL);
+        field.setForeground(TEXT);
+        field.setFont(MONO);
+        field.setCaretPosition(0);
+        field.setMinimumSize(new Dimension(0, field.getPreferredSize().height));
+        field.setToolTipText(text);
+        return field;
+    }
+
+    static JTextArea notice(String text, int rows) {
+        JTextArea area = new JTextArea(text, rows, 20);
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.setOpaque(false);
+        area.setForeground(TEXT_DIM);
+        area.setFont(BODY);
+        area.setMinimumSize(new Dimension(0, area.getPreferredSize().height));
+        return area;
     }
 
     static JTextArea logArea() {

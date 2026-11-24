@@ -15,12 +15,20 @@ final class ProcessRunner {
 
     static void runClient(Path clientJar, List<Path> supportJars, String javaCommand,
                           String mainClass, Consumer<String> output) throws IOException, InterruptedException {
+        runClient(clientJar, supportJars, javaCommand, mainClass, null, output);
+    }
+
+    static void runClient(Path clientJar, List<Path> supportJars, String javaCommand,
+                          String mainClass, Path userDataRoot, Consumer<String> output) throws IOException, InterruptedException {
         Path jar = clientJar.toAbsolutePath().normalize();
         ArrayList<String> classpath = new ArrayList<>();
         classpath.add(jar.toString());
         for (Path support : supportJars) classpath.add(support.toAbsolutePath().normalize().toString());
-        int exit = run(jar.getParent(), output, javaCommand, "-cp",
-                String.join(System.getProperty("path.separator"), classpath), mainClass);
+        ArrayList<String> command = new ArrayList<>();
+        command.add(javaCommand);
+        if (userDataRoot != null) command.add("-Dmechanist.storage.root=" + userDataRoot.toAbsolutePath().normalize());
+        command.addAll(List.of("-cp", String.join(System.getProperty("path.separator"), classpath), mainClass));
+        int exit = run(jar.getParent(), output, command.toArray(String[]::new));
         if (exit != 0) throw new IOException("Client process exited with code " + exit + ". See launch log.");
     }
 

@@ -15,6 +15,7 @@ final class EarlyScreenTextAuthoritySmoke {
     }
 
     public static void main(String[] args) {
+        verifyLoadingPreset();
         BufferedImage image = new BufferedImage(1920, 1080, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         try {
@@ -47,5 +48,33 @@ final class EarlyScreenTextAuthoritySmoke {
         } finally {
             g.dispose();
         }
+    }
+
+    private static void verifyLoadingPreset() {
+        var metadata = mechanist.assets.AssetManager.metadata("UIX-0189").orElseThrow();
+        check(metadata.pathOrUri().contains("Frameless_system_icons_r01c03"),
+                "Loading preset must resolve to the unframed cog, not a toolbar refresh button");
+        ImageCache media = new ImageCache();
+        BufferedImage cog = media.getBootSpinnerFrame(0);
+        check(cog != null && cog.getWidth() > 0, "Loading cog must ship in the client assets");
+        check(media.getBootSpinnerFrame(Long.MIN_VALUE) == cog, "Cog fallback must remain stable");
+        BufferedImage first = new BufferedImage(3, 3, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage second = new BufferedImage(4, 4, BufferedImage.TYPE_INT_ARGB);
+        media.bootFrames.add(first);
+        media.bootFrames.add(second);
+        check(media.getBootSpinnerFrame(0) == first && media.getBootSpinnerFrame(1) == second
+                        && media.getBootSpinnerFrame(2) == first && media.getBootSpinnerFrame(-1) == second,
+                "Authored loading animation must retain frame order, priority and wrapping");
+        GamePanel panel = new GamePanel();
+        panel.timer.stop();
+        try {
+            BufferedImage image = new BufferedImage(640, 480, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D graphics = image.createGraphics();
+            try {
+                var transform = graphics.getTransform();
+                new BootSurfacePainter().drawSpinner(graphics, panel, 640, 480, 575L);
+                check(transform.equals(graphics.getTransform()), "Loading rotation leaked its transform");
+            } finally { graphics.dispose(); }
+        } finally { panel.shutdownRuntime(); }
     }
 }

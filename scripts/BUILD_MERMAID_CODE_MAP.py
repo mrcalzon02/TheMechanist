@@ -33,6 +33,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 ROOT = Path.cwd()
 SRC_ROOT = ROOT / "src"
+JAVA_ROOTS = (SRC_ROOT, ROOT / "PACKAGE_launcher/java/src/main/java", ROOT / "ROOT_tools/verification")
 OUT_ROOT = ROOT / "ROOT_docs" / "functionmap"
 GENERATED_ROOT = OUT_ROOT / "generated"
 MASTER_RECORD = OUT_ROOT / "Mermaid_Code_Map_Master.md"
@@ -55,6 +56,10 @@ ZONE_LABELS: Dict[str, str] = {zone_id: label for zone_id, label, _patterns, _de
 ZONE_LABELS["UNPOSITIONED"] = "Unpositioned / Needs Map Assignment"
 
 MODULE_OVERRIDES: List[Tuple[str, str, str]] = [
+    ("LauncherPresentationSmoke.java", "DIAGNOSTIC_DOC", "Headless launcher layout, task gating and client-storage integration regression owner."),
+    ("MechanistLauncherApp.java", "SERVER_AUTH", "Installed package verification and client launch orchestration UI owner."),
+    ("RuntimeSelectionWriter.java", "INVENTORY_PERSIST", "Atomic launcher-to-client user options and package selection persistence owner."),
+    ("RuntimeVisualVerification.java", "DIAGNOSTIC_DOC", "Packaged client graphical verification harness owner."),
     ("KnowledgeProgressionAuthority.java", "COMBAT_SIM", "Character earned-XP conversion and authoritative knowledge purchase owner."),
     ("SemanticTextManager.java", "LOCALIZATION_TEXT", "Semantic key text manager and locale loader."),
     ("MainMenuLanguageSelectorAuthority.java", "LOCALIZATION_TEXT", "Main-menu language selector and locale override surface."),
@@ -302,9 +307,7 @@ def node_id_for(path: str) -> str:
 
 
 def gather_java() -> List[Path]:
-    if not SRC_ROOT.exists():
-        return []
-    return sorted(SRC_ROOT.rglob("*.java"), key=lambda p: rel(p))
+    return sorted((path for root in JAVA_ROOTS if root.exists() for path in root.rglob("*.java")), key=lambda p: rel(p))
 
 
 def module_record(path: Path) -> ModuleRecord:

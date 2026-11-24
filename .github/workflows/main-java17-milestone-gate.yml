@@ -62,6 +62,12 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/launcher-classes \
             mechanist.launcher.LauncherBuildIdentitySmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/launcher-classes:ROOT_build/main-java17-gate/classes \
+            mechanist.launcher.LauncherPresentationSmoke --client-integration
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.EarlyScreenTextAuthoritySmoke
 
       - name: Run focused semantic resolver smoke
         shell: bash

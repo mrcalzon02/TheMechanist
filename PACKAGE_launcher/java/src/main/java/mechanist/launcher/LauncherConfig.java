@@ -22,6 +22,7 @@ final class LauncherConfig {
     final Path uninstallDir;
     final Path saveDir;
     final Path settingsDir;
+    final Path clientSettingsDir;
     final Path profilesDir;
     final Path logsDir;
     final Path cacheDir;
@@ -40,6 +41,7 @@ final class LauncherConfig {
         this.uninstallDir = installRoot.resolve("Uninstall");
         this.saveDir = userDataRoot.resolve("saves");
         this.settingsDir = roamingConfigRoot.resolve("settings");
+        this.clientSettingsDir = userDataRoot.resolve("settings");
         this.profilesDir = roamingConfigRoot.resolve("profiles");
         this.logsDir = localStateRoot.resolve("logs");
         this.cacheDir = localStateRoot.resolve("cache");
@@ -122,11 +124,25 @@ final class LauncherConfig {
     private static Path defaultUserDataRoot() {
         Path override = rootOverride("mechanist.launcher.userDataRoot", "MECHANIST_LAUNCHER_USER_DATA_ROOT");
         if (override != null) return override;
+        override = rootOverride("mechanist.storage.root", "THE_MECHANIST_HOME");
+        if (override != null) return override;
         String home = System.getProperty("user.home");
-        if (isWindows()) return Path.of(home, "Saved Games", STUDIO_NAME, APP_NAME);
+        // Match the client's established GameStorageManager paths. Changing
+        // the launcher's display must not migrate or hide existing worlds.
+        if (isWindows()) {
+            String profile = System.getenv("USERPROFILE");
+            Path documents = Path.of(profile == null || profile.isBlank() ? home : profile, "Documents");
+            if (!Files.isDirectory(documents) && Files.isDirectory(Path.of(home, "Documents")))
+                documents = Path.of(home, "Documents");
+            return documents.resolve("TheMechanist");
+        }
+        if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("mac"))
+            return Path.of(home, "Library", "Application Support", "TheMechanist");
         String xdg = System.getenv("XDG_DATA_HOME");
-        if (xdg != null && !xdg.isBlank()) return Path.of(xdg, STUDIO_NAME, "TheMechanist");
-        return Path.of(home, ".local", "share", STUDIO_NAME, "TheMechanist");
+        if (xdg != null && !xdg.isBlank()) return Path.of(xdg, "TheMechanist");
+        if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("linux"))
+            return Path.of(home, ".local", "share", "TheMechanist");
+        return Path.of(home, "TheMechanist");
     }
 
     private static Path defaultRoamingConfigRoot() {

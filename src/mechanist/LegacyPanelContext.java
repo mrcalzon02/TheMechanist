@@ -8129,6 +8129,16 @@ final class LegacyImageSurface {
         return media.getSemanticAssetImage(assetId);
     }
 
+    BufferedImage getBootSpinnerFrame(long tick) {
+        ensureLoaded(lastOptions);
+        return media.getBootSpinnerFrame(tick);
+    }
+
+    boolean hasBootSpinnerFrames() {
+        ensureLoaded(lastOptions);
+        return !media.bootFrames.isEmpty();
+    }
+
     BufferedImage getCompiledTileImage(World world, int worldX, int worldY,
                                        char fallbackGlyph, boolean preferUnderlay) {
         ensureLoaded(lastOptions);
