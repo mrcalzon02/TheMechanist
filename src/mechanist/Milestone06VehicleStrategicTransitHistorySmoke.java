@@ -293,6 +293,8 @@ final class Milestone06VehicleStrategicTransitHistorySmoke {
         Properties legacy = new Properties();
         legacy.putAll(saved);
         legacy.remove("world.mapObjects");
+        // This predates both fixture lists and exact terrain snapshots.
+        legacy.remove(WorldTerrainSnapshotAuthority.KEY);
         World legacyTarget = world();
         MapObjectState legacyCar = vehicle(legacyTarget, 7, 5,
                 AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR, 192L);
@@ -308,6 +310,7 @@ final class Milestone06VehicleStrategicTransitHistorySmoke {
         MapObjectState savedCar = vehicle(oneVehicle, 4, 5,
                 AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR, 193L);
         oneVehicle.mapObjects.add(savedCar);
+        oneVehicle.tiles[savedCar.x][savedCar.y] = savedCar.glyph;
         Properties replacement = new Properties();
         Persistence.writeWorldState(oneVehicle, replacement);
         World replacedTarget = world();
