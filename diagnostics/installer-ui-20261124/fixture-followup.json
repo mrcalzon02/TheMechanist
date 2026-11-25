@@ -206,5 +206,33 @@
       "Runtime Visual Verification": "success"
     },
     "canonicalInventoryOnlySuccessor": "c6495c87ffe7db26eb7d194df156b75914857abf"
+  },
+  "charcoalExposureFollowup": {
+    "baseCommit": "988b5566e22216f9db981d7ba92f98a6bc8b955b",
+    "sourceSha256": {
+      "src/mechanist/ViewportDarknessAuthority.java": "56cb1a9fc4b194bbfd8b6b3fdcc0a1f16b5d02559836e799fbd2ac79de803b42",
+      "src/mechanist/DeveloperBattleMapSmoke.java": "bd9f9f1442ee867f750acfa4f36e522916cd431d650a048ceffead0902d48321"
+    },
+    "priorFloorRGB": [
+      0,
+      26,
+      51
+    ],
+    "newFloorRGB": [
+      8,
+      10,
+      13
+    ],
+    "neutralShadesChecked": 256,
+    "maximumNeutralChannelSpread": 5,
+    "whiteAndAlphaPreserved": true,
+    "lowLightTextureContrastPreserved": true,
+    "software2DAndFirstPersonRenderChecks": "passed",
+    "authoritativeCombatTurns": 20,
+    "previewReviewed": true,
+    "previewSha256": "c32c5acfcf651f71e2aaa0f58cfbd7631e83f0d78022640c1c10f48180e58ec2",
+    "battleLogSha256": "8c346513705bd441ce44974e9420ac73398454923c62502bf651b452544366dc",
+    "syntheticRenderErrorProbeExpected": true,
+    "releaseCertified": false
   }
 }

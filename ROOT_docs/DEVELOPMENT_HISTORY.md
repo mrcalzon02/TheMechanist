@@ -1,5 +1,10 @@
 # Development History
 
+### Milestone 06.R restrained charcoal darkness floor (2026-11-24)
+
+- The owner identified the universal deep-blue cast in the reviewed gameplay capture as excessive. Changed the shared final exposure floor from saturated navy `#001a33` to subtle cool charcoal `#080a0d`. Both 2D viewports and the software first-person renderer use the same transform. Bright white stays white, alpha is retained, and local material/light colors and low-light texture differences survive.
+- Extended the render regression across all 256 neutral input shades: output channel spread must remain at most five levels, preventing another strong universal color wash. Existing exact exposure, translated viewport, buffer reuse/resize and graphics-state checks passed, along with the real battle-map render and 20 authoritative combat turns. Reviewed the newly rendered planner capture; the charcoal floor gives local art and lighting their color back. Module positions and the existing fixture follow-up evidence are updated; fresh source CI and canonical clean-checkout inventory reconciliation follow this color-only repair. Native installer acceptance and release clearance remain open.
+
 ### Milestone 06.R translucent loading cog and accelerated-surface rendering repair (2026-11-24)
 
 - Applied the owner's requested slight translucency to the loading cog: 82% opacity within its isolated graphics context, preserving the lower placement and parent composite. Pixel tests require the expected alpha range, clear subtitle/status spacing at four resolutions, and unchanged graphics state; the offscreen preview was reviewed.

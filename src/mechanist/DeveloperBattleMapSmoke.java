@@ -36,12 +36,12 @@ final class DeveloperBattleMapSmoke {
             require(WorldAmbientLightAuthority.at(game.world,3,3,4)==4,"Enclosed hub must retain its own ambient");
             World sewer=new World(3,3,3);sewer.sewerLayer=true;sewer.tiles[1][1]='_';
             require(WorldAmbientLightAuthority.at(sewer,1,1,2)==2,"Enclosed sewer must not receive open-space light");
-            require(ViewportDarknessAuthority.expose(0xFF000000)==ViewportDarknessAuthority.DARKEST,"Darkest exposure must be #001a33");
+            require(ViewportDarknessAuthority.expose(0xFF000000)==ViewportDarknessAuthority.DARKEST,"Darkest exposure must be near-black charcoal");
             require(ViewportDarknessAuthority.expose(0xFF080808)!=ViewportDarknessAuthority.expose(0xFF000000),"Low-light detail must survive exposure");
             BufferedImage black=new BufferedImage(2,2,BufferedImage.TYPE_INT_RGB);Graphics2D blackPainter=black.createGraphics();
             try{new ViewportDarknessAuthority.SceneBuffer().paint(blackPainter,new Rectangle(0,0,2,2),
                     layer -> { layer.setColor(Color.BLACK); layer.fillRect(0,0,2,2); });}finally{blackPainter.dispose();}
-            require(black.getRGB(0,0)==ViewportDarknessAuthority.DARKEST,"2D compositing must produce the exact blue darkness floor");
+            require(black.getRGB(0,0)==ViewportDarknessAuthority.DARKEST,"2D compositing must produce the charcoal darkness floor");
             var layout=DeveloperFacilityAuthority.layout(game);layout.cyberneticPercent=0;
             DeveloperCombatScenarioAuthority.prepare(game,10,"rifles",71000);
             require(game.world.npcs.stream().filter(n->n.id.startsWith("MATCH-")).map(n->DeveloperBattleMapAuthority.height(game.world,n.x,n.y)).distinct().count()==3,"Teams must occupy all three heights");
@@ -114,6 +114,14 @@ final class DeveloperBattleMapSmoke {
     }
 
     private static void verifyExposureBuffer() {
+        require(ViewportDarknessAuthority.expose(0xFFFFFFFF)==0xFFFFFFFF,"Bright neutral light must stay neutral");
+        for (int shade = 0; shade <= 255; shade++) {
+            int color = ViewportDarknessAuthority.expose(0x7F000000 | shade << 16 | shade << 8 | shade);
+            int red = (color >>> 16) & 255, green = (color >>> 8) & 255, blue = color & 255;
+            require(Math.max(red,Math.max(green,blue))-Math.min(red,Math.min(green,blue))<=5,
+                    "Neutral textures acquired a strong colored wash");
+            require(color >>> 24 == 0x7F,"Exposure changed the source alpha");
+        }
         BufferedImage target = new BufferedImage(12, 10, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = target.createGraphics();
         try {

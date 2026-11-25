@@ -5,11 +5,14 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.util.function.Consumer;
 
-/** Shared final scene exposure. Black maps to #001a33; low-light texture differences survive. */
+/** Shared final scene exposure. A cool charcoal floor preserves low-light texture contrast. */
 final class ViewportDarknessAuthority {
-    static final int DARKEST=0xFF001A33;
+    static final int DARKEST=0xFF080A0D;
     static int expose(int color) {
-        return (color&0xFFFF0000) | ((26+((color>>>8)&255)*229/255)<<8) | (51+(color&255)*204/255);
+        return (color & 0xFF000000)
+                | ((8 + ((color >>> 16) & 255) * 247 / 255) << 16)
+                | ((10 + ((color >>> 8) & 255) * 245 / 255) << 8)
+                | (13 + (color & 255) * 242 / 255);
     }
     static void expose(int[] pixels) {for(int i=0;i<pixels.length;i++)pixels[i]=expose(pixels[i]);}
     /** One reusable software viewport per panel. Never read back an accelerated surface's raster. */
