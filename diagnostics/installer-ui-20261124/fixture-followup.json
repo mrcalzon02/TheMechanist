@@ -177,7 +177,34 @@
       "error": "java.lang.InternalError: not implemented yet at sun.java2d.xr.XRSurfaceData.getRaster during ViewportDarknessAuthority.apply"
     },
     "replacement": "reused software viewport; exact exposure before ordinary accelerated-target image blit",
-    "freshAcceleratedWindowCheck": "pending CI",
-    "releaseCertified": false
+    "freshAcceleratedWindowCheck": {
+      "status": "passed and actual captures reviewed",
+      "sourceCommit": "bf8c86b8e5082ec098616cd1fd77b32f94ccc7f0",
+      "run": 45513693824,
+      "attempt": 2,
+      "artifactId": 14976673723,
+      "clientJarSha256": "da287b76fc9234c4e8767eef2812d2c4a00ce250d71af713e22c07cfa8c26194",
+      "gameClassCount": 2364,
+      "renderFailureObserved": false,
+      "loadingAndGameplayCapturesReviewed": true,
+      "screenshots": {
+        "02a-graphical-zone-loading.png": "4adc98adf0c0e96a999edf18731423a3a2938144481e944156b71413d5649508",
+        "07-gameplay.png": "f208e12bcebf11d974448a4149c34ebf03f5e113d131a984f93ffdadc5691b3e",
+        "08-gameplay-960x600.png": "8b94b09fff5da90a0d25119507397d33245787f526a40d2975060be3878c8209"
+      },
+      "terrainSamplesBound": 1536,
+      "sampledEntityArtMissing": 0,
+      "mapPixelsChangedWithImagesDisabled": 37884,
+      "firstAttemptInfrastructureFailure": "Maven Central HTTP 429 before client launch"
+    },
+    "releaseCertified": false,
+    "finalSourceCI": {
+      "Main Java 17 Milestone Gate": "success",
+      "Milestone Validation and Smoke": "success",
+      "Multiplayer Loopback Integration": "success",
+      "Repository Inventory Alpha Gate": "success",
+      "Runtime Visual Verification": "success"
+    },
+    "canonicalInventoryOnlySuccessor": "c6495c87ffe7db26eb7d194df156b75914857abf"
   }
 }
