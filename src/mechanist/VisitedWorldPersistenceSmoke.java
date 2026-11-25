@@ -54,6 +54,13 @@ final class VisitedWorldPersistenceSmoke {
             var start = game.world.startPoint();
             game.playerX = start.x; game.playerY = start.y;
             game.writeSaveFile(1, false);
+            var slot = new java.util.Properties();
+            try (var in = Files.newInputStream(SaveSlotSurfaceApi.savePathForSlot(1))) { slot.load(in); }
+            require(SaveEfficiencyAuthority.SINGLE_PLAYER_BUNDLED_SLOT_SCHEMA.equals(slot.getProperty("save.schema"))
+                    && slot.containsKey("worlddef.seed"), "real slot did not bundle the world definition");
+            Path definition = CampaignWorldApi.worldFile(game.atlas.hiveWorld).toAbsolutePath().normalize();
+            require(definition.startsWith(GameStorageManager.get().rootDir()), "world definition escaped isolated storage");
+            Files.delete(definition);
         } finally { game.shutdownRuntime(); }
         GamePanel resumed = new GamePanel();
         resumed.timer.stop();
@@ -80,13 +87,35 @@ final class VisitedWorldPersistenceSmoke {
             require(Arrays.deepEquals(expected, previous.tiles), "previous floor terrain changed after restart");
             require(previous.tiles[x][y] == '.', "previously excavated wall was lost");
             require(previous.npcs.isEmpty(), "cleared previous-floor NPCs respawned");
+            resumed.world = previous;
+            resumed.xp += 7; // Unsaved progress must survive a failed load.
+            int unsavedXp = resumed.xp;
+            resumed.world.tiles[x][y] = '#';
+            var damaged = new java.util.Properties();
+            try (var in = Files.newInputStream(SaveSlotSurfaceApi.savePathForSlot(2))) { damaged.load(in); }
+            damaged.setProperty(WorldTerrainSnapshotAuthority.KEY, "corrupt terrain fixture");
+            try (var out = Files.newOutputStream(SaveSlotSurfaceApi.savePathForSlot(3))) { damaged.store(out, "Owned corrupt-load fixture"); }
+            GamePanel rejected = new GamePanel();
+            rejected.timer.stop();
+            try {
+                require(!rejected.loadSaveSlot(3, "expected first-load rejection")
+                        && rejected.world == null && rejected.active == null,
+                        "failed initial load left a partially restored campaign available");
+            } finally { rejected.shutdownRuntime(); }
+            require(!resumed.loadSaveSlot(3, "expected corrupt snapshot rejection"), "corrupt slot was accepted");
+            require(resumed.world != null && resumed.world.tiles[x][y] == '#' && resumed.xp == unsavedXp
+                    && resumed.atlas.floor == 4, "failed load destroyed the prior unsaved campaign");
+            Files.writeString(SaveSlotSurfaceApi.savePathForSlot(3), "run.seed=123\n");
+            require(!resumed.loadSaveSlot(3, "expected incomplete slot rejection")
+                    && resumed.xp == unsavedXp && resumed.world.tiles[x][y] == '#',
+                    "incomplete slot replaced the prior campaign");
             var malformed = new java.util.Properties();
             malformed.setProperty(VisitedWorldPersistenceAuthority.PREFIX + "4-1-2-2-6", snapshot);
             try {
                 VisitedWorldPersistenceAuthority.register(resumed.atlas, malformed);
                 throw new AssertionError("invalid visited-world coordinates were accepted");
             } catch (IllegalStateException expectedFailure) { }
-            System.out.println("VisitedWorldPersistenceSmoke PASS inactiveFloor=true exactTiles=true clearedPopulation=true lazyRestore=true carryForward=true invalidRejected=true");
+            System.out.println("VisitedWorldPersistenceSmoke PASS inactiveFloor=true exactTiles=true clearedPopulation=true lazyRestore=true carryForward=true invalidRejected=true failedLoadPreserved=true embeddedDefinition=true");
         } finally { resumed.shutdownRuntime(); }
     }
 

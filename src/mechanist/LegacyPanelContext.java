@@ -839,9 +839,25 @@ class GamePanel extends LegacyPanelBridgeBase {
             logEvent(saveLoadStatus);
             return false;
         }
+        Properties recovery = null;
+        boolean applying = false;
+        Screen previousScreen = screen;
+        PanelMode previousPanel = panelMode;
         try (java.io.InputStream in = java.nio.file.Files.newInputStream(path)) {
             Properties p = new Properties();
             p.load(in);
+            if (p.getProperty("char.name", "").isBlank() || !p.containsKey("run.seed"))
+                throw new java.io.IOException("Campaign save is incomplete: character or seed is missing.");
+            Long.parseLong(p.getProperty("run.seed"));
+            if (SaveEfficiencyAuthority.SINGLE_PLAYER_BUNDLED_SLOT_SCHEMA.equals(p.getProperty("save.schema"))
+                    && (!p.containsKey("worlddef.seed") || !p.containsKey("worlddef.worldId")
+                        || !p.containsKey(WorldTerrainSnapshotAuthority.KEY)))
+                throw new java.io.IOException("Bundled campaign save is incomplete.");
+            if (world != null && active != null) {
+                recovery = new Properties();
+                Persistence.writeCore(this, recovery);
+            }
+            applying = true;
             Persistence.readCore(this, p);
             MovementPlanningFocusResetAuthority.reset(this, "loaded game");
             screen = Screen.GAME;
@@ -852,6 +868,25 @@ class GamePanel extends LegacyPanelBridgeBase {
             DebugLog.audit("CLIENT_MENU_ROUTE", "loaded slot=" + slot + " reason=" + (reason == null ? "unspecified" : reason) + " path=" + path);
             return true;
         } catch (Throwable t) {
+            if (applying && recovery != null) {
+                try {
+                    Persistence.readCore(this, recovery);
+                    screen = previousScreen;
+                    panelMode = previousPanel;
+                } catch (Throwable rollback) {
+                    DebugLog.error("SAVE_LOAD_ROLLBACK", "Could not restore the prior in-memory campaign.", rollback);
+                    world = null;
+                    active = null;
+                    atlas = null;
+                    screen = Screen.MENU;
+                }
+            } else if (applying) {
+                world = null;
+                active = null;
+                atlas = null;
+                screen = Screen.SAVE_LOAD;
+                panelMode = PanelMode.NONE;
+            }
             saveLoadStatus = "Could not load " + SaveSlotSurfaceApi.slotLabel(slot) + ": " + t.getMessage();
             logEvent(saveLoadStatus);
             DebugLog.error("SAVE_LOAD_MENU", saveLoadStatus, t);
@@ -6639,6 +6674,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     void writeSaveFile(int slot, boolean quick) {
         if (DeveloperFacilityAuthority.session(this)!=null) { logEvent("Developer sessions cannot overwrite campaign saves; use the return portal first.");return; }
         if (world == null) throw new IllegalStateException("No active world is loaded.");
+        if (active == null) throw new IllegalStateException("No active character is loaded.");
         int safeSlot = slot == AUTOSAVE_HOURLY_SLOT || slot == AUTOSAVE_ZONE_SLOT ? slot : Math.max(1, Math.min(SAVE_SLOT_COUNT, slot));
         java.nio.file.Path path = SaveSlotSurfaceApi.savePathForSlot(safeSlot);
         try {

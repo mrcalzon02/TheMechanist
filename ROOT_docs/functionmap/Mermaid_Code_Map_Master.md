@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-11-24 17:14:15`
+Generated/evaluated: `2026-11-24 17:40:44`
 
 ## Top-Line Rule
 
@@ -45,7 +45,7 @@ flowchart TD
     ROOT --> ERRORS
     ROOT --> Z_LOCALIZATION_TEXT["Localization Text<br/>128 modules"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_MediaRuntimeFramework_java["src/mechanist/MediaRuntimeFramework.java<br/>58 funcs / 883 lines"]
-    Z_LOCALIZATION_TEXT --> M_src_mechanist_PersistenceFramework_java["src/mechanist/PersistenceFramework.java<br/>22 funcs / 579 lines"]
+    Z_LOCALIZATION_TEXT --> M_src_mechanist_PersistenceFramework_java["src/mechanist/PersistenceFramework.java<br/>22 funcs / 586 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_ModDeploymentManager_java["src/mechanist/ModDeploymentManager.java<br/>42 funcs / 551 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_FactionReinforcementAuthority_java["src/mechanist/FactionReinforcementAuthority.java<br/>30 funcs / 499 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_SaveEfficiencyAuthority_java["src/mechanist/SaveEfficiencyAuthority.java<br/>38 funcs / 482 lines"]
@@ -58,7 +58,7 @@ flowchart TD
     Z_LOCALIZATION_TEXT --> M_src_mechanist_SecuritySupplyProvenanceAuthority_java["src/mechanist/SecuritySupplyProvenanceAuthority.java<br/>32 funcs / 436 lines"]
     Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 116 smaller modules"]
     ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>163 modules"]
-    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>618 funcs / 8369 lines"]
+    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>618 funcs / 8405 lines"]
     Z_UI_RENDER --> M_src_mechanist_SimulationEditorSuite_java["src/mechanist/SimulationEditorSuite.java<br/>117 funcs / 1699 lines"]
     Z_UI_RENDER --> M_src_mechanist_FirstPerson3DFramework_java["src/mechanist/FirstPerson3DFramework.java<br/>114 funcs / 1359 lines"]
     Z_UI_RENDER --> M_src_mechanist_WorldStartFlowAuthority_java["src/mechanist/WorldStartFlowAuthority.java<br/>114 funcs / 1289 lines"]
@@ -100,7 +100,7 @@ flowchart TD
     Z_RUNTIME_OPTIONS --> M_src_mechanist_PerlinNoiseAuthority_java["src/mechanist/PerlinNoiseAuthority.java<br/>9 funcs / 79 lines"]
     Z_RUNTIME_OPTIONS --> Z_RUNTIME_OPTIONS_OTHER["+ 25 smaller modules"]
     ROOT --> Z_WORLD_GEN["World Generation Transition<br/>104 modules"]
-    Z_WORLD_GEN --> M_src_mechanist_WorldRuntimeGenerationFramework_java["src/mechanist/WorldRuntimeGenerationFramework.java<br/>380 funcs / 8433 lines"]
+    Z_WORLD_GEN --> M_src_mechanist_WorldRuntimeGenerationFramework_java["src/mechanist/WorldRuntimeGenerationFramework.java<br/>382 funcs / 8449 lines"]
     Z_WORLD_GEN --> M_src_mechanist_FactionRoomShellConstructionAuthority_java["src/mechanist/FactionRoomShellConstructionAuthority.java<br/>52 funcs / 1256 lines"]
     Z_WORLD_GEN --> M_src_mechanist_ExplicitRoomTypeRequirementAuthority_java["src/mechanist/ExplicitRoomTypeRequirementAuthority.java<br/>61 funcs / 1106 lines"]
     Z_WORLD_GEN --> M_src_mechanist_Milestone05FactionRoomShellConstructionSmoke_java["src/mechanist/Milestone05FactionRoomShellConstructionSmoke.java<br/>30 funcs / 806 lines"]

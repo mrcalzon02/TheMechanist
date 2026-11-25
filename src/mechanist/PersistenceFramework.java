@@ -155,6 +155,13 @@ class Persistence {
         put(p,"base.claimed",Boolean.toString(g.baseClaimed)); put(p,"base.x",Integer.toString(g.baseX)); put(p,"base.y",Integer.toString(g.baseY)); put(p,"base.room",Integer.toString(g.claimedRoomId));
         writeWorldState(g.world, p);
         VisitedWorldPersistenceAuthority.write(g, p);
+        if (g.atlas != null && g.atlas.hiveWorld != null) {
+            Properties bundledWorld = SaveEfficiencyAuthority.worldDefinitionProperties(g.atlas.hiveWorld);
+            for (String key : p.stringPropertyNames()) if (key.startsWith("world."))
+                bundledWorld.setProperty(key, p.getProperty(key));
+            SaveEfficiencyAuthority.writeWorldRuntimeMetadata(g, bundledWorld);
+            SaveEfficiencyAuthority.prepareSinglePlayerBundledSlot(g, p, bundledWorld);
+        }
         put(p, "settings.snapshot", g.options.summary());
         g.auditItemLedgers("save/write");
         DebugLog.audit("SAVE_WRITE_CORE", "keys=" + p.size() + " active=" + (g.active==null?"none":g.active.name) + " world=" + (g.world==null?"none":g.world.zoneCoordText()));
@@ -201,7 +208,7 @@ class Persistence {
         g.seed = getLong(p,"run.seed",System.currentTimeMillis());
         g.worldSetup = WorldSetupSettings.decode(p.getProperty("run.worldSetup", WorldSetupSettings.standard().encode()));
         long atlasSeed = getLong(p,"atlas.seed",g.seed);
-        g.atlas = WorldAtlas.loadSavedRun(atlasSeed, g.worldSetup);
+        g.atlas = WorldAtlas.loadSavedRun(atlasSeed, g.worldSetup, p);
         long afterDefinition = profileLoad ? System.nanoTime() : 0L;
         if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=atlas-definition status=completed"
                 + " elapsedMs=" + (afterDefinition - profileStart) / 1_000_000L);

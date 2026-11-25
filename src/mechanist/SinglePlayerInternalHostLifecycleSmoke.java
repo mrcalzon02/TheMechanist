@@ -72,6 +72,8 @@ final class SinglePlayerInternalHostLifecycleSmoke {
             first.gainXp("Mechanics", 24, "installed persistence checkpoint");
             first.addInventoryItem("Machine part", ItemProvenanceRecord.found(
                     "Machine part", first.world, first.turn, "installed persistence checkpoint"));
+            first.atlas.hiveWorld.zoneHistory.put(first.atlas.hiveWorld.zoneKey(1, 1, 2, 2, 4, false),
+                    "Installed world history checkpoint");
             World visited = visitedFloor(first);
             boolean carved = false;
             outer: for (int x = 1; x < visited.w - 1; x++) for (int y = 1; y < visited.h - 1; y++) {
@@ -89,6 +91,9 @@ final class SinglePlayerInternalHostLifecycleSmoke {
             try (var out = Files.newOutputStream(checkpoint, StandardOpenOption.CREATE_NEW)) {
                 receipt.store(out, "Immutable installed-world checkpoint");
             }
+            Path definition = CampaignWorldApi.worldFile(first.atlas.hiveWorld).toAbsolutePath().normalize();
+            require(definition.startsWith(expectedRoot), "world definition escaped isolated storage");
+            Files.delete(definition); // The real slot must recover its own world definition and history.
         } finally {
             first.shutdownRuntime();
             firstHost.close();
@@ -166,6 +171,8 @@ final class SinglePlayerInternalHostLifecycleSmoke {
         Properties result = new Properties();
         result.setProperty("checkpoint.schema", "1");
         result.setProperty("seed", Long.toString(game.seed));
+        result.setProperty("worldDefinition.history", game.atlas.hiveWorld.zoneHistory.getOrDefault(
+                game.atlas.hiveWorld.zoneKey(1, 1, 2, 2, 4, false), ""));
         result.setProperty("turn", Integer.toString(game.turn));
         result.setProperty("worldTurn", Long.toString(game.worldTurn));
         result.setProperty("character", game.active.name);

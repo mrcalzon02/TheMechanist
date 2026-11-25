@@ -17,12 +17,28 @@ class WorldAtlas {
     static WorldAtlas createNew(long seed, WorldSetupSettings settings){ return new WorldAtlas(seed, settings, DefinitionMode.CREATE_NEW); }
     static WorldAtlas loadExisting(long seed, WorldSetupSettings fallbackSettings){ return new WorldAtlas(seed, fallbackSettings, DefinitionMode.LOAD_OR_CREATE); }
     static WorldAtlas loadSavedRun(long seed, WorldSetupSettings savedSettings){ return new WorldAtlas(seed, savedSettings, DefinitionMode.LOAD_SAVED_RUN); }
+    static WorldAtlas loadSavedRun(long seed, WorldSetupSettings savedSettings, Properties save){
+        boolean embedded = Boolean.parseBoolean(save.getProperty("save.worldDefinitionEmbedded", "false"))
+                || save.containsKey("worlddef.seed");
+        if (!embedded) return loadSavedRun(seed, savedSettings);
+        if (!Long.toString(seed).equals(save.getProperty("worlddef.seed")))
+            throw new IllegalStateException("Embedded world seed differs from the saved run");
+        HiveWorldDefinition definition = HiveWorldDefinition.readFrom(save, seed);
+        if (!definition.worldId.equals(save.getProperty("worlddef.worldId")))
+            throw new IllegalStateException("Embedded world identity differs from the saved run");
+        definition.applySettings(savedSettings == null ? WorldSetupSettings.standard() : savedSettings);
+        definition.loadedFromWorldFile = true; // Restored history must not replay initial simulation batches.
+        return new WorldAtlas(seed, savedSettings, DefinitionMode.LOAD_SAVED_RUN, definition);
+    }
     static WorldAtlas preview(long seed, WorldSetupSettings settings){ return new WorldAtlas(seed, settings, DefinitionMode.TRANSIENT_PREVIEW); }
     private WorldAtlas(long seed, WorldSetupSettings settings, DefinitionMode mode){
+        this(seed, settings, mode, null);
+    }
+    private WorldAtlas(long seed, WorldSetupSettings settings, DefinitionMode mode, HiveWorldDefinition embedded){
         this.seed=seed;
         WorldSetupSettings use = settings == null ? WorldSetupSettings.standard() : settings.copy();
         if(mode != DefinitionMode.TRANSIENT_PREVIEW) WorldGenerationApi.setActiveSettings(use);
-        this.hiveWorld = switch(mode) {
+        this.hiveWorld = embedded != null ? embedded : switch(mode) {
             case CREATE_NEW, TRANSIENT_PREVIEW -> CampaignWorldApi.createDefinition(seed, use);
             case LOAD_SAVED_RUN -> CampaignWorldApi.loadForSavedRun(seed, use);
             case LOAD_OR_CREATE -> CampaignWorldApi.loadOrCreate(seed, use);
