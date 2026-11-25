@@ -1,5 +1,12 @@
 # Development History
 
+### Milestone 06.R visited-world save continuity (2026-11-24)
+
+- A second-floor disk-save probe reproduced another real boundary defect: an excavated wall on floor 4 returned after saving on floor 5 and restarting. Earlier active-floor checks and the complete 252-case suite did not cover inactive visited slices. Stopped native acceptance for that superseded candidate rather than claiming complete world-save continuity.
+- Campaign saves now carry compressed snapshots for inactive visited slices. Their physical terrain, fixtures, NPCs and existing world-runtime ledgers restore lazily when that slice is requested. Unvisited snapshots survive another save without materializing their maps. Coordinates, seed, dimensions and terrain payload are validated; expanded snapshots have the same 128 MiB limit on write and read, and malformed or wrong-floor payloads fail instead of silently regenerating. Existing saves without these snapshots retain their legacy behavior; previously lost terrain cannot be reconstructed from absent data.
+- An explicit empty saved NPC list now clears generated NPCs, matching the existing explicit-empty fixture semantics. Only absent population fields retain legacy generated defaults.
+- Extended installed original-save checks to compare another visited floor's complete terrain hash and cleared population in fresh JVMs. Added an isolated child-JVM disk-save smoke covering saving from another floor, resaving before revisiting, lazy restoration, exact terrain, cleared NPCs and corrupt/identity rejection. Both focused checks and the fresh-JVM original-slot readback passed; the full suite now has 253 cases and is being rerun before fresh native acceptance. No Computer Use or publication was performed.
+
 ### Milestone 06.R original-world preservation across installer repair (2026-11-24)
 
 - The native Windows MSI and Linux DEB baseline completed build, silent installation, installed launcher/game execution, single-player save/load, maintenance reinstall, uninstall and profile checks at source `100fc143` (workflow `45523911139`); publication was skipped. The old maintenance smoke recreated slot 1, so its success did not prove that the original world survived repair.

@@ -91,6 +91,9 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.WorldTerrainPersistenceSmoke
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.VisitedWorldPersistenceSmoke
           mkdir -p ROOT_build/main-java17-gate/installed-cwd
           cd ROOT_build/main-java17-gate/installed-cwd
           java -Djava.awt.headless=true \

@@ -154,6 +154,7 @@ class Persistence {
         ArrayList<String> rw = new ArrayList<>(); for (RecruitWorker r : g.factionRecruits) rw.add(r.saveLine()); put(p,"base.recruits",encList(rw));
         put(p,"base.claimed",Boolean.toString(g.baseClaimed)); put(p,"base.x",Integer.toString(g.baseX)); put(p,"base.y",Integer.toString(g.baseY)); put(p,"base.room",Integer.toString(g.claimedRoomId));
         writeWorldState(g.world, p);
+        VisitedWorldPersistenceAuthority.write(g, p);
         put(p, "settings.snapshot", g.options.summary());
         g.auditItemLedgers("save/write");
         DebugLog.audit("SAVE_WRITE_CORE", "keys=" + p.size() + " active=" + (g.active==null?"none":g.active.name) + " world=" + (g.world==null?"none":g.world.zoneCoordText()));
@@ -207,6 +208,7 @@ class Persistence {
         g.atlas.sectorX = clamp(getInt(p,"atlas.sx",1),1,3); g.atlas.sectorY = clamp(getInt(p,"atlas.sy",1),1,3);
         g.atlas.zoneX = clamp(getInt(p,"atlas.zx",2),1,3); g.atlas.zoneY = clamp(getInt(p,"atlas.zy",2),1,3);
         g.atlas.floor = clamp(getInt(p,"atlas.floor",4),1,10); g.atlas.sewer = Boolean.parseBoolean(p.getProperty("atlas.sewer","false"));
+        VisitedWorldPersistenceAuthority.register(g.atlas, p);
         if (profileLoad) DebugLog.log("SAVE_LOAD_PROFILE stage=physical-slice status=started");
         g.atlas.generateScaffold();
         g.world = g.atlas.currentWorld();
@@ -501,7 +503,7 @@ class Persistence {
         w.trapInteractionSummary = p.getProperty("world.trapInteractionSummary", w.trapInteractionSummary);
         w.lightNoiseSummary = p.getProperty("world.lightNoiseSummary", w.lightNoiseSummary);
         w.hazardVisibilitySummary = p.getProperty("world.hazardVisibilitySummary", w.hazardVisibilitySummary);
-        java.util.List<String> ns=decList(p.getProperty("world.npcs","")); if(!ns.isEmpty()){ w.npcs.clear(); for(String s:ns){ try{ NpcEntity n=NpcEntity.parseLine(s, w); if(n!=null) w.npcs.add(n); }catch(Exception ignored){} } }
+        java.util.List<String> ns=decList(p.getProperty("world.npcs","")); if(p.containsKey("world.npcs")){ w.npcs.clear(); for(String s:ns){ try{ NpcEntity n=NpcEntity.parseLine(s, w); if(n!=null) w.npcs.add(n); }catch(Exception ignored){} } }
         java.util.List<String> repl=decList(p.getProperty("world.personnelReplacements","")); w.replacementQueue.clear(); for(String s:repl){ PersonnelReplacementRequest rr=PersonnelReplacementRequest.parse(s); if(rr!=null) w.replacementQueue.add(rr); }
         java.util.List<String> popLedgers=decList(p.getProperty("world.populationLedgers","")); w.roomPopulationLedgers.clear(); for(String s:popLedgers){ RoomPopulationLedger pl=RoomPopulationLedger.parse(s); if(pl!=null) w.roomPopulationLedgers.add(pl); } if(w.roomPopulationLedgers.isEmpty()) PersonnelPopulationApi.ensureLedgers(w, new Random(w.seed ^ 0x5070A11L));
         java.util.List<String> crecheCohorts=decList(p.getProperty("world.crecheCohorts","")); w.crecheCohorts.clear(); for(String s:crecheCohorts){ CrecheCohortRecord cc=CrecheCohortRecord.parse(s); if(cc!=null) w.crecheCohorts.add(cc); }

@@ -3,6 +3,7 @@ package mechanist;
 /** Runs the narrow Gate 3 readability checks from one entry point. */
 final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) throws Exception {
+        runSmoke("VisitedWorldPersistenceSmoke", () -> VisitedWorldPersistenceSmoke.main(args));
         runSmoke("OptionsSwingComponentSmoke", () -> OptionsSwingComponentSmoke.main(args));
         runSmoke("CoreGameplayBoundarySmoke", () -> CoreGameplayBoundarySmoke.main(args));
         runSmoke("Milestone03PlayerConstructionCrewSmoke", () -> Milestone03PlayerConstructionCrewSmoke.main(args));

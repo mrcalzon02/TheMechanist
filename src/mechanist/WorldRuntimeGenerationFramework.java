@@ -10,6 +10,7 @@ class WorldAtlas {
     final HiveWorldDefinition hiveWorld;
     final boolean persistWorldDefinition;
     final World[][][][][] slices = new World[3][3][3][3][20]; // sector x/y, zone x/y, layer index 0..19; even=floor, odd=sewer
+    final java.util.Map<String,String> savedSliceStates = new java.util.LinkedHashMap<>();
     int sectorX=1, sectorY=1, zoneX=2, zoneY=2, floor=4; boolean sewer=false;
     WorldAtlas(long seed){ this(seed, WorldSetupSettings.standard(), DefinitionMode.LOAD_OR_CREATE); }
     WorldAtlas(long seed, WorldSetupSettings settings){ this(seed, settings, DefinitionMode.LOAD_OR_CREATE); }
@@ -89,6 +90,8 @@ class WorldAtlas {
                 seed, sx, sy, zx, zy, w.w, w.h);
         if(sx==1&&sy==1&&zx==2&&zy==2&&fl==4&&!sewerLayer) w.zoneType = ZoneType.NEUTRAL_CIVILIAN_FLOOR;
         w.generate();
+        VisitedWorldPersistenceAuthority.restore(this, w,
+                VisitedWorldPersistenceAuthority.key(sx, sy, zx, zy, (fl-1)*2+(sewerLayer?1:0)));
         slices[sx-1][sy-1][zx-1][zy-1][(fl-1)*2+(sewerLayer?1:0)] = w;
         WorldGenerationProgressApi.markSliceGenerated(hiveWorld, 1);
         if(persistWorldDefinition) CampaignWorldApi.saveWorldDefinition(hiveWorld);

@@ -338,6 +338,7 @@ def main() -> int:
             "singlePlayerLifecycle": True,
             "originalWorldResumedInFreshJvm": True,
             "originalWorldRendered": True,
+            "visitedFloorStateRestored": True,
             "existingSaveOnly": args.verify_existing_save,
             "worldSave": {"path": str(world_save), "size": world_save.stat().st_size,
                           "sha256": sha256(world_save)},

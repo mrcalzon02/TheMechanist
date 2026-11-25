@@ -72,6 +72,17 @@ final class SinglePlayerInternalHostLifecycleSmoke {
             first.gainXp("Mechanics", 24, "installed persistence checkpoint");
             first.addInventoryItem("Machine part", ItemProvenanceRecord.found(
                     "Machine part", first.world, first.turn, "installed persistence checkpoint"));
+            World visited = visitedFloor(first);
+            boolean carved = false;
+            outer: for (int x = 1; x < visited.w - 1; x++) for (int y = 1; y < visited.h - 1; y++) {
+                if (visited.tiles[x][y] == '#' && visited.tiles[x + 1][y] == '.') {
+                    visited.tiles[x][y] = '.';
+                    carved = true;
+                    break outer;
+                }
+            }
+            require(carved, "visited-floor persistence fixture needs an excavatable wall");
+            visited.npcs.clear();
             first.writeSaveFile(1, false);
             Properties receipt = state(first);
             receipt.setProperty("save.sha256", hash(Files.readAllBytes(SaveSlotSurfaceApi.savePathForSlot(1))));
@@ -160,11 +171,10 @@ final class SinglePlayerInternalHostLifecycleSmoke {
         result.setProperty("character", game.active.name);
         result.setProperty("player", game.playerX + "," + game.playerY);
         result.setProperty("worldSize", game.world.w + "," + game.world.h);
-        MessageDigest tiles = MessageDigest.getInstance("SHA-256");
-        for (char[] column : game.world.tiles) for (char tile : column) {
-            tiles.update((byte) (tile >>> 8)); tiles.update((byte) tile);
-        }
-        result.setProperty("tiles.sha256", HexFormat.of().formatHex(tiles.digest()));
+        result.setProperty("tiles.sha256", terrainHash(game.world));
+        World visited = visitedFloor(game);
+        result.setProperty("visitedFloor5.tiles.sha256", terrainHash(visited));
+        result.setProperty("visitedFloor5.npcs", Integer.toString(visited.npcs.size()));
         result.setProperty("xp", Integer.toString(game.xp));
         result.setProperty("knowledgeProgress", Integer.toString(game.knowledgeXpProgress));
         result.setProperty("knowledgeCredits", Integer.toString(game.knowledgeCredits));
@@ -180,6 +190,24 @@ final class SinglePlayerInternalHostLifecycleSmoke {
 
     private static String hash(byte[] bytes) throws Exception {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+    }
+
+    private static World visitedFloor(GamePanel game) {
+        WorldAtlas atlas = game.atlas;
+        World visited = atlas.slices[atlas.sectorX-1][atlas.sectorY-1][atlas.zoneX-1][atlas.zoneY-1][8];
+        if (visited == null) {
+            atlas.createSlice(atlas.sectorX, atlas.sectorY, atlas.zoneX, atlas.zoneY, 5, false);
+            visited = atlas.slices[atlas.sectorX-1][atlas.sectorY-1][atlas.zoneX-1][atlas.zoneY-1][8];
+        }
+        return visited;
+    }
+
+    private static String terrainHash(World world) throws Exception {
+        MessageDigest tiles = MessageDigest.getInstance("SHA-256");
+        for (char[] column : world.tiles) for (char tile : column) {
+            tiles.update((byte) (tile >>> 8)); tiles.update((byte) tile);
+        }
+        return HexFormat.of().formatHex(tiles.digest());
     }
 
     private static void require(boolean condition, String message) {

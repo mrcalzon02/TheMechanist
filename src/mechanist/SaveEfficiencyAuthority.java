@@ -51,6 +51,7 @@ final class SaveEfficiencyAuthority {
         Properties p = game == null || game.atlas == null ? new Properties() : worldDefinitionProperties(game.atlas.hiveWorld);
         if (game != null) {
             Persistence.writeWorldState(game.world, p);
+            VisitedWorldPersistenceAuthority.write(game, p);
             writeWorldRuntimeMetadata(game, p);
             writeWorldCatalogMetadata(p);
         }

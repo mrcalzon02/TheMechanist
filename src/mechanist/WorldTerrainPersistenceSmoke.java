@@ -24,6 +24,15 @@ final class WorldTerrainPersistenceSmoke {
         expectCorrupt(resumed, corrupt);
         require(Arrays.deepEquals(world.tiles, resumed.tiles), "corrupt terrain partly replaced the live grid");
         expectCorrupt(new World(17, 25, 24), saved);
+        Properties emptyPopulation = new Properties();
+        Persistence.writeWorldState(world, emptyPopulation);
+        resumed.npcs.add(new NpcEntity());
+        Persistence.readWorldState(resumed, emptyPopulation);
+        require(resumed.npcs.isEmpty(), "an explicitly empty saved population respawned generated NPCs");
+        emptyPopulation.remove("world.npcs");
+        resumed.npcs.add(new NpcEntity());
+        Persistence.readWorldState(resumed, emptyPopulation);
+        require(resumed.npcs.size() == 1, "legacy population defaults were removed");
 
         var root = Files.createTempDirectory("mechanist-save-atomic-");
         var slot = root.resolve("slot.mechsave");
