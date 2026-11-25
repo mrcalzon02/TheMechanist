@@ -5,6 +5,8 @@ on:
     branches: [ main ]
     paths:
       - 'src/**'
+      - 'pom.xml'
+      - 'PACKAGE_launcher/java/**'
       - 'scripts/PACKAGE_CLIENT_WINDOWS.ps1'
       - 'ROOT_docs/**'
       - '.github/workflows/main-java17-milestone-gate.yml'

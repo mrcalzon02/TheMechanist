@@ -233,6 +233,31 @@
     "previewSha256": "c32c5acfcf651f71e2aaa0f58cfbd7631e83f0d78022640c1c10f48180e58ec2",
     "battleLogSha256": "8c346513705bd441ce44974e9420ac73398454923c62502bf651b452544366dc",
     "syntheticRenderErrorProbeExpected": true,
-    "releaseCertified": false
+    "releaseCertified": false,
+    "buildReliabilityFollowup": {
+      "surefireVersion": "3.5.4",
+      "priorFailure": "Maven Central HTTP 429 fetching unpinned runner-default Surefire 3.6.1 before launching client",
+      "sourceSha256": {
+        "pom.xml": "8fb6a6bd18afb307465e4059c38568b588448eb27d767508a153a1c218751f5c",
+        "PACKAGE_launcher/java/pom.xml": "30f803e007699c08fd693da83c7e481c031d826aef919711a67e12c27cd5fd7e",
+        "ROOT_tools/verification/run_runtime_visual_verification.py": "9bbd1ecab8a2ba5a9db836a7de5888c6e22b79d599845403496376dadf334ad7",
+        ".github/workflows/main-java17-milestone-gate.yml": "6bf198b1029bf238a68ed00b72bd4419ce0a1e5bf1fd930c1b5a40e062613ff8"
+      },
+      "pluginChecks": {
+        "client": {
+          "offlineLifecycleResolution": "passed",
+          "testsSkippedPerExistingPackagingFlag": true,
+          "logSha256": "be5051d7d1680c1702740503e455b32c9233300ad556ef516b00e4a3bc5da126"
+        },
+        "launcher": {
+          "offlineLifecycleResolution": "passed",
+          "testsSkippedPerExistingPackagingFlag": true,
+          "logSha256": "2f7139533d13ab02cd87255e33f25b834bde975a7778240701836eb0aeac5612"
+        }
+      },
+      "diagnosticRunnerPythonSyntax": "passed",
+      "failurePropagates": true,
+      "reference": "https://maven.apache.org/surefire/maven-surefire-plugin/usage.html"
+    }
   }
 }

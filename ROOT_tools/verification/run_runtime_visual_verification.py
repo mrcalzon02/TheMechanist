@@ -19,9 +19,16 @@ def main():
               "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()}
 
     def run(command, cwd, logfile, timeout=1200):
-        with (output / logfile).open("w", encoding="utf-8") as log:
-            subprocess.run([str(item) for item in command], cwd=cwd, stdout=log,
-                           stderr=subprocess.STDOUT, check=True, timeout=timeout)
+        path = output / logfile
+        try:
+            with path.open("w", encoding="utf-8") as log:
+                subprocess.run([str(item) for item in command], cwd=cwd, stdout=log,
+                               stderr=subprocess.STDOUT, check=True, timeout=timeout)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            print("\n" + logfile + " (last 40 lines):\n"
+                  + "\n".join(path.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]),
+                  file=sys.stderr)
+            raise
 
     try:
         run(["mvn", "-B", "-DskipTests", "clean", "package"], repo, "build.log")
