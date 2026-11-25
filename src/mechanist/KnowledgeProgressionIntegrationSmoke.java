@@ -16,7 +16,7 @@ final class KnowledgeProgressionIntegrationSmoke {
             game.worldSetup.zoneSize = 0;
             game.worldSetup.npcDensity = 0;
             game.worldSetup.simulationAge = 0;
-            game.world = new World(game.seed, 32, 32);
+            game.world = new World(game.seed, 500, 500);
             for (char[] column : game.world.tiles) Arrays.fill(column, '.');
             game.active = Candidate.random(new Random(94117));
             game.unlockedKnowledges.add("Underhive Basics");

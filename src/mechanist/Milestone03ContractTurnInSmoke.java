@@ -13,7 +13,7 @@ final class Milestone03ContractTurnInSmoke {
         System.out.flush();
         if (game.timer != null) game.timer.stop();
         try {
-            if (game.world == null) game.world = new World(73117L, 40, 40);
+            if (game.world == null) game.world = new World(73117L, 600, 600);
             FactionContract uncarriedContract = new FactionContract();
             uncarriedContract.id = "F-EARLIER-PRIVATE";
             uncarriedContract.type = "FETCH";

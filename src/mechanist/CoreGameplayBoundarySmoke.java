@@ -9,7 +9,8 @@ final class CoreGameplayBoundarySmoke {
         GamePanel game = new GamePanel();
         game.timer.stop();
         try {
-            game.world = new World(941L, 24, 24);
+            // Match the 500-tile setup restored by the full campaign decoder.
+            game.world = new World(941L, 500, 500);
             game.seed = 941L;
             game.worldSetup.zoneSize = 0;
             game.worldSetup.npcDensity = 0;

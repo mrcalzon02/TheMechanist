@@ -40,7 +40,7 @@ final class ChatRuntimeAuthority {
 
     ChatRuntimeAuthority(GamePanel game) {
         this.game = game;
-        this.logger = new AsyncChatLogger(Paths.get("logs", "chat.log"));
+        this.logger = new AsyncChatLogger(GameStorageManager.get().rootDir().resolve("logs/chat.log"));
         this.encryptionManager = new HybridEncryptionManager();
         this.localChatIdentity = createLocalChatIdentity(this.encryptionManager);
     }

@@ -19,8 +19,8 @@ import java.util.zip.ZipOutputStream;
 /** Owns local fallback profile metadata and migration packages when no store/wrapper profile is available. */
 final class FallbackProfileManagementAuthority {
     static final String VERSION = "0.9.10hn";
-    private static final Path PROFILE_DIR = Paths.get("profiles");
-    private static final Path SETTINGS_DIR = Paths.get("settings");
+    private static final Path PROFILE_DIR = GameStorageManager.get().profilesDir();
+    private static final Path SETTINGS_DIR = GameStorageManager.settingsPath("options.properties").getParent();
     private static final Path ACTIVE_PROFILE_PATH = PROFILE_DIR.resolve("active_profile.properties");
     private static final long MAX_IMPORT_BYTES = 16L * 1024L * 1024L;
 
@@ -114,9 +114,11 @@ final class FallbackProfileManagementAuthority {
     static LocalProfile loadOrCreate(UserProfileAuthority.Profile detected) {
         try {
             Files.createDirectories(PROFILE_DIR);
-            if (Files.exists(ACTIVE_PROFILE_PATH)) {
+            Path source = Files.exists(ACTIVE_PROFILE_PATH) ? ACTIVE_PROFILE_PATH
+                    : Paths.get("profiles", "active_profile.properties");
+            if (Files.exists(source)) {
                 Properties pr = new Properties();
-                try (InputStream in = Files.newInputStream(ACTIVE_PROFILE_PATH)) { pr.load(in); }
+                try (InputStream in = Files.newInputStream(source)) { pr.load(in); }
                 return LocalProfile.fromProperties(pr);
             }
             LocalProfile p = defaults(detected);
@@ -151,8 +153,8 @@ final class FallbackProfileManagementAuthority {
             writeZipText(zos, "manifest.properties", migrationManifest(profile));
             addIfExists(zos, ACTIVE_PROFILE_PATH, "profiles/active_profile.properties");
             addIfExists(zos, GameOptions.settingsPath(), "settings/options.properties");
-            addIfExists(zos, Paths.get("settings", "jvm_runtime.properties"), "settings/jvm_runtime.properties");
-            addIfExists(zos, Paths.get("settings", "profile.seed"), "settings/profile.seed");
+            addIfExists(zos, GameStorageManager.settingsReadPath(SETTINGS_DIR.resolve("jvm_runtime.properties"), Path.of(".")), "settings/jvm_runtime.properties");
+            addIfExists(zos, PROFILE_DIR.resolve("profile.seed"), "settings/profile.seed");
         }
         try { Files.move(tmp, dest, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE); }
         catch (AtomicMoveNotSupportedException ex) { Files.move(tmp, dest, StandardCopyOption.REPLACE_EXISTING); }
@@ -195,8 +197,8 @@ final class FallbackProfileManagementAuthority {
         Files.createDirectories(SETTINGS_DIR);
         copyIfExists(staging.resolve("profiles/active_profile.properties"), ACTIVE_PROFILE_PATH);
         copyIfExists(staging.resolve("settings/options.properties"), GameOptions.settingsPath());
-        copyIfExists(staging.resolve("settings/jvm_runtime.properties"), Paths.get("settings", "jvm_runtime.properties"));
-        copyIfExists(staging.resolve("settings/profile.seed"), Paths.get("settings", "profile.seed"));
+        copyIfExists(staging.resolve("settings/jvm_runtime.properties"), SETTINGS_DIR.resolve("jvm_runtime.properties"));
+        copyIfExists(staging.resolve("settings/profile.seed"), PROFILE_DIR.resolve("profile.seed"));
         return p;
     }
 

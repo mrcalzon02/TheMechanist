@@ -33,7 +33,7 @@ final class Milestone05BlueprintContractRewardSmoke {
         GamePanel game = new GamePanel();
         game.shutdownRuntime();
         try {
-            if (game.world == null) game.world = new World(17300L + mode.ordinal(), 40, 40);
+            if (game.world == null) game.world = new World(17300L + mode.ordinal(), 600, 600);
             game.factionContracts.clear();
             game.inventory.clear();
             game.unlockedConstructionBlueprints.clear();
@@ -128,7 +128,7 @@ final class Milestone05BlueprintContractRewardSmoke {
         GamePanel game = new GamePanel();
         game.shutdownRuntime();
         try {
-            if (game.world == null) game.world = new World(17399L, 40, 40);
+            if (game.world == null) game.world = new World(17399L, 600, 600);
             game.factionContracts.clear();
             game.inventory.clear();
             game.unlockedConstructionBlueprints.clear();

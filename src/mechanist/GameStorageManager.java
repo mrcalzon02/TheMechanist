@@ -173,7 +173,11 @@ final class GameStorageManager {
 
     /** Options are user data, never installer-owned files. */
     static Path optionsPath() {
-        return normalizeAbsolute(resolveUserRoot()).resolve("settings").resolve("options.properties");
+        return settingsPath("options.properties");
+    }
+
+    static Path settingsPath(String filename) {
+        return normalizeAbsolute(resolveUserRoot()).resolve("settings").resolve(filename);
     }
 
     static Path optionsReadPath() {
@@ -181,15 +185,19 @@ final class GameStorageManager {
     }
 
     static Path optionsReadPath(Path target, Path workingDirectory) {
+        return settingsReadPath(target, workingDirectory);
+    }
+
+    static Path settingsReadPath(Path target, Path workingDirectory) {
         if (Files.exists(target)) return target;
         Path cwd = normalizeAbsolute(workingDirectory);
-        Path legacy = cwd.resolve("settings/options.properties");
+        Path legacy = cwd.resolve("settings").resolve(target.getFileName());
         if (Files.isRegularFile(legacy)) return legacy;
         // Older installed launchers ran from the distribution root, rather than packages/client.
         Path packages = cwd.getParent();
         if (cwd.endsWith("client") && packages != null && packages.endsWith("packages")
                 && packages.getParent() != null) {
-            Path oldInstallOptions = packages.getParent().resolve("settings/options.properties");
+            Path oldInstallOptions = packages.getParent().resolve("settings").resolve(target.getFileName());
             if (Files.isRegularFile(oldInstallOptions)) return oldInstallOptions;
         }
         return target;
@@ -327,6 +335,14 @@ final class GameStorageManager {
         String normalized = p.normalize().toString();
         if (normalized.startsWith("..") || normalized.contains(".." + java.io.File.separator)) throw new IOException("path traversal is forbidden: " + normalized);
         return normalized;
+    }
+
+    static void writePropertiesAtomic(Path target, Properties properties, String comment) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        properties.store(bytes, comment);
+        Files.createDirectories(target.getParent());
+        Path temporary = Files.createTempFile(target.getParent(), target.getFileName().toString() + ".", ".tmp");
+        writeAtomic(temporary, target, bytes.toByteArray());
     }
 
     static void writeAtomic(Path tmp, Path target, byte[] data) throws IOException {

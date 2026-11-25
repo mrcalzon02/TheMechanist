@@ -20,6 +20,7 @@ import subprocess
 import sys
 import time
 import traceback
+import tempfile
 from typing import Iterable
 
 from verify_native_installer_image import verify_image
@@ -125,6 +126,9 @@ def probe_running_process(
     hold_seconds: int,
 ) -> dict[str, object]:
     rendered = [str(item) for item in command]
+    # A verbose boot must not block on an undrained pipe and look healthy.
+    stdout_log = tempfile.TemporaryFile(mode="w+b")
+    stderr_log = tempfile.TemporaryFile(mode="w+b")
     process = subprocess.Popen(
         rendered,
         cwd=cwd,
@@ -132,15 +136,18 @@ def probe_running_process(
         text=True,
         encoding="utf-8",
         errors="replace",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=stdout_log,
+        stderr=stderr_log,
     )
     try:
         deadline = time.monotonic() + hold_seconds
         while time.monotonic() < deadline:
             code = process.poll()
             if code is not None:
-                stdout, stderr = process.communicate(timeout=5)
+                stdout_log.seek(0)
+                stderr_log.seek(0)
+                stdout = stdout_log.read().decode("utf-8", errors="replace")
+                stderr = stderr_log.read().decode("utf-8", errors="replace")
                 raise RuntimeError(
                     f"{label} exited before the running probe completed with {code}: "
                     f"stdout={stdout[-4000:]!r} stderr={stderr[-4000:]!r}"
@@ -160,10 +167,8 @@ def probe_running_process(
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait(timeout=10)
-        if process.stdout is not None:
-            process.stdout.close()
-        if process.stderr is not None:
-            process.stderr.close()
+        stdout_log.close()
+        stderr_log.close()
 
 
 def ensure_outside(path: pathlib.Path, forbidden_root: pathlib.Path, label: str) -> None:
@@ -181,6 +186,8 @@ def main() -> int:
     parser.add_argument("--profile-root", type=pathlib.Path, required=True)
     parser.add_argument("--report", type=pathlib.Path, required=True)
     parser.add_argument("--hold-seconds", type=int, default=12)
+    parser.add_argument("--verify-existing-save", action="store_true",
+                        help="Reopen the original checkpoint without creating or saving a new world")
     args = parser.parse_args()
 
     report_path = args.report.resolve()
@@ -255,11 +262,19 @@ def main() -> int:
                 classpath(payload, "client"),
                 "mechanist.TheMechanist",
             ],
-            cwd=profile_root,
+            cwd=client_jar.parent,
             env=env,
             label="installed game process",
             hold_seconds=args.hold_seconds,
         )
+        storage_verification = None
+        if not args.verify_existing_save:
+            storage_verification = run_checked(
+                [runtime_java, f"-Duser.home={profile_root}",
+                 f"-Dmechanist.storage.root={game_storage}", "-Djava.awt.headless=true",
+                 "-cp", classpath(payload, "client"), "mechanist.InstalledUserStorageSmoke"],
+                cwd=client_jar.parent, env=env, label="installed user-storage and profile migration", timeout=300,
+            )
         single_player = run_checked(
             [
                 runtime_java,
@@ -269,12 +284,22 @@ def main() -> int:
                 "-cp",
                 classpath(payload, "client"),
                 "mechanist.SinglePlayerInternalHostLifecycleSmoke",
-            ],
-            cwd=profile_root,
+            ] + (["--verify-existing-save"] if args.verify_existing_save else []),
+            cwd=client_jar.parent,
             env=env,
             label="installed single-player lifecycle",
             timeout=900,
         )
+        fresh_jvm_resume = run_checked(
+            [runtime_java, f"-Duser.home={profile_root}",
+             f"-Dmechanist.storage.root={game_storage}", "-Djava.awt.headless=true",
+             "-cp", classpath(payload, "client"),
+             "mechanist.SinglePlayerInternalHostLifecycleSmoke", "--verify-existing-save"],
+            cwd=client_jar.parent, env=env, label="fresh JVM original-world resume", timeout=900,
+        )
+        world_save = game_storage / "saves" / "singleplayer" / "slot1.mechsave"
+        if not world_save.is_file() or world_save.stat().st_size == 0:
+            raise RuntimeError("installed game did not preserve its real world save")
 
         after = snapshot_tree(image_root)
         if after != before:
@@ -311,6 +336,11 @@ def main() -> int:
             "gameProcessRunning": True,
             "launcherBundledPackageVerification": True,
             "singlePlayerLifecycle": True,
+            "originalWorldResumedInFreshJvm": True,
+            "originalWorldRendered": True,
+            "existingSaveOnly": args.verify_existing_save,
+            "worldSave": {"path": str(world_save), "size": world_save.stat().st_size,
+                          "sha256": sha256(world_save)},
             "installTreeImmutable": True,
             "mutableStorageOutsideInstall": True,
             "profileFileCount": len(profile_files) + 1,
@@ -319,6 +349,8 @@ def main() -> int:
             "gameProbe": game_probe,
             "launcherVerification": launcher_verification,
             "singlePlayer": single_player,
+            "userStorageVerification": storage_verification,
+            "freshJvmResume": fresh_jvm_resume,
         })
         report_path.write_text(
             json.dumps(report, indent=2, sort_keys=True) + "\n",

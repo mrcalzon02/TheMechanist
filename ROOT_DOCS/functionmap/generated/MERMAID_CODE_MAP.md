@@ -1,18 +1,18 @@
 # Generated Mermaid Code Map
 
-Generated: `2026-11-24 15:10:27`
+Generated: `2026-11-24 16:36:33`
 
 ```mermaid
 flowchart TD
     ROOT["The Mechanist Codebase<br/>Mermaid position master"]
     ERRORS["Code errors / unmapped modules<br/>must submit map position"]
     ROOT --> ERRORS
-    ROOT --> Z_LOCALIZATION_TEXT["Localization Text<br/>126 modules"]
+    ROOT --> Z_LOCALIZATION_TEXT["Localization Text<br/>127 modules"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_MediaRuntimeFramework_java["src/mechanist/MediaRuntimeFramework.java<br/>58 funcs / 883 lines"]
-    Z_LOCALIZATION_TEXT --> M_src_mechanist_PersistenceFramework_java["src/mechanist/PersistenceFramework.java<br/>22 funcs / 575 lines"]
+    Z_LOCALIZATION_TEXT --> M_src_mechanist_PersistenceFramework_java["src/mechanist/PersistenceFramework.java<br/>22 funcs / 577 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_ModDeploymentManager_java["src/mechanist/ModDeploymentManager.java<br/>42 funcs / 551 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_FactionReinforcementAuthority_java["src/mechanist/FactionReinforcementAuthority.java<br/>30 funcs / 499 lines"]
-    Z_LOCALIZATION_TEXT --> M_src_mechanist_SaveEfficiencyAuthority_java["src/mechanist/SaveEfficiencyAuthority.java<br/>38 funcs / 482 lines"]
+    Z_LOCALIZATION_TEXT --> M_src_mechanist_SaveEfficiencyAuthority_java["src/mechanist/SaveEfficiencyAuthority.java<br/>38 funcs / 481 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_FactionCriticalVendorPlacementAuthority_java["src/mechanist/FactionCriticalVendorPlacementAuthority.java<br/>32 funcs / 480 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_FactionMarketContractAuthority_java["src/mechanist/FactionMarketContractAuthority.java<br/>26 funcs / 478 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_AnimalAgricultureSupplyProvenanceAuthority_java["src/mechanist/AnimalAgricultureSupplyProvenanceAuthority.java<br/>34 funcs / 462 lines"]
@@ -20,9 +20,9 @@ flowchart TD
     Z_LOCALIZATION_TEXT --> M_PACKAGE_launcher_java_src_main_java_mechanist_launcher_PackageInstallService_java["PACKAGE_launcher/java/src/main/java/mechanist/launcher/PackageInstallService.java<br/>37 funcs / 456 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_HousingVariantRules_java["src/mechanist/HousingVariantRules.java<br/>21 funcs / 448 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_SecuritySupplyProvenanceAuthority_java["src/mechanist/SecuritySupplyProvenanceAuthority.java<br/>32 funcs / 436 lines"]
-    Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 114 smaller modules"]
+    Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 115 smaller modules"]
     ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>163 modules"]
-    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>618 funcs / 8370 lines"]
+    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>618 funcs / 8369 lines"]
     Z_UI_RENDER --> M_src_mechanist_SimulationEditorSuite_java["src/mechanist/SimulationEditorSuite.java<br/>117 funcs / 1699 lines"]
     Z_UI_RENDER --> M_src_mechanist_FirstPerson3DFramework_java["src/mechanist/FirstPerson3DFramework.java<br/>114 funcs / 1359 lines"]
     Z_UI_RENDER --> M_src_mechanist_WorldStartFlowAuthority_java["src/mechanist/WorldStartFlowAuthority.java<br/>114 funcs / 1289 lines"]
@@ -80,12 +80,12 @@ flowchart TD
     ROOT --> Z_INVENTORY_PERSIST["Inventory Items Persistence<br/>35 modules"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_ItemEconomyFramework_java["src/mechanist/ItemEconomyFramework.java<br/>73 funcs / 1537 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_ContainerTradeFramework_java["src/mechanist/ContainerTradeFramework.java<br/>93 funcs / 828 lines"]
-    Z_INVENTORY_PERSIST --> M_src_mechanist_FallbackProfileManagementAuthority_java["src/mechanist/FallbackProfileManagementAuthority.java<br/>49 funcs / 684 lines"]
+    Z_INVENTORY_PERSIST --> M_src_mechanist_FallbackProfileManagementAuthority_java["src/mechanist/FallbackProfileManagementAuthority.java<br/>49 funcs / 686 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_VehicleManifestAuthority_java["src/mechanist/VehicleManifestAuthority.java<br/>14 funcs / 513 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_VehicleMotorPoolAuthority_java["src/mechanist/VehicleMotorPoolAuthority.java<br/>10 funcs / 496 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_VehicleMaintenanceAuthority_java["src/mechanist/VehicleMaintenanceAuthority.java<br/>17 funcs / 472 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_VehicleFuelAuthority_java["src/mechanist/VehicleFuelAuthority.java<br/>17 funcs / 447 lines"]
-    Z_INVENTORY_PERSIST --> M_src_mechanist_GameStorageManager_java["src/mechanist/GameStorageManager.java<br/>38 funcs / 371 lines"]
+    Z_INVENTORY_PERSIST --> M_src_mechanist_GameStorageManager_java["src/mechanist/GameStorageManager.java<br/>41 funcs / 387 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_IndependentHostResumeTokenStore_java["src/mechanist/IndependentHostResumeTokenStore.java<br/>11 funcs / 308 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_VehicleAccessAuthority_java["src/mechanist/VehicleAccessAuthority.java<br/>7 funcs / 295 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_ItemSemanticAssetAuthority_java["src/mechanist/ItemSemanticAssetAuthority.java<br/>10 funcs / 257 lines"]
@@ -106,7 +106,7 @@ flowchart TD
     Z_FIXTURE_MACHINE --> M_src_mechanist_FixtureInteractionRegistry_java["src/mechanist/FixtureInteractionRegistry.java<br/>7 funcs / 193 lines"]
     Z_FIXTURE_MACHINE --> Z_FIXTURE_MACHINE_OTHER["+ 20 smaller modules"]
     ROOT --> Z_COMBAT_SIM["Combat Entity Simulation<br/>73 modules"]
-    Z_COMBAT_SIM --> M_src_mechanist_WorldSimulationFramework_java["src/mechanist/WorldSimulationFramework.java<br/>207 funcs / 1814 lines"]
+    Z_COMBAT_SIM --> M_src_mechanist_WorldSimulationFramework_java["src/mechanist/WorldSimulationFramework.java<br/>207 funcs / 1815 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_PopulationPersonnelFramework_java["src/mechanist/PopulationPersonnelFramework.java<br/>126 funcs / 1433 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_IndependentHostTurnAuthority_java["src/mechanist/IndependentHostTurnAuthority.java<br/>49 funcs / 1142 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_FactionServicesFramework_java["src/mechanist/FactionServicesFramework.java<br/>124 funcs / 1108 lines"]
@@ -147,7 +147,7 @@ flowchart TD
     Z_SERVER_AUTH --> M_src_mechanist_launcher_LauncherFallbackProfileAuthority_java["src/mechanist/launcher/LauncherFallbackProfileAuthority.java<br/>10 funcs / 212 lines"]
     Z_SERVER_AUTH --> M_src_mechanist_ClientLauncherContext_java["src/mechanist/ClientLauncherContext.java<br/>17 funcs / 203 lines"]
     Z_SERVER_AUTH --> Z_SERVER_AUTH_OTHER["+ 46 smaller modules"]
-    ROOT --> Z_DIAGNOSTIC_DOC["Diagnostics Smoke Audit<br/>255 modules"]
+    ROOT --> Z_DIAGNOSTIC_DOC["Diagnostics Smoke Audit<br/>257 modules"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone06FactionVehicleBalanceSmoke_java["src/mechanist/Milestone06FactionVehicleBalanceSmoke.java<br/>8 funcs / 868 lines"]
     Z_DIAGNOSTIC_DOC --> M_ROOT_tools_verification_RuntimeVisualVerification_java["ROOT_tools/verification/RuntimeVisualVerification.java<br/>19 funcs / 781 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_IndependentHostTransportSessionSmoke_java["src/mechanist/IndependentHostTransportSessionSmoke.java<br/>19 funcs / 769 lines"]
@@ -160,5 +160,5 @@ flowchart TD
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_AuthoritativeWorldRuntimeOverflowSmoke_java["src/mechanist/AuthoritativeWorldRuntimeOverflowSmoke.java<br/>10 funcs / 547 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone09ExplicitRoomPurposeBarracksSmoke_java["src/mechanist/Milestone09ExplicitRoomPurposeBarracksSmoke.java<br/>23 funcs / 538 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone06VehicleMaintenanceSmoke_java["src/mechanist/Milestone06VehicleMaintenanceSmoke.java<br/>7 funcs / 529 lines"]
-    Z_DIAGNOSTIC_DOC --> Z_DIAGNOSTIC_DOC_OTHER["+ 243 smaller modules"]
+    Z_DIAGNOSTIC_DOC --> Z_DIAGNOSTIC_DOC_OTHER["+ 245 smaller modules"]
 ```

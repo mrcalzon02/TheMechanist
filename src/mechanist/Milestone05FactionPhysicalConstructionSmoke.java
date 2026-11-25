@@ -512,7 +512,7 @@ final class Milestone05FactionPhysicalConstructionSmoke {
     }
 
     private static World world() {
-        World world = new World(1702172L, 24, 16);
+        World world = new World(1702172L, 600, 600);
         world.sectorX = 1;
         world.sectorY = 1;
         world.zoneX = 2;

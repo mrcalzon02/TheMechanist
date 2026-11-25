@@ -375,7 +375,7 @@ final class Milestone05FactionBlueprintSiteUpgradeSmoke {
     }
 
     private static World world() {
-        World world = new World(170205L, 24, 24);
+        World world = new World(170205L, 600, 600);
         world.sectorX = 1;
         world.sectorY = 1;
         world.zoneX = 2;

@@ -10,7 +10,7 @@ WARN	src/mechanist/IndependentHostClientSupervisor.java	M_src_mechanist_Independ
 WARN	src/mechanist/IndependentHostTurnAuthority.java	M_src_mechanist_IndependentHostTurnAuthority_java	COMBAT_SIM	positioned	Oversized mapped module: 49 funcs / 1142 lines / 41531 bytes
 WARN	src/mechanist/InfrastructurePromotionRegistry.java	M_src_mechanist_InfrastructurePromotionRegistry_java	ASSET_REGISTRY	positioned	Oversized mapped module: 11 funcs / 1001 lines / 61142 bytes
 WARN	src/mechanist/ItemEconomyFramework.java	M_src_mechanist_ItemEconomyFramework_java	INVENTORY_PERSIST	positioned	Oversized mapped module: 73 funcs / 1537 lines / 242180 bytes
-WARN	src/mechanist/LegacyPanelContext.java	M_src_mechanist_LegacyPanelContext_java	UI_RENDER	positioned	Oversized mapped module: 618 funcs / 8370 lines / 460184 bytes
+WARN	src/mechanist/LegacyPanelContext.java	M_src_mechanist_LegacyPanelContext_java	UI_RENDER	positioned	Oversized mapped module: 618 funcs / 8369 lines / 460134 bytes
 WARN	src/mechanist/MediaRuntimeFramework.java	M_src_mechanist_MediaRuntimeFramework_java	LOCALIZATION_TEXT	positioned	Oversized mapped module: 58 funcs / 883 lines / 50248 bytes
 WARN	src/mechanist/Milestone05FactionRoomShellConstructionSmoke.java	M_src_mechanist_Milestone05FactionRoomShellConstructionSmoke_java	WORLD_GEN	positioned	Oversized mapped module: 30 funcs / 806 lines / 43178 bytes
 WARN	src/mechanist/Milestone06FactionVehicleBalanceSmoke.java	M_src_mechanist_Milestone06FactionVehicleBalanceSmoke_java	DIAGNOSTIC_DOC	positioned	Oversized mapped module: 8 funcs / 868 lines / 46778 bytes
@@ -21,5 +21,5 @@ WARN	src/mechanist/RemoteSessionLedgerAuthority.java	M_src_mechanist_RemoteSessi
 WARN	src/mechanist/SimulationEditorSuite.java	M_src_mechanist_SimulationEditorSuite_java	UI_RENDER	positioned	Oversized mapped module: 117 funcs / 1699 lines / 101521 bytes
 WARN	src/mechanist/VehicleRuntimeAuthority.java	M_src_mechanist_VehicleRuntimeAuthority_java	COMBAT_SIM	positioned	Oversized mapped module: 46 funcs / 915 lines / 45847 bytes
 WARN	src/mechanist/WorldRuntimeGenerationFramework.java	M_src_mechanist_WorldRuntimeGenerationFramework_java	WORLD_GEN	positioned	Oversized mapped module: 380 funcs / 8430 lines / 409343 bytes
-WARN	src/mechanist/WorldSimulationFramework.java	M_src_mechanist_WorldSimulationFramework_java	COMBAT_SIM	positioned	Oversized mapped module: 207 funcs / 1814 lines / 133522 bytes
+WARN	src/mechanist/WorldSimulationFramework.java	M_src_mechanist_WorldSimulationFramework_java	COMBAT_SIM	positioned	Oversized mapped module: 207 funcs / 1815 lines / 133524 bytes
 WARN	src/mechanist/WorldStartFlowAuthority.java	M_src_mechanist_WorldStartFlowAuthority_java	UI_RENDER	positioned	Oversized mapped module: 114 funcs / 1289 lines / 81561 bytes

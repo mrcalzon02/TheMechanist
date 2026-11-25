@@ -411,6 +411,7 @@ class Persistence {
         return c;
     }
     static void writeWorldState(World w, Properties p) {
+        if (w != null) WorldTerrainSnapshotAuthority.write(w, p);
         if (w == null) return;
         TileStructureAuthority.write(w,p);
         put(p,"world.architecturalClutter.version",Integer.toString(w.architecturalClutterVersion));
@@ -520,6 +521,7 @@ class Persistence {
         w.factionHappinessBoost.clear(); readFactionMap(p.getProperty("world.factionHappinessBoost",""), w.factionHappinessBoost);
         ZoneEconomyInitializationManager.readPersistence(w, p);
         ArchitecturalClutterAuthority.synchronizeLights(w);
+        WorldTerrainSnapshotAuthority.read(w, p);
     }
     static void readFactionMap(String text, EnumMap<Faction,Integer> map) { for(String s: decList(text)) { String[] a=s.split(":",2); if(a.length==2) try{ map.put(Faction.valueOf(a[0]),Integer.parseInt(a[1])); }catch(Exception ignored){} } }
     static void put(Properties p,String k,String v){ if(v!=null) p.setProperty(k,v); }

@@ -221,9 +221,8 @@ final class SaveEfficiencyAuthority {
         Path dir = ServerRuntimePaths.worldDir(domain == null ? ServerRuntimePaths.SaveDomain.SINGLE_PLAYER : domain);
         Files.createDirectories(dir);
         Path file = dir.resolve(game.atlas.hiveWorld.worldId + ".mechworld");
-        try (OutputStream out = Files.newOutputStream(file)) {
-            worldRuntime.store(out, "The Mechanist generated hive world and mutable world state");
-        }
+        GameStorageManager.writePropertiesAtomic(file, worldRuntime,
+                "The Mechanist generated hive world and mutable world state");
     }
 
     static void mergeReferencedWorldState(Properties slot) {

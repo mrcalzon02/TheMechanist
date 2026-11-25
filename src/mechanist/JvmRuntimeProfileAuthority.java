@@ -162,13 +162,14 @@ final class JvmRuntimeProfileAuthority {
         }
     }
 
-    private static final Path PATH = Paths.get("settings", "jvm_runtime.properties");
+    private static final Path PATH = GameStorageManager.settingsPath("jvm_runtime.properties");
 
     static RuntimeConfig load() {
         RuntimeConfig c = new RuntimeConfig();
-        if (!Files.exists(PATH)) return c;
+        Path source = GameStorageManager.settingsReadPath(PATH, Path.of("."));
+        if (!Files.exists(source)) return c;
         Properties p = new Properties();
-        try (InputStream in = Files.newInputStream(PATH)) {
+        try (InputStream in = Files.newInputStream(source)) {
             p.load(in);
             c.mode = parseEnum(ExecutionMode.class, p.getProperty("mode"), c.mode);
             c.runtimeTarget = parseEnum(RuntimeTarget.class, p.getProperty("runtimeTarget"), c.runtimeTarget);
@@ -203,7 +204,7 @@ final class JvmRuntimeProfileAuthority {
             p.setProperty("forceVolatileVram", String.valueOf(c.forceVolatileVram));
             p.setProperty("disableVectorAntialiasing", String.valueOf(c.disableVectorAntialiasing));
             p.setProperty("manualOverrides", c.manualOverrides == null ? "" : c.manualOverrides.replace('\n', ' '));
-            try (OutputStream out = Files.newOutputStream(PATH)) { p.store(out, "The Mechanist JVM runtime profile"); }
+            GameStorageManager.writePropertiesAtomic(PATH, p, "The Mechanist JVM runtime profile");
         } catch (Throwable t) {
             DebugLog.error("JVM_RUNTIME_PROFILE_SAVE", "Failed to save JVM runtime profile.", t);
         }

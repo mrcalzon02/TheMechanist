@@ -280,6 +280,7 @@ jobs:
             IMAGE='${{ steps.install_windows.outputs.image }}'
           fi
           python ROOT_build/ci/verify_installer_profile_preservation.py capture \
+            --require-world-save \
             --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
             --installed-image "$IMAGE" \
             --expected-commit "$GITHUB_SHA" \
@@ -298,8 +299,10 @@ jobs:
             --expected-platform linux-x64 \
             --expected-commit "$GITHUB_SHA" \
             --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
+            --verify-existing-save \
             --report dist/alpha-installer/deployment/reinstalled-deployment-linux-x64.json
           python ROOT_build/ci/verify_installer_profile_preservation.py check \
+            --require-world-save \
             --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
             --installed-image '${{ steps.install_linux.outputs.image }}' \
             --expected-commit "$GITHUB_SHA" \
@@ -323,9 +326,11 @@ jobs:
             --expected-platform windows-x64 `
             --expected-commit $env:GITHUB_SHA `
             --profile-root $profile `
+            --verify-existing-save `
             --report 'dist\alpha-installer\deployment\reinstalled-deployment-windows-x64.json'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & python ROOT_build\ci\verify_installer_profile_preservation.py check `
+            --require-world-save `
             --profile-root $profile `
             --installed-image '${{ steps.install_windows.outputs.image }}' `
             --expected-commit $env:GITHUB_SHA `
@@ -379,6 +384,7 @@ jobs:
             IMAGE='${{ steps.install_windows.outputs.image }}'
           fi
           python ROOT_build/ci/verify_installer_profile_preservation.py check \
+            --require-world-save \
             --profile-root "$RUNNER_TEMP/Mechanist Installed Profile" \
             --installed-image "$IMAGE" \
             --expected-commit "$GITHUB_SHA" \

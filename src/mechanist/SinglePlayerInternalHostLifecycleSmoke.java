@@ -1,11 +1,16 @@
 package mechanist;
 
 import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.util.Properties;
 import java.util.Random;
 
 /** End-to-end packaged smoke for the supervised in-process single-player host. */
 final class SinglePlayerInternalHostLifecycleSmoke {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.setProperty("java.awt.headless", "true");
         String configuredRoot = System.getProperty(GameStorageManager.OVERRIDE_PROPERTY, "").trim();
         require(!configuredRoot.isBlank(),
@@ -15,6 +20,15 @@ final class SinglePlayerInternalHostLifecycleSmoke {
                 "single-player lifecycle smoke did not receive its isolated storage root");
 
         RuntimeProfile profile = RuntimeProfile.fromArgs(new String[] {"--internal-server"});
+        Path checkpoint = expectedRoot.resolve("installed-world-checkpoint.properties");
+        if (args.length == 1 && "--verify-existing-save".equals(args[0])) {
+            verifyExisting(profile, checkpoint);
+            return;
+        }
+        require(args.length == 0, "unknown lifecycle smoke arguments");
+        require(!Files.exists(checkpoint), "refusing to replace an existing world checkpoint");
+        require(!Files.exists(SaveSlotSurfaceApi.savePathForSlot(1)),
+                "creation requires an empty isolated save slot");
         long seed = 0x51A6E2026L;
         int savedTurn;
         long savedWorldTurn;
@@ -55,7 +69,15 @@ final class SinglePlayerInternalHostLifecycleSmoke {
             savedTurn = first.turn;
             savedWorldTurn = first.worldTurn;
             savedCharacter = first.active.name;
+            first.gainXp("Mechanics", 24, "installed persistence checkpoint");
+            first.addInventoryItem("Machine part", ItemProvenanceRecord.found(
+                    "Machine part", first.world, first.turn, "installed persistence checkpoint"));
             first.writeSaveFile(1, false);
+            Properties receipt = state(first);
+            receipt.setProperty("save.sha256", hash(Files.readAllBytes(SaveSlotSurfaceApi.savePathForSlot(1))));
+            try (var out = Files.newOutputStream(checkpoint, StandardOpenOption.CREATE_NEW)) {
+                receipt.store(out, "Immutable installed-world checkpoint");
+            }
         } finally {
             first.shutdownRuntime();
             firstHost.close();
@@ -88,11 +110,76 @@ final class SinglePlayerInternalHostLifecycleSmoke {
         }
         require(resumed.singlePlayerSectorBridge == null,
                 "internal host bridge remained mounted after resumed client shutdown");
+        verifyExisting(profile, checkpoint);
 
         System.out.println("SinglePlayerInternalHostLifecycleSmoke PASS root=" + expectedRoot
                 + " turn=" + savedTurn
                 + " worldTurn=" + savedWorldTurn
                 + " character=" + savedCharacter);
+    }
+
+    private static void verifyExisting(RuntimeProfile profile, Path checkpoint) throws Exception {
+        Properties expected = new Properties();
+        try (var in = Files.newInputStream(checkpoint)) { expected.load(in); }
+        require("1".equals(expected.getProperty("checkpoint.schema")), "unsupported checkpoint");
+        Path slot = SaveSlotSurfaceApi.savePathForSlot(1);
+        String before = hash(Files.readAllBytes(slot));
+        require(before.equals(expected.getProperty("save.sha256")), "original save bytes changed");
+        GamePanel game = new GamePanel(profile);
+        if (game.timer != null) game.timer.stop();
+        SinglePlayerInternalHostSupervisor host = SinglePlayerInternalHostSupervisor.mount(game, profile);
+        try {
+            require(game.loadSaveSlot(1, "existing installed-world checkpoint"), "existing world could not load");
+            host.refreshNow("existing installed-world checkpoint");
+            require(host.active() && host.bridge().sessionAuthority() != null,
+                    "existing world did not rebind its authoritative host");
+            Properties actual = state(game);
+            expected.remove("save.sha256");
+            require(actual.equals(expected), "resumed world state differs: expected=" + expected + " actual=" + actual);
+            game.setSize(960, 600);
+            var frame = new java.awt.image.BufferedImage(960, 600, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            var graphics = frame.createGraphics();
+            try { game.paint(graphics); } finally { graphics.dispose(); }
+            require(game.getClientProperty("mechanist.render.failure") == null,
+                    "saved world could not render after resume");
+        } finally {
+            game.shutdownRuntime();
+            host.close();
+        }
+        require(game.singlePlayerSectorBridge == null, "existing world host did not shut down");
+        require(before.equals(hash(Files.readAllBytes(slot))), "read-only resume rewrote the original save");
+        System.out.println("SinglePlayerInternalHostLifecycleSmoke EXISTING_SAVE_PASS sha256=" + before);
+    }
+
+    private static Properties state(GamePanel game) throws Exception {
+        Properties result = new Properties();
+        result.setProperty("checkpoint.schema", "1");
+        result.setProperty("seed", Long.toString(game.seed));
+        result.setProperty("turn", Integer.toString(game.turn));
+        result.setProperty("worldTurn", Long.toString(game.worldTurn));
+        result.setProperty("character", game.active.name);
+        result.setProperty("player", game.playerX + "," + game.playerY);
+        result.setProperty("worldSize", game.world.w + "," + game.world.h);
+        MessageDigest tiles = MessageDigest.getInstance("SHA-256");
+        for (char[] column : game.world.tiles) for (char tile : column) {
+            tiles.update((byte) (tile >>> 8)); tiles.update((byte) tile);
+        }
+        result.setProperty("tiles.sha256", HexFormat.of().formatHex(tiles.digest()));
+        result.setProperty("xp", Integer.toString(game.xp));
+        result.setProperty("knowledgeProgress", Integer.toString(game.knowledgeXpProgress));
+        result.setProperty("knowledgeCredits", Integer.toString(game.knowledgeCredits));
+        result.setProperty("itemIds", new java.util.TreeSet<>(game.itemInstances.keySet()).toString());
+        java.util.TreeSet<String> provenance = new java.util.TreeSet<>();
+        game.itemInstances.forEach((id, item) -> {
+            if (item.provenance != null) provenance.add(id + ":" + item.provenance.unitId);
+        });
+        result.setProperty("provenance", provenance.toString());
+        result.setProperty("baseObjects", Integer.toString(game.baseObjects.size()));
+        return result;
+    }
+
+    private static String hash(byte[] bytes) throws Exception {
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
     private static void require(boolean condition, String message) {

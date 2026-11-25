@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Verify byte-for-byte mutable profile preservation across native installer operations.
 
-The test owns only two dedicated sentinel files outside the installed application.
+The test owns two dedicated sentinels outside the installed application. Native
+lifecycle CI also requires the actual world slot and immutable resume checkpoint.
 A baseline stored in CI evidence is compared after maintenance reinstall and purge.
 It does not claim to exercise a real user's historical saves or a version upgrade.
 """
@@ -19,6 +20,15 @@ SCHEMA = 1
 SENTINELS = (
     "TheMechanist/installed-game-storage/installer-preservation-test.sav",
     "TheMechanist/profiles/installer-preservation-test.profile",
+)
+WORLD_FILES = (
+    "TheMechanist/installed-game-storage/saves/singleplayer/slot1.mechsave",
+    "TheMechanist/installed-game-storage/installed-world-checkpoint.properties",
+    "TheMechanist/installed-game-storage/settings/options.properties",
+    "TheMechanist/installed-game-storage/settings/jvm_runtime.properties",
+    "TheMechanist/installed-game-storage/settings/legal.properties",
+    "TheMechanist/installed-game-storage/saves/data/profiles/active_profile.properties",
+    "TheMechanist/installed-game-storage/saves/data/profiles/profile.seed",
 )
 
 
@@ -43,7 +53,8 @@ def sentinel_path(profile: pathlib.Path, image: pathlib.Path, relative: str) -> 
     return path
 
 
-def capture(profile: pathlib.Path, image: pathlib.Path, commit: str, baseline: pathlib.Path) -> dict:
+def capture(profile: pathlib.Path, image: pathlib.Path, commit: str, baseline: pathlib.Path,
+            require_world_save: bool = False) -> dict:
     profile = profile.resolve()
     image = image.resolve()
     assert_location(profile, image)
@@ -52,6 +63,13 @@ def capture(profile: pathlib.Path, image: pathlib.Path, commit: str, baseline: p
     if baseline.exists():
         raise RuntimeError("baseline already exists; refusing to overwrite evidence")
     files = {}
+    if require_world_save:
+        for relative in WORLD_FILES:
+            path = sentinel_path(profile, image, relative)
+            if not path.is_file() or path.stat().st_size == 0:
+                raise RuntimeError("real world checkpoint is missing or empty: " + str(path))
+            data = path.read_bytes()
+            files[relative] = {"size": len(data), "sha256": digest(data)}
     for relative in SENTINELS:
         path = sentinel_path(profile, image, relative)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -67,6 +85,7 @@ def capture(profile: pathlib.Path, image: pathlib.Path, commit: str, baseline: p
         "profileRoot": str(profile),
         "installedImage": str(image),
         "files": files,
+        "requiresWorldSave": require_world_save,
     }
     baseline.parent.mkdir(parents=True, exist_ok=True)
     baseline.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -83,9 +102,10 @@ def check(profile: pathlib.Path, image: pathlib.Path, commit: str, baseline: pat
             or record.get("installedImage") != str(image)):
         raise RuntimeError("baseline identity, source commit, or paths differ")
     files = record.get("files")
-    if not isinstance(files, dict) or set(files) != set(SENTINELS):
+    required = SENTINELS + WORLD_FILES if record.get("requiresWorldSave") is True else SENTINELS
+    if not isinstance(files, dict) or set(files) != set(required):
         raise RuntimeError("baseline does not contain exactly the required sentinels")
-    for relative in SENTINELS:
+    for relative in required:
         path = sentinel_path(profile, image, relative)
         if not path.is_file():
             raise RuntimeError("mutable sentinel was removed: " + str(path))
@@ -208,13 +228,17 @@ def main() -> int:
     parser.add_argument("--new-deb", type=pathlib.Path)
     parser.add_argument("--new-commit")
     parser.add_argument("--deployment-report", type=pathlib.Path)
+    parser.add_argument("--require-world-save", action="store_true")
     args = parser.parse_args()
     result = {"schema": SCHEMA, "phase": args.phase, "status": "failed"}
     try:
         if args.phase == "capture":
-            record = capture(args.profile_root, args.installed_image, args.expected_commit, args.baseline)
+            record = capture(args.profile_root, args.installed_image, args.expected_commit, args.baseline,
+                             require_world_save=args.require_world_save)
         elif args.phase == "check":
             record = check(args.profile_root, args.installed_image, args.expected_commit, args.baseline)
+            if args.require_world_save and record.get("requiresWorldSave") is not True:
+                raise RuntimeError("baseline lacks required real-world save evidence")
         elif args.phase == "upgrade-capture":
             if not args.old_deb or not args.deployment_report:
                 raise RuntimeError("upgrade-capture requires --old-deb and --deployment-report")

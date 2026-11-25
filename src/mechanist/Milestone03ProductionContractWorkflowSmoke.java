@@ -10,7 +10,7 @@ final class Milestone03ProductionContractWorkflowSmoke {
         GamePanel game = new GamePanel();
         if (game.timer != null) game.timer.stop();
         try {
-            if (game.world == null) game.world = new World(73119L, 40, 40);
+            if (game.world == null) game.world = new World(73119L, 600, 600);
             NpcEntity representative = new NpcEntity();
             representative.name = "Civic Works Clerk";
             representative.role = "Faction Representative";

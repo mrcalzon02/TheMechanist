@@ -1774,7 +1774,8 @@ class CampaignWorldApi {
         try{
             Files.createDirectories(worldDir());
             Properties p = SaveEfficiencyAuthority.worldDefinitionProperties(d);
-            try(OutputStream out = Files.newOutputStream(worldFile(d))){ p.store(out, "The Mechanist generated arcology world definition"); }
+            GameStorageManager.writePropertiesAtomic(worldFile(d), p,
+                    "The Mechanist generated arcology world definition");
             DebugLog.audit("CAMPAIGN_WORLD_SAVE", "file=" + worldFile(d).toAbsolutePath() + " " + d.summary() + " " + SaveEfficiencyAuthority.catalog("world-definition", p));
         }catch(IOException ex){ DebugLog.error("CAMPAIGN_WORLD_SAVE", "Failed to save generated arcology world definition.", ex); }
     }

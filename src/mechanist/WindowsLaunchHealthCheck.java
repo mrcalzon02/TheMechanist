@@ -112,7 +112,7 @@ public final class WindowsLaunchHealthCheck {
     }
 
     private static boolean savedDoomModeEnabled() {
-        Path options = Path.of("settings", "options.properties");
+        Path options = GameStorageManager.optionsReadPath();
         if (!Files.isRegularFile(options)) return false;
         Properties pr = new Properties();
         try (var in = Files.newInputStream(options)) {

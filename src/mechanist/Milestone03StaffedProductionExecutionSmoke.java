@@ -315,7 +315,7 @@ final class Milestone03StaffedProductionExecutionSmoke {
         if (live.timer != null) live.timer.stop();
         try {
             live.seed = 73061L;
-            live.world = new World(live.seed, 24, 24);
+            live.world = new World(live.seed, 500, 500);
             live.active = Candidate.random(new java.util.Random(73061L));
             live.worldSetup.zoneSize = 0;
             live.worldSetup.npcDensity = 0;

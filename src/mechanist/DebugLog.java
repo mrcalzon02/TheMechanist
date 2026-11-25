@@ -25,7 +25,7 @@ class DebugLog {
             startMillis = System.currentTimeMillis();
             closed = false;
             try{
-                Path dir = Paths.get("logs");
+                Path dir = GameStorageManager.get().rootDir().resolve("logs");
                 Files.createDirectories(dir);
                 Path current = dir.resolve("current.log");
                 Path previous = dir.resolve("previous.log");
@@ -35,7 +35,7 @@ class DebugLog {
                 }
                 currentOut = new PrintWriter(new FileWriter(current.toFile(), false), true);
                 writeHeader();
-                log("The Mechanist logging initialized. Single active log is logs/current.log; prior run rotated to logs/previous.log.");
+                log("The Mechanist logging initialized. Active log=" + current + "; prior run=" + previous);
             } catch(IOException e){
                 e.printStackTrace();
             }

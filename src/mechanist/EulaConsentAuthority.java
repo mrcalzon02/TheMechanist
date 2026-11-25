@@ -12,13 +12,14 @@ import java.util.Properties;
 final class EulaConsentAuthority {
     static final String VERSION = "eula-consent-authority-0.9.10ip";
     static final String CONSENT_KEY = "eula_consented";
-    private static final Path PATH = Paths.get("settings", "legal.properties");
+    private static final Path PATH = GameStorageManager.settingsPath("legal.properties");
 
     static boolean hasConsent() {
         try {
-            if (!Files.exists(PATH)) return false;
+            Path source = GameStorageManager.settingsReadPath(PATH, Path.of("."));
+            if (!Files.exists(source)) return false;
             Properties p = new Properties();
-            try (InputStream in = Files.newInputStream(PATH)) { p.load(in); }
+            try (InputStream in = Files.newInputStream(source)) { p.load(in); }
             return Boolean.parseBoolean(p.getProperty(CONSENT_KEY, "false"));
         } catch (Throwable t) {
             DebugLog.warn("EULA_LOAD", "Consent settings could not be read; legal gate will remain closed.");
@@ -30,13 +31,14 @@ final class EulaConsentAuthority {
         try {
             Files.createDirectories(PATH.getParent());
             Properties p = new Properties();
-            if (Files.exists(PATH)) try (InputStream in = Files.newInputStream(PATH)) { p.load(in); }
+            Path source = GameStorageManager.settingsReadPath(PATH, Path.of("."));
+            if (Files.exists(source)) try (InputStream in = Files.newInputStream(source)) { p.load(in); }
             p.setProperty(CONSENT_KEY, "true");
             p.setProperty("eula.acceptedAt", Instant.now().toString());
             p.setProperty("eula.version", VERSION);
             p.setProperty("profile.provider", profile == null ? "fallback" : safe(profile.provider));
             p.setProperty("profile.id", profile == null ? "unknown" : safe(profile.shortId()));
-            try (OutputStream out = Files.newOutputStream(PATH)) { p.store(out, "The Mechanist EULA consent state"); }
+            GameStorageManager.writePropertiesAtomic(PATH, p, "The Mechanist EULA consent state");
             DebugLog.audit("EULA_ACCEPTED", "profile=" + (profile == null ? "unknown" : profile.provider + "/" + profile.shortId()));
         } catch (Throwable t) {
             DebugLog.error("EULA_SAVE", "Could not persist EULA consent.", t);

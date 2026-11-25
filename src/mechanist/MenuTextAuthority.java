@@ -127,7 +127,7 @@ final class MenuTextAuthority {
     private static String configuredLanguage() {
         String prop = System.getProperty("mechanist.language");
         if (prop != null && !prop.isBlank()) return prop.trim();
-        Path options = Path.of("settings/options.properties");
+        Path options = GameStorageManager.optionsReadPath();
         if (Files.isRegularFile(options)) {
             Properties p = new Properties();
             try (FileInputStream in = new FileInputStream(options.toFile())) {

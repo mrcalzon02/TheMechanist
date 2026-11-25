@@ -6645,9 +6645,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             java.nio.file.Files.createDirectories(path.getParent());
             Properties p = new Properties();
             Persistence.writeCore(this, p);
-            try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(path)) {
-                p.store(out, "The Mechanist " + SaveSlotSurfaceApi.slotLabel(safeSlot));
-            }
+            GameStorageManager.writePropertiesAtomic(path, p,
+                    "The Mechanist " + SaveSlotSurfaceApi.slotLabel(safeSlot));
             logEvent((quick ? "Quick-saved " : "Saved ") + SaveSlotSurfaceApi.slotLabel(safeSlot) + ".");
             DebugLog.audit("SAVE_LOAD_MENU", "wrote slot=" + safeSlot + " path=" + path);
         } catch (java.io.IOException ex) {

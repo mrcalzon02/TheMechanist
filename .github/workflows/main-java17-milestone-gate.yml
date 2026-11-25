@@ -84,6 +84,21 @@ jobs:
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.DeveloperBattleMapSmoke ROOT_build/main-java17-gate/render-captures
 
+      - name: Verify terrain persistence and failed-save preservation
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.WorldTerrainPersistenceSmoke
+          mkdir -p ROOT_build/main-java17-gate/installed-cwd
+          cd ROOT_build/main-java17-gate/installed-cwd
+          java -Djava.awt.headless=true \
+            -Dmechanist.storage.root="$GITHUB_WORKSPACE/ROOT_build/main-java17-gate/storage-user" \
+            -cp "$GITHUB_WORKSPACE/ROOT_build/main-java17-gate/classes" \
+            mechanist.InstalledUserStorageSmoke
+          test -z "$(find . -type f -print -quit)"
+
       - name: Run focused semantic resolver smoke
         shell: bash
         run: |

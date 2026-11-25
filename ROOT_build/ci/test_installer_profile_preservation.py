@@ -2,11 +2,26 @@
 """Host-only negative and positive tests for installer mutable-profile evidence."""
 import pathlib
 import tempfile
+import os
+import sys
 import unittest
 from unittest.mock import patch
 
-from verify_installer_profile_preservation import (SENTINELS, capture, check,
+from verify_installer_profile_preservation import (SENTINELS, WORLD_FILES, capture, check,
     capture_deb_upgrade, check_deb_upgrade)
+from run_installed_alpha_smoke import probe_running_process
+
+
+class InstalledBootProbeTests(unittest.TestCase):
+    def test_verbose_crashed_boot_cannot_pass_by_filling_output_pipe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(RuntimeError, "with 17"):
+                probe_running_process(
+                    [sys.executable, "-c", "import sys; sys.stdout.write('x'*2000000); "
+                     "sys.stderr.write('y'*2000000); sys.exit(17)"],
+                    cwd=pathlib.Path(directory), env=os.environ.copy(),
+                    label="verbose failed boot", hold_seconds=3,
+                )
 
 
 class ProfilePreservationTests(unittest.TestCase):
@@ -27,6 +42,24 @@ class ProfilePreservationTests(unittest.TestCase):
         self.capture()
         record = check(self.profile, self.image, self.commit, self.baseline)
         self.assertEqual(set(record["files"]), set(SENTINELS))
+
+    def test_real_world_is_required_before_capture(self):
+        with self.assertRaisesRegex(RuntimeError, "world checkpoint is missing"):
+            capture(self.profile, self.image, self.commit, self.baseline, require_world_save=True)
+        self.assertFalse(self.baseline.exists())
+
+    def test_real_world_survives_removal_of_installed_image(self):
+        for relative in WORLD_FILES:
+            path = self.profile / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"owned test fixture, not a gameplay proof: " + relative.encode())
+        capture(self.profile, self.image, self.commit, self.baseline, require_world_save=True)
+        self.image.rmdir()
+        record = check(self.profile, self.image, self.commit, self.baseline)
+        self.assertEqual(set(record["files"]), set(SENTINELS + WORLD_FILES))
+        (self.profile / WORLD_FILES[0]).write_bytes(b"replacement world")
+        with self.assertRaisesRegex(RuntimeError, "changed"):
+            check(self.profile, self.image, self.commit, self.baseline)
 
     def test_changed_save_is_rejected(self):
         self.capture()

@@ -11,7 +11,7 @@ final class Milestone03PlayerConstructionCrewSmoke {
         GamePanel g = new GamePanel();
         g.timer.stop();
         try {
-            g.world = new World(17731L, 24, 24);
+            g.world = new World(17731L, 500, 500);
             g.seed = 17731L;
             g.worldSetup.zoneSize = 0;
             g.worldSetup.npcDensity = 0;
@@ -183,7 +183,7 @@ final class Milestone03PlayerConstructionCrewSmoke {
             BaseObject loadedMachine = loaded.baseObjects.stream()
                     .filter(b -> "Recovery Test Machine".equals(b.name))
                     .findFirst().orElseThrow();
-            // The smoke's source world is a hand-built 24x24 room fixture;
+            // The smoke's source world is a hand-built room fixture;
             // Persistence.readCore recreates the normal deterministic atlas.
             // Find the actual claimed room in the restored atlas rather than
             // assuming that (10,10) still belongs to room zero.
