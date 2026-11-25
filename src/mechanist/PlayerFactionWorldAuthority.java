@@ -22,7 +22,7 @@ final class PlayerFactionWorldAuthority {
         String playerId = SaveEfficiencyAuthority.playerIdFor(game);
         String factionId = SaveEfficiencyAuthority.playerFactionIdFor(game, playerId);
         String playerName = game.active == null ? "unknown" : SaveEfficiencyAuthority.cleanRecord(game.active.name);
-        boolean founded = game.baseClaimed && !"none".equals(factionId);
+        boolean founded = PlayerCampStateAuthority.founded(game) && !"none".equals(factionId);
         String factionName = founded ? SaveEfficiencyAuthority.cleanRecord(playerName + "'s Freehold") : "none";
         String role = founded ? ROLE_FOUNDER : "unaffiliated";
 
@@ -31,9 +31,11 @@ final class PlayerFactionWorldAuthority {
         world.setProperty("world.playerFaction.id", factionId);
         world.setProperty("world.playerFaction.name", factionName);
         world.setProperty("world.playerFaction.exists", Boolean.toString(founded));
-        world.setProperty("world.playerFaction.baseRoom", Integer.toString(game.claimedRoomId));
-        world.setProperty("world.playerFaction.baseX", Integer.toString(game.baseX));
-        world.setProperty("world.playerFaction.baseY", Integer.toString(game.baseY));
+        PlayerCampStateAuthority.Home home = PlayerCampStateAuthority.home(game);
+        world.setProperty("world.playerFaction.baseWorld", home == null ? "" : home.world());
+        world.setProperty("world.playerFaction.baseRoom", Integer.toString(home == null ? -1 : home.room()));
+        world.setProperty("world.playerFaction.baseX", Integer.toString(home == null ? -1 : home.x()));
+        world.setProperty("world.playerFaction.baseY", Integer.toString(home == null ? -1 : home.y()));
         world.setProperty("world.playerFaction.autonomyPolicy", founded ? "continue-production-trade-defense-without-player" : "no-player-faction-founded");
         world.setProperty("world.playerFaction.playerCommandTrack", "player-ranks");
         world.setProperty("world.playerFaction.npcCommandTrack", "npc-ranks");

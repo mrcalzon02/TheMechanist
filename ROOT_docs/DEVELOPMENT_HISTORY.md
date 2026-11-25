@@ -1,5 +1,13 @@
 # Development History
 
+### Gameplay audit: physical camp travel, storage access and faction continuity (2026-11-24)
+
+- Reproduced a real stair-travel defect: beds, machines, base stock, claimed-room state and scavenging cooldowns followed the player to another building floor. Camps now retain their own world coordinates, construction records, ownership history and exact stored item identities. Returning restores that camp; saving away from home and restarting preserves it without projecting it onto the loaded floor. Malformed camp payloads, missing containers and inconsistent/duplicated stored units are rejected.
+- The real inventory transfer method previously bypassed its existing actor-access authority. It now checks permissions before mutation, rejects remote camp storage, requires local claimed-room access for deposits and withdrawals, and avoids reusing surviving legacy item IDs. Unclaimed space no longer counts as being inside a claimed room.
+- Faction founding/identity now survives leaving the home floor and is saved independently of the currently loaded camp. Faction metadata records the home world's coordinates as well as its room and anchor. The existing base-object codec is shared by active and inactive camp restoration rather than introducing a second format.
+- The new isolated child-JVM CampTravelIntegrationSmoke uses real building-stair actions, an actual disk slot, offsite reload/return, exact stock IDs, a cot, faction continuity, local cooldowns and denied remote transfers. It reproduced the original failure and passed the repair, including corrupt-payload/missing-container negative controls. CoreGameplayBoundarySmoke passed. The new journey runs in both the main Java 17 gate and the full Gate 3 suite; the broader suite is running before final acceptance. Required module positions are regenerated.
+- This checkpoint repairs physical locality and persistence. Offsite staffed work and remaining mission/animal gameplay are still being audited; this entry does not certify the complete original gameplay scope. No Computer Use, installer publication, history rewrite or modification of the original dirty user checkout was performed.
+
 ### Milestone 06.R visited-world save continuity (2026-11-24)
 
 - A second-floor disk-save probe reproduced another real boundary defect: an excavated wall on floor 4 returned after saving on floor 5 and restarting. Earlier active-floor checks and the complete 252-case suite did not cover inactive visited slices. Stopped native acceptance for that superseded candidate rather than claiming complete world-save continuity.

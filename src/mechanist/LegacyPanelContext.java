@@ -310,6 +310,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     int mouseX = -1;
     int mouseY = -1;
     boolean baseClaimed;
+    String playerFactionIdentity = "";
     boolean characterNameEditActive;
     boolean manualMovementPlanActive;
     boolean manualMovementPlanHazardous;
@@ -691,6 +692,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         equippedClothing = Clothing.scavengerRags();
         activeWeaponHandIndex = 1;
         baseClaimed = false;
+        playerFactionIdentity = "";
         claimedRoomId = -1;
         baseX = baseY = -1;
         activePortableLightItem = "";
@@ -7700,7 +7702,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         return inst == null ? "unknown item" : inst.displayName;
     }
     boolean isInClaimedRoom(int x, int y) {
-        if (!baseClaimed || claimedRoomId < 0) return true;
+        if (!baseClaimed) return false;
         if (world != null && claimedRoomId < world.rooms.size() && claimedRoomId < world.roomFactions.size()
                 && world.roomFaction(claimedRoomId) == Faction.HIVER
                 && RoomOwnershipAuthority.hasAuthoritativePlayerClaim(this, claimedRoomId)) {
@@ -7708,7 +7710,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         return Math.abs(x - baseX) <= 12 && Math.abs(y - baseY) <= 12;
     }
-    Faction playerFaction() { return baseClaimed ? Faction.HIVER : Faction.NONE; }
+    Faction playerFaction() { return PlayerCampStateAuthority.founded(this) ? Faction.HIVER : Faction.NONE; }
     boolean playerIsFactionMember(Faction faction) { return faction == null || faction == Faction.NONE || sameFactionFamily(faction, playerFaction()); }
     boolean sameFactionFamily(Faction a, Faction b) { return sameFactionFamilyStatic(a, b); }
     String baseDisplayName() {
@@ -7737,6 +7739,8 @@ class GamePanel extends LegacyPanelBridgeBase {
                                              String toContainerId, String toLabel, ArrayList<String> toLegacy,
                                              String reason) {
         if (itemName == null || itemName.isBlank()) return null;
+        String access = ActorAccessAuthority.containerTransferProblem(this, fromContainerId, toContainerId, reason);
+        if (access != null) { lastTargetingReport = access; return null; }
         ensureContainer(fromContainerId, fromContainerId == null ? "source" : fromContainerId);
         ensureContainer(toContainerId, toLabel == null ? toContainerId : toLabel);
         ItemInstance found = null;
@@ -7746,7 +7750,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             while (it.hasNext()) {
                 String id = it.next();
                 ItemInstance inst = itemInstances.get(id);
-                if (inst != null && ItemQuality.namesMatch(inst.displayName, itemName)) {
+                if (inst != null && fromContainerId.equals(inst.containerId) && ItemQuality.namesMatch(inst.displayName, itemName)) {
                     found = inst;
                     it.remove();
                     if (fromLegacy != null) {
@@ -7763,7 +7767,9 @@ class GamePanel extends LegacyPanelBridgeBase {
                 String s = it.next();
                 if (ItemQuality.namesMatch(s, itemName)) {
                     it.remove();
-                    String id = "legacy-transfer-" + (itemInstances.size() + 1);
+                    int sequence = itemInstances.size() + 1;
+                    String id;
+                    do { id = "legacy-transfer-" + sequence++; } while (itemInstances.containsKey(id));
                     found = new ItemInstance(id, s, toContainerId, "legacy-transfer", null);
                     itemInstances.put(id, found);
                     break;

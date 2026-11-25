@@ -1958,7 +1958,12 @@ class ActorAccessAuthority {
         String to = toContainerId == null ? "" : toContainerId;
         String r = route == null ? "" : route.toLowerCase(Locale.ROOT);
         if (from.isBlank() || to.isBlank()) return "container route is incomplete";
+        if (from.startsWith(GamePanel.CONTAINER_BASE_STORAGE + "@") || to.startsWith(GamePanel.CONTAINER_BASE_STORAGE + "@"))
+            return "stored camp supplies are not accessible from another location";
         if (isVoid(from) || isVoid(to)) return null;
+        if ((from.equals(GamePanel.CONTAINER_BASE_STORAGE) || to.equals(GamePanel.CONTAINER_BASE_STORAGE))
+                && (!g.baseClaimed || !g.isInClaimedRoom(g.playerX, g.playerY)))
+            return "base storage requires access from inside the claimed room";
         if (from.equals(GamePanel.CONTAINER_PLAYER_INVENTORY) || to.equals(GamePanel.CONTAINER_PLAYER_INVENTORY)) {
             if (from.equals(GamePanel.CONTAINER_PLAYER_INVENTORY)) return null;
             if (from.equals(GamePanel.CONTAINER_BASE_STORAGE) && !g.isInClaimedRoom(g.playerX, g.playerY)) return "base storage may only be recovered from inside the claimed room";
@@ -2060,9 +2065,11 @@ class ActorAccessAuditApi {
         for (String[] r: routes) {
             a.containerRoutesChecked++;
             String p = ActorAccessAuthority.containerTransferProblem(g, r[0], r[1], r[2]);
-            boolean expectedDeny = r[0].startsWith(GamePanel.CONTAINER_FACTION_STOCK_PREFIX) && r[1].equals(GamePanel.CONTAINER_PLAYER_INVENTORY);
+            boolean expectedDeny = r[0].startsWith(GamePanel.CONTAINER_FACTION_STOCK_PREFIX) && r[1].equals(GamePanel.CONTAINER_PLAYER_INVENTORY)
+                    || g != null && (r[0].equals(GamePanel.CONTAINER_BASE_STORAGE) || r[1].equals(GamePanel.CONTAINER_BASE_STORAGE))
+                    && (!g.baseClaimed || !g.isInClaimedRoom(g.playerX,g.playerY));
             if (expectedDeny) { if (p == null) a.issues.add("direct faction-stock to player route was not denied"); else a.protectedDenials++; }
-            else if (p != null && !(r[0].equals(GamePanel.CONTAINER_BASE_STORAGE) && (g == null || !g.isInClaimedRoom(g.playerX,g.playerY)))) a.issues.add("authorized route unexpectedly denied: " + Arrays.toString(r) + " reason=" + p);
+            else if (p != null) a.issues.add("authorized route unexpectedly denied: " + Arrays.toString(r) + " reason=" + p);
         }
         if (g != null) {
             for (FactionRecipeVariant v : FactionRecipeVariantApi.generatedFactionVariants()) {

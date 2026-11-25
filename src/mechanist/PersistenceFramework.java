@@ -155,6 +155,8 @@ class Persistence {
         put(p,"base.claimed",Boolean.toString(g.baseClaimed)); put(p,"base.x",Integer.toString(g.baseX)); put(p,"base.y",Integer.toString(g.baseY)); put(p,"base.room",Integer.toString(g.claimedRoomId));
         writeWorldState(g.world, p);
         VisitedWorldPersistenceAuthority.write(g, p);
+        PlayerCampStateAuthority.write(g, p);
+        put(p, "run.playerFactionId", SaveEfficiencyAuthority.playerFactionIdFor(g, SaveEfficiencyAuthority.playerIdFor(g)));
         if (g.atlas != null && g.atlas.hiveWorld != null) {
             Properties bundledWorld = SaveEfficiencyAuthority.worldDefinitionProperties(g.atlas.hiveWorld);
             for (String key : p.stringPropertyNames()) if (key.startsWith("world."))
@@ -206,6 +208,8 @@ class Persistence {
         String version = p.getProperty("save.version", "unknown");
         if (!VERSION.equals(version)) DebugLog.warn("SAVE_VERSION", "Loading save version " + version + " with runtime " + VERSION + ". Migration uses compatibility defaults.");
         g.seed = getLong(p,"run.seed",System.currentTimeMillis());
+        g.playerFactionIdentity = p.getProperty("run.playerFactionId", p.getProperty("char.lastKnownPlayerFactionId", ""));
+        if ("none".equals(g.playerFactionIdentity)) g.playerFactionIdentity = "";
         g.worldSetup = WorldSetupSettings.decode(p.getProperty("run.worldSetup", WorldSetupSettings.standard().encode()));
         long atlasSeed = getLong(p,"atlas.seed",g.seed);
         g.atlas = WorldAtlas.loadSavedRun(atlasSeed, g.worldSetup, p);
@@ -293,49 +297,7 @@ class Persistence {
         g.seedNpcFactionProductionSites();
         g.scavengeCooldownUntilTurn.clear(); for(String s: decList(p.getProperty("scavenge.cooldowns",""))) { String[] a=s.split(":",2); if(a.length==2) try{g.scavengeCooldownUntilTurn.put(Integer.parseInt(a[0]),Integer.parseInt(a[1]));}catch(Exception ignored){} }
         g.baseClaimed=Boolean.parseBoolean(p.getProperty("base.claimed","false")); g.baseX=getInt(p,"base.x",-1); g.baseY=getInt(p,"base.y",-1); g.claimedRoomId=getInt(p,"base.room",-1);
-        g.baseObjects.clear();
-        for(String s: decList(p.getProperty("base.objects",""))) {
-            String[] a=s.split("\\|",36);
-            if(a.length>=5) try {
-                BaseObject b=new BaseObject(a[0], a[1].isEmpty()?'?':a[1].charAt(0),
-                        Integer.parseInt(a[2]), Integer.parseInt(a[3]), 0, 0);
-                b.capacity=Integer.parseInt(a[4]);
-                if(a.length>=6) b.qualityName=a[5];
-                if(a.length>=7) try{ b.faction=Faction.valueOf(a[6]); }catch(Exception ignored){}
-                if(a.length>=8) b.charges=Integer.parseInt(a[7]);
-                if(a.length>=9) b.integrity=Integer.parseInt(a[8]);
-                if(a.length>=10) b.assignedRecipe=BaseObject.decodeDelimitedField(a[9]);
-                if(a.length>=11) b.assignedWorker=a[10];
-                if(a.length>=12) b.businessOpen=Boolean.parseBoolean(a[11]);
-                if(a.length>=13) b.permittedBusiness=Boolean.parseBoolean(a[12]);
-                if(a.length>=14) try{ b.businessHeat=Integer.parseInt(a[13]); }catch(Exception ignored){}
-                if(a.length>=15) try{ b.productionQueueTarget=Integer.parseInt(a[14]); }catch(Exception ignored){}
-                if(a.length>=16) try{ b.productionQueueRemaining=Integer.parseInt(a[15]); }catch(Exception ignored){}
-                if(a.length>=17) b.underConstruction=Boolean.parseBoolean(a[16]);
-                if(a.length>=18 && !a[17].isBlank()) b.finalSymbol=a[17].charAt(0);
-                if(a.length>=19) b.constructionRequiredItems=a[18];
-                if(a.length>=20) b.constructionInsertedItems=a[19];
-                if(a.length>=21) try{ b.constructionLaborRequired=Integer.parseInt(a[20]); }catch(Exception ignored){}
-                if(a.length>=22) try{ b.constructionLaborDone=Integer.parseInt(a[21]); }catch(Exception ignored){}
-                if(a.length>=23) try{ b.constructionVisualProgress=Integer.parseInt(a[22]); }catch(Exception ignored){}
-                if(a.length>=24) b.machineKnowledge=a[23];
-                if(a.length>=25) b.machineRepairHistory=a[24];
-                if(a.length>=26 && !a[25].isBlank()) b.constructionOriginalTile=a[25].charAt(0);
-                if(a.length>=27) try{ b.productionProgressTurns=Math.max(0,Integer.parseInt(a[26])); }catch(Exception ignored){}
-                if(a.length>=28) b.productionMaterialPolicy=a[27];
-                if(a.length>=29) b.productionOutputPolicy=a[28];
-                if(a.length>=30) b.productionNoRoomPolicy=a[29];
-                if(a.length>=31) b.productionLastBlocker=BaseObject.decodeDelimitedField(a[30]);
-                if(a.length>=32) b.constructionOwnerMode=BaseObject.decodeDelimitedField(a[31]);
-                if(a.length>=33) b.constructionMaterialSource=BaseObject.decodeDelimitedField(a[32]);
-                if(a.length>=34) b.constructionPlanSource=BaseObject.decodeDelimitedField(a[33]);
-                if(a.length>=35) b.constructionLinkedSiteName=BaseObject.decodeDelimitedField(a[34]);
-                if(a.length>=36) b.constructionLinkedPlanId=BaseObject.decodeDelimitedField(a[35]);
-                if(!b.underConstruction) g.configureBaseObject(b);
-                g.baseObjects.add(b);
-                if(g.world.inBounds(b.x,b.y)) g.world.tiles[b.x][b.y]=b.symbol;
-            } catch(Exception ignored) {}
-        }
+        restoreBaseObjects(g, p);
         g.factionRecruits.clear(); for(String rs: decList(p.getProperty("base.recruits",""))) { RecruitWorker r = RecruitWorker.parse(rs); if(r != null) g.factionRecruits.add(r); }
         if (g.machineOperationQueue != null) g.machineOperationQueue.restoreRecentHistory(decList(p.getProperty("machine.queue.history", "")));
         g.nextLogisticsIntentSeq = Math.max(1, getInt(p, "logistics.intent.nextSeq", g.nextLogisticsIntentSeq));
@@ -379,6 +341,7 @@ class Persistence {
             g.playerX = restoredPlayerX;
             g.playerY = restoredPlayerY;
         }
+        PlayerCampStateAuthority.read(g, p);
         g.markZoneVisitedAndCheckFirstType();
         g.migrateLegacyPhysicalScript("save/read");
         g.auditItemLedgers("save/read");
@@ -531,6 +494,58 @@ class Persistence {
         ZoneEconomyInitializationManager.readPersistence(w, p);
         ArchitecturalClutterAuthority.synchronizeLights(w);
         WorldTerrainSnapshotAuthority.read(w, p);
+    }
+    static ArrayList<BaseObject> decodeBaseObjects(Properties p) {
+        ArrayList<BaseObject> result = new ArrayList<>();
+        for(String s: decList(p.getProperty("base.objects",""))) {
+            String[] a=s.split("\\|",36);
+            if(a.length>=5) try {
+                BaseObject b=new BaseObject(a[0], a[1].isEmpty()?'?':a[1].charAt(0),
+                        Integer.parseInt(a[2]), Integer.parseInt(a[3]), 0, 0);
+                b.capacity=Integer.parseInt(a[4]);
+                if(a.length>=6) b.qualityName=a[5];
+                if(a.length>=7) try{ b.faction=Faction.valueOf(a[6]); }catch(Exception ignored){}
+                if(a.length>=8) b.charges=Integer.parseInt(a[7]);
+                if(a.length>=9) b.integrity=Integer.parseInt(a[8]);
+                if(a.length>=10) b.assignedRecipe=BaseObject.decodeDelimitedField(a[9]);
+                if(a.length>=11) b.assignedWorker=a[10];
+                if(a.length>=12) b.businessOpen=Boolean.parseBoolean(a[11]);
+                if(a.length>=13) b.permittedBusiness=Boolean.parseBoolean(a[12]);
+                if(a.length>=14) try{ b.businessHeat=Integer.parseInt(a[13]); }catch(Exception ignored){}
+                if(a.length>=15) try{ b.productionQueueTarget=Integer.parseInt(a[14]); }catch(Exception ignored){}
+                if(a.length>=16) try{ b.productionQueueRemaining=Integer.parseInt(a[15]); }catch(Exception ignored){}
+                if(a.length>=17) b.underConstruction=Boolean.parseBoolean(a[16]);
+                if(a.length>=18 && !a[17].isBlank()) b.finalSymbol=a[17].charAt(0);
+                if(a.length>=19) b.constructionRequiredItems=a[18];
+                if(a.length>=20) b.constructionInsertedItems=a[19];
+                if(a.length>=21) try{ b.constructionLaborRequired=Integer.parseInt(a[20]); }catch(Exception ignored){}
+                if(a.length>=22) try{ b.constructionLaborDone=Integer.parseInt(a[21]); }catch(Exception ignored){}
+                if(a.length>=23) try{ b.constructionVisualProgress=Integer.parseInt(a[22]); }catch(Exception ignored){}
+                if(a.length>=24) b.machineKnowledge=a[23];
+                if(a.length>=25) b.machineRepairHistory=a[24];
+                if(a.length>=26 && !a[25].isBlank()) b.constructionOriginalTile=a[25].charAt(0);
+                if(a.length>=27) try{ b.productionProgressTurns=Math.max(0,Integer.parseInt(a[26])); }catch(Exception ignored){}
+                if(a.length>=28) b.productionMaterialPolicy=a[27];
+                if(a.length>=29) b.productionOutputPolicy=a[28];
+                if(a.length>=30) b.productionNoRoomPolicy=a[29];
+                if(a.length>=31) b.productionLastBlocker=BaseObject.decodeDelimitedField(a[30]);
+                if(a.length>=32) b.constructionOwnerMode=BaseObject.decodeDelimitedField(a[31]);
+                if(a.length>=33) b.constructionMaterialSource=BaseObject.decodeDelimitedField(a[32]);
+                if(a.length>=34) b.constructionPlanSource=BaseObject.decodeDelimitedField(a[33]);
+                if(a.length>=35) b.constructionLinkedSiteName=BaseObject.decodeDelimitedField(a[34]);
+                if(a.length>=36) b.constructionLinkedPlanId=BaseObject.decodeDelimitedField(a[35]);
+                result.add(b);
+            } catch(Exception ignored) {}
+        }
+        return result;
+    }
+    static void restoreBaseObjects(GamePanel g, Properties p) {
+        g.baseObjects.clear();
+        g.baseObjects.addAll(decodeBaseObjects(p));
+        for (BaseObject b : g.baseObjects) {
+            if (!b.underConstruction) g.configureBaseObject(b);
+            if (g.world.inBounds(b.x,b.y)) g.world.tiles[b.x][b.y]=b.symbol;
+        }
     }
     static void readFactionMap(String text, EnumMap<Faction,Integer> map) { for(String s: decList(text)) { String[] a=s.split(":",2); if(a.length==2) try{ map.put(Faction.valueOf(a[0]),Integer.parseInt(a[1])); }catch(Exception ignored){} } }
     static void put(Properties p,String k,String v){ if(v!=null) p.setProperty(k,v); }

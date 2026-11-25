@@ -4,6 +4,7 @@ package mechanist;
 final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) throws Exception {
         runSmoke("VisitedWorldPersistenceSmoke", () -> VisitedWorldPersistenceSmoke.main(args));
+        runSmoke("CampTravelIntegrationSmoke", () -> CampTravelIntegrationSmoke.main(args));
         runSmoke("OptionsSwingComponentSmoke", () -> OptionsSwingComponentSmoke.main(args));
         runSmoke("CoreGameplayBoundarySmoke", () -> CoreGameplayBoundarySmoke.main(args));
         runSmoke("Milestone03PlayerConstructionCrewSmoke", () -> Milestone03PlayerConstructionCrewSmoke.main(args));

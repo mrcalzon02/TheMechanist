@@ -29,10 +29,12 @@ final class CoreGameplayBoundarySmoke {
             game.rebuildItemContainersFromLegacyLists();
             check(player.itemInstanceIds.size() == 2 && player.itemInstanceIds.get(0).equals(firstId), "rebuild preserves exact identities and multiplicity");
             check(game.itemInstances.get(firstId).provenance == first, "supplier provenance survives admission/rebuild");
+            game.baseClaimed = true; game.baseX = game.playerX; game.baseY = game.playerY;
             ItemInstance moved = game.transferContainerItemByName(GamePanel.CONTAINER_PLAYER_INVENTORY,
                     game.inventory, "Machine part", GamePanel.CONTAINER_BASE_STORAGE, "Base storage", game.baseStorage, "test transfer");
             game.rebuildItemContainersFromLegacyLists();
             check(moved != null && moved.id.equals(firstId), "transfer must preserve identity");
+            game.baseClaimed = false;
             check(game.inventory.size() == 1 && game.baseStorage.size() == 1 && game.itemInstances.size() == 2, "transfer/rebuild must not duplicate units");
             check(ProductionContainerAuthority.consumeOne(game, "Machine part", "test consumption").success, "consume transferred material");
             game.addInventoryItem("Wire bundle", null);

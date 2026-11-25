@@ -10,12 +10,12 @@ WARN	src/mechanist/IndependentHostClientSupervisor.java	M_src_mechanist_Independ
 WARN	src/mechanist/IndependentHostTurnAuthority.java	M_src_mechanist_IndependentHostTurnAuthority_java	COMBAT_SIM	positioned	Oversized mapped module: 49 funcs / 1142 lines / 41531 bytes
 WARN	src/mechanist/InfrastructurePromotionRegistry.java	M_src_mechanist_InfrastructurePromotionRegistry_java	ASSET_REGISTRY	positioned	Oversized mapped module: 11 funcs / 1001 lines / 61142 bytes
 WARN	src/mechanist/ItemEconomyFramework.java	M_src_mechanist_ItemEconomyFramework_java	INVENTORY_PERSIST	positioned	Oversized mapped module: 73 funcs / 1537 lines / 242180 bytes
-WARN	src/mechanist/LegacyPanelContext.java	M_src_mechanist_LegacyPanelContext_java	UI_RENDER	positioned	Oversized mapped module: 618 funcs / 8405 lines / 461977 bytes
+WARN	src/mechanist/LegacyPanelContext.java	M_src_mechanist_LegacyPanelContext_java	UI_RENDER	positioned	Oversized mapped module: 618 funcs / 8411 lines / 462410 bytes
 WARN	src/mechanist/MediaRuntimeFramework.java	M_src_mechanist_MediaRuntimeFramework_java	LOCALIZATION_TEXT	positioned	Oversized mapped module: 58 funcs / 883 lines / 50248 bytes
 WARN	src/mechanist/Milestone05FactionRoomShellConstructionSmoke.java	M_src_mechanist_Milestone05FactionRoomShellConstructionSmoke_java	WORLD_GEN	positioned	Oversized mapped module: 30 funcs / 806 lines / 43178 bytes
 WARN	src/mechanist/Milestone06FactionVehicleBalanceSmoke.java	M_src_mechanist_Milestone06FactionVehicleBalanceSmoke_java	DIAGNOSTIC_DOC	positioned	Oversized mapped module: 8 funcs / 868 lines / 46778 bytes
 WARN	src/mechanist/PopulationPersonnelFramework.java	M_src_mechanist_PopulationPersonnelFramework_java	COMBAT_SIM	positioned	Oversized mapped module: 126 funcs / 1433 lines / 95248 bytes
-WARN	src/mechanist/ProductionAuthorityFramework.java	M_src_mechanist_ProductionAuthorityFramework_java	FIXTURE_MACHINE	positioned	Oversized mapped module: 322 funcs / 3152 lines / 345097 bytes
+WARN	src/mechanist/ProductionAuthorityFramework.java	M_src_mechanist_ProductionAuthorityFramework_java	FIXTURE_MACHINE	positioned	Oversized mapped module: 322 funcs / 3159 lines / 345681 bytes
 WARN	src/mechanist/ProgressiveConstructionAuthority.java	M_src_mechanist_ProgressiveConstructionAuthority_java	UI_RENDER	positioned	Oversized mapped module: 68 funcs / 807 lines / 47320 bytes
 WARN	src/mechanist/RemoteSessionLedgerAuthority.java	M_src_mechanist_RemoteSessionLedgerAuthority_java	SERVER_AUTH	positioned	Oversized mapped module: 33 funcs / 901 lines / 34651 bytes
 WARN	src/mechanist/SimulationEditorSuite.java	M_src_mechanist_SimulationEditorSuite_java	UI_RENDER	positioned	Oversized mapped module: 117 funcs / 1699 lines / 101521 bytes

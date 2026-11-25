@@ -169,7 +169,13 @@ final class MultiFloorBuildingTransitAuthority {
         }
         boolean[][] remembered = rememberedFor(exploration.memory(), from,
                 game.rememberedTiles, target);
-        game.world = target;
+        try {
+            PlayerCampStateAuthority.enter(game, target);
+        } catch (RuntimeException failure) {
+            atlas.floor = originalFloor;
+            report(game, "Cannot change floors: camp state could not be transferred safely: " + failure.getMessage());
+            return true;
+        }
         game.rememberedTiles = remembered;
         game.visibleTiles = new boolean[target.w][target.h];
         game.lightLevels = new int[target.w][target.h];

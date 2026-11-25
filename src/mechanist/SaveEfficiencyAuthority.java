@@ -76,7 +76,7 @@ final class SaveEfficiencyAuthority {
         String factionId = playerFactionIdFor(game, playerId);
         String playerName = game.active == null ? "unknown" : cleanRecord(game.active.name);
         String factionName = factionId.equals("none") ? "none" : cleanRecord(playerName + "'s Freehold");
-        String memberRole = game.baseClaimed ? "leader" : "unaffiliated";
+        String memberRole = PlayerCampStateAuthority.founded(game) ? "leader" : "unaffiliated";
         world.setProperty("world.faction.playerFactionId", factionId);
         world.setProperty("world.faction.playerFactionName", factionName);
         world.setProperty("world.faction.playerMember." + playerId + ".name", playerName);
@@ -84,7 +84,7 @@ final class SaveEfficiencyAuthority {
         world.setProperty("world.faction.playerMember." + playerId + ".reserved", "true");
         world.setProperty("world.faction.playerMember." + playerId + ".rankTrack", "player-command");
         world.setProperty("world.faction.npcCommandTrack", "separate-npc-command-structure");
-        world.setProperty("world.faction.autonomyPolicy", game.baseClaimed ? "continues-without-player-present" : "no-player-faction-founded");
+        world.setProperty("world.faction.autonomyPolicy", PlayerCampStateAuthority.founded(game) ? "continues-without-player-present" : "no-player-faction-founded");
     }
 
     static String playerIdFor(GamePanel game) {
@@ -97,15 +97,19 @@ final class SaveEfficiencyAuthority {
         if (game == null || game.active == null) return "none";
         String playerId = playerIdFor(game);
         String name = cleanRecord(game.active.name);
-        String role = game.baseClaimed ? "founder-leader" : "unaffiliated";
+        String role = PlayerCampStateAuthority.founded(game) ? "founder-leader" : "unaffiliated";
         String factionId = playerFactionIdFor(game, playerId);
         return playerId + "|" + name + "|" + factionId + "|" + role + "|npc-chain=separate|reserved=true";
     }
 
     static String playerFactionIdFor(GamePanel game, String playerId) {
-        if (game == null || !game.baseClaimed) return "none";
-        String basis = (playerId == null ? "unknown-player" : playerId) + "|" + game.claimedRoomId + "|" + game.baseX + "," + game.baseY;
-        return "player-faction-" + Integer.toUnsignedString(basis.hashCode(), 36);
+        if (game == null) return "none";
+        if (!game.playerFactionIdentity.isBlank()) return game.playerFactionIdentity;
+        PlayerCampStateAuthority.Home home = PlayerCampStateAuthority.home(game);
+        if (home == null) return "none";
+        String basis = (playerId == null ? "unknown-player" : playerId) + "|" + home.room() + "|" + home.x() + "," + home.y();
+        game.playerFactionIdentity = "player-faction-" + Integer.toUnsignedString(basis.hashCode(), 36);
+        return game.playerFactionIdentity;
     }
 
     static String cleanRecord(String text) {
