@@ -258,6 +258,28 @@
       "diagnosticRunnerPythonSyntax": "passed",
       "failurePropagates": true,
       "reference": "https://maven.apache.org/surefire/maven-surefire-plugin/usage.html"
-    }
+    },
+    "actualWindowCheck": {
+      "status": "passed and actual gameplay capture reviewed",
+      "sourceCommit": "0fd5fa8a120435ccc67aebb41fe12494419b4ddc",
+      "run": 45517858546,
+      "attempt": 1,
+      "clientJarSha256": "0b0402df0ec21e534f141909b5e8f732190f8967ac55327361c55c4355b4bdc5",
+      "gameClassCount": 2364,
+      "renderFailureObserved": false,
+      "gameplayCaptureSha256": "e5ddaf104c8fdc0c1ff1b4ff292314f83a4b5e1f1a70375b2b5e16b3b54eda39",
+      "terrainSamplesBound": 1536,
+      "sampledEntityArtMissing": 0,
+      "mapPixelsChangedWithImagesDisabled": 37890,
+      "pinnedSurefireResolved": "3.5.4",
+      "canonicalInventorySuccessor": "60f7be8e619f4e00cd1917bcf7a8a79d10cccfd9"
+    },
+    "finalBuildCI": {
+      "Main Java 17 Milestone Gate": "success",
+      "Milestone Validation and Smoke": "success",
+      "Repository Inventory Alpha Gate": "success",
+      "Runtime Visual Verification": "success"
+    },
+    "multiplayerSourceRevision": "77b31ada60886a6a5d84f0e8ad5f5004d02a0203"
   }
 }
