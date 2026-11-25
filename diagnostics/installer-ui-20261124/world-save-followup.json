@@ -1,0 +1,175 @@
+{
+  "actualDiskCampJourney": {
+    "completedCot": true,
+    "itemProvenance": true,
+    "knowledgeRemainder": true,
+    "rewardReplay": false,
+    "status": "passed"
+  },
+  "computerUse": false,
+  "date": "2026-11-24",
+  "fullGameplayFeatureCertification": false,
+  "fullSuite": {
+    "cases": 253,
+    "elapsedSeconds": 383.73,
+    "exitCode": 0,
+    "failedCases": 0,
+    "freshIsolatedProfile": true,
+    "sourceCommit": "3d19ba2ae3a773172899b2b4056b47de627a855d",
+    "status": "passed",
+    "timeoutSeconds": 1200
+  },
+  "graphics": {
+    "actualScreenshotsReviewed": true,
+    "charcoalFog": true,
+    "gameClassCount": 2371,
+    "loadingBelowSubtitle": true,
+    "loadingOpacity": 0.82,
+    "screenshots": {
+      "02a-graphical-zone-loading.png": "5e47dd07293ef0e37f7c094ed246e0d89dc43476851eb45f823fc51183a082e0",
+      "08-gameplay-960x600.png": "e5ddaf104c8fdc0c1ff1b4ff292314f83a4b5e1f1a70375b2b5e16b3b54eda39"
+    },
+    "status": "passed-automated-checks"
+  },
+  "installerVerifierTests": {
+    "count": 19,
+    "status": "passed"
+  },
+  "nativeCandidateCommit": "5c66486101fa9dfa457231ea56674324ba0dc7dc",
+  "nativePlatforms": {
+    "linux-x64": {
+      "artifactDigest": "sha256:cd9018871cd09e2140fca450bb43a7f71b6dbfa314edc7eedb65d8859c8ad10b",
+      "artifactId": 14987073921,
+      "embeddedWorldDefinitionRecovered": true,
+      "originalWorldRendered": true,
+      "originalWorldResumedInFreshJvm": true,
+      "originalWorldSave": {
+        "path": "/home/runner/work/_temp/Mechanist Installed Profile/TheMechanist/installed-game-storage/saves/singleplayer/slot1.mechsave",
+        "sha256": "ceabe514100c8ff88c19281784769628e5af3db2ef179e9c591cdb1e5e664cd6",
+        "size": 14291517
+      },
+      "preservedFileCount": 9,
+      "preservedFiles": {
+        "TheMechanist/installed-game-storage/installed-world-checkpoint.properties": {
+          "sha256": "a5a52c12decd655c5b93246941d9133ca7cc2d5d4d9d17e74597159396181179",
+          "size": 730
+        },
+        "TheMechanist/installed-game-storage/installer-preservation-test.sav": {
+          "sha256": "2825ba5826283370edf1f7510270671bb8d3bedf1f377dc7fec1a3bb0087f9af",
+          "size": 175
+        },
+        "TheMechanist/installed-game-storage/saves/data/profiles/active_profile.properties": {
+          "sha256": "60dbf7539938562d8fc3175ad3731ee9add883c9f0546bbd596421618f95c55e",
+          "size": 622
+        },
+        "TheMechanist/installed-game-storage/saves/data/profiles/profile.seed": {
+          "sha256": "7d844626d98adcd3a6e16e8854d0a43abc090b97778a7aaf30e3f473ae33b307",
+          "size": 37
+        },
+        "TheMechanist/installed-game-storage/saves/singleplayer/slot1.mechsave": {
+          "sha256": "ceabe514100c8ff88c19281784769628e5af3db2ef179e9c591cdb1e5e664cd6",
+          "size": 14291517
+        },
+        "TheMechanist/installed-game-storage/settings/jvm_runtime.properties": {
+          "sha256": "9a25aa09c3b3fbdf9733fd8b5e2b37b9423ed13f54dafdcb6b000527a419aa5e",
+          "size": 306
+        },
+        "TheMechanist/installed-game-storage/settings/legal.properties": {
+          "sha256": "99c1a8696291ad2fca9f65d9327c7070dc3af6ce44c0be66bf4ea22a377292f3",
+          "size": 234
+        },
+        "TheMechanist/installed-game-storage/settings/options.properties": {
+          "sha256": "82488b6070c86768a46fd44cad5a1bc8e80936615ccd67eb19b04c6c018e5764",
+          "size": 1798
+        },
+        "TheMechanist/profiles/installer-preservation-test.profile": {
+          "sha256": "e5e99a76031ec1a393ed8e475f1697a23eb3e85aae9c8700c005e9e073d04f4e",
+          "size": 165
+        }
+      },
+      "repairPreservedBytes": true,
+      "status": "passed",
+      "uninstallPreservedBytes": true,
+      "version": "0.9.59",
+      "visitedFloorStateRestored": true
+    },
+    "windows-x64": {
+      "artifactDigest": "sha256:4c449e5dda4bba99f587f139d070ef39ccc3299c3f860066a6fc0b7c6494e8a3",
+      "artifactId": 14986959530,
+      "embeddedWorldDefinitionRecovered": true,
+      "originalWorldRendered": true,
+      "originalWorldResumedInFreshJvm": true,
+      "originalWorldSave": {
+        "path": "D:\\a\\_temp\\Mechanist Installed Profile\\TheMechanist\\installed-game-storage\\saves\\singleplayer\\slot1.mechsave",
+        "sha256": "5d72ea5e749ecd9a3406a54462d055f1a18cf196c122c266a778c94563f04092",
+        "size": 14536788
+      },
+      "preservedFileCount": 9,
+      "preservedFiles": {
+        "TheMechanist/installed-game-storage/installed-world-checkpoint.properties": {
+          "sha256": "baa335bef54346a87eaac01b76722f3713db67d2c9631f2460a6c26695cedcce",
+          "size": 751
+        },
+        "TheMechanist/installed-game-storage/installer-preservation-test.sav": {
+          "sha256": "7411acbe62bd42bf0a21793e80adf5d598d5c7b574a0b93c49150c6cdc792300",
+          "size": 175
+        },
+        "TheMechanist/installed-game-storage/saves/data/profiles/active_profile.properties": {
+          "sha256": "17583a09b34d59219ad64c3144fa20a6b7de58306171a4754bab402cc74fb503",
+          "size": 638
+        },
+        "TheMechanist/installed-game-storage/saves/data/profiles/profile.seed": {
+          "sha256": "37b0b1b9e4ca028ebadc0f1dc59f034196d5f58bfa52bdc139c1ae1db64ccab1",
+          "size": 37
+        },
+        "TheMechanist/installed-game-storage/saves/singleplayer/slot1.mechsave": {
+          "sha256": "5d72ea5e749ecd9a3406a54462d055f1a18cf196c122c266a778c94563f04092",
+          "size": 14536788
+        },
+        "TheMechanist/installed-game-storage/settings/jvm_runtime.properties": {
+          "sha256": "2d117d565cd896b36f98476c712d10930044d7b87ab883eefdc66e710414cee3",
+          "size": 319
+        },
+        "TheMechanist/installed-game-storage/settings/legal.properties": {
+          "sha256": "61508f767efc1804392b3fb9c8f14ea5efef6a004848496fba1cded93d1c5f22",
+          "size": 241
+        },
+        "TheMechanist/installed-game-storage/settings/options.properties": {
+          "sha256": "ad54ff3f1e59b892798b9c363d94b16e4eb170c9128b23a02bce070244579fdd",
+          "size": 1874
+        },
+        "TheMechanist/profiles/installer-preservation-test.profile": {
+          "sha256": "8096e0bf82dcadfcf8e81a59ce380c28f4645ed0b32fe19ee1936b99962e0aac",
+          "size": 165
+        }
+      },
+      "repairPreservedBytes": true,
+      "status": "passed",
+      "uninstallPreservedBytes": true,
+      "version": "0.9.59",
+      "visitedFloorStateRestored": true
+    }
+  },
+  "nativeRun": {
+    "conclusion": "success",
+    "id": 45535457901,
+    "publishJob": "skipped",
+    "url": "https://github.com/mrcalzon02/TheMechanist/actions/runs/45535457901",
+    "version": "0.9.59"
+  },
+  "releasePublished": false,
+  "remainingAuditFindings": [
+    "World generation still reports advisory weak-door/corridor findings with reachable rooms and ready spawn.",
+    "This pass does not certify every original requested mission, faction, facility, pet/livestock acquisition or breeding playthrough.",
+    "Older saves without terrain/visited-slice snapshots cannot recover edits already absent from their stored data."
+  ],
+  "scope": "Windows/Linux installer, desktop startup and single-player campaign persistence",
+  "sourceCI": {
+    "graphics": 45534693207,
+    "inventory": 45534695768,
+    "mainJava17": 45534693288,
+    "milestoneValidation": 45534693254,
+    "multiplayer": 45534693355
+  },
+  "sourceCommit": "3d19ba2ae3a773172899b2b4056b47de627a855d"
+}
