@@ -86,7 +86,7 @@ final class Milestone04CrecheGenerationMaturitySmoke {
 
         Properties saved = new Properties();
         Persistence.writeWorldState(world, saved);
-        World restored = new World(84302L, 24, 24);
+        World restored = new World(world.seed, world.w, world.h);
         Persistence.readWorldState(restored, saved);
         require(restored.crecheCohorts.size() == 2
                         && restored.crecheCohorts.get(0).remaining == 3
