@@ -118,3 +118,5 @@ jobs:
           gh release edit "$tag" --repo "$REPOSITORY" --draft=false --prerelease=true
           gh release view "$tag" --repo "$REPOSITORY" --json url,isDraft,assets \
             --jq '{url: .url, draft: .isDraft, assetNames: [.assets[].name]}'
+
+# Owner demo prerelease request: 2026-11-26; current main; no gameplay changes.
